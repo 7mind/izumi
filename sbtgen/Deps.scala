@@ -180,7 +180,7 @@ object Izumi {
   // DON'T REMOVE, these variables are read from CI build (build.sh)
   final val scala212 = ScalaVersion("2.12.21")
   final val scala213 = ScalaVersion("2.13.18")
-  final val scala300 = ScalaVersion("3.7.4")
+  final val scala300 = ScalaVersion("3.9.0")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -207,6 +207,11 @@ object Izumi {
   )
 
   private final val JvmRelease = "17"
+
+  private def withoutBackendParallelism(options: Seq[Const]): Seq[Const] = {
+    val index = options.indexOf(Const.CString("-Ybackend-parallelism"))
+    if (index < 0) options else options.patch(index, Nil, 2)
+  }
 
   private def withJvmRelease(options: Seq[Const]): Seq[Const] = {
     options.map {
@@ -387,14 +392,17 @@ object Izumi {
               (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf
             ),
           SettingKey(Some(scala300), None) :=
-            withJvmRelease(
-              Seq[Const](
-                "-source:3.7",
-                "-Xkind-projector:underscores",
-              ) ++ Defaults.Scala3Options
-                .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
-                .filterNot(scala3Wconf.contains(_))
-              ++ scala3Wconf
+            withoutBackendParallelism(
+              withJvmRelease(
+                Seq[Const](
+                  "-source:3.9",
+                  "-Xkind-projector:underscores",
+                  "-Ximport-suggestion-timeout:0",
+                ) ++ Defaults.Scala3Options
+                  .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
+                  .filterNot(scala3Wconf.contains(_))
+                ++ scala3Wconf
+              )
             ),
           SettingKey.Default := Const.EmptySeq,
         ),
