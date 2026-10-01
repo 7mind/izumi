@@ -749,8 +749,9 @@ on JS:
   derivation macros expand to it, so that facility and its test need a different
   derivation on Native.
 
-The `fundamentals-platform` tree still holds three `.native` files from 2022,
-which predate its current platform structure. CI's generation step passes
+The `fundamentals-platform` tree still holds three `.native` files from an
+earlier Native build, added between 2019 and 2022, which predate its current
+platform structure. CI's generation step passes
 `--js` or `--nojvm --js` (`.mdl/defs/actions.md`); Native test lanes and the
 publish job also need `--native`. The nix development shell provides Node but no
 clang, which Native linking needs.
