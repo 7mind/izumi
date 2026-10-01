@@ -130,8 +130,8 @@ by the checklist's item IDs. For each item, record:
 
 Before the first commit of step 1a, add the plan's other requirements to the
 checklist as items O.1 onwards, as its "Other requirements" rule defines them.
-Each item gives its plan line and its assigned step. The status ledger then
-tracks the O items like every other item.
+Each item gives its plan line with a short quote, and its assigned step. The
+status ledger then tracks the O items like every other item.
 
 Keep captured logs in an ignored directory and refer to them by path. Update the
 status ledger in the commit whose work it records, and read it first after a

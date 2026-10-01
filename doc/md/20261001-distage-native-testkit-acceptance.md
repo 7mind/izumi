@@ -49,8 +49,9 @@ unqualified wording.
   - **Enumeration.** Before the first commit of step 1a, the agent adds each
     such requirement to the "Other requirements" section of this file as an
     item, O.1 onwards.
-    - Each item cites its plan line and is marked *step* or *final* under its
-      assigned step.
+    - Each item cites its plan line with a short quote of the requirement,
+      which keeps the reference stable when plan lines shift. It is marked
+      *step* or *final* under its assigned step.
     - These items follow every rule here, including states, evidence, and
       completion.
     - The reviewer subagent checks the O items against the plan at every step
