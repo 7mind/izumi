@@ -86,7 +86,7 @@ missing.
 | --- | --- | --- |
 | [0a: JVM SBT](spikes/20261001/sbt/REPORT.md) | Public host substitution and fork bootstrap work on SBT 1.13.0/2.0.9; selection/body/XML counts agree; DI omission and partial-cache failures reproduced; safe public policies exercised | Real engine integration, streaming/concurrent events, failing bodies and launch-failure memoization, cancellation, default parallel task execution, an in-process run of the target bootstrap without host substitution, classloader lifetime, multi-project/configuration behavior |
 | [0b: portability](spikes/20261001/portability/REPORT.md) | Native acceptance passed in a second round: the real `TestPlanner` and `DistageTestRunner` link and run on Native 0.5.12 with Scala 3.9.0, for a DI and configuration test and for a parallel run with one memoized resource acquisition. It runs with stand-ins for the unpublished ZIO interop artifacts, or with a local publish of [zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763), and with fixture-local Native platform files. A third round passes the same programs on 3.7.4, 2.13.18, and 2.12.21, and the existing ScalaTest suites of two modules pass on Native in the repository build generated with a Native platform. On the JVM, 3.9.0 still hits exact-version gating and the intermittent backend race | For step 1a: a released zio-interop-cats with Native artifacts, `.native` source sets replacing the fixture-local files, and every module's existing tests on Native. Also ZIO and Cats Effect test effects under the engine and logging sinks on Native, and HOCON if that configuration format is added there (see Open decisions) |
-| [0c: target transport](spikes/20261001/transport/REPORT.md) | Passed in a second round: a host-side projection over the platform test adapters gives every selected suite its own task, result, JUnit file, and history on SBT 1.13.0 and 2.0.9 for JS and Native at Scala 3.3.7 (SBT 2 smoke at 3.9.0). SBT 1 history needs the 0a conservative policy. Each group acquires once, and a failing or dying target task is launched once and reported for every suite | Streaming instead of buffering; per-suite completion records; cancellation; thread limits below group size; runtime reuse after a target dies; Scala 2, browser JS, the real engine |
+| [0c: target transport](spikes/20261001/transport/REPORT.md) | Passed in a second round: a host-side projection over the platform test adapters gives every selected suite its own task, result, JUnit file, and history on SBT 1.13.0 and 2.0.9 for JS and Native at Scala 3.3.7 (SBT 2 smoke at 3.9.0). SBT 1 history needs the 0a conservative policy. Each group acquires once, and a failing or dying target task is launched once and reported for every suite | Streaming instead of buffering; per-suite completion records; cancellation; thread limits below group size; runtime reuse after a target dies; Scala 2, the real engine; browser JS, deferred (see Open decisions) |
 
 All three reports distinguish executed outcomes from source observations and
 record exact commands. Their drivers, fixtures, and reports are versioned; the
@@ -1097,7 +1097,8 @@ assumptions; a different answer changes the listed steps.
   - Native drops the interop orphan;
   - Native `distage-core` omits `ZIOCatsEffectInstancesModule`, so
     `DefaultModule.forZIOPlusCats` is unavailable there;
-  - Native excludes the bio tests that use zio-interop-cats.
+  - Native drops bio's test-scope zio-interop-cats dependency; the bio tests
+    that use the interop are already JVM-only.
 
   That gives up ZIO–Cats Effect interop on Native.
 - **Native release timing.** Assumed: step 1a's Native artifacts ship with the
@@ -1109,6 +1110,9 @@ assumptions; a different answer changes the listed steps.
   gets no Native variant, and distage specs reach Native through the new runner
   in step 2e. A Native variant would port the ScalaTest-based registry of a
   module that step 5 deletes.
+- **Browser JS.** Assumed: JS acceptance runs on Node, which is what the
+  repository's JS lanes use. Running JS tests in a browser, which the 0c spike
+  left uncovered, is an addition and not part of this plan.
 - **Configuration format on Native.** Assumed: Native uses the JS circe JSON
   configuration implementation, as the spike does. HOCON on Native needs a Native
   HOCON parser, such as sconfig, which publishes Native 0.5 artifacts; it is an

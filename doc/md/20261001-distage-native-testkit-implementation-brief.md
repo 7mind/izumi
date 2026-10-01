@@ -67,7 +67,8 @@ is done. The fallback, if no release appears, is the owner's choice (the plan's
   verified sub-step locally, with a message that states what was verified. Do
   not push, open pull requests, force-push, rewrite history, or change
   `develop`.
-- **Generated build.** Never hand-edit `build.sbt` or `project/plugins.sbt`.
+- **Generated build.** Never hand-edit `build.sbt`, `project/plugins.sbt`, or
+  `project/build.properties`.
   Change `sbtgen/Deps.scala`, `project/Versions.scala`, or
   `project/project/PluginVersions.scala`, regenerate with `bash sbtgen.sc` and
   the platform flags (`JAVA_HOME` set; the dev shell exports `$JDK17`, `$JDK21`,
@@ -107,7 +108,9 @@ is done. The fallback, if no release appears, is the owner's choice (the plan's
 - **Plan maintenance.** When evidence contradicts the plan outside its gate
   table and open-decision defaults, correct the plan text in the same commit and
   cite the evidence. Do not change gate rows, open-decision defaults, or owner
-  decisions. Record a new owner-level choice under open decisions, with the
+  decisions, and do not weaken any other normative statement of the plan. A
+  correction that would weaken one is waiting on owner. Record a new owner-level
+  choice under open decisions, with the
   default you proceeded under. A choice that would narrow an acceptance item
   makes that item waiting on owner instead of taking effect.
 - **Review.** Before marking a step done, have a read-only reviewer subagent
@@ -218,8 +221,8 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
 - 2e: the transport report's measured design is a host projection over the
   platform test adapters
   (`spikes/20261001/transport/fixture/project/TransportProjection.scala`). The
-  checklist's 2e items define the remaining work; streaming and browser JS are
-  not among them.
+  checklist's 2e items define the remaining work. Streaming is part of it,
+  through 2d.12 and 2e.5. Browser JS follows the plan's open decision.
 
 ### 3–5
 
