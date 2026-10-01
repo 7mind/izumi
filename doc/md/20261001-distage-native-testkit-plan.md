@@ -956,6 +956,11 @@ validated. JUnit XML alone cannot provide the live IDE experience.
 | 4 | IntelliJ integration | Run suite/test, navigate failure, rerun failed tests, cancel, and debug a JVM test using the same IDs and settings as CLI/SBT |
 | 5 | Repository-wide migration and ScalaTest retirement | No current published module or repository test dependency contains `org.scalatest` or `org.scalactic`; no module's tests use a runner layer that depends on that module, and such tests live in a test-only project above that layer; migrated suites reference neither package; each migrated module discovers, executes, and reports the same selected tests. A temporary legacy adapter may exist only during the staged migration and is removed before this gate closes |
 
+The [acceptance checklist](20261001-distage-native-testkit-acceptance.md)
+restates the gates of steps 1a–5 and the fixture requirements below as numbered
+items with evaluation points. It is the completion contract for the
+implementation.
+
 Step 1a comes first. It tests Native portability on the repository's own build
 and existing suites, needs neither the runner nor the 3.9 move, and gives every
 later Native lane its dependency closure, including the assertion adapters'.
@@ -1086,11 +1091,15 @@ assumptions; a different answer changes the listed steps.
 - **Interop release.** Assumed: zio-interop-cats publishes a release with Native
   artifacts; [zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763),
   which adds them, was merged on 2026-10-01. Until then, every step that does not
-  need it proceeds. If no release appears, the alternative is Native variants of
-  `fundamentals-orphans` and `fundamentals-bio` that avoid the interop artifacts.
-  That means moving bio's shared tracer references into platform sources and
-  dropping the interop orphan on Native, which gives up ZIO–Cats Effect interop
-  there.
+  need it proceeds. If no release appears, the alternative is Native variants
+  that avoid the interop artifacts:
+  - bio's shared tracer references move into platform sources;
+  - Native drops the interop orphan;
+  - Native `distage-core` omits `ZIOCatsEffectInstancesModule`, so
+    `DefaultModule.forZIOPlusCats` is unavailable there;
+  - Native excludes the bio tests that use zio-interop-cats.
+
+  That gives up ZIO–Cats Effect interop on Native.
 - **Native release timing.** Assumed: step 1a's Native artifacts ship with the
   next regular release, even before step 2a. They add a platform to modules that
   already publish Scala 3 artifacts at the current baseline, and step 2a moves

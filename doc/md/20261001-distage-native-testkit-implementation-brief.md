@@ -3,20 +3,17 @@
 For the agent implementing [the plan](20261001-distage-native-testkit-plan.md).
 The plan is the specification; this brief adds execution order, environment
 facts, and working rules. The plan's owner decisions take precedence over this
-brief. Resolve any other conflict in the plan text, with evidence, and note it in
-the status ledger.
+brief.
 
 ## Definition of done
 
-Every step from 1a to 5 in the plan's
-[delivery table](20261001-distage-native-testkit-plan.md#delivery-sequence-and-acceptance-gates)
-passes its observable acceptance on the head of
-`wip/distage-test-runner-and-scala-native`. Each gate item has evidence in the
-status ledger from a command run against the current code. The local equivalents
-of the CI lanes pass on JDK 17: every platform with Scala 2.12, 2.13, and 3,
-using `:coverage` where CI does, plus `:site-test`. The JVM lanes also pass on
-JDK 25. Steps 0a–0c are the executed spikes. A step is done when its gate checks
-ran and passed, not when its code exists.
+The [acceptance checklist](20261001-distage-native-testkit-acceptance.md) is the
+completion contract. It restates every gate clause of steps 1a–5, the plan's
+fixture requirements, and the lanes as numbered items, and gives the evaluation
+point of each. The work is done when every item is done at its evaluation points
+on the head of `wip/distage-test-runner-and-scala-native`, as the status ledger
+records. A step is done when its items were verified by commands and passed, not
+when its code exists. Steps 0a–0c are the executed spikes.
 
 ## Inputs
 
@@ -45,7 +42,7 @@ independent work remains.
 | 1b, 1c | 1a part 1, for their Native lanes | — |
 | 1d | 1c; 1a part 2 for its Native BIO checks | As 1a part 2 |
 | 2a | — | — |
-| 2b | 1c | — |
+| 2b | 1c; 2a, because 3.7.4 cannot read the portable protocol module's 3.8.4 TASTy | — |
 | 2c | 2b | — |
 | 2d | 2c | — |
 | 2e | 2d, 1a part 2 | As 1a part 2 |
@@ -83,7 +80,10 @@ is done. The fallback, if no release appears, is the owner's choice (the plan's
   runs locally as
   `direnv exec . mdl -u platform:<jvm|js|js-nojvm> -u java_version:<17|21|25> -u scala_version:<2.12|2.13|3> :gen :test`,
   with `:coverage` instead of `:test` where CI uses it and the Native platform
-  values that step 1a adds.
+  values that step 1a adds. The checklist's lanes L1–L6 list the required ones.
+  `:gen` rewrites the tracked generated files with the lane's flags, so run lanes
+  in a disposable worktree, or regenerate with the committed flags before
+  committing (item L5).
 - **Native toolchain.** Scala Native needs clang on `PATH`, which the dev shell
   lacks; step 1a adds it to `flake.nix`. Until then, use the clang, LLVM, and lld
   store paths listed in `spikes/20261001/transport/REPORT.md`. Clean Native
@@ -99,25 +99,35 @@ is done. The fallback, if no release appears, is the owner's choice (the plan's
   concurrently editing subagent its own worktree, and remove worktrees afterwards.
 - **Defects.** Reproduce before fixing. For a third-party defect, search its
   tracker, then cite the existing issue, or record a minimal public reproduction
-  and a draft report in the ledger. Do not file issues yourself.
-- **Plan maintenance.** When evidence contradicts the plan, correct the plan text
-  in the same commit and cite the evidence. Do not change owner decisions. If one
-  proves infeasible, record the evidence under open decisions and continue with
-  independent work. Record any new owner-level choice under open decisions, with
-  the default you proceeded under.
+  and a draft report in the status ledger. Do not file issues yourself.
+- **Acceptance checklist.** Never edit it except to add or strengthen items. An
+  item you cannot meet, or find contradicted by evidence, is waiting on owner,
+  with the evidence in the status ledger. Meanwhile, continue with independent
+  work.
+- **Plan maintenance.** When evidence contradicts the plan outside its gate
+  table and open-decision defaults, correct the plan text in the same commit and
+  cite the evidence. Do not change gate rows, open-decision defaults, or owner
+  decisions. Record a new owner-level choice under open decisions, with the
+  default you proceeded under. A choice that would narrow an acceptance item
+  makes that item waiting on owner instead of taking effect.
 - **Review.** Before marking a step done, have a read-only reviewer subagent
-  audit its gate against the code and the ledger evidence, and resolve its
-  findings.
+  audit that step's checklist items against the code and the status ledger, and
+  resolve its findings.
 
 ## Status ledger
 
-Create and maintain `doc/md/20261001-distage-native-testkit-status.md`. For each
-step, record its state (not started, in progress, waiting on a named external
-condition, or done). For each gate item, record the commands that verify it and
-their observed results, such as counts and exit codes, with the commit and date.
+Create and maintain `doc/md/20261001-distage-native-testkit-status.md`, keyed
+by the checklist's item IDs. For each item, record:
+
+- its state: not started, in progress, waiting on a named external condition,
+  waiting on owner, or done;
+- the commands that verify it;
+- the observed results, such as counts and exit codes;
+- the commit and the date, for each evaluation point.
+
 Keep captured logs in an ignored directory and refer to them by path. Update the
-ledger in the commit whose work it records, and read it first after a context
-reset.
+status ledger in the commit whose work it records, and read it first after a
+context reset.
 
 ## Step notes
 
@@ -154,7 +164,8 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
   circe-derivation, which has no Native artifact. On Native Scala 2, the
   facility either works without it or is documented as unavailable there.
 - Add Native tests to `distage-testkit-core` that reproduce the 0b engine checks
-  in the portability fixture's `PortabilityMain`:
+  in the portability fixture's `PortabilityMain`. In step 5 they move to a
+  test-only project above it (checklist 5.7):
   - a DI and configuration test;
   - four parallel tests sharing one memoized `Lifecycle` resource, acquired and
     released exactly once.
@@ -192,18 +203,23 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
   until 2e takes them over. There are two ways to do this: leave those suites on
   ScalaTest until the base runner supports their platforms, or select each
   suite's base class per platform. The owner decision makes the plain front end
-  source-compatible with `AnyWordSpec`. Record the choice in the ledger.
+  source-compatible with `AnyWordSpec`. Record the choice in the status ledger.
+- The portable protocol module compiles with 3.8.4, which a 3.7.4 build cannot
+  read, so 2b's Scala 3 lane follows 2a.
 - 2d: the JVM SBT report's measured seams.
-  - Substitute in `loadedTestFrameworks`, with `Def.uncached` on SBT 2.
-  - Use a target-side bootstrap for forks. First run the in-process matrix with
-    only that bootstrap registered, as the plan requires.
+  - Register a target-side bootstrap framework. It serves forks, and it can
+    serve in-process runs too. First run the in-process matrix with only that
+    bootstrap registered. As the plan requires, add host substitution in
+    `loadedTestFrameworks` (with `Def.uncached` on SBT 2) only if that matrix
+    shows a measured need.
   - Ordinary per-suite tasks project one application run per group.
   - Apply the conservative SBT 1 `testQuick` policy.
   - Add DI digests through `extraTestDigests` or `definedTestDigests` on SBT 2.
-- 2e: the transport report's measured design, a host projection over the
+- 2e: the transport report's measured design is a host projection over the
   platform test adapters
   (`spikes/20261001/transport/fixture/project/TransportProjection.scala`). The
-  items the plan lists as still uncovered for it are 2e work.
+  checklist's 2e items define the remaining work; streaming and browser JS are
+  not among them.
 
 ### 3–5
 
@@ -213,3 +229,11 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
 - The plan's migration inventory lists every ScalaTest facility to replace.
   Reconcile each module's discovered suite and test counts before and after its
   migration.
+
+## Goal objective
+
+The Codex `/goal` objective for this work:
+
+```text
+Implement doc/md/20261001-distage-native-testkit-plan.md, steps 1a through 5, following doc/md/20261001-distage-native-testkit-implementation-brief.md. Done means every item in doc/md/20261001-distage-native-testkit-acceptance.md is done at each of its evaluation points on the head of branch wip/distage-test-runner-and-scala-native: verified by commands run against the code, with the commands, results, and commits recorded in doc/md/20261001-distage-native-testkit-status.md. The acceptance checklist and the plan's owner decisions are fixed: you may add or strengthen items but never remove, narrow, or reinterpret one, and an item you cannot meet is waiting on owner, not done. Follow the brief's dependency order, never wait on the pending zio-interop-cats Native release while independent work remains, commit each verified sub-step locally, and never push.
+```
