@@ -46,10 +46,15 @@ unqualified wording.
   - **What does not.** Descriptions of observed or external behaviour, such as
     spike results and SBT or platform facts; alternatives the plan does not
     choose; and proposed follow-ups.
-  - **Enumeration.** Before the first commit of step 1a, the status ledger lists
-    these requirements, each with its plan line, its assigned step, and how it
-    will be verified. The reviewer subagent checks that list against the plan at
-    every step boundary. The owner may amend it.
+  - **Enumeration.** Before the first commit of step 1a, the agent adds each
+    such requirement to the "Other requirements" section of this file as an
+    item, O.1 onwards.
+    - Each item cites its plan line and is marked *step* or *final* under its
+      assigned step.
+    - These items follow every rule here, including states, evidence, and
+      completion.
+    - The reviewer subagent checks the O items against the plan at every step
+      boundary, and the owner may amend them.
 - **Completion.** The goal is complete only when every item is done at each of
   its evaluation points.
 
@@ -450,3 +455,8 @@ the owner confirms it.
   runner. That covers the microsite's `distage-testkit.md` page and the other
   pages that mention ScalaTest. The installation and migration documentation
   states that the distage SBT plugin is required for SBT use, and L4 passes.
+
+## Other requirements
+
+The implementing agent adds items O.1 onwards here before the first commit of
+step 1a, as the "Other requirements" rule specifies.
