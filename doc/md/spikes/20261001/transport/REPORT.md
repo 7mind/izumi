@@ -515,5 +515,5 @@ XML snapshots omit JVM system properties; testcase and failure data are retained
   cancellation/finalizer failures, arbitrary test selectors, concurrent sessions,
   real distage provisioning, or Native port dependencies. The portability spike
   owns actual izumi closure feasibility.
-- Source-span macro probing remains step 1b acceptance; it was deferred following
+- Source-span macro probing remains step 1c acceptance; it was deferred following
   the prioritized failure accounting and explicit Scala 3.9 transport steering.

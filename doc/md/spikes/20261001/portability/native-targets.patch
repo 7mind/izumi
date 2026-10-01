@@ -1,0 +1,38 @@
+diff --git a/sbtgen/Deps.scala b/sbtgen/Deps.scala
+index f3d8d795c..296f78497 100644
+--- a/sbtgen/Deps.scala
++++ b/sbtgen/Deps.scala
+@@ -59,6 +59,7 @@ object Izumi {
+     sbtTarget = SbtTarget.Sbt2,
+     sbtVersion = Some("2.0.9"),
+     scalaJsVersion = Version.VExpr("PV.scala_js_version"),
++    scalaNativeVersion = Version.VConst("0.5.12"),
+     crossProjectVersion = Version.VConst("1.4.0"),
+     // npm dependencies are installed from the root `package.json` instead; node resolves them
+     // by walking up from the linker output directory
+@@ -234,6 +235,16 @@ object Izumi {
+       ),
+     )
+ 
++    private val nativePlatform = PlatformEnv(
++      platform = Platform.Native,
++      language = targetScala3,
++      settings = Seq(
++        "coverageEnabled" := false,
++        // the target-side test interface must match the Scala Native SBT plugin, whatever version test libraries were built with
++        "libraryDependencySchemes" += """"org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always""".raw,
++      ),
++    )
++
+     private val jvmPlatformSbt = PlatformEnv(
+       platform = Platform.Jvm,
+       language = Seq(scala212),
+@@ -242,7 +253,7 @@ object Izumi {
+       ),
+     )
+ 
+-    final val cross = Seq(jvmPlatform, jsPlatform)
++    final val cross = Seq(jvmPlatform, jsPlatform, nativePlatform)
+     final val jvm = Seq(jvmPlatform)
+     final val js = Seq(jsPlatform)
+ 

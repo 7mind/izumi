@@ -45,7 +45,7 @@ object PortabilityMain {
     }
   }
   final class Environment extends DistageTestEnv {
-    def create(config: TestConfig): TestEnvironment = loadEnvironment(config, implicitly[TagK[Identity]], implicitly[izumi.distage.modules.DefaultModule[Identity]])
+    def create(config: TestConfig): TestEnvironment = loadEnvironment[Identity](config, implicitly[TagK[Identity]], implicitly[izumi.distage.modules.DefaultModule[Identity]])
   }
   def main(args: Array[String]): Unit = {
     if (args.contains("parallel")) parallelMemoized() else sequentialSingle()

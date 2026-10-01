@@ -51,9 +51,15 @@ val nativeDeps = Def.setting { Seq(
   "io.circe" %%% "circe-parser" % "0.14.14",
   "org.scala-lang.modules" %%% "scala-collection-compat" % "2.13.0"
 ) }
+// the repository's semantic Scala 2 options (build.sbt): source level, migration warnings, kind-projector syntax
+def scala2Flags(v: String): Seq[String] =
+  if (v.startsWith("2.12.")) Seq("-language:higherKinds", "-Xsource:3", "-P:kind-projector:underscore-placeholders", "-Ypartial-unification")
+  else Seq("-Xsource:3", "-Xmigration", "-Wconf:cat=scala3-migration:silent", "-Wconf:cat=other-migration:silent", "-P:kind-projector:underscore-placeholders")
 def module(id: String, path: String) = Project(id, file("modules/" + id)).enablePlugins(ScalaNativePlugin).settings(
   libraryDependencies ++= nativeDeps.value,
   libraryDependencies += "io.github.classgraph" % "classgraph" % "4.8.181" % Provided,
+  // Cats Effect 3.7.1's Scala 2 signatures need this annotation library, which it declares as a provided JVM artifact
+  libraryDependencies ++= (if (native05 && scalaVersion.value.startsWith("2.")) Seq("org.typelevel" %% "scalac-compat-annotation" % "0.1.4" % Provided) else Nil),
   libraryDependencies ++= (if (scalaVersion.value.startsWith("2.")) Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided, compilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full)) else Seq("org.scala-lang" %% "scala3-compiler" % scalaVersion.value % Provided)),
   Compile / unmanagedSourceDirectories := {
     val sv = scalaBinaryVersion.value
@@ -62,10 +68,10 @@ def module(id: String, path: String) = Project(id, file("modules/" + id)).enable
     val roots = Seq(repo / path, repo / path / platformDir)
     (if ((native05 || sys.props.contains("spike.nativeAdapter")) && id == "bio") Seq(file("native-adapter/bio").getCanonicalFile) else Nil) ++
     (if (interopStandins && Set("bio", "core")(id)) Seq(file("native-standins/" + id).getCanonicalFile) else Nil) ++
-    (if (native05 && Set("platform", "bio")(id)) Seq(file("native-platform/" + id).getCanonicalFile) else Nil) ++ roots.flatMap(r => Seq(r / "src/main/scala", r / ("src/main/scala-" + (if (sv == "3") "3" else "2")), r / "src/main/scala-2.12+", r / "src/main/scala-2.13+")) ++ (if ((native05 || sys.props.contains("spike.catsJvmAdapter")) && id == "core") Seq(repo / path / ".jvm/src/main/scala/izumi/distage/modules/platform") else Nil)
+    (if (native05 && Set("platform", "bio")(id)) Seq(file("native-platform/" + id).getCanonicalFile) else Nil) ++ roots.flatMap(r => Seq(r / "src/main/scala", r / ("src/main/scala-" + (if (sv == "3") "3" else "2")), r / "src/main/scala-2.12+") ++ (if (sv == "2.12") Nil else Seq(r / "src/main/scala-2.13+")) ++ (if (sv == "3") Nil else Seq(r / ("src/main/scala-" + sv)))) ++ (if ((native05 || sys.props.contains("spike.catsJvmAdapter")) && id == "core") Seq(repo / path / ".jvm/src/main/scala/izumi/distage/modules/platform") else Nil)
   },
   Compile / unmanagedSources / excludeFilter := (if (native05 && id == "platform") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && f.getName == "__AbstractIzPlatformPlatformSpecific.scala") else if (native05 && id == "bio") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && Set("__PlatformSpecific.scala", "IzUUIDPlatformSpecific.scala", "__SecureRandomPlatformSpecific.scala", "UnsafeRun2.scala", "QuasiIORunner.scala")(f.getName)) else if (native05 && id == "core") new SimpleFileFilter(f => (interopStandins && f.getPath.contains("/src/main/scala/izumi/distage/modules/typeclass/ZIOCatsEffectInstancesModule.scala") && !f.getPath.contains("native-standins")) || (f.getPath.contains("/.js/") && f.getName == "CatsIOPlatformDependentSupportModule.scala") || (f.getPath.contains("/.jvm/") && f.getName != "CatsIOPlatformDependentSupportModule.scala")) else if (sys.props.contains("spike.nativeAdapter") && id == "bio") new SimpleFileFilter(f => f.getPath.contains("/.jvm/") && f.getName == "__PlatformSpecific.scala") else if (sys.props.contains("spike.catsJvmAdapter") && id == "core") new SimpleFileFilter(f => (f.getPath.contains("/.js/") && f.getName == "CatsIOPlatformDependentSupportModule.scala") || (f.getPath.contains("/.jvm/") && f.getName != "CatsIOPlatformDependentSupportModule.scala")) else HiddenFileFilter),
-  scalacOptions ++= (if (scalaVersion.value.startsWith("2.")) Seq("-Xsource:3", "-P:kind-projector:underscore-placeholders") else Seq("-Xkind-projector:underscores", "-Yretain-trees", "-no-indent") ++ (if (native05) Seq("-Xmax-inlines:64") else Nil)),
+  scalacOptions ++= (if (scalaVersion.value.startsWith("2.")) scala2Flags(scalaVersion.value) else Seq("-Xkind-projector:underscores", "-Yretain-trees", "-no-indent") ++ (if (native05) Seq("-Xmax-inlines:64") else Nil)),
   publishMavenStyle := true,
   Compile / unmanagedSources ++= (if (native05 && id == "bio") Seq(repo / path / ".js/src/main/scala/izumi/fundamentals/platform/uuid/IzUUIDPlatformSpecific.scala") else Nil),
   Compile / sourceGenerators += Def.task {
@@ -94,7 +100,7 @@ for name,(path,deps) in modules.items():
     if deps: line += '.dependsOn(' + ', '.join(deps) + ')'
     if name == 'orphans': line += '.dependsOn((if (interopStandins) Seq[ClasspathDep[ProjectReference]](interopStandin % Provided) else Nil): _*)'
     body.append(line)
-body.append('lazy val app = Project("app", file("app")).enablePlugins(ScalaNativePlugin).dependsOn(testkit).settings(libraryDependencies ++= nativeDeps.value, Compile / mainClass := Some("izumi.distage.PortabilityMain"))')
+body.append('lazy val app = Project("app", file("app")).enablePlugins(ScalaNativePlugin).dependsOn(testkit).settings(libraryDependencies ++= nativeDeps.value, Compile / mainClass := Some("izumi.distage.PortabilityMain"), scalacOptions ++= (if (scalaVersion.value.startsWith("2.")) scala2Flags(scalaVersion.value) else Nil), libraryDependencies ++= (if (scalaVersion.value.startsWith("2.")) Seq(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full)) else Nil))')
 body.append('lazy val root = Project("root", file(".")).aggregate(' + ', '.join(modules) + ', app).settings(publish / skip := true)')
 (here/'fixture/build.sbt').write_text(header + '\n'.join(body) + '\n')
 (here/'closure.tsv').write_text('module\trepository path\tproject dependencies\n' + ''.join(f'{n}\t{p}\t{",".join(d)}\n' for n,(p,d) in modules.items()))

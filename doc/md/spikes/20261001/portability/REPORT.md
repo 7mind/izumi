@@ -11,7 +11,10 @@ plugin configuration, and a parallel run with a memoized `Lifecycle` resource
 acquired and released exactly once. The run depends on fixture-local stand-ins
 for the unpublished ZIO interop Native artifacts and on fixture-local Native
 platform files, listed below as production port items. The first round, kept
-below as history, stopped before compiling the testkit.
+below as history, stopped before compiling the testkit. A
+[third round](#third-round-current-compiler-and-scala-2) passes the same two
+programs from clean builds on the repository's current Scala 3 compiler, 3.7.4,
+and on Scala 2.13.18 and 2.12.21.
 
 ## Most consequential results
 
@@ -27,6 +30,8 @@ below as history, stopped before compiling the testkit.
 | Native 0.5.12 with pinned dependency versions | Dependency resolution fails: Cats Effect 3.6.3 has Native 0.4 publications but no Native 0.5 publication; `zio-interop-cats` and `zio-interop-tracer` 23.1.0.5 have no Native publication checked. |
 | Native 3.9 approximation with explicit diagnostic substitutions | 17 repository modules compile; framework stops deriving decoder for `Option[RenderingOptions]` in `LoggerConfigLoader.scala:41`. Testkit/app never compile; native linking never occurs. The decoder stop is a fixture artifact: the fixture omitted the repository's `-Xmax-inlines:64`. The build, with its 3.7.4 Scala 3 options extended to 3.9.0, compiles `distage-frameworkJS` on 3.9.0, and removing only that flag reproduces the identical error. |
 | Second round, `native05` mode, Native 0.5.12, Scala 3.9.0 | All 19 closure modules and the application compile; `nativeLink` succeeds after the platform overrides below; the binary prints `TESTPLANNER_AND_DISTAGETESTRUNNER_PASS`, and in `parallel` mode `PARALLEL_MEMOIZED_PASS success=4, failure=0, ended=true, acquired=1, released=1, threads=2`. |
+| Third round, `native05` mode, Scala 3.7.4, 2.13.18, 2.12.21 | From clean builds, all 19 modules and the application compile and link, and both programs pass. On Scala 2, Cats Effect 3.7.1 needs its `provided` annotation library on the compile classpath, on the JVM as well ([typelevel/cats-effect#4693](https://github.com/typelevel/cats-effect/issues/4693)). |
+| Third round, repository build generated with a Native platform | sbtgen 0.0.122 generates 21 Native projects; the existing ScalaTest suites of `fundamentals-collections` (33 tests) and `fundamentals-language` (1 test) pass on Native on 3.7.4, 2.13.18, and 2.12.21. |
 
 `3.3.8` was the latest stable 3.3 compiler found in Maven metadata during this
 spike. Native 0.5.12's `nscplugin_3.9.0` POM exists (HTTP 200). Availability is
@@ -211,7 +216,7 @@ current shared `IzPlatform` structure and are not usable as they stand.
 Not verified: ZIO or Cats Effect effect types under the testkit on Native (only
 `Identity` ran), logstage file sinks and console color detection, HOCON
 configuration, the `CompletionStage` adapter's callbacks, Scala 2.12/2.13 on
-Native, macOS and Windows, release or LTO link modes.
+Native (run in the third round), macOS and Windows, release or LTO link modes.
 
 The decoder control runs in a disposable worktree at the recorded baseline, with
 this directory copied in. The two modes differ only in removing
@@ -237,6 +242,98 @@ direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'export PATH="$LLVM_PATH:$PA
 #   sbt 'set ThisBuild / version := "23.1.0.13-native-pr763"' zioInteropTracerNative/publishLocal zioInteropCatsNative/publishLocal
 rm -rf modules/*/target app/target target  # stale .nir files survive mode switches
 # then the nativeLink command above with -Dspike.interopVersion=23.1.0.13-native-pr763 added
+```
+
+## Third round: current compiler and Scala 2
+
+Executed 2026-10-01 against the unchanged repository sources, from a copy of
+this directory whose generated build points `repo` at the main checkout. Apart
+from that path, the generated build is identical to the one this directory
+produces. Captured outputs are the ignored local `logs/native05-374-*`,
+`logs/native05-213-*`, `logs/native05-212-*`, and `logs/jvm-213-*` files.
+
+| Scala | ZIO interop | Clean build | Programs |
+| --- | --- | --- | --- |
+| 3.7.4, the repository's current compiler | Local publish of zio/interop-cats#763 | All 19 modules and the application compile, with no stand-in project; `nativeLink` succeeds | Both pass; `parallel` prints `success=4, failure=0, ended=true, acquired=1, released=1, threads=2` |
+| 2.13.18 | Stand-ins; the local publish has Scala 3 artifacts only | All 19 modules, the stand-in project, and the application compile; `nativeLink` succeeds | Both pass with the same counts |
+| 2.12.21 | Stand-ins | As for 2.13.18 | Both pass with the same counts |
+
+The first Scala 2 attempts stopped on fixture omissions, which the generator now
+corrects; their outputs were not retained:
+
+- The fixture passed only `-Xsource:3` and kind-projector on Scala 2. On 2.13 the
+  `-Xsource:3` migration messages about case-class `copy` access became errors,
+  because only the build's 2.13 options silence those categories. On 2.12, BIO's
+  higher-kinded calls failed without `-Ypartial-unification`. `scala2Flags` now
+  carries the build's semantic Scala 2 options.
+- The fixture read neither `scala-2.12` nor `scala-2.13` source directories, and
+  read `scala-2.13+` on every version. It now follows the binary version.
+- `PortabilityMain` relied on Scala 3 inference for the type argument of
+  `loadEnvironment`; it now passes `[Identity]`.
+
+One failure does not come from the fixture. With Cats Effect 3.7.1,
+`fundamentals-bio` fails on Scala 2 at `CatsConversions.scala:103` with
+`Symbol 'type org.typelevel.scalaccompat.annotation.package.unused' is missing
+from the classpath`, required by `Async.class`. Cats Effect 3.7.0 annotated a
+parameter of `Async#syncStep` with that library's `@unused` and declares the
+library `provided`. The JVM build fails identically when only `cats_effect`
+changes to 3.7.1 (`logs/jvm-213-ce371-bio-compile.txt`). With 3.6.3 the library
+is absent from that compile classpath (`logs/jvm-213-ce363-bio-classpath.txt`),
+and the module compiles. The defect is reported upstream as
+[typelevel/cats-effect#4693](https://github.com/typelevel/cats-effect/issues/4693).
+The fixture adds the library's JVM artifact in `Provided` scope on Scala 2, which
+is also how Cats Effect's own Native POM declares it; the library publishes no
+Native artifact.
+
+Not verified in this round: the PR #763 artifacts on Scala 2, which need a
+Scala 2 local publish; anything beyond the two programs; and the other
+second-round gaps above.
+
+```sh
+python3 generate-fixture.py
+cd fixture
+rm -rf modules/*/target app/target target
+# LLVM toolchain and JDK 17 as in the second round
+direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'export PATH="$LLVM_PATH:$PATH"; exec sbt -java-home "$JDK" -batch -Dspike.native05=true -Dspike.interopVersion=23.1.0.13-native-pr763 "++3.7.4!" app/nativeLink'
+direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'export PATH="$LLVM_PATH:$PATH"; exec sbt -java-home "$JDK" -batch -Dspike.native05=true "++2.13.18!" app/nativeLink'
+direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'export PATH="$LLVM_PATH:$PATH"; exec sbt -java-home "$JDK" -batch -Dspike.native05=true "++2.12.21!" app/nativeLink'
+./app/target/scala-3.7.4/app && ./app/target/scala-3.7.4/app parallel  # likewise scala-2.13 and scala-2.12
+
+# JVM control, in a disposable worktree: set `cats_effect = "3.7.1"` in project/Versions.scala, then
+direnv exec /home/pavel/work/safe/7mind/izumi sbt -batch '++2.13.18' 'fundamentals-bioJVM/compile'  # CatsConversions.scala:103:6
+```
+
+### Generated repository build
+
+[native-targets.patch](native-targets.patch) adds a Native `PlatformEnv` to
+`Targets.cross` in `sbtgen/Deps.scala` and pins Scala Native 0.5.12; sbtgen
+0.0.122 otherwise defaults to 0.5.10. Without the patch, `--native` generates no
+Native project. With it, in a disposable worktree, `bash sbtgen.sc --js --native`
+generates 21 Native projects. They cover every cross-built module, the legacy
+`distage-testkit-scalatest` included, and use the SBT 2 plugins
+`sbt-scala-native` 0.5.12 and `sbt-scala-native-crossproject` 1.4.0.
+
+Native tests need one more setting. ScalaTest 3.3.0-alpha.2 depends on Scala
+Native's `test-interface` 0.5.8 and ScalaCheck 1.18.1 on 0.5.5. That artifact's
+POM declares the `strict` version scheme, so `update` rejects the 0.5.12 the
+plugin requires. The target-side test interface has to match the plugin's host
+adapter, so the patch accepts that eviction through `libraryDependencySchemes`.
+The rule names `test-interface_native0.5`, like the build's existing `_sjs1`
+circe entries; with the unsuffixed name, `update` still failed.
+
+With the patch, the existing ScalaTest suites of the two modules without
+platform-specific sources run as Native test binaries from the generated build.
+On 3.7.4, 2.13.18, and 2.12.21, `fundamentals-collections` passes 33 tests in 6
+suites and `fundamentals-language` passes 1 test
+(`logs/realbuild-native-test-*.txt`). Modules with platform-specific sources do
+not compile for Native until they have the `.native` source sets listed above.
+
+```sh
+# disposable worktree at the current commit, JAVA_HOME set for sbtgen
+git apply doc/md/spikes/20261001/portability/native-targets.patch
+bash sbtgen.sc --js --native
+# LLVM toolchain and JDK 17 as in the second round
+direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'export PATH="$LLVM_PATH:$PATH"; exec sbt -java-home "$JDK" -batch fundamentals-collectionsNative/test fundamentals-languageNative/test "++2.13.18" fundamentals-collectionsNative/test fundamentals-languageNative/test "++2.12.21" fundamentals-collectionsNative/test fundamentals-languageNative/test'
 ```
 
 ## Reproductions and evidence
