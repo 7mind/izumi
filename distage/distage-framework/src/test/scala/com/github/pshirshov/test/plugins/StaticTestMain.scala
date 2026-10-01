@@ -6,6 +6,7 @@ import izumi.distage.modules.DefaultModule2
 import izumi.distage.plugins.{PluginConfig, PluginDef}
 import izumi.distage.roles.RoleAppMain
 import izumi.distage.roles.RoleAppMain.ArgV
+import izumi.distage.roles.launcher.AppFailureHandler
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.functional.quasi.QuasiApplicative
 import izumi.fundamentals.platform.IzPlatform
@@ -14,6 +15,11 @@ import izumi.reflect.TagKK
 import logstage.LogIO2
 
 object StaticTestMain extends RoleAppMain.Launcher1[cats.effect.IO] {
+
+  override protected def earlyFailureHandler(args: ArgV): AppFailureHandler = {
+    AppFailureHandler.NullHandler
+  }
+
   override protected def pluginConfig: PluginConfig = {
     (if (IzPlatform.isScalaJS) {
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
@@ -32,6 +38,11 @@ object StaticTestMain extends RoleAppMain.Launcher1[cats.effect.IO] {
 }
 
 object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
+
+  override protected def earlyFailureHandler(args: ArgV): AppFailureHandler = {
+    AppFailureHandler.NullHandler
+  }
+
   override protected def pluginConfig: PluginConfig = {
     (if (IzPlatform.isScalaJS) {
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
@@ -42,6 +53,11 @@ object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
 }
 
 class StaticTestMainLogIO2[F[+_, +_]: TagKK: DefaultModule2] extends RoleAppMain.LauncherBIO[F] {
+
+  override protected def earlyFailureHandler(args: ArgV): AppFailureHandler = {
+    AppFailureHandler.NullHandler
+  }
+
 
   override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
     make[Boolean].named("distage.roles.always-include-reference-role-configs").fromValue(true)
