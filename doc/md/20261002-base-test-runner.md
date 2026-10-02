@@ -206,8 +206,12 @@ snapshots are retained; failed loads propagate their original exception, and
 the effective-resolution cache retains each failed request without automatic
 retry.
 
-The runtime fixtures cover all four entry points on JVM and JS. The existing
-suite import-only compatibility fixture and final-head checks remain pending.
+The runtime fixtures cover all four entry points on JVM and JS. The higher
+test project also retains the legacy autoset suite and the Identity, Cats IO
+and ZIO sequential-ordering suites with only the Spec1 import changed. Their
+compatibility harness checks all 46 logical identities and runs fresh suite
+instances twice on every supported JVM/JS compiler lane. The complete
+compatibility inventory and final-head checks remain pending.
 
 ## Fundamentals test projects
 

@@ -59,7 +59,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
 | 2b.8 | in progress | Plain and raw DI ownership controls pass below; complete higher-layer/custom-hook isolation and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain-suite/test IDs reject in all nine lanes below; higher-layer and final evaluation outstanding. |
-| 2b.10 | in progress | Existing pure plain suites migrate through import lines only; resolved implicit Scalactic users remain legacy; higher/final compatibility fixtures outstanding. |
+| 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
 | 2c.2 | not started | No evaluation point passed yet. |
@@ -2872,3 +2872,105 @@ provenance. A reviewer-only correction labels the core digest as coreSha256
 and records the actual base-runner digest as baseSha256 in classpath metadata;
 the prior metadata is preserved, and artifact bytes, paths and commands do not
 change. Root checks both corrected digests against the frozen JARs.
+
+### Import-only distage compatibility: six JVM/JS lanes verified
+
+The preceding four-front-end/owned-snapshot sub-step is committed locally as
+`0b87e5facd39305995e7c801b1a64f01d0ff51d3` on 2026-10-02. Root verifies that
+hash and observes a clean working tree immediately after the commit. No push
+is performed; the commit does not close parent 2b or its final requirements.
+
+Original autoset/sequential-ordering baseline batches exit 0 on Scala 3.9.0,
+2.13.18 and 2.12.21, JVM and JS. Scala 3 runs 46 tests/four suites on both
+platforms; Scala 2 JS also runs 46. The first Scala 2 JVM captures run only
+one autoset test, with empty sequential-suite headers. Their exit 0 does not
+verify the 45 omitted sequential tests; that omission is under investigation.
+Exact batch/JDK21 argv, stdout and completion records are retained in
+`2b-spec-import-only-original-{scala3,scala213,scala212}-baseline.*`.
+Higher test sources now retain AutoSetTestkitTest and the sequential-ordering
+file under their original packages. Each differs from its pre-migration source
+at `58929ad2a6cfb9c8ae7eb0983e284413054dc00a` only in the Spec1 import;
+the originals remain in the legacy test project. Root checks full byte equality
+to that commit and the exact import replacement before copying. The preserved
+manifest and unified import-only diffs are in `spec-import-only-preparation/`.
+
+The public RunSession compatibility harness supplies four fresh factories,
+checks the 46 expected structured IDs and source locations, and executes all
+four suites twice through independent owners. The retained sequential bodies
+assert declaration order for Identity, Cats IO and ZIO; the retained autoset
+body asserts the bootstrap planning-hook result. At installation its compiler
+and runtime verification was pending; the completed evidence follows below.
+This is an additional compatibility fixture portion;
+2b.10 and its all-applicable-suite/final-head evaluation stay in progress.
+
+The read-only reviewer identifies the Scala 2 JVM baseline omission in the
+captured summaries/planning output before any legacy correction. Root's initial
+46-per-lane inference used the JS tails and was unsupported for those two JVM
+lanes; the baseline statement above is corrected. The original captures are
+preserved. Candidate source diffs still change only the Spec1 import, and this
+baseline discrepancy does not itself establish a new-runner defect.
+
+The retained migrated suites now pass Scala 3.9.0, 2.13.18 and 2.12.21 on JVM
+and JS. `python3 /srv/nvme/tmp/izumi-impl/2b-spec-import-only-final-matrix.py`
+runs one fresh batch SBT process per compiler through direnv/JDK21; Scala 3
+adds `-Wunused:all` to both higher Compile/Test scopes, and Scala 2 receives no
+Scala 3 flag. Each three-command sequence and argv is retained in
+`2b-spec-import-only-*-final.commands.json`, with separate logs and completion
+exit 0. Each platform passes 198 higher checks, including two complete
+46-test/four-suite compatibility runs through fresh factories. All original
+autoset and effect-specific declaration-order assertions execute and succeed.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-import-only-final-audit.py` exits 0:
+1,188 higher checks across six lanes, with 84 additional compatibility checks,
+12 compatibility sessions and 552 successful terminal results (46 per
+session). Repeated runs preserve the same 46 logical IDs; terminal result,
+start/completion event and contiguous ordinal checks all pass. The auditor
+checks full original/candidate byte equality and writes the verified unified
+diff of each held file. The exact changed lines in each diff are:
+
+```diff
+-import izumi.distage.testkit.scalatest.Spec1
++import izumi.distage.testkit.runner.spec.Spec1
+```
+
+Both `.verified.diff` files retain the original commit/path and installed
+candidate path in `spec-import-only-preparation/`; the auditor retains its
+argv/stdout/completion and structured source/hash summary. No production,
+dependency or generated-build change is needed for this fixture portion.
+
+A fresh Scala 2.13 JVM legacy debug control repeats the original selection
+with `-J-Dizumi.distage.testkit.debug=true`. It exits 0, gathers 46 tests from
+four suites and reports 46 successful tests
+(`2b-spec-import-only-original-scala213-debug-parallel.*`). Unlike the first
+nondebug captures, it includes the sequential bodies. This supports a
+timing-sensitive omission hypothesis but does not establish its mechanism.
+Source review identifies early singleton registration in the base constructor
+and collection of already registered instances before their subclass
+construction necessarily finishes; filtering remains another boundary to
+distinguish. Explicit serial Scala 2 JVM controls are underway with source
+unchanged. No legacy correction or silent settings fallback is made.
+
+Both explicit serial controls finish with SBT exit 0 but only one successful
+test, on Scala 2.13 and 2.12. Their completion records explicitly set
+countInvariantHolds=false against the expected 46
+(`2b-spec-import-only-original-{scala213,scala212}-serial-control.*`). They do
+not validate the simple parallel-constructor-race explanation or restore the
+omitted bodies. The omission's mechanism remains unestablished. All original
+and diagnostic captures are preserved; no legacy source or committed test
+setting is changed. The migrated fixture independently executes all 46 bodies
+on these JVM lanes, so the bounded import-only portion is verified while the
+legacy discrepancy remains disclosed for subsequent investigation.
+
+The final read-only review finds no concrete defect in this bounded migration
+portion. It independently checks the source/commit byte oracle, both exact
+import-only diffs, all six runtime lanes and the matrix auditor. Its immutable
+captures and `verification-audit.json` are in
+`spec-import-only-requirements-review/`; the review keeps full 2b.10 and parent
+2b open. The current generated files have no diff from the committed outputs
+(`git diff --exit-code build.sbt project/plugins.sbt project/build.properties`,
+exit 0), and `git diff --check` passes.
+
+Primary Native interop metadata requests still return HTTP 404 at 16:53:44–45
+UTC on 2026-10-02 (`2b-spec-import-only-release-metadata.json` and responses).
+The higher Native lanes wait on that named external condition; independent
+ownership, duplicate-identity and host integration work remains.
