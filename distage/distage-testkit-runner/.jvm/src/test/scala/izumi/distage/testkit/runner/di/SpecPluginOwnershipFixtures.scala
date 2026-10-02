@@ -58,7 +58,7 @@ private[di] object SpecPluginOwnershipFixtures {
     }
   }
 
-  private final class Suite(debug: Boolean, fresh: Boolean, stats: Statistics, gate: OwnerGate) extends Spec1[IO] {
+  private final class Suite(debug: Boolean, fresh: Boolean, reconstruct: Boolean, stats: Statistics, gate: OwnerGate) extends Spec1[IO] {
     override protected def distageSuiteId: EngineSuiteId = EngineSuiteId("custom-plugin-" + debug)
     override protected def config: TestConfig = {
       stats.configurations.incrementAndGet().discard()
@@ -74,7 +74,15 @@ private[di] object SpecPluginOwnershipFixtures {
     }
     override protected def makePluginloader(): PluginLoader = {
       stats.loaders.incrementAndGet().discard()
-      if (fresh) {
+      if (fresh && reconstruct) {
+        val delegate = new PluginLoaderDefaultImpl {
+          override def load(config: PluginConfig): LoadedPlugins = {
+            stats.request(config)
+            super.load(PluginConfig(config.packagesEnabled, config.packagesDisabled, config.cachePackages, debug, config.merges, config.overrides))
+          }
+        }
+        if (debug) delegate.map(value => value) else delegate
+      } else if (fresh) {
         val delegate = new PluginLoaderDefaultImpl().map(value => value)
         new PluginLoader {
           override def load(config: PluginConfig): LoadedPlugins = {
@@ -91,18 +99,23 @@ private[di] object SpecPluginOwnershipFixtures {
 
   def run(context: ExecutionContext, verify: (String, Boolean) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
+    runOwners("", reconstruct = false, context, verify).flatMap(_ => runOwners("reconstructed-", reconstruct = true, context, verify))
+  }
+
+  private def runOwners(prefix: String, reconstruct: Boolean, context: ExecutionContext, verify: (String, Boolean) => Unit): Future[Unit] = {
+    implicit val ec: ExecutionContext = context
     val custom = Vector(true, true)
-    exercise("first", custom, new OwnerGate(1, "first", verify), context, verify)
-      .flatMap { first => exercise("repeated", custom, new OwnerGate(1, "repeated", verify), context, verify).map(second => verify("custom plugins keep fresh state across repeated owners", first.state ne second.state)) }
-      .flatMap(_ => exercise("mixed", Vector(false, true), new OwnerGate(1, "mixed", verify), context, verify))
+    exercise(prefix + "first", custom, reconstruct, new OwnerGate(1, prefix + "first", verify), context, verify)
+      .flatMap { first => exercise(prefix + "repeated", custom, reconstruct, new OwnerGate(1, prefix + "repeated", verify), context, verify).map(second => verify(prefix + "custom plugins keep fresh state across repeated owners", first.state ne second.state)) }
+      .flatMap(_ => exercise(prefix + "mixed", Vector(false, true), reconstruct, new OwnerGate(1, prefix + "mixed", verify), context, verify))
       .flatMap { _ =>
-        val gate = new OwnerGate(2, "concurrent", verify)
-        Future.sequence(Vector("concurrent-first", "concurrent-second").map(owner => exercise(owner, custom, gate, context, verify)))
-          .map(resources => verify("custom plugins keep distinct resources and state across concurrent owners", (resources.head ne resources(1)) && (resources.head.state ne resources(1).state)))
+        val gate = new OwnerGate(2, prefix + "concurrent", verify)
+        Future.sequence(Vector(prefix + "concurrent-first", prefix + "concurrent-second").map(owner => exercise(owner, custom, reconstruct, gate, context, verify)))
+          .map(resources => verify(prefix + "custom plugins keep distinct resources and state across concurrent owners", (resources.head ne resources(1)) && (resources.head.state ne resources(1).state)))
       }
   }
 
-  private def exercise(owner: String, custom: Vector[Boolean], gate: OwnerGate, context: ExecutionContext, verify: (String, Boolean) => Unit): Future[SessionPluginResource] = {
+  private def exercise(owner: String, custom: Vector[Boolean], reconstruct: Boolean, gate: OwnerGate, context: ExecutionContext, verify: (String, Boolean) => Unit): Future[SessionPluginResource] = {
     implicit val ec: ExecutionContext = context
     val stats = new Statistics
     val identity = CatalogueIdentity(BuildId("custom-plugin"), BuildTargetId("plugin-target"), CatalogueId(owner))
@@ -115,7 +128,7 @@ private[di] object SpecPluginOwnershipFixtures {
         case _ => ()
       }
     } }
-    val factories = Vector(false, true).zip(custom).map { case (debug, fresh) => () => new Suite(debug, fresh, stats, gate) }
+    val factories = Vector(false, true).zip(custom).map { case (debug, fresh) => () => new Suite(debug, fresh, reconstruct, stats, gate) }
     val session = new RunSession(identity, factories, context, sink)
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     verify(owner + " custom plugin discovery suspends hooks, resources and bodies", catalogue.tests.size == 2 && stats.configurations.get() == 0 && stats.loaders.get() == 0 && stats.loaded.isEmpty && stats.seen.isEmpty && events.isEmpty)

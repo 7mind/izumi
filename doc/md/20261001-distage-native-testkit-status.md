@@ -57,7 +57,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | in progress | Owned higher provider and all four spec entry points pass six JVM/JS lanes below; common host integration and final evaluation remain outstanding. |
 | 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
-| 2b.8 | in progress | Plain/raw DI, atomic registration, delegating bootstrap and request-preserving cached custom-plugin controls pass below; request-reconstruction ownership defect, complete custom-hook audit, higher Native and final evaluation outstanding. |
+| 2b.8 | in progress | Plain/raw DI, atomic higher registration, delegating bootstrap and forwarding/direct synchronous cached custom-plugin controls pass below; opaque/handoff reconstruction ownership defects, complete custom-hook audit, higher Native and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain IDs reject in all nine lanes and distage path/suite/test IDs reject in six JVM/JS lanes below; higher Native and final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
@@ -135,7 +135,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.15 | not started | No evaluation point passed yet. |
 | O.16 | not started | No evaluation point passed yet. |
 | O.17 | in progress | Declarative registration and arbitrary-constructor side-effect boundary documented; no-resource front-end discovery verified below; final evaluation outstanding. |
-| O.18 | in progress | Owned/default/delegating bootstrap and request-preserving custom-plugin controls pass below; request-reconstruction ownership defect, complete custom-hook audit and final evaluation outstanding. |
+| O.18 | in progress | Owned/default/delegating bootstrap and forwarding/direct synchronous custom-plugin controls pass below; opaque/handoff reconstruction ownership defects, complete custom-hook audit and final evaluation outstanding. |
 | O.19 | not started | No evaluation point passed yet. |
 | O.20 | not started | No evaluation point passed yet. |
 | O.21 | not started | No evaluation point passed yet. |
@@ -3492,3 +3492,150 @@ compile 0/runtime 1 commands and the expected isolation assertion. Its
 `root-source-variant.diff` confirms only the custom six-field reconstruction
 differs from the preceding passing public probe. Local commit below records
 this verified forwarding portion; no parent or final gate is marked done.
+
+## 2026-10-02: verified synchronous custom-loader reconstruction portion
+
+The preceding verified forwarding checkpoint is committed as
+`cbe133bb38dbf7ae76ac6f6858f20bbdafa7ef23`. `git rev-parse HEAD` and
+`git status --short` immediately after that commit return the exact hash and
+an empty working tree. This section retains parent 2b/O.18 and every final
+evaluation point as open.
+
+Fail-first evidence: the unchanged public six-field reconstruction probe above
+compiles with exit 0 and fails with exit 1 against that checkpoint's published
+closure. A permanent JVM resource fixture adds direct and built-in-map
+reconstruction to the existing five-owner controls. Before any production
+correction, `python3 /srv/nvme/tmp/izumi-impl/2b-spec-plugin-reconstruction-before.py`
+runs a fresh strict Scala 3 process and exits 1. Compilation succeeds; all
+forwarding owners and the first reconstructed owner pass. The reconstructed
+repeated owner reaches its gate with counts=3,4, acquired=2, released=1, and the
+fresh-owner assertion becomes the recorded Test failure. The fixture source,
+exact SBT argv, log and completion are captured under that prefix. Root reads
+the nested failure and its counts before editing production code.
+
+An initial one-time instance-binding candidate is frozen but never compiled
+under `spec-plugin-reconstruction-rejected-binding-candidate/`. Review identifies
+that it would reject a shared stateless loader after its first session. The
+actual published shared-instance control in
+`plugin-loader-binding-candidate-review/ControlledSharedLoaderProbe.scala`
+passes: the same loader serves fresh sessions with Vector(1,1), sharedState=false.
+Root reads the full source and captured exit-0 output. The later source-shadow
+candidate uses the revised invocation implementation, not the rejected binding
+candidate. Its initial reviewer script still expects the discarded binder's
+rejection; that stale oracle fails after the actual shared-instance run passes.
+The reviewer retains this harness failure separately; it is not a production
+failure or verification of the discarded candidate.
+
+The correction passes the owner explicitly through an internal concrete
+PluginLoader.loadOwned call and a scoped wrapper. Built-in map forwards that
+call without executing its mapping function during wrapper creation. The
+Classgraph implementation retains virtual load/scan and protected package-cache
+dispatch; a ThreadLocal owned by that loader instance exposes the invocation's
+cache while a custom override reconstructs its request. A finally block restores
+an outer invocation or removes the scope. No process-level ownership registry
+is added. SessionPluginLoader validates its fixed owner. The session environment
+factory passes the scoped wrapper while preserving the original owned requests.
+
+The first strict Scala 3 check,
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-plugin-reconstruction-first.py`, exits 0:
+core 128 checks, higher 372. Its direct/mapped reconstruction controls now have
+fresh repeated/concurrent state, same-owner resource identity, one acquisition
+and release, and release before Finished. JVM core controls verify a shared
+loader across owners, map, failure cause and legacy-policy restoration, nested
+invocation restoration, two barrier-controlled simultaneously entered worker
+invocations, and preserved explicit protected-cache policy. A later helper edit
+derives the barrier size from its owner vector; the consistent final matrix
+below is the verification of that final helper source.
+
+Final producer verification is running through
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-plugin-reconstruction-final-matrix.py`.
+Each compiler has a fresh JDK 21 batch process; Scala 3 has Compile/Test
+-Wunused:all on all six relevant LocalProjects, while Scala 2 receives no Scala 3
+flags. The script runs extension/core/higher JVM and JS tests, captures 36 fresh
+Compile/Test classpath blocks, and requests 18 publications. Four production
+sources are frozen before these final processes in
+`spec-plugin-reconstruction-production-snapshot/manifest.json`. Scala 3 and
+2.13 completions currently return exit 0; 2.12, published consumers, binary
+auditors, generator and final review remain pending.
+
+Candidate-only review reproduces two remaining isolation defects: an opaque
+wrapper reconstructs then delegates to a hidden Classgraph loader, and a custom
+Classgraph override waits synchronously for a worker-thread super.load of a
+reconstructed request. In
+`plugin-loader-owned-route-candidate-review/{opaque-reconstructing,handoff-reconstructing}/`
+both compile with exit 0 and run with exit 1: both bodies succeed but state is
+Vector(1,2), sharedState=true. The corresponding metadata-preserving routes
+pass. These captures use frozen source-shadow candidate units, never producer
+classes; final-publication replays are pending. They are concrete scope findings,
+not evidence that all custom hooks are isolated. Equivalent reconstruction and
+thread handoff are not declared unsupported, and acceptance is unchanged.
+
+Consistent final producer results: all three completion files return exit 0.
+The six lanes pass core 128 JVM/103 JS and higher 372 JVM/290 JS checks, plus
+seven existing extension cases per compiler. The independent
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-plugin-reconstruction-final-audit.py`
+exits 0 and records 2,679 primary checks (693 core/1,986 higher), 141 added
+reconstruction checks, 30 scanned owners, 60 selected terminal results and six
+controlled overlapping owner pairs. All four production snapshots still match
+the checkout exactly. The independent
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-plugin-reconstruction-artifact-audit.py`
+exits 0: 18 publications, 2,673 exact current binary entries, expected POMs,
+36 fresh Compile/Test classpaths, no core/higher ScalaTest or fixture leakage.
+Three unchanged earlier graphs are explicitly reused and still match the
+generated build: 109 nodes, 213 scoped edges, no cycle.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-plugin-reconstruction-generator-final.py`
+runs the prescribed JDK 21 `bash sbtgen.sc --js --native` command and exits 0.
+Before/after hashes of all three generated files are identical to the preceding
+checkpoint's recorded hashes. The primary interop Native metadata URLs both
+return HTTP 404 at 19:37:22 UTC; exact URLs, responses and times are captured in
+`2b-spec-plugin-reconstruction-release-metadata.json` and its two XML files.
+This condition leaves the released higher Native lane open.
+
+Actual published runtime closure:
+`spec-plugin-reconstruction-published-final-review/` contains 78 frozen artifacts
+(54 JARs/24 POMs), 33 source records including 12 unchanged consumer sources,
+and 357 exact current core/higher/extension JVM binary entries. Its 39 JDK 21
+commands match their explicit expectations: 16 preserved old-binary runtime
+controls execute before seven identical-source compilations, then 16 recompiled
+controls execute. Direct reconstruction, the same shared loader instance,
+original forwarding/registration/bootstrap/property controls and the captured
+same-session resource all pass. Both reconstruction residuals fail their original
+isolation assertion with successful body outcomes; replaying each with old and
+recompiled binaries gives four expected runtime exit-1 records, not four defects.
+Their preserving-request controls pass. Consumer classpaths contain only their
+own output directory followed by 49 frozen published JARs; no producer classes
+or source-shadow candidates are used.
+
+Actual API closure:
+`plugin-config-actual-published-api-reconstruction-final-review/` contains 127
+artifact records, three unchanged Scala/Java consumer sources, 26 consumer files
+and 172 exact extension JVM binary entries. All 20 commands exit 0 on 3.9,
+2.13 and 2.12: seven old-binary runs, six same-source compilations, seven
+recompiled runs, including the six copy default getters and Scala 3 Mirror.
+Both reviewer manifest auditors exit 0. Root's independent
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-plugin-reconstruction-root-publication-audit.py`
+also exits 0 and writes separate runtime/API audit JSONs after checking every
+artifact/source hash, prior source/binary identity, exact command/classpath,
+expected failure cause, current binary set/bytes and immutable producer log.
+The runtime log SHA256 is
+537b54d66a79346265fff1aa4821183b033efada2176fc6f641edd087bf4ac66.
+Root retains its initial API-auditor assumptions separately: the Java compilation
+also includes its own consumer output directory, and the substring `recompile`
+also matches recompiled runtime labels. Correcting those oracle assumptions
+changes no product code, consumer command or runtime result.
+
+The product documentation now qualifies the verified synchronous routes and
+names both actual published residual defects. Parent 2b/O.18, the complete
+custom-hook audit, compatibility inventory, cancellation, common host integration,
+higher Native and final-head gates remain open. Final read-only document closure
+and local commit are pending below; the acceptance checklist and owner decisions
+are unchanged.
+
+Read-only document closure is recorded in
+`spec-plugin-reconstruction-bounded-final-review/document-closure-verdict.json`:
+the reviewer finds no additional defect or overclaim in this verified portion.
+The revised documents distinguish the corrected synchronous routes from the two
+published residual routes. All parent and final gates remain open. `git diff
+--check` exits 0 before the local commit; its exact hash is recorded at the next
+evaluation point.

@@ -195,13 +195,15 @@ repeat a failed hook. Custom hooks keep their explicit collaborators and
 definitions.
 
 App and bootstrap plugin requests carry the provider's package-cache owner.
-The verified forwarding and mapped custom built-in routes share compatible
-scanned definitions inside a session and get fresh definitions in another
+The verified forwarding, mapped and direct synchronous reconstruction routes
+share compatible scanned definitions inside a session and get fresh definitions in another
 session. PluginConfig copy, snapshot and request helpers retain ownership while
 preserving its six-field value shape. Explicit custom package-cache collaborators
-retain their policies. A custom hook that reconstructs a six-field PluginConfig
-loses the owner and still reaches the global cache; this ownership defect and
-the complete custom-hook audit remain open.
+retain their policies. The invocation scope preserves custom dispatch and allows
+a shared built-in loader instance to serve distinct owners. An opaque wrapper
+that reconstructs before forwarding to a hidden delegate, or a hook that hands
+a reconstructed request to a worker thread, still reaches the global cache.
+These reproduced ownership defects and the complete custom-hook audit remain open.
 
 The built-in testkit `BootstrapFactory.Impl` keeps its router local to the
 test environment. This also applies when a custom factory delegates to it.

@@ -9,7 +9,22 @@ import scala.jdk.CollectionConverters.*
 import scala.util.chaining.scalaUtilChainingOps
 
 open class PluginLoaderClassgraphImpl extends PluginLoader {
-  protected def packageCache: PluginPackageCache = PluginLoaderClassgraphImpl.legacyPackageCache
+  private val packageCacheOwner = new ThreadLocal[Option[PluginPackageCache]] {
+    override protected def initialValue(): Option[PluginPackageCache] = None
+  }
+
+  override private[distage] final def loadOwned(config: PluginConfig, owner: PluginPackageCache): LoadedPlugins = {
+    // Keep the owner available when a custom load override reconstructs its request.
+    val previous = packageCacheOwner.get()
+    packageCacheOwner.set(Some(owner))
+    try load(config)
+    finally previous match {
+      case None => packageCacheOwner.remove()
+      case _ => packageCacheOwner.set(previous)
+    }
+  }
+
+  protected def packageCache: PluginPackageCache = packageCacheOwner.get().getOrElse(PluginLoaderClassgraphImpl.legacyPackageCache)
 
   /** Will not scan if no packages are specified (add `"_root_"` package if you want to scan everything) */
   override def load(config: PluginConfig): LoadedPlugins = {

@@ -23,6 +23,6 @@ private[di] final class SessionEnvironmentFactory(delegate: TestEnvironmentFacto
       bootstrapPluginConfig = config.bootstrapPluginConfig.withPackageCacheOwner(packageCache),
       bootstrapFactory = if (config.bootstrapFactory eq BootstrapFactory.Impl) bootstrap else config.bootstrapFactory,
     )
-    delegate.create(owned, loader, roles, merge, effect, defaultModule)
+    delegate.create(owned, loader.withPackageCacheOwner(packageCache), roles, merge, effect, defaultModule)
   }
 }
