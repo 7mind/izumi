@@ -7,7 +7,6 @@ import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
 import izumi.distage.framework.services.{ConfigFilteringStrategy, ConfigLoader, ConfigLoaderArgs, ConfigLocationProvider, ModuleProvider}
 import izumi.distage.model.definition.Activation
-import izumi.distage.roles.DebugProperties
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
@@ -74,7 +73,7 @@ object BootstrapFactory {
         shutdownInitiator = AppShutdownInitiator.empty,
         roleAppLocator = None,
         appArtifact = None,
-        setupStaticLogRouter = DebugProperties.`izumi.distage.roles.logs.static-log-router`.boolValue(true),
+        setupStaticLogRouter = false,
       )
     }
   }

@@ -5,6 +5,10 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.*
 
 private[di] object ProviderFixturePlatform {
+  abstract class BootstrapFactoryBase extends izumi.distage.testkit.runner.impl.services.BootstrapFactory {
+    override protected def makeConfigLocationProvider(name: String): izumi.distage.framework.services.ConfigLocationProvider = izumi.distage.framework.services.ConfigLocationProvider.Default
+  }
+
   private final val Threads = 4
   private final val Timeout = 60.seconds
   private final val RegistrationTimeoutSeconds = 10L

@@ -5,6 +5,8 @@ import scala.scalajs.js.timers.setTimeout
 import scala.util.{Failure, Success}
 
 private[di] object ProviderFixturePlatform {
+  abstract class BootstrapFactoryBase extends izumi.distage.testkit.runner.impl.services.BootstrapFactory
+
   def concurrentDiscovery(sessions: Vector[izumi.distage.testkit.runner.RunSession], context: ExecutionContext): Future[Vector[Either[izumi.distage.testkit.protocol.Failure, izumi.distage.testkit.protocol.Catalogue]]] = {
     implicit val ec: ExecutionContext = context
     Future.sequence(sessions.map(session => Future(session.discover())))

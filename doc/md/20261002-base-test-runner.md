@@ -194,6 +194,14 @@ original Planning failure as one lazy snapshot; multiple selected tests do not
 repeat a failed hook. Custom hooks keep their explicit collaborators and
 definitions.
 
+The built-in testkit `BootstrapFactory.Impl` keeps its router local to the
+test environment. This also applies when a custom factory delegates to it.
+Testkit no longer reads the role-app static-router property to install a
+process-global router. Custom factories retain their configuration/module
+hooks and definitions; role-app modules retain their explicit static setup
+policy. A hook that explicitly mutates global state still requires an ownership
+audit.
+
 Effective activation uses the existing core policy: suite choices override
 loaded configuration, and explicit run choices override those suite choices.
 Explicit axes and filters are validated against available definitions before

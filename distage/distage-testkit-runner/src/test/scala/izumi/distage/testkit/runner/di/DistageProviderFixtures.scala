@@ -66,6 +66,7 @@ object DistageProviderFixtures {
         .flatMap(_ => SpecConfigurationFixtures.run(context, checks.verify))
         .flatMap(_ => SpecCompatibilityFixtures.run(context, checks.verify))
         .flatMap(_ => SpecRegistrationFixtures.run(context, checks.verify))
+        .flatMap(_ => SpecBootstrapFixtures.run(context, checks.verify))
         .map { _ => println("DISTAGE_PROVIDER_CONTRACTS_OK checks=" + checks.count) }
     }
   }
@@ -351,7 +352,7 @@ object DistageProviderFixtures {
   private final class Checks {
     private var checked = 0
     def count: Int = checked
-    def verify(name: String, condition: Boolean): Unit = {
+    def verify(name: String, condition: Boolean): Unit = synchronized {
       require(condition, name)
       checked += 1
       println("DISTAGE_PROVIDER_CHECK " + name)

@@ -57,7 +57,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | in progress | Owned higher provider and all four spec entry points pass six JVM/JS lanes below; common host integration and final evaluation remain outstanding. |
 | 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
-| 2b.8 | in progress | Plain/raw DI ownership controls and four distage front-end atomic registration controls pass below; reproduced custom bootstrap/plugin isolation failures and final evaluation outstanding. |
+| 2b.8 | in progress | Plain/raw DI ownership, four-front-end atomic registration and delegating bootstrap controls pass below; reproduced cached custom-plugin isolation failure and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain IDs reject in all nine lanes and distage path/suite/test IDs reject in six JVM/JS lanes below; higher Native and final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
@@ -135,7 +135,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.15 | not started | No evaluation point passed yet. |
 | O.16 | not started | No evaluation point passed yet. |
 | O.17 | in progress | Declarative registration and arbitrary-constructor side-effect boundary documented; no-resource front-end discovery verified below; final evaluation outstanding. |
-| O.18 | in progress | Owned provider/default bootstrap controls preserve the static router below; complete custom-hook isolation and final evaluation outstanding. |
+| O.18 | in progress | Owned provider/default and delegating bootstrap controls preserve the static router below; cached custom-plugin isolation, complete custom-hook audit and final evaluation outstanding. |
 | O.19 | not started | No evaluation point passed yet. |
 | O.20 | not started | No evaluation point passed yet. |
 | O.21 | not started | No evaluation point passed yet. |
@@ -3098,3 +3098,158 @@ exit 0. Its review explicitly retains both custom-hook failures and the open
 parent/final-head gates. This checkpoint is committed locally; its exact hash
 is recorded at the next ledger evaluation after commit creation. No push is
 performed.
+
+### Verified delegating bootstrap portion
+
+The verified atomic registration portion is committed locally as
+`bb2c7f0ba4a3532eebf707cc4110eb140b8c1e26` on 2026-10-02. Root verifies the
+hash and observes a clean tree immediately afterward. No push is performed.
+
+The unchanged CustomBootstrapRouterProbe's expected isolation failure is read
+before editing either bootstrap implementation. The testkit-specific built-in
+BootstrapFactory.Impl now passes setupStaticLogRouter=false on JVM and JS;
+its unused role DebugProperties imports are removed. This corrects the library
+side effect when fresh custom factories delegate to that built-in implementation,
+preserving their virtual dispatch, custom definitions and router collaborator.
+It changes the prior testkit behavior, which read the role-app static-router
+property with default true; testkit no longer installs that process-global
+router through the built-in factory. Role-app ModuleProvider/LogstageModule
+explicit setup behavior is unchanged. The reviewer finds no plan/checklist or
+testkit public documentation requiring the historical auto-installation.
+Explicitly mutating custom hooks are not established isolated by this correction;
+full O.18 and final-head evaluation remain open.
+
+SpecBootstrapFixtures adds sequential/repeated and concurrent planning/execution
+controls through fresh delegating custom factories. It checks configuration
+loader dispatch/snapshot, custom bootstrap/app binding preservation, suspended
+application resources during discovery/planning, same-owner memoization,
+resource release before terminal completion and retained sentinel router.
+Compiler/runtime verification is pending at installation.
+
+The initial strict Scala 3 core/higher JVM/JS sequence passes (116/98 core and
+269 higher checks per platform) and publishes both JVM modules, exit 0
+(`2b-spec-bootstrap-scala3-first.*`). Review identifies two oracle limits,
+rather than production defects: the custom sink initially observes release
+only after execute returns, and paired asynchronous runs do not guarantee
+overlapping resource lifetimes. The strengthened fixture records the release
+count at Finished emission and uses a shared Promise to hold each owner's
+second Cats IO body until every owner has acquired its resource. The gate
+observes each scope acquired=1/released=0 before opening. The first strengthened
+Scala 3 sequence passes 272 higher checks on JVM and JS and publishes all four
+modules, exit 0. Final per-owner sequencing and failure-path checks are pending;
+this intermediate capture is not the final fixture checkpoint.
+
+Review also identifies an uncompleted test-helper waiter if the gate's final
+verification throws. Root reproduces this against the actual compiled JVM3
+OwnerGate through a scratch reflection probe (explicit test-class directory,
+not a published-consumer claim). Compile exits 0; the original controlled
+verification failure is preserved but waitingSettled=false, and the named
+settlement oracle exits 1. Exact source/commands/logs are retained in
+`bootstrap-owner-gate-before/` before any helper correction. The final fixture
+will settle every waiter with the same failure and explicitly serialize tests
+within each owner while retaining overlapping independent owner resources.
+
+All six core/higher runtime lanes and twelve publications complete the initial
+strengthened matrix with exit 0. The final helper revision is applied while the
+remaining Scala 2.12 process runs core-only dependency compilation; higher
+fixtures are outside that active task graph. The higher final checks will be
+rerun consistently on every compiler afterward, rather than claiming those
+mixed-revision intermediate logs verify the final test helpers.
+
+Root also reproduces a lost fixture-counter update before changing its method:
+the compiled DistageProviderFixtures.Checks receives 20,000 successful concurrent
+verify calls, prints 20,000 check lines, but reports 19,999. The scratch probe
+compiles with exit 0 and fails its exact-count oracle with exit 1
+(`bootstrap-check-counter-before/`). The new concurrent bootstrap callbacks
+require serialized counter updates; Checks.verify now holds its instance
+monitor. This is a test-harness correction, not a production runner defect.
+The unchanged gate/counter probes and fresh six higher runtime lanes remain
+pending final rerun at installation of these corrections.
+
+The final strict Scala 3 helper/runtime/publication sequence completes with
+exit 0, passing 272 higher checks on both JVM and JS and publishing all four
+modules (`2b-spec-bootstrap-helper-scala3-final.*`). Root replays the unchanged,
+previously compiled gate and counter probes against the corrected actual JVM3
+test classes. The gate preserves its controlled original failure and now
+reports waitingSettled=true, exit 0. The counter prints exactly 20,000 successful
+check lines and reports observed=20000, exit 0. Both after directories preserve
+identical probe source/class bytes and exact runtime argv/results:
+`bootstrap-owner-gate-after/` and `bootstrap-check-counter-after/`. These are
+explicit test-helper controls using the compiled test directory, separate from
+the published-consumer gate. Scala 2 final helper verification is underway.
+
+The separate instance-cache policy experiment is not applied. Its preserved
+actual-engine captured-definition control in
+`spec-custom-loader-cache-scope-captured-definition-review/` observes two fresh
+custom loaders within one RunSession: the published baseline acquires/releases
+one shared resource, while the per-loader candidate acquires/releases two
+distinct resources and fails its named preservation oracle. Both compile with
+exit 0. The earlier stateless-binding candidate control passed and remains
+separate evidence; it does not disprove the captured-binding counterexample.
+The current product's cached custom-loader cross-session state defect remains
+uncorrected. A correction must retain both session isolation and compatible
+same-session sharing; no caching requirement is narrowed.
+
+The final helper revision passes all six fresh higher runtime lanes, 272 checks
+each, and twelve core/higher publications, exit 0
+(`2b-spec-bootstrap-helper-{scala3,scala213,scala212}-final.*`). The strict
+Scala 3 invocation enables -Wunused:all in Compile/Test for all four scoped
+projects; Scala 2 invocations use their pinned versions without Scala 3 flags.
+Core runtime evidence is explicitly reused from the immediately preceding
+unchanged-production matrix, 116 JVM and 98 JS checks per compiler. The final
+matrix auditor exits 0 (`2b-spec-bootstrap-final-audit.*`): 2,274 primary checks,
+642 core and 1,632 higher, including 180 added bootstrap checks, 24 owner scopes,
+48 successful terminal results and six controlled overlapping-owner pairs.
+Its production byte oracle admits only the two static-router policy changes
+and their unused import removals relative to bb2c7f0.
+
+The artifact auditor exits 0 (`2b-spec-bootstrap-artifact-audit.*`), comparing
+2,167 current binary entries against all twelve freshly published JARs, checking
+expected dependency scopes and excluding test fixtures. Its 24 prior resolved
+classpath blocks and three unchanged-build graphs (109 nodes, 213 scoped edges,
+no cycles per compiler) are explicitly reused. The fresh generator exits 0
+(`2b-spec-bootstrap-generator-final.*`) and leaves the hashes of build.sbt,
+project/plugins.sbt and project/build.properties unchanged. No root SBT or
+generator process remains active after these captures.
+
+The independent replay in `spec-bootstrap-published-final-review/` freezes 54
+dependency JARs and 24 POMs, including the final JVM3 core JAR SHA256
+a4a82693b87d5c865cbbb03b8f58aed7127a35dea0ef9a831fb806e322fd8f8f and higher
+JAR c81452f21adb27b839ec556568897cd9c6d59bafd456e2b90e0413642170174b. Its
+immutable producer-log SHA256 is
+406e2c51cf827b81903361b83dc9c8fa28f78719f9a7a73c167fda05950cff95.
+Four prior public probes remain byte-identical; a fifth checks explicit
+role-app static-router policies. The ten exact JDK21 commands yield compile
+exit 0, shared-suite/duplicate/default-bootstrap/custom-bootstrap controls
+exit 0, both explicit role-property values for the delegating factory exit 0,
+owned plugin-loader control exit 0, and all four explicit role-app module
+policy controls exit 0. The unchanged cached custom-plugin control still exits
+1 for its expected cross-owner shared-state failure (Vector(1,2), shared=true).
+Both bodies succeed, so this failure is not attributed to test execution.
+
+Root independently audits all 78 artifact hashes/bytes, 22 sources (five compiled
+probes and 17 production-provenance-only sources), ten command/result records,
+consumer classpath provenance and all 295 current JVM3 core/higher binary
+entries. `root-after-evidence-audit.json` records exit 0. No consumer compilation
+uses producer class directories or production-source shadowing. An initial
+root auditor lookup used publishedJar instead of the actual jar record key and
+failed before writing its result; only that auditor schema lookup was corrected.
+The review auditor's preserved command-string and quoting failures likewise
+precede its successful rerun, without changing product artifacts or probes.
+
+Primary Native interop metadata returns HTTP 404 at 18:20:05 UTC on 2026-10-02
+(`2b-spec-bootstrap-release-metadata.json` and response XML). Higher Native
+lanes remain waiting on that named external condition. This bounded bootstrap
+correction leaves parent 2b, the cached custom-plugin failure, full O.18 and
+final-head evaluations open. The acceptance checklist and owner decisions
+remain unchanged. Final read-only review and local commit are pending below.
+
+The read-only reviewer finds no concrete residual production defect or
+overstated bounded-checkpoint claim. It independently reruns both final auditors
+with exit 0, verifies the persisted generator argv/completion and all three
+actual output hashes, reads the final ledger/API documentation and runs
+git diff --check successfully. Its conclusion explicitly preserves the reused
+core/classpath/graph provenance, the test-helper/auditor failure captures and
+the cached custom-plugin, full O.18, parent and final-head work. This verified
+bootstrap portion is committed locally; its exact hash is recorded at the next
+ledger evaluation after commit creation. No push is performed.
