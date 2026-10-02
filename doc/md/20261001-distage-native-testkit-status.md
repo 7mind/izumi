@@ -25,7 +25,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 1a.2 | in progress | No evaluation point passed yet. |
 | 1a.3 | in progress | No evaluation point passed yet. |
 | 1a.4 | in progress | No evaluation point passed yet. |
-| 1a.5 | waiting on released zio-interop-cats and zio-interop-tracer Native artifacts | No evaluation point passed yet. |
+| 1a.5 | in progress | Released 23.1.0.14 JVM/JS/Native POMs/JARs now directly verified below; build integration and evaluation remain outstanding. |
 | 1a.6 | in progress | No evaluation point passed yet. |
 | 1a.7 | in progress | No evaluation point passed yet. |
 | 1a.8 | in progress | No evaluation point passed yet. |
@@ -43,7 +43,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 1c.5 | in progress | Current plain-core semantics and diagnostic checkpoint below; final recheck outstanding. |
 | 1d.1 | in progress | Cats matrix and BIO JVM/JS checkpoints below; released Native BIO verification outstanding. |
 | 1d.2 | in progress | Cats matrix and BIO JVM/JS checkpoints below; released Native BIO verification outstanding. |
-| 1d.3 | in progress | Actual BIO defects and typed-error preservation verified on six JVM/JS lanes; released Native interop outstanding. |
+| 1d.3 | in progress | Actual BIO defects and typed-error preservation verified on six JVM/JS lanes; released Native BIO verification outstanding. |
 | 1d.4 | in progress | Legacy display checkpoint passes on six JVM/JS lanes below; parent-step evaluation outstanding. |
 | 1d.5 | in progress | Explicit suspension boundary and runtime adapters below; final recheck outstanding. |
 | 2a.1 | in progress | Scala 3.9 verification below; gate remains outstanding. |
@@ -4040,3 +4040,294 @@ actual completion JSON instead. That auditor assumption is corrected and
 retained separately, with no product/source/acceptance change and no duplicate
 runtime execution. Parent and final gates remain open. The local commit's exact
 hash is recorded at the next evaluation point; no push is performed.
+
+## Step 2b/O.18: MiniBIO cancellation lifetime investigation (2026-10-02)
+
+The bounded independent Identity reporting checkpoint is committed locally as
+`e27f9db79e1e5a495fd989cb9cf9793640ee5804`. Exact HEAD and a clean
+working tree are observed after the commit. No push is performed. Active session
+cancellation and all parent/final gates remain open. The next investigation
+addresses the already reproduced incoming MiniBIO held-finalizer abandonment;
+no MiniBIO production source has changed at this evaluation point.
+
+Root subsequently reads the read-only design report and auditor under
+`/srv/nvme/tmp/izumi-impl/minibio-interruption-design-review/`, inspects the
+authoritative public probe sources/runtime logs and reruns `python
+/srv/nvme/tmp/izumi-impl/minibio-interruption-design-review/audit-evidence.py`
+with exit 0 before editing MiniBIO. That command checks all seven cases' frozen
+7-JAR compiler/49-JAR consumer classpaths, all 378 artifact records, source and
+log hashes, exact command/result pairs and absence of production definitions in
+consumer output. All seven compile with exit 0. Mask, nested-mask, zip child
+drain, traversal child drain and inline child signaling fail their named runtime
+assertions with exit 1; direct restore is the exit-0 control. The seventh case
+reproduces stale callback clear erasing a newer pending request at the internal
+`AsyncInterruptRef` component boundary; exact public-fiber reachability of that
+interleaving is not established. The probe report preserves this distinction.
+The frozen MiniBIO implementation's 23 class/TASTy entries equal current compiled
+entries/bytes; unchanged production source SHA256 is
+`60bd3740e386a09470d04e762590c66acfbedac9cf59c6efcff24fd8a6d5abcc`.
+Public held-gate captures open their gates, settle children and drain owned EC
+callbacks before executor shutdown. Initial compile/cleanup harness failures
+are retained and do not replace these authoritative captures.
+
+Six shared permanent regressions are added to `MiniBIOAsyncTest` before the
+runtime edit. `2b-minibio-mask-before.*` records a settings-reference failure
+(unsuffixed cross-project names); `2b-minibio-mask-valid-before.*` records a
+fixture type-inference failure. Neither is product reproduction evidence.
+`python /srv/nvme/tmp/izumi-impl/2b-minibio-mask-typed-before.py` runs the correctly
+named `fundamentals-bioJVM`/`fundamentals-bio-testJVM` strict Scala-3 Compile/Test
+settings and `fundamentals-bio-testJVM/Test/testOnly
+izumi.functional.bio.test.MiniBIOAsyncTest`. Actual compilation succeeds;
+runtime exit is 1: 21 tests, 16 pass and five fail for their expected reasons.
+Both masked continuations execute zero rather than once; interrupted async
+release executes zero rather than once; a body-error release control preserves
+the original error but abandons release; and interruption replaces the original
+release exception. The direct-restore control passes. Root reads those five
+assertion failures before editing the runtime. Exact argv, completion and both
+source snapshots/hashes are retained beside each capture.
+
+The initial runtime edit's `2b-minibio-mask-first-after.*` compilation fails
+because `Morphism2` requires its `Instance` constructor; the compile error and
+source snapshot are retained, then the constructor is corrected. At this
+evaluation point runtime masking/bracket verification remains in progress;
+parallel parent joining and active session cancellation remain open. No
+acceptance item or owner decision changes.
+
+`2b-minibio-mask-valid-after.*` then compiles and passes the targeted 21 JVM
+tests, including the original five failing regressions. Acquisition cancellation,
+explicit bracketExcept restoration, failed-region restoration, repeated external
+interruption during held release, and the explicit pending execution assertion
+are added to strengthen the same scope. The first broader
+`2b-minibio-mask-scala3-final.*` process exits 1 at the applicable Cats Sync
+`canceled associates left over flatMap` law. Its `/Test/test` task delegates to
+testQuick (101 tests/one failure); it is not full final matrix evidence.
+Root inspects the actual law failure and `CatsConversions.isUninterruptibleNoOp`:
+real masks change that adapter's reference-identity classification from
+Uncancelable to Cancelable, exposing the old no-op `sendInterruptToSelf`.
+The reviewer preserves a same-source/same-bytecode frozen-publication comparison
+under `minibio-self-cancellation-law-baseline-valid` (0/0) and
+`minibio-self-cancellation-law-mask-candidate` (runtime 1; explicitly source-shadow
+candidate). Primary pinned Cats Effect 3.7.1 MonadCancelLaws/Tests distinguish
+these cancellation scopes. No unchanged law or acceptance item is removed.
+
+`2b-minibio-self-interrupt-before.*` compiles and fails the two new self-request
+regressions for Success instead of interruption, plus the applicable law.
+The first self-request implementation still uses Termination;
+`2b-minibio-self-interrupt-after.*` exposes five property failures. Stronger
+`2b-minibio-interruption-outcome-before.*` then compiles and fails cleanup count
+0/expected 1 and sandbox continuation count 1/expected 0, with an independently
+raised InterruptedException (`F.terminate`) control passing. Root reads these failures before
+adding actual `Exit.Interruption` propagation. Ordinary recovery frames now
+cannot catch cancellation; dedicated bracket frames still run release and
+restoration frames unwind either outcome. Execution APIs in the implementation
+package return `Exit`, reflecting that additional outcome, rather than falsely
+promising `Exit.Uninterrupted`. Published/source/binary compatibility verification
+of that change remains pending at this evaluation point.
+
+The JVM law environment now compares explicit Cats Outcome values for success,
+error and cancellation. Throwing cancellation through its old `Try` adapter is
+invalid: Scala Try excludes InterruptedException, and cancellation is neither
+successful return nor ordinary error. The test adapter retains exact error
+comparison and marks a canceled property computation unsuccessful; it does not
+discard a law. `2b-minibio-interruption-outcome-after.*` compiles and passes all
+104 actual tests (shared behavior plus complete applicable Sync laws). The
+original independent body/release exception controls and independent
+InterruptedException sandbox control pass. Full final matrix command requests
+use `/Test/testFull` for both BIO test projects and both core/higher platforms,
+fresh Compile/Test classpaths and BIO publications on all three compilers. All
+parent/final gates and parallel joining remain open while those checks run.
+
+The first full true-interruption matrix's Scala-3 process exits 0 (430 JVM BIO
+tests, 94 JS BIO tests, core/higher fixtures, classpaths and publications).
+Scala 2.13 exits 1 at a nonexhaustive Identity adapter match because the proposed
+direct execution API widening adds Interruption. This incomplete matrix is
+retained as `2b-minibio-interruption-*-final.*`; no Scala-2 pass is inferred.
+The independent narrow-public-API controls also establish a concrete source and
+binary regression: unchanged `Exit.Uninterrupted` consumers fail recompilation
+and old classfiles throw ClassCastException. Root reads their source, E007
+diagnostics and actual runtime trace before correcting the proposal.
+
+All five existing direct API signatures (three execution methods plus Sync.a
+and Async.register) are restored. Their explicit boundary projection maps
+Interruption to Termination while retaining its compound exception, NEList and
+trace. The existing UnsafeRun2 APIs retain full Exit.Interruption through the
+private interpreter. No old consumer cast/type failure is silently accepted.
+The independent `minibio-narrow-wrapper-candidate-review` source-shadow replay
+reports six actual exit-0 commands: old classfiles, unchanged narrow sources and
+all five signatures, and broad UnsafeRun2 outcome/hook/recovery controls. Those
+are candidate evidence, not current published-artifact proof. Actual publication
+checks remain required. Shared self-interruption checks and the JVM law adapter
+use the existing full-outcome UnsafeRun2 API.
+
+Two further runtime boundaries are reproduced before correction. The independent
+held-synchronous-body success capture receives a real request but returns
+Success(42); its independently thrown body exception control retains the exact
+original error. A throwing release constructor during failed/interrupted use
+escapes a recovery callback and leaves execution pending in the asynchronous
+probe. Captured inputs/logs under `minibio-true-interruption-candidate-review` and
+`minibio-release-constructor-interruption-candidate-review` preserve source-shadow
+provenance and owned executor cleanup. Permanent
+`2b-minibio-boundary-before.*` compiles and fails 3/108 checks: missing terminal
+interruption and both unhandled release-constructor exceptions. Root reads the
+named failures before adding successful-Sync exit polling, guarded recovery
+callbacks and suspended release construction. Independent failing-body outcomes
+still take precedence over release errors, as documented by MiniBIO's existing
+policy; this is not an all-finalizer-errors preservation claim.
+`2b-minibio-boundary-after.*` compiles and passes all 108 checks. The next complete
+matrix freezes all four implementation/test sources and requests full BIO and
+core/higher checks on six JVM/JS compiler lanes under
+`2b-minibio-boundary-final-matrix.py`. Parent/active-cancellation and parallel
+joining gates remain open. No push, owner-decision or acceptance change occurs.
+
+The `2b-minibio-boundary-*-final.*` matrix actually exits 0 for Scala 3 and
+Scala 2.13: respectively 434/96 and 435/97 JVM/JS BIO checks, plus the requested
+core/higher checks, fresh classpaths and publications. Scala 2.12 exits 1 before
+tests because two restore-method type parameters shadow the enclosing trait's
+parameters under its pinned fatal-warning policy. Root reads both exact compiler
+diagnostics before renaming those parameters. The shared independent-exception
+control is also strengthened to `F.sync(throw original)`, distinguishing an
+actually throwing thunk from the earlier explicit `F.terminate` control.
+The complete rerun uses `2b-minibio-boundary-compatible-final-matrix.py` and a
+new immutable four-source snapshot; neither the failed matrix nor its published
+Scala-3 proof is overwritten or represented as current final evidence.
+
+The earlier frozen Scala-3 publication replay is preserved under
+`minibio-boundary-published-final-review`: the reviewer reports 28 successful
+commands and two named held-child join failures, with owned cleanup markers,
+against seven compiler/49 consumer JARs. Root reads the join inputs and actual
+failure logs: the parent completes while the child's entered finalizer remains
+held, then manual release drains both children. This establishes the next
+parallel-join correction's failure mode; it does not close parallel or session
+cancellation. Root also reads the separate source-shadow publication-race probe
+and logs: cancellation during held child enqueue precedes handle publication;
+after enqueue resumes the parent settles with two acquired resources, zero
+releases and both body gates closed. Its manual cleanup releases both resources
+and drains the executor. The source-shadow capture remains candidate evidence
+until replayed against an actual publication.
+
+The complete compatible matrix closes all three fresh producer processes with
+actual exit 0; root reads their completion files, log footers and named check
+counts. Commands/results are `2b-minibio-boundary-compatible-{scala3,scala213,
+scala212}-final.{commands,completion}.json` and adjacent full logs. Scala 3
+Compile/Test use strict `-Wunused:all`; Scala 2 uses its pinned flags.
+
+| Compiler | JVM BIO tests | JS BIO tests | JVM core/higher checks | JS core/higher checks |
+| --- | ---: | ---: | ---: | ---: |
+| 3.9.0 | 434 | 96 | 128 / 432 | 103 / 350 |
+| 2.13.18 | 435 | 97 | 128 / 432 | 103 / 350 |
+| 2.12.21 | 435 | 97 | 128 / 432 | 103 / 350 |
+
+All 1,594 BIO tests and 3,039 core/higher checks pass. The four implementation/
+test source hashes remain equal to the frozen compatible snapshot after all
+three processes. `/Test/testFull` is used, not testQuick. All six BIO publications
+complete. `python .../2b-minibio-boundary-compatible-artifact-audit.py` exits 0
+after two retained harness corrections: resolving the actual `${CSR_CACHE}`
+placeholder and excluding only an unpublished project's own compiled classes
+from the dependency-purity guard. Neither harness failure is product evidence.
+Root reads the final summary: six JAR/POM pairs contain 6,424 binary entries,
+each entry set/byte matches currently compiled classes, no fixture leaks,
+production dependency checks pass, and all 48 fresh Compile/Test classpath blocks
+resolve with the required own Test entry exactly once. No prior classpath block
+substitutes for this matrix.
+
+The supplemental downstream audit initially fails: four Scala-3 core/higher
+JARs differ from their currently tested class files. The exact mismatch inventory
+is `2b-minibio-boundary-compatible-downstream-before-publication.json`. Root
+refreshes only those four publications with the same strict settings;
+`2b-minibio-boundary-compatible-downstream-publication.*` exits 0.
+`python .../2b-minibio-boundary-compatible-downstream-artifact-audit.py` then
+exits 0: 12 current core/higher JAR/POM comparisons, 2,167 exact binary entries
+and 24 fresh core/higher classpath blocks (part of the 48 above). Four Scala-3
+publications are fresh; eight unchanged Scala-2 publications are reused only
+after exact current-byte equality checks. The three 109-node/213-scoped-edge
+graphs are explicitly reused from the earlier observed SBT graph and compared
+against the unchanged generated build; each has no cycle.
+
+`python .../2b-minibio-boundary-compatible-generator-final.py` exits 0 after
+all matrix processes close. Root reads actual command/completion/log evidence;
+the generator (`sbtgen.sc --js --native`, JDK21) preserves all three generated
+build-file hashes recorded at the preceding checkpoint. Product documentation
+now describes bracketCase masking, complete async release, true UnsafeRun2
+interruption and the five retained narrow public API signatures. It continues
+to state that active session interruption remains subsequent work.
+
+Root also captures a separate actual-published parallel-combiner defect before
+any parallel correction: `minibio-zip-combiner-published-before/replay.py`
+compiles the public input with strict Scala 3 (exit 0), then both an independently
+thrown IllegalStateException and InterruptedException produce runtime exit 1.
+At the named three-second deadline execution remains pending and the exact
+exception has reached ExecutionContext.reportFailure instead of an Exit.
+Manual parent interruption settles the original execution, and the owned
+executor terminates in each case. Root reads both expected failures and verifies
+the three command/result/log hashes, source and 56 immutable JAR records
+(seven compiler/49 consumer JARs), with no production shadow or class directory.
+This is open parallel scope; it does not become a false successful outcome or
+an exception-class cancellation heuristic.
+
+The mandatory release boundary check changes the observed external state.
+`2b-minibio-boundary-compatible-release-metadata.json` records HTTP 200 at
+2026-10-02 22:32:20 UTC for both required Native metadata URLs; root reads their
+`release`/`latest` tags as 23.1.0.14. Earlier HTTP-404 captures remain historical
+evidence. Under `native-interop-23.1.0.14-release-audit/`, root directly downloads
+and audits all 36 POM/JAR responses: both artifacts on JVM, JS and Native, each
+for Scala 3, 2.13 and 2.12, all HTTP 200, POM version 23.1.0.14 and valid JARs.
+Their Native entries are actual NIR, not local stand-ins. The POMs require ZIO
+2.1.26 and Cats Effect 3.7.1; the repository currently pins ZIO 2.1.24 and
+interop 23.1.0.5. This establishes availability, not build compatibility.
+Item 1a.5 moves from waiting on the release to in progress. Following the brief's
+dependency order, work returns to 1a part 2 after this bounded MiniBIO checkpoint;
+parallel joining/callback defects remain captured and open. No release-dependent
+gate is marked done before compilation, Native linking/execution and publication.
+
+The reviewer additionally captures actual-published short-circuit failures at
+`minibio-parallel-short-circuit-published-valid-before/`: strict public-input
+compilation exits 0; zip-left, zip-right and traverse runtimes each exit 1.
+Root reads the source and all three expected assertion logs, then audits the
+four command/result/log hashes and JAR-only compiler7/consumer49 paths (exit 0).
+The failing branch settles, but its resource-owning sibling never starts cleanup
+within the named observation while its body gate remains closed; the parent
+remains pending. Manually opening that gate starts its held finalizer, and
+opening the release gate yields the exact original independent Error, one
+acquisition/release and complete callback/executor drain. This violates the
+public zipWithPar sibling-interruption contract and is retained as open parallel
+scope. The first helper failed compilation because fromFuture has a Throwable
+error in an infallible release; that harness attempt is retained separately and
+is not a runtime reproduction. No parallel implementation changes occur in
+this masking/boundary checkpoint.
+
+The final reconciled actual-publication replay is
+`minibio-boundary-reconciled-published-final-review/`: 32 exact commands,
+30 actual exit-0 controls and two separately named exit-1 child-join reproductions.
+Root reads the auditor, command outcomes and concrete masking/finalizer/API/
+terminal/constructor/exception logs, then reruns `audit.py` (exit 0).
+The immutable compiler7/consumer49 closure uses the actual current BIO, core
+and higher JARs, with 60 artifact/provenance records, 11 input sources and 48
+old/new consumer binary files; all 1,136 current JVM3 producer entries match
+compiled bytes. Old Mask/finalizer/narrow classfiles and unchanged source
+recompiles pass. All five original public narrow signatures compile, and broad
+constructor/copy/Product, true UnsafeRun2 interruption/hook and ordinary sandbox
+controls pass. Two disclosed source adaptations move true-interruption
+assertions from the narrow facade to existing UnsafeRun2; no production
+definitions are shadowed and no producer directory enters a consumer classpath.
+
+The separate unchanged-source throwing-hook consumer at
+`minibio-thrown-hook-reconciled-published-review/` compiles/runs with actual
+exits 0/0 against that same reconciled JAR closure. Root reads its source and
+actual markers: independently throwing `F.sync` preserves the exact original
+InterruptedException as sandboxed Termination and invokes zero interruption
+hooks; an owned self-request invokes one hook and bypasses ordinary recovery.
+Root reruns `supplemental-audit.py` (exit 0), covering this control and the
+retained short-circuit/combiner reproductions. The reviewer's initial
+case-sensitive cleanup-marker spelling error is retained separately; inputs
+and observed product failures are unchanged.
+
+The read-only review's `BOUNDED-REVIEW.md` and
+`bounded-review-verdict.json` find no concrete remaining defect or unsupported
+claim within the four-source masking/interruption/callback-constructor scope.
+Root reads that verdict, verifies the current four source hashes against the
+frozen matrix, and runs `git diff --check` (exit 0). This verified sub-step is
+committed locally as `Implement MiniBIO interruption masks; verify six JVM and JS lanes`.
+Parallel joins/publication/short-circuit/combiner defects, active session
+cancellation, opaque/handoff ownership, complete compatibility inventory and
+all parent/final evaluation points remain open. No push, acceptance narrowing,
+owner-decision change or whole-goal completion is implied.

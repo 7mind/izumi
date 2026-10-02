@@ -4,6 +4,7 @@ import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.bio.{Exit, F}
 import org.scalatest.wordspec.AsyncWordSpec
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.*
 import scala.concurrent.{Future, Promise}
 import scala.util.Success
@@ -11,6 +12,8 @@ import scala.util.Success
 class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecific {
 
   import MiniBIOAsync.WeakAsyncForMiniBIOAsync
+
+  private final val InterruptionTimeout = 2.seconds
 
   "MiniBIOAsync" should {
 
@@ -48,8 +51,8 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
         exit <- withTimeout(future, 2.seconds)
       } yield {
         exit match {
-          case Exit.Termination(t, _, _) => assert(t.isInstanceOf[InterruptedException])
-          case other => fail(s"Expected Termination(InterruptedException), got $other")
+          case Exit.Interruption(t, _, _) => assert(t.isInstanceOf[InterruptedException])
+          case other => fail(s"Expected Interruption(InterruptedException), got $other")
         }
       }
       result
@@ -68,11 +71,208 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
         exit <- withTimeout(future, 2.seconds)
       } yield {
         exit match {
-          case Exit.Termination(t, _, _) => assert(t.isInstanceOf[InterruptedException])
-          case other => fail(s"Expected Termination(InterruptedException), got $other")
+          case Exit.Interruption(t, _, _) => assert(t.isInstanceOf[InterruptedException])
+          case other => fail(s"Expected Interruption(InterruptedException), got $other")
         }
       }
       result
+    }
+
+    "defer interruption until an uninterruptible operation completes" in {
+      checkMask(F.uninterruptible(_), expectedContinuations = 1)
+    }
+
+    "restore the enclosing mask inside a nested uninterruptible operation" in {
+      checkMask(body => F.uninterruptible(F.uninterruptibleExcept(restore => restore(body))), expectedContinuations = 1)
+    }
+
+    "restore interruption inside an uninterruptible operation" in {
+      checkMask(body => F.uninterruptibleExcept(restore => restore(body)), expectedContinuations = 0)
+    }
+
+    "complete an asynchronous finalizer before interrupted execution settles" in {
+      val bodyEntered = Promise[Unit]()
+      val releaseEntered = Promise[Unit]()
+      val releaseGate = Promise[Unit]()
+      val acquired = new AtomicInteger(0)
+      val released = new AtomicInteger(0)
+      val effect = F.bracketCase[Throwable, Int, Unit](F.sync(acquired.incrementAndGet())) {
+        (_, _) =>
+          F.flatMap(F.async[Nothing, Unit] { callback =>
+            releaseEntered.success(())
+            releaseGate.future.foreach(_ => callback(Right(())))
+          })(_ => F.sync { released.incrementAndGet(); () })
+      } { _ =>
+        F.async[Throwable, Unit](_ => { bodyEntered.success(()); () })
+      }
+      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      for {
+        _ <- withTimeout(bodyEntered.future, InterruptionTimeout)
+        _ <- interrupt.interrupt.runOnEC(executionContext)
+        _ <- withTimeout(releaseEntered.future, InterruptionTimeout)
+        _ <- interrupt.interrupt.runOnEC(executionContext)
+        _ = assert(!future.isCompleted)
+        _ = releaseGate.success(())
+        exit <- withTimeout(future, InterruptionTimeout)
+      } yield {
+        assertInterrupted(exit)
+        assert(acquired.get() == 1)
+        assert(released.get() == 1)
+      }
+    }
+
+    "preserve an independent body failure through interruption during release" in {
+      checkReleaseFailure(bodyFails = true)
+    }
+
+    "preserve an independent finalizer failure through a pending interruption" in {
+      checkReleaseFailure(bodyFails = false)
+    }
+
+    "release an acquired value when interruption was requested during acquisition" in {
+      val acquireEntered = Promise[Unit]()
+      val acquireGate = Promise[Unit]()
+      val acquired = new AtomicInteger(0)
+      val bodies = new AtomicInteger(0)
+      val released = new AtomicInteger(0)
+      val acquire = F.flatMap(F.async[Throwable, Unit] { callback =>
+        acquireEntered.success(())
+        acquireGate.future.foreach(_ => callback(Right(())))
+      })(_ => F.sync(acquired.incrementAndGet()))
+      val effect = F.bracketCase[Throwable, Int, Unit](acquire) { (value, _) =>
+        F.sync { assert(value == 1); released.incrementAndGet(); () }
+      } { _ =>
+        F.sync { bodies.incrementAndGet(); () }
+      }
+      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      for {
+        _ <- withTimeout(acquireEntered.future, InterruptionTimeout)
+        _ <- interrupt.interrupt.runOnEC(executionContext)
+        _ = acquireGate.success(())
+        exit <- withTimeout(future, InterruptionTimeout)
+      } yield {
+        assertInterrupted(exit)
+        assert(acquired.get() == 1)
+        assert(bodies.get() == 0)
+        assert(released.get() == 1)
+      }
+    }
+
+    "allow interruption in explicitly restored bracket acquisition" in {
+      val acquireEntered = Promise[Unit]()
+      val released = new AtomicInteger(0)
+      val effect = F.bracketExcept[Throwable, Unit, Unit] { restore =>
+        restore(F.async[Throwable, Unit](_ => { acquireEntered.success(()); () }))
+      } { (_, _) =>
+        F.sync { released.incrementAndGet(); () }
+      }(_ => F.unit)
+      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      for {
+        _ <- withTimeout(acquireEntered.future, InterruptionTimeout)
+        _ <- interrupt.interrupt.runOnEC(executionContext)
+        exit <- withTimeout(future, InterruptionTimeout)
+      } yield {
+        assertInterrupted(exit)
+        assert(released.get() == 0)
+      }
+    }
+
+    "restore interruption after unwinding a failed masked region" in {
+      val entered = Promise[Unit]()
+      val original = new IllegalStateException("masked failure")
+      val effect = F.catchAll[IllegalStateException, Unit, Throwable](F.uninterruptible(F.fail(original))) { error =>
+        F.async[Throwable, Unit] { _ =>
+          assert(error eq original)
+          entered.success(())
+          ()
+        }
+      }
+      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      for {
+        _ <- withTimeout(entered.future, InterruptionTimeout)
+        _ <- interrupt.interrupt.runOnEC(executionContext)
+        exit <- withTimeout(future, InterruptionTimeout)
+      } yield assertInterrupted(exit)
+    }
+
+    "stop subsequent effects after self-interruption" in {
+      val continuations = new AtomicInteger(0)
+      val effect = F.flatMap(F.sendInterruptToSelf)(_ => F.sync { continuations.incrementAndGet(); () })
+      runWithExit(effect).map { exit =>
+        assertInterrupted(exit)
+        assert(continuations.get() == 0)
+      }
+    }
+
+    "defer self-interruption until the enclosing mask ends" in {
+      val maskedContinuations = new AtomicInteger(0)
+      val outerContinuations = new AtomicInteger(0)
+      val masked = F.uninterruptible(F.flatMap(F.sendInterruptToSelf)(_ => F.sync { maskedContinuations.incrementAndGet(); () }))
+      val effect = F.flatMap(masked)(_ => F.sync { outerContinuations.incrementAndGet(); () })
+      runWithExit(effect).map { exit =>
+        assertInterrupted(exit)
+        assert(maskedContinuations.get() == 1)
+        assert(outerContinuations.get() == 0)
+      }
+    }
+
+    "run interruption cleanup once after self-interruption" in {
+      val cleaned = new AtomicInteger(0)
+      val effect = F.guaranteeOnInterrupt(F.sendInterruptToSelf, _ => F.sync { cleaned.incrementAndGet(); () })
+      runWithExit(effect).map { exit =>
+        assert(cleaned.get() == 1)
+        assert(exit.isInterrupted)
+      }
+    }
+
+    "bypass sandbox recovery after self-interruption" in {
+      val recovered = new AtomicInteger(0)
+      val effect = F.flatMap(F.sandboxExit(F.sendInterruptToSelf))(_ => F.sync { recovered.incrementAndGet(); () })
+      runWithExit(effect).map { exit =>
+        assert(recovered.get() == 0)
+        assert(exit.isInterrupted)
+      }
+    }
+
+    "preserve an independently thrown InterruptedException as a termination" in {
+      val original = new InterruptedException("independent termination")
+      F.sandboxExit(F.sync(throw original)).runOnEC(executionContext).map {
+        case Exit.Success(Exit.Termination(error, _, _)) => assert(error eq original)
+        case other => fail(s"Expected sandboxed independent termination, got $other")
+      }
+    }
+
+    "settle despite a throwing release constructor after body failure" in {
+      val original = new IllegalStateException("body failure")
+      val releaseError = new IllegalArgumentException("release constructor failure")
+      val releases = new AtomicInteger(0)
+      val effect = F.bracketCase[Throwable, Unit, Unit](F.unit) { (_, _) =>
+        releases.incrementAndGet()
+        throw releaseError
+      }(_ => F.fail(original))
+      withTimeout(runWithExit(effect), InterruptionTimeout).map {
+        case Exit.Error(error, _) =>
+          assert(error eq original)
+          assert(releases.get() == 1)
+        case other => fail(s"Expected original body failure, got $other")
+      }
+    }
+
+    "settle despite a throwing release constructor after interruption" in {
+      val releaseError = new IllegalArgumentException("release constructor failure")
+      val releases = new AtomicInteger(0)
+      val effect = F.bracketCase[Nothing, Unit, Unit](F.unit) { (_, _) =>
+        releases.incrementAndGet()
+        throw releaseError
+      }(_ => F.sendInterruptToSelf)
+      withTimeout(runWithExit(effect), InterruptionTimeout).map { exit =>
+        assert(exit.isInterrupted)
+        assert(releases.get() == 1)
+      }
     }
 
     "support parTraverse" in {
@@ -221,6 +421,85 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
       }
     }
 
+  }
+
+  private def runWithExit[E, A](effect: MiniBIOAsync[E, A]): Future[Exit[E, A]] = {
+    MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext).unsafeRunAsyncAsFuture(effect)
+  }
+
+  private def checkMask(
+    transform: MiniBIOAsync[Throwable, Unit] => MiniBIOAsync[Throwable, Unit],
+    expectedContinuations: Int,
+  ) = {
+    val entered = Promise[Unit]()
+    val gate = Promise[Unit]()
+    val delivered = Promise[Unit]()
+    val continuations = new AtomicInteger(0)
+    val body = F.flatMap(F.async[Throwable, Unit] { callback =>
+      entered.success(())
+      gate.future.foreach { _ =>
+        callback(Right(()))
+        delivered.success(())
+      }
+    })(_ => F.sync { continuations.incrementAndGet(); () })
+    val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+    val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(transform(body))
+    for {
+      _ <- withTimeout(entered.future, InterruptionTimeout)
+      _ <- interrupt.interrupt.runOnEC(executionContext)
+      _ = gate.success(())
+      _ <- withTimeout(delivered.future, InterruptionTimeout)
+      exit <- withTimeout(future, InterruptionTimeout)
+    } yield {
+      assertInterrupted(exit)
+      assert(continuations.get() == expectedContinuations)
+    }
+  }
+
+  private def checkReleaseFailure(bodyFails: Boolean) = {
+    val releaseEntered = Promise[Unit]()
+    val releaseGate = Promise[Unit]()
+    val released = new AtomicInteger(0)
+    val original = new IllegalStateException(if (bodyFails) "body failure" else "release failure")
+    val body: MiniBIOAsync[Throwable, Unit] = if (bodyFails) F.fail(original) else F.unit
+    val effect = F.bracketCase[Throwable, Unit, Unit](F.unit) { (_, _) =>
+      F.flatMap(F.async[Nothing, Unit] { callback =>
+        releaseEntered.success(())
+        releaseGate.future.foreach(_ => callback(Right(())))
+      }) { _ =>
+        F.sync {
+          released.incrementAndGet()
+          if (!bodyFails) throw original
+          ()
+        }
+      }
+    }(_ => body)
+    val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+    val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+    for {
+      _ <- withTimeout(releaseEntered.future, InterruptionTimeout)
+      _ <- interrupt.interrupt.runOnEC(executionContext)
+      _ = releaseGate.success(())
+      exit <- withTimeout(future, InterruptionTimeout)
+    } yield {
+      if (bodyFails) {
+        exit match {
+          case Exit.Error(error, _) => assert(error eq original)
+          case other => fail(s"Expected original body failure, got $other")
+        }
+      } else {
+        exit match {
+          case Exit.Termination(error, _, _) => assert(error eq original)
+          case other => fail(s"Expected original finalizer failure, got $other")
+        }
+      }
+      assert(released.get() == 1)
+    }
+  }
+
+  private def assertInterrupted(exit: Exit[Throwable, Unit]) = exit match {
+    case Exit.Interruption(error, _, _) => assert(error.isInstanceOf[InterruptedException])
+    case other => fail(s"Expected Interruption(InterruptedException), got $other")
   }
 
 }

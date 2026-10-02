@@ -167,6 +167,13 @@ error recovery and emits one Test-phase failure for that logical identity.
 The interruption reporting hook wraps ordinary recovery, so a recovered body
 exception does not generate an additional terminal report.
 
+MiniBIOAsync defers pending interruption inside a mask and restores the enclosing
+interruption mode when that scope ends. `bracketCase` acquisition and release run
+under a mask; an asynchronous release completes before its bracket exits. Owned
+interruption bypasses ordinary sandbox recovery. The existing UnsafeRun2 APIs
+retain `Exit.Interruption`; direct execution methods retain their public
+`Exit.Uninterrupted` signatures by projecting interruption to Termination.
+
 Cancellation requested before execution acquires no application resource;
 active interruption remains subsequent work.
 
