@@ -57,8 +57,8 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | in progress | Owned higher provider and all four spec entry points pass six JVM/JS lanes below; common host integration and final evaluation remain outstanding. |
 | 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
-| 2b.8 | in progress | Plain and raw DI ownership controls pass below; complete higher-layer/custom-hook isolation and final evaluation outstanding. |
-| 2b.9 | in progress | Duplicate plain-suite/test IDs reject in all nine lanes below; higher-layer and final evaluation outstanding. |
+| 2b.8 | in progress | Plain/raw DI ownership controls and four distage front-end atomic registration controls pass below; reproduced custom bootstrap/plugin isolation failures and final evaluation outstanding. |
+| 2b.9 | in progress | Duplicate plain IDs reject in all nine lanes and distage path/suite/test IDs reject in six JVM/JS lanes below; higher Native and final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
@@ -2974,3 +2974,127 @@ Primary Native interop metadata requests still return HTTP 404 at 16:53:44–45
 UTC on 2026-10-02 (`2b-spec-import-only-release-metadata.json` and responses).
 The higher Native lanes wait on that named external condition; independent
 ownership, duplicate-identity and host integration work remains.
+
+### Front-end ownership boundaries: reproduced defects
+
+The verified import-only fixture portion is committed locally as
+`92b8bace3127b84389a55c6633f17aeb8f5456c7` on 2026-10-02. Root verifies the
+hash and observes a clean tree immediately afterward. No push is performed.
+
+The read-only ownership audit reproduces two additional defects against the
+unchanged published closure in `spec-session-ownership-published-before-review/`.
+Two public probe sources compile on JDK21, exit 0, without source shadowing or
+producer class directories. ConcurrentSharedSuiteProbe accepts the same
+SpecIdentity instance into both first/second catalogues on attempt 0; its
+ownership oracle fails with exit 1 before application execution. The suite's
+ownedProvider check and assignment were not atomic. Registration now holds the
+suite monitor across the ownership check and registration; verification of the
+correction was pending at installation and is completed below. The original
+failure source/command/log is preserved.
+
+CustomBootstrapRouterProbe's default control preserves its sentinel router,
+exit 0. With fresh custom factories that only delegate to BootstrapFactory.Impl,
+planning replaces the sentinel and then replaces the first session's router
+with the second's, exit 1. The custom hooks do not explicitly mutate global
+logging state. Root reads both full probe sources and the expected failure
+messages before correction, checks all 54 frozen JAR hashes/bytes and 15 frozen
+production-source hashes/bytes, both probe hashes, four exact JDK21 commands,
+and the exact current core 240 binary entries. The frozen higher publication
+has 55 entries, but the later compatibility compiler output does not match
+every frozen higher byte; root's current-byte comparison fails and is under
+investigation. The published reproductions retain their original publication
+and source provenance and are not presented as current-byte-equality proof.
+The custom-bootstrap defect remains
+uncorrected while its ownership policy is investigated; no blind definition
+replacement or process-global property override is introduced.
+
+The audit also reproduces a cached custom-loader defect before any loader
+correction. CustomPluginLoaderStateProbe uses fresh zero-argument
+PluginLoaderDefaultImpl instances, an explicitly cached scanned plugin, and
+actual DI execution in two fresh owners. The default route succeeds with
+Vector(1, 1) and distinct injected state; the custom route successfully executes
+both bodies but observes Vector(1, 2) and the same injected state, then fails its
+session-isolation oracle with exit 1. This establishes mutable run-state reuse,
+not merely PluginDef reference equality. Both probe/control source and commands
+are preserved with compile exit 0. The initial extra-probe harness compile
+failure and the separate uncached controls remain historical evidence; they
+are not the cached reproduction. Root reads the full corrected cached probe and
+its expected failure before any plugin correction. Its separate
+`root-before-command-evidence-audit.json` verifies all eight captured commands
+and results, four compiled probe sources, frozen artifact hashes, and absence of
+producer class directories or production-source shadowing.
+
+The historical binary discrepancy has no established compiler-input cause.
+The reviewer's captured javap instruction/signature comparisons match for all
+four affected classes; their TASTY UUID attributes differ. Compiler-version
+TASTyPrinter captures show equal Names sections but different tree serialization
+lengths (6041/6038, 3162/3161, 1104/1102 and 1268/1266). This does not prove
+complete TASTy semantic equivalence and does not erase the failed exact-byte
+comparison. No product correction is made from that metadata observation.
+
+### Verified atomic registration and duplicate front-end portion
+
+On 2026-10-02, the one-line registration monitor correction and permanent
+SpecRegistrationFixtures pass Scala 3.9.0, 2.13.18 and 2.12.21 on JVM and JS.
+One fresh batch SBT process per compiler runs through direnv/JDK21; Scala 3
+applies `-Wunused:all` to higher Compile/Test on both platforms. Captures are
+`2b-spec-registration-scala3-first.*` and
+`2b-spec-registration-{scala213,scala212}-final.*`; each retains exact commands,
+log and completion exit 0. Each platform passes 242 higher checks. The unchanged
+import-only fixtures still complete both 46-body compatibility sessions.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-registration-final-audit.py` exits 0:
+1,452 higher checks, including 264 added registration checks. Four front ends
+each repeat 32 paired discoveries per lane: 768 pairs, exactly 768 accepted
+owners and 768 original Discovery rejections. JVM workers enter through a
+bounded start gate on the existing borrowed executor; JS checks the paired
+queued discovery semantics without claiming simultaneous threads. All 72
+duplicate cases check explicit path/suite/test rejection, retained failure,
+factory counts, suspended configuration/effects/bodies and correct run terminal
+reporting. Full source-byte comparison against 92b8bace verifies that the monitor
+is the only production change. The first auditor failed because Scala 3's
+command capture is a list rather than the Scala 2 records' object shape; its
+TypeError is preserved as an auditor harness failure, then corrected and rerun.
+It is not a runner regression or a failed producer lane.
+
+All six higher artifacts are published locally. The five publications in the
+runtime sequences and separate strict Scala 3 JS publication finish with exit
+0 (`2b-spec-registration-scala3-js-publication.*`). The artifact auditor exits
+0 and compares all 348 current binary entries byte for byte to their six
+published JARs, verifies required front ends, excludes fixture classes and
+checks unchanged expected POM dependency scopes. Its prior classpath and graph
+evidence is explicitly reused from the previous unchanged-build gate, rather
+than presented as a fresh SBT graph capture. A fresh generator invocation exits
+0 with all three generated output hashes unchanged
+(`2b-spec-registration-generator-final.*`), and `git diff --check` passes.
+
+The independent published replay in
+`spec-session-ownership-published-atomic-after-review/` freezes the current
+higher JAR with SHA256
+6283f47d0a3531f2f50846133e32dd3554db5bc9d075dbc5df136395529fc7a3 and the
+unchanged dependency closure. All four probe sources are identical to their
+before captures. The original race probe now exits 0 over 128 attempts with
+violated=false; twelve duplicate controls and both default hook controls pass.
+The custom bootstrap and custom cached-plugin controls still fail their original
+isolation oracles, exit 1. Root independently verifies seven exact JDK21
+commands/results, 19 source hashes/bytes (four compiled probes and 15
+production-provenance-only sources), 55 frozen artifact hashes/bytes, immutable
+producer log provenance and all 295 current core/higher JVM3 binary entries.
+`root-after-evidence-audit.json` retains these checks; no consumer compilation
+uses producer classes or production-source shadowing.
+
+Primary Native interop metadata remains HTTP 404 at 17:29:05 UTC on 2026-10-02
+(`2b-spec-registration-release-metadata.json` and response XML). Higher Native
+lanes wait on that named external condition. This verified registration portion
+leaves parent 2b, full 2b.8/O.18 custom-hook isolation and final-head evaluations
+open; the two actual custom-hook failures remain independent implementation
+work.
+
+The read-only reviewer concludes the bounded atomic checkpoint with no concrete
+residual defect or overstated acceptance claim. It independently reruns both
+auditors, verifies the persisted generator command/completion/current hashes,
+reads the final ledger and API documentation, and runs `git diff --check`, all
+exit 0. Its review explicitly retains both custom-hook failures and the open
+parent/final-head gates. This checkpoint is committed locally; its exact hash
+is recorded at the next ledger evaluation after commit creation. No push is
+performed.

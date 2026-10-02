@@ -5,6 +5,11 @@ import scala.scalajs.js.timers.setTimeout
 import scala.util.{Failure, Success}
 
 private[di] object ProviderFixturePlatform {
+  def concurrentDiscovery(sessions: Vector[izumi.distage.testkit.runner.RunSession], context: ExecutionContext): Future[Vector[Either[izumi.distage.testkit.protocol.Failure, izumi.distage.testkit.protocol.Catalogue]]] = {
+    implicit val ec: ExecutionContext = context
+    Future.sequence(sessions.map(session => Future(session.discover())))
+  }
+
   def activationConfig(choice: izumi.distage.testkit.protocol.AxisChoice): izumi.distage.config.model.AppConfig =
     izumi.distage.config.model.AppConfig.provided(io.circe.JsonObject("activation" -> io.circe.Json.obj(choice.axis.value -> io.circe.Json.fromString(choice.value.value))))
 

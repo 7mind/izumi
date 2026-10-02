@@ -175,6 +175,10 @@ Nested branches restore their enclosing registration path, and `skip` leaves
 its argument unevaluated.
 
 Pass fresh suite factories to the same `RunSession` used for plain suites.
+Concurrent discovery of the same distage suite instance admits one session;
+the other retains an explicit Discovery failure. Duplicate paths, suite IDs
+and test IDs also reject during discovery without evaluating configuration or
+bodies. A rejected discovery is retained without repeating suite factories.
 Discovery invokes declarative registration and stores positions and structured
 paths. Suite constructors must keep application side effects inside registered
 bodies or providers; arbitrary constructor side effects execute when the

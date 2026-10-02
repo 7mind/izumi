@@ -68,7 +68,7 @@ abstract class DistageSpec[F[_]](implicit val tagMonoIO: TagK[F], val defaultMod
     registrations :+= new Registration(path, location, position, function.asInstanceOf[Functoid[F[Any]]])
   }
 
-  final override def register(context: RegistrationContext): RegisteredSuite = {
+  final override def register(context: RegistrationContext): RegisteredSuite = synchronized {
     require(ownedProvider.isEmpty, "Suite instance cannot be shared between sessions")
     val execution = context.provider(ProviderId("distage"), () => new DistageExecutionProvider(context.executionContext, new TestConfigLoader.TestConfigLoaderImpl, DistageRunnerOptions(false, false)))
     ownedProvider = Some(execution)
