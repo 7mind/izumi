@@ -1,14 +1,16 @@
 package izumi.distage.testkit.runner.di
 
-import izumi.distage.testkit.model.{DistageTest, TestMeta}
+import izumi.distage.model.definition.{Activation, Axis}
+import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestConfig, TestEnvironment, TestMeta}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
-import izumi.distage.testkit.runner.impl.services.TestConfigLoader
+import izumi.distage.testkit.runner.impl.services.{TestActivationResolver, TestConfigLoader}
 import izumi.distage.testkit.spec.{SessionPluginLoader, SessionTestEnvironment, TestEnvironmentFactory}
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.quasi.QuasiIORunner
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
+import izumi.logstage.api.IzLogger
 
 import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,6 +18,8 @@ import scala.util.control.NonFatal
 
 private[distage] final case class ResolvedDistageTest(descriptor: TestDescriptor, test: DistageTest[AnyF])
 private[distage] final case class RegisteredDistageTest(descriptor: TestDescriptor, resolve: RunOverrides => Either[Failure, ResolvedDistageTest])
+private[distage] final case class EffectiveDistageEnvironment(environment: TestEnvironment, settings: EffectiveSettings)
+private[di] final case class EnvironmentResolution(environment: SessionTestConfigLoader.EnvironmentIdentity, overrides: RunOverrides)
 
 final class DistageExecutionProvider(
   executionContext: ExecutionContext,
@@ -25,11 +29,48 @@ final class DistageExecutionProvider(
   private[distage] val environments = new SessionTestEnvironment(new SessionEnvironmentFactory(new TestEnvironmentFactory.Impl, new SessionBootstrapFactory))
   private[distage] val defaultPluginLoader = new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))
   private type RunnerF[A] = MiniBIOAsync[Throwable, A]
-  private val engine = new DistageEngine[RunnerF](configLoader, options)
+  private val configuration = new SessionTestConfigLoader(configLoader)
+  private val engine = new DistageEngine[RunnerF](configuration, options)
   private val effectRunner = QuasiIORunner.fromBIO[MiniBIOAsync](using MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext))
   private var registrations = Vector.empty[RegisteredDistageTest]
   private var resolutions = Map.empty[TestDescriptor, DistageTest[AnyF]]
   private var planned = false
+  private val activationResolver = new TestActivationResolver
+  private var effectiveEnvironments = Map.empty[EnvironmentResolution, Either[Failure, EffectiveDistageEnvironment]]
+
+  private[distage] def resolveEnvironment(environment: TestEnvironment, overrides: RunOverrides): Either[Failure, EffectiveDistageEnvironment] = synchronized {
+    require(!planned, "Distage provider planning has already started")
+    val key = EnvironmentResolution(new SessionTestConfigLoader.EnvironmentIdentity(environment), overrides)
+    effectiveEnvironments.getOrElse(key, {
+      def choice(request: AxisChoice): Either[Failure, (Axis, Axis.AxisChoice)] = {
+        environment.activationInfo.availableChoices.find(_._1.name == request.axis.value).flatMap { case (axis, choices) =>
+          choices.find(_.value == request.value.value).map(axis -> _)
+        }.toRight(RunnerFailure.message(FailurePhase.Selection, s"Unknown activation choice: ${request.axis.value}:${request.value.value}"))
+      }
+      val validated = (overrides.axes ++ overrides.axisFilters).foldLeft[Either[Failure, Vector[(Axis, Axis.AxisChoice)]]](Right(Vector.empty)) { (previous, request) =>
+        previous.flatMap(values => choice(request).map(values :+ _))
+      }
+      val result = validated.flatMap { choices =>
+        try {
+          val logger = IzLogger(environment.logLevel).withCustomContext("phase" -> "testRunner")
+          val config = configuration.loadConfig(environment, logger)
+          val activation = activationResolver.resolve(config, environment, logger) ++ Activation(choices.take(overrides.axes.size).toMap)
+          val enabled = overrides.memoization != MemoizationOverride.Disabled
+          val effective = environment.copy(
+            activation = activation,
+            activationStrategy = TestActivationStrategy.IgnoreConfig,
+            configOverrides = Some(config),
+            memoizationRoots = if (enabled) environment.memoizationRoots else TestConfig.PriorityAxisDIKeys.empty,
+          )(environment.parallelSuites, environment.parallelTests, environment.debugOutput)
+          configuration.retain(effective, config)
+          val axes = activation.activeChoices.toVector.map { case (axis, value) => AxisChoice(AxisId(axis.name), AxisValue(value.value)) }.sortBy(_.axis.value)
+          Right(EffectiveDistageEnvironment(effective, EffectiveSettings(axes, enabled)))
+        } catch { case NonFatal(cause) => Left(RunnerFailure.fromThrowable(FailurePhase.Planning, cause)) }
+      }
+      effectiveEnvironments += key -> result
+      result
+    })
+  }
 
   private[distage] def add(tests: Vector[RegisteredDistageTest]): Unit = synchronized {
     require(!planned, "Distage provider registration is already frozen")

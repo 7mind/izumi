@@ -3801,7 +3801,9 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossT
       "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)

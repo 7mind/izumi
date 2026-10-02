@@ -61,6 +61,9 @@ object DistageProviderFixtures {
         .flatMap(_ => transport(checks, context, failRelease = true, sameCause = true))
         .flatMap(_ => skipped(checks))
         .flatMap(_ => reporterInvariants(checks))
+        .flatMap(_ => SpecFrontendFixtures.run(context, checks.verify))
+        .flatMap(_ => SpecActivationFixtures.run(context, checks.verify))
+        .flatMap(_ => SpecConfigurationFixtures.run(context, checks.verify))
         .map { _ => println("DISTAGE_PROVIDER_CONTRACTS_OK checks=" + checks.count) }
     }
   }

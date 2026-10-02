@@ -930,7 +930,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testkitRunner,
-        libs = Seq.empty,
+        libs = Seq(zio_core in Scope.Optional.all, cats_effect in Scope.Test.all),
         depends = Seq(Projects.distage.testkitCore, Projects.distage.testRunner).map(_ in Scope.Compile.all),
         platforms = Targets.jvmJs,
         settings = assertionFixtureSettings ++ Seq(

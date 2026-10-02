@@ -64,8 +64,8 @@ spent. Projected host exceptions retain the protocol failure's cause tree.
 
 The independent JVM framework consumer compares actual body records with JUnit
 test identities under SBT 1 and 2. The status ledger records the exact scope and
-results. The distage front end, rich assertion wire mapping,
-transports and host plugins remain subsequent implementation.
+results. Rich assertion wire mapping, transports and host plugins remain
+subsequent implementation.
 
 ## Distage environment ownership
 
@@ -115,9 +115,8 @@ receives the package cache explicitly. JVM fixtures exercise actual planner and
 resource acquisition/release alongside custom loading policies. JS supports
 static modules and rejects package scanning through its existing backend.
 
-The higher front end and its import-only compatibility gate remain
-subsequent work, including the existing `makePluginloader(): PluginLoader` suite
-hook. The legacy
+The higher front end uses these owners through its suite hooks, as described
+below. Its import-only compatibility gate remains subsequent work. The legacy
 `DistageTestEnv` delegates construction to the same factory and retains its
 existing global cache policy. The legacy default loader's package cache policy
 also remains unchanged.
@@ -163,9 +162,52 @@ exception in an effect whose bracket keeps only its use failure. Reporter
 identity and ordering invariants still throw; they are outside callback
 recovery. Precondition skips emit the protocol's failure-free Skipped result.
 
-The replacement spec front ends and compatibility fixture are still under
-implementation. Cancellation requested before execution acquires no application
-resource; active interruption remains subsequent work.
+Cancellation requested before execution acquires no application resource;
+active interruption remains subsequent work.
+
+## Distage spec front ends
+
+`izumi.distage.testkit.runner.spec` supplies `Spec1`, `Spec2`, `SpecZIO` and
+`SpecIdentity`. They retain `should`/`must`/`can`/`in`, Functoid dependency
+parameters and deferred effect construction. Spec2 retains typed-error
+projection; SpecZIO also constructs its required environment through DI.
+Nested branches restore their enclosing registration path, and `skip` leaves
+its argument unevaluated.
+
+Pass fresh suite factories to the same `RunSession` used for plain suites.
+Discovery invokes declarative registration and stores positions and structured
+paths. Suite constructors must keep application side effects inside registered
+bodies or providers; arbitrary constructor side effects execute when the
+factory runs. The library's registration path leaves configuration, plugin
+loading, effects, test bodies and application resources suspended.
+
+Selected resolution evaluates the suite configuration and its environment
+hooks. `makeTestEnv`, `loadRoles`, `makeMergeStrategy`, `makePluginloader`,
+`loadEnvironment` and `makeEnv` retain virtual dispatch. The default route
+evaluates roles, merge strategy and loader in that order and then uses the
+provider's environment owner. A suite retains its environment success or
+original Planning failure as one lazy snapshot; multiple selected tests do not
+repeat a failed hook. Custom hooks keep their explicit collaborators and
+definitions.
+
+Effective activation uses the existing core policy: suite choices override
+loaded configuration, and explicit run choices override those suite choices.
+Explicit axes and filters are validated against available definitions before
+application provisioning. Filtering uses the resolved choices, and resolution
+and execution retain the same logical IDs. Disabled memoization removes the
+cross-test memoization roots while preserving dependency sharing within each
+test graph. Effective settings and configuration snapshots use the original
+environment's reference identity, preserving the full input to custom loaders
+and the suite/test/debug policies excluded from core structural equality.
+The provider binds each effective environment to its retained AppConfig before
+planning and includes that config in the environment's grouping inputs.
+Resolution and DI therefore consume the same loaded snapshot. Successful
+snapshots are retained; failed loads propagate their original exception, and
+the effective-resolution cache retains each failed request without automatic
+retry.
+
+The runtime fixtures cover all four entry points on JVM and JS. The existing
+suite import-only compatibility fixture and final-head checks remain pending.
 
 ## Fundamentals test projects
 

@@ -55,8 +55,8 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.3 | in progress | Five fundamentals test projects run all 42 lanes; 51 actual publishLocal requests create no artifacts below; final evaluation outstanding. |
 | 2b.4 | in progress | All 42 moved lanes preserve the original 3,219 JUnit cases below; step-2b evaluation remains outstanding. |
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
-| 2b.6 | in progress | Owned higher-provider implementation passes six JVM/JS lanes below; spec front ends and final evaluation remain outstanding. |
-| 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI discovery passes six below; complete front-end and final evaluation outstanding. |
+| 2b.6 | in progress | Owned higher provider and all four spec entry points pass six JVM/JS lanes below; common host integration and final evaluation remain outstanding. |
+| 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
 | 2b.8 | in progress | Plain and raw DI ownership controls pass below; complete higher-layer/custom-hook isolation and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain-suite/test IDs reject in all nine lanes below; higher-layer and final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain suites migrate through import lines only; resolved implicit Scalactic users remain legacy; higher/final compatibility fixtures outstanding. |
@@ -130,11 +130,11 @@ head. The spike reports are design evidence, not implementation verification.
 | O.10 | in progress | No evaluation point passed yet. |
 | O.11 | in progress | Separate Cats/BIO artifacts above their runtimes; dependency verification outstanding. |
 | O.12 | in progress | Portable protocol checkpoint passes all nine producer lanes, twelve published consumers and four isolated-loader exchanges; real transports and final evaluation remain outstanding. |
-| O.13 | not started | No evaluation point passed yet. |
+| O.13 | in progress | Four spec entry points run on the base provider contract in six JVM/JS lanes below; common plugin/framework/IDE integration and final evaluation outstanding. |
 | O.14 | in progress | Five test projects retain original packages, source variants and supported platforms below; final evaluation outstanding. |
 | O.15 | not started | No evaluation point passed yet. |
 | O.16 | not started | No evaluation point passed yet. |
-| O.17 | not started | No evaluation point passed yet. |
+| O.17 | in progress | Declarative registration and arbitrary-constructor side-effect boundary documented; no-resource front-end discovery verified below; final evaluation outstanding. |
 | O.18 | in progress | Owned provider/default bootstrap controls preserve the static router below; complete custom-hook isolation and final evaluation outstanding. |
 | O.19 | not started | No evaluation point passed yet. |
 | O.20 | not started | No evaluation point passed yet. |
@@ -2582,3 +2582,293 @@ and custom suite hooks, import-only compatibility gate, active interruption,
 complete isolation audit and final-head lanes remain outstanding. Parent items
 2b.6/7/8/11 and O.18 stay in progress; no acceptance item or owner decision is
 narrowed or marked done by this checkpoint.
+
+### Replacement spec front ends: implementation underway
+
+The provider checkpoint is committed locally on 2026-10-02 as
+`58929ad2a6cfb9c8ae7eb0983e284413054dc00a`; the post-commit checkout is clean.
+It contains the preceding commands/results and does not close step 2b.
+
+The next portion retains Spec1/Spec2/SpecZIO/SpecIdentity and the registration
+verbs through the base provider contract. Registration keeps Functoids and
+positions; selected resolution constructs the owned environment. Existing
+makeTestEnv, plugin-loader, role and merge hooks dispatch through suite methods;
+the defaults use the provider caches. The effective activation policy is shared
+with core planning, with suite activation overriding loaded configuration and
+explicit run overrides last. Requested choices are validated before effective
+axis filtering. These are implementation intentions; their verification is
+pending and no acceptance state changes at this capture.
+
+Initial strict Scala 3 production compilation passes on JVM/JS with exit 0
+(`2b-spec-frontends-scala3-compile-first.*`). Core regression fixtures pass
+116 JVM and 98 JS checks in `2b-spec-frontends-scala3-first.log`; its higher
+JVM portion passes 109 checks. The higher JS portion fails the fixture's
+assumed two resource scopes: all 14 selected statuses and 12 successful body
+counters agree, but acquisition/release are three. The subsequent
+`2b-spec-frontends-js-{sharing,binding}-observation.*` captures establish equal
+effect tags and hashes, unequal default/app binding sets and unequal execution
+parameters. The unequal bindings contain distinct function/singleton instances
+from ZIOSupportModule and LogIOModule; the existing Provider/Module equality
+preserves definition identity. No engine grouping correction follows from this
+fixture assumption. Explicitly reusing session-owned ZIO default/logging module
+values defines the intended shared scope, then passes 109 checks on each
+platform with two resource lifetimes in
+`2b-spec-frontends-scala3-shared-definitions.*`, exit 0.
+
+The read-only reviewer captures two actual front-end defects before correction
+in `spec-frontend-boundary-before-review/`. HookOrderProbe compiles with exit 0
+and runs with exit 1: the old route invokes roles/merge/loader and succeeds;
+the new route invokes loader first and fails selected resolution. Discovery
+invokes no hook. DistageSpec restores the original local-variable order before
+virtual makeEnv dispatch. PlanningHookPhaseProbe compiles with exit 0 and its
+environment/loader controls both run with exit 1: exceptions retain original
+class/message but become Selection failures instead of Planning. A stronger
+`phase-resource-controls/` replay proves the resource binding is reachable in
+the normal control (one acquisition/release/body, exit 0), while the two failing
+controls acquire/release/execute zero and still fail for the wrong phase.
+The environment construction boundary now retains a lazy Either snapshot,
+including its original Planning failure, before effective settings resolution.
+These independent probes freeze 48 dependency/compiler JARs plus two current
+compiled core/higher snapshot JARs; they are pre-publication evidence, not a
+published front-end consumer gate.
+
+The first actual Scala 2.13 process passes both core fixtures (116/98), then
+fails higher production compilation because the private nested Registration
+case class generates an unchecked outer-reference test in equals. The original
+fatal warning is retained in `2b-spec-frontends-scala213-first.*`, exit 1.
+Registration now uses a private class with explicit fields, as the base front
+end does; no generated equality is needed. Current verification strengthens
+the unary fixture to Cats IO, records ZIO environment effect construction, and
+adds unselected-effect and reachable-resource planning-hook controls. Their
+runtime and remaining compiler lanes are pending at this capture.
+
+The stronger Scala 3 effects/hooks run passes core 116 JVM/98 JS checks and
+higher 119 checks per platform with exit 0
+(`2b-spec-frontends-scala3-effects-and-hooks.*`). Its four front ends produce
+14 terminal results, construct nine deferred effects, execute 12 successful
+bodies, and acquire/release three scopes (Identity, Cats IO and the explicitly
+shared ZIO definitions). Unselected effects remain unconstructed. Reachable
+application-resource controls for failed makeTestEnv and PluginLoader.load
+retain their original Planning failure once and acquire/execute zero.
+
+The unchanged independent probes now compile and pass all four controls with
+exit 0 in `spec-frontend-boundary-after-review/`: original roles/merge/loader
+order, normal one-acquisition/one-release resource control, and both Planning
+exception controls. Root checks the two unchanged probe hashes, 14 current and
+frozen production source hashes, and every frozen core/higher binary entry
+against current compiler output. The snapshots have 240/51 binary entries;
+compiler and consumer paths are seven/43 JARs. These remain pre-publication
+controls, not a published consumer gate.
+
+The effective-settings controls add loaded configuration, suite precedence,
+explicit override precedence, filtering after resolution, memoization disabled
+with intra-test graph sharing, and rejection of unknown axis/value/filter/ID or
+an empty effective filter. Scala 3 JVM and JS each pass 169 checks, exit 0
+(`2b-spec-frontends-scala3-activation-first.*`). Enabled cross-test memoization
+acquires/releases one resource for two bodies; disabling it acquires/releases
+two while both dependency references inside each body retain the same resource.
+All rejected selections acquire/release/execute zero.
+
+The first new Scala 2.13 activation fixture compilation fails before execution
+because inferred `Map[Mode.type, Mode.Suite.type]` does not match the overloaded
+Activation constructor (`2b-spec-frontends-scala213-activation.*`, exit 1).
+The fixture uses the existing tuple constructor. Its fresh rerun passes core
+116/98 and higher 169/169, exit 0, in
+`2b-spec-frontends-scala213-activation-final.*`.
+
+The subsequent actual Scala 2.12 process passes core 116/98, then fails higher
+production compilation: inference at the generic environment delegation cannot
+match the TagK/DefaultModule higher kinds
+(`2b-spec-frontends-scala212-activation-final.*`, exit 1). DistageSpec.makeEnv
+now supplies its declared G argument explicitly to environments.load[G].
+Fresh three-compiler runtime/publication/classpath/graph verification is pending
+in `2b-spec-frontends-final-matrix.py`; its commands and separate exit captures
+will determine the verified portion. No parent acceptance state changes.
+
+The first final-matrix attempt passes Scala 3 and 2.13, including their four
+publications, classpaths and observed graphs. Scala 2.12 now passes production
+compilation but fails two fixture inference boundaries: the mixed-effect suite
+factory Vector's inferred higher-kinded least upper bound, and a generic
+super.loadEnvironment delegation. All three original logs/argv are retained
+as `2b-spec-frontends-*-final-before-fixture-correction.*`; the 2.12 exit is 1
+with seven type errors. The fixture now states Vector[() => TestSuite] and
+super.loadEnvironment[F] explicitly. The fresh final matrix is rerunning;
+production is unchanged by these fixture corrections.
+
+Before the owned-configuration correction below, verification passes on all
+three compiler versions.
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-frontends-final-matrix.py` runs a fresh
+batch SBT process per version, through direnv and JDK21, with Scala 3
+`-Wunused:all` set on both Compile/Test for core and higher JVM/JS projects.
+Scala 2 processes receive no Scala 3 warning flag. Exact 18-command lists and
+argv are retained in
+`2b-spec-frontends-{scala3,scala213,scala212}-final-before-owned-config.commands.json`;
+all three logs end in exit 0. Each compiler passes core 116 JVM/98 JS and
+higher 169/169 checks, publishes four artifacts locally, captures eight
+Compile/Test classpaths and the observed project graph. No push is performed.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-frontends-matrix-audit.py` exits 0:
+1,656 primary checks (642 core and 1,014 higher), 84 terminal results from the
+four-entry-point fixture and 60 activation request controls. Each platform
+retains 14 front-end outcomes, three acquisition/release scopes, nine deferred
+effect constructions and 12 successful bodies. These counts describe the
+bounded fixture observations; they do not substitute for outstanding checklist
+gates. Earlier debug/failed/repeated runs are excluded from primary totals.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-spec-frontends-artifact-audit.py` exits 0:
+12 core/higher artifacts, 24 Compile/Test classpaths and 2,138 published binary
+entries matching their current compiled bytes exactly. JARs contain the four
+entry points and the shared activation resolver, with no fixture binaries.
+POMs/classpaths contain no ScalaTest, Scalactic or test-support project leaks.
+Core retains its sole direct izumi dependency on framework; higher retains
+core/base, optional ZIO and test-only Cats Effect. Each observed graph matches
+the generated graph: 109 nodes, 213 scoped records and no cycle. Both auditors
+retain stdout, exact argv, exit captures and structured summaries as
+`2b-spec-frontends-{matrix,artifact}-before-owned-config-audit.*` and corresponding
+before-owned-config summary JSON. Those captures are historical evidence for
+the source before the following configuration correction.
+
+The final generator command
+`direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`
+exits 0 and leaves all three generated outputs byte-identical. Exact argv and
+before/after digests are in `2b-spec-frontends-generator-final.*`:
+build.sbt `cd9a723e92db4e4652a1ccc91fb92ad7b09f0a982e97ca2b3ec83094f81e6e56`,
+plugins `3d66e16d3eb977416f059d7e2ec2ff87c323636db4ea49b2d5bf043431f73c34`,
+properties `669fae6680792604c3020a33e1d814dfef7b17fedb0ff6a843cc520685db984e`.
+
+The required primary Native interop metadata requests still return HTTP 404 at
+15:56:37 UTC on 2026-10-02 (`2b-spec-frontends-release-metadata.json` and response
+XML). The browser tool cannot access either URL; the primary HTTP requests
+establish those statuses. Independent compatibility and isolation work remains.
+Published consumer replay and final read-only checkpoint review are pending.
+Parent step 2b, O.13/O.18 and all final evaluation requirements stay open.
+
+The published front-end review first passes the four unchanged hook controls
+and independently reruns both auditors. It resolves the actual 45-entry Compile
+closure to published JARs/POMs; root checks all frozen source/artifact hashes,
+the exact core/higher 240/51 binary sets/bytes, and the closure against its
+producer command/log. Its outside-izumi four-spec consumer expands all four
+entry points, Functoids, ZEnv and inherited assertion macros. Its first runtime
+fails because its manually frozen Cats Effect closure omitted cats-mtl:
+captured failures contain NoClassDefFoundError cats/mtl/LiftValue. The exact
+Test-minus-Compile classpath contains that pinned 1.6.0 dependency alongside
+the three CE 3.7.1 JARs. Adding it to the consumer passes 26 checks, 15 terminal
+IDs, three resource scopes, nine deferred builds and 12 successful bodies.
+This is a consumer dependency correction, with no product change from it.
+
+Configuration-snapshot probes then distinguish the default and supplied-loader
+domains. `PublishedConfigSnapshotProbe.scala` compiles against those frozen
+published JARs. The default-loader control invokes the wrapper twice but loads
+its backend once, resolves First and injects First, with one acquisition,
+release and body, exit 0. The supported public injection route with a
+nonmemoizing TestConfigLoader loads twice, resolves First but injects Second,
+and reports successful=true; its named snapshot invariant fails with exit 1.
+Root reads the full source and failure before correction. The failing source
+and original published binary proof are preserved in
+`spec-frontend-published-final-review/config-snapshot-{compile,cached,reload}.log`
+with exact commands and exit records. This establishes a supplied-loader
+snapshot defect, not a defect in the default memoized route. O.18 does not
+restrict configuration ownership to the default collaborator.
+
+The proposed standard three-field source key is rejected by a separate model
+probe, not by assuming custom loaders use only those fields. In
+`spec-config-source-key-review/`, a deterministic activation-sensitive loader
+passes its original baseline (two configurations, resources and bodies); a
+consumer model keyed only by base/bootstrap/overrides supplies First config to
+the Second environment and fails its named full-input-domain assertion. That
+model is not production code. A further actual old-publication probe in
+`spec-config-reference-domain-before-review/` measures structuralEquality=true
+and distinctReferences=true for original environments. Value-keyed resolution
+collapses them; execution injects the wrong configurations despite reporting
+success, and its named snapshot assertion fails, compile 0/runtime 1.
+
+The provider now retains successful configuration snapshots by original
+environment reference identity. It binds every effective environment to that
+snapshot and carries the loaded AppConfig in its grouping inputs. The
+effective-resolution key also uses reference identity, retaining the supplied
+loader's full input domain rather than assuming standard-source dimensions.
+Failures preserve the original exception; each effective-resolution request
+retains its failure and performs no automatic retry. The default loader keeps
+its existing backend memoization policy.
+
+The first strict Scala 3 JVM/JS run passes 184 checks each with exit 0
+(`2b-spec-frontends-scala3-owned-config-first.*`). Permanent controls retain the
+injected exact AppConfig references through planning/execution, load once per
+independent owner with a changing loader, and retain two configuration/resource
+scopes for an activation-sensitive loader. The previous 169-check final
+matrix, artifacts and external consumers are preserved before-owned-config
+evidence and do not verify the changed production. A fresh three-compiler
+matrix/publication plus unchanged external snapshot replay is underway.
+
+The original autoset and sequential-ordering suites pass a separate Scala 3
+legacy baseline: 46 tests/four suites on each JVM/JS platform, exit 0
+(`2b-spec-import-only-original-scala3-baseline.*`). Their prepared migration
+diffs change only the Spec1 import. The migrated fixtures have not yet been
+compiled or executed; this baseline does not complete 2b.10.
+
+The corrected front ends and owned configuration snapshots now pass the fresh
+three-compiler matrix. `2b-spec-frontends-final-matrix.py` runs the exact
+18-command sequences retained in `2b-spec-frontends-*-final.commands.json`;
+Scala 3.9.0, 2.13.18 and 2.12.21 each exit 0. Each compiler passes core
+116 JVM/98 JS and higher 184 JVM/184 JS checks, then publishes core/higher
+JVM/JS locally, captures eight classpaths and the observed dependency graph.
+The fresh matrix auditor exits 0 with 1,746 primary checks (642 core/1,104
+higher), including 84 four-entry-point terminal outcomes and 60 activation
+request controls. The configuration fixture additionally records its changing
+and activation-sensitive loader controls on all six lanes. Failed and repeated
+historical runs are excluded from the primary count.
+
+The fresh artifact auditor exits 0 with 12 publications, 24 Compile/Test
+classpaths and 2,167 exact published binary entries. All four entry points
+and the shared activation resolver are present; fixture binaries are absent.
+The POM/classpath scope and absence checks above still pass. Each graph has
+109 nodes, 213 scoped records and no cycle, matching the generated build.
+Both auditors retain their current stdout, argv, completion and summary JSON
+in `2b-spec-frontends-{matrix,artifact}-audit.*` and corresponding summaries.
+The generator is rerun after the correction: exit 0, all three output hashes
+unchanged; its final captures supersede the preserved before-owned-config ones.
+
+The read-only reviewer freezes the new actual published Scala 3 closure in
+`spec-frontend-owned-config-published-after-review/`: 49 consumer JAR entries
+(45 Compile entries plus four explicit pinned Cats consumer dependencies),
+seven compiler JAR entries, and 103 artifact records (54 distinct JARs/49
+POMs). Six external probe sources are byte-identical to their preserved
+controls; 15 frozen production sources are provenance only and are not
+compiled into the consumer. One JDK21 compilation and nine runtime controls
+all exit 0, with exact commands/results retained. Root independently checks
+every artifact/source hash and byte equality, the resolved closure against the
+producer log/classpaths, all ten argv, and the exact current core/higher binary
+sets/bytes (240/55). Its evidence audit is retained as
+`root-after-evidence-audit.json` in that review directory.
+
+The four-spec consumer passes 26 checks/15 terminal IDs, including inherited
+assertion expansion, three acquisition/release scopes, nine deferred builds
+and 12 successful bodies. The four hook/phase controls pass unchanged.
+Both default and nonmemoizing supplied configuration loaders now record one
+invocation/one actual load, matching resolved/injected First, and one resource
+scope/body. The activation-sensitive control records two loads, correct First
+and Second injections and two scopes. The reference-identity control retains
+structuralEquality=true/distinctReferences=true while now injecting each
+matching snapshot, with two loads/scopes/bodies. These observations verify the
+previous supplied-loader reproduction and both domain controls against the
+published correction; they do not establish all remaining isolation gates.
+Published core/higher JAR SHA-256 values are
+`19e5bca16da3d403f28c3f5c944bae47f5fefd9f1c37ab9de0a1fcdf6ef80734`
+and `d9e3f777b2d9dbcd3dd3b73b4bd1e64fc6d1e993e1c3602aaa403d866567a475`.
+
+Primary Native interop metadata requests still return HTTP 404 at 16:33:32 UTC
+on 2026-10-02; current captures are `2b-spec-frontends-release-metadata.json`
+and response XML. Parent 2b, O.13/O.18, compatibility migration and all final
+evaluation points remain open. This is a verified front-end/snapshot sub-step;
+active interruption, full isolation and the later host integrations remain.
+
+The final read-only bounded checkpoint review reports no concrete residual
+defect or overstated current claim (`final-checkpoint-review.json` in the
+after-publication review directory). It independently rechecks both auditors,
+generator hashes and the external artifacts/sources/controls, while retaining
+the open checklist scope. The after producer log is frozen as
+`published-producer-final.log`; root verifies its SHA-256 and updated closure
+provenance. A reviewer-only correction labels the core digest as coreSha256
+and records the actual base-runner digest as baseSha256 in classpath metadata;
+the prior metadata is preserved, and artifact bytes, paths and commands do not
+change. Root checks both corrected digests against the frozen JARs.

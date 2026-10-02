@@ -11,18 +11,17 @@ import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.LoggerConfigLoader.LogConfigLoaderImpl
-import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser, RouterFactory}
+import izumi.distage.roles.launcher.{CLILoggerOptions, RouterFactory}
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
-import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
+import izumi.distage.testkit.model.{DistageTest, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestActivationResolver, TestConfigLoader, TestkitLogging}
 import izumi.distage.testkit.spec.TestEnvironmentFactory
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
@@ -87,6 +86,8 @@ class TestPlanner(
   testRunnerLocator: LocatorRef,
   logBuffer: LogQueue,
 ) {
+  private val activationResolver = new TestActivationResolver
+
   /**
     * Group tests by their memoization environment.
     * [[TestEnvironment.EnvExecutionParams]] - contains parts of environment that may radically affect planning.
@@ -200,7 +201,7 @@ class TestPlanner(
     Try {
       val lateLogger = IzLogger(router)
 
-      val fullActivation = makeTestActivation(config, env, lateLogger)
+      val fullActivation = activationResolver.resolve(config, env, lateLogger)
 
       // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
       val moduleProvider =
@@ -208,30 +209,6 @@ class TestPlanner(
 
       prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider, runtimeGcRoots).left.map(errors => PlanningFailure.DIErrors(errors))
     }.toEither.left.map(e => PlanningFailure.Exception(e)).flatMap(identity)
-  }
-
-  private def makeTestActivation(config: AppConfig, env: TestEnvironment, lateLogger: IzLogger): Activation = {
-    env.activationStrategy match {
-      case TestActivationStrategy.IgnoreConfig =>
-        env.activation
-      case TestActivationStrategy.LoadConfig(ignoreUnknown, warnUnset) =>
-        val roleAppActivationParser = new RoleAppActivationParser.Impl(
-          logger = lateLogger,
-          ignoreUnknownActivations = ignoreUnknown,
-        )
-        val activationParser = new ActivationParser.Impl(
-          roleAppActivationParser,
-          RoleAppArgs.empty,
-          env.activationInfo,
-          env.activation,
-          Activation.empty,
-          lateLogger,
-          warnUnset,
-        )
-        val configActivation = activationParser.parseActivation(config)
-
-        configActivation ++ env.activation
-    }
   }
 
   private def prepareTestEnv[F[_]: TagK: DefaultModule](
