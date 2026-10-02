@@ -5,13 +5,36 @@ import scala.reflect.macros.blackbox
 
 object AssertionMacro {
   def standard(c: blackbox.Context)(condition: c.Expr[Boolean]): c.Expr[Unit] = {
-    import c.universe._
-    expand(c)(condition, c.Expr[AssertionContext](q"_root_.izumi.fundamentals.assertions.AssertionContext.standard"))
+    expand(c)(condition, standardContext(c), c.prefix.tree)
   }
 
-  def configured(c: blackbox.Context)(condition: c.Expr[Boolean], context: c.Expr[AssertionContext]): c.Expr[Unit] = expand(c)(condition, context)
+  def configured(c: blackbox.Context)(condition: c.Expr[Boolean], context: c.Expr[AssertionContext]): c.Expr[Unit] = expand(c)(condition, context, c.prefix.tree)
 
-  private def expand(c: blackbox.Context)(condition: c.Expr[Boolean], context: c.Expr[AssertionContext]): c.Expr[Unit] = {
+  def unary[F[_]](c: blackbox.Context)(condition: c.Expr[Boolean])(suspension: c.Expr[AssertionSuspension1[F]]): c.Expr[F[Unit]] =
+    c.Expr[F[Unit]](suspended(c)(condition, standardContext(c), suspension.tree))
+
+  def unaryConfigured[F[_]](c: blackbox.Context)(condition: c.Expr[Boolean], context: c.Expr[AssertionContext])(suspension: c.Expr[AssertionSuspension1[F]]): c.Expr[F[Unit]] =
+    c.Expr[F[Unit]](suspended(c)(condition, context, suspension.tree))
+
+  def binary[F[_, _]](c: blackbox.Context)(condition: c.Expr[Boolean])(suspension: c.Expr[AssertionSuspension2[F]]): c.Expr[F[Nothing, Unit]] =
+    c.Expr[F[Nothing, Unit]](suspended(c)(condition, standardContext(c), suspension.tree))
+
+  def binaryConfigured[F[_, _]](c: blackbox.Context)(condition: c.Expr[Boolean], context: c.Expr[AssertionContext])(suspension: c.Expr[AssertionSuspension2[F]]): c.Expr[F[Nothing, Unit]] =
+    c.Expr[F[Nothing, Unit]](suspended(c)(condition, context, suspension.tree))
+
+  private def standardContext(c: blackbox.Context): c.Expr[AssertionContext] = {
+    import c.universe._
+    c.Expr[AssertionContext](q"_root_.izumi.fundamentals.assertions.AssertionContext.standard")
+  }
+
+  private def suspended(c: blackbox.Context)(condition: c.Expr[Boolean], context: c.Expr[AssertionContext], suspension: c.Tree): c.Tree = {
+    import c.universe._
+    val receiver = TermName(c.freshName("assertionReceiver"))
+    val assertion = expand(c)(condition, context, q"$receiver")
+    q"{ val $receiver = ${ c.prefix.tree }; $suspension.suspend($assertion) }"
+  }
+
+  private def expand(c: blackbox.Context)(condition: c.Expr[Boolean], context: c.Expr[AssertionContext], receiver: c.Tree): c.Expr[Unit] = {
     import c.universe._
 
     val sites = ArrayBuffer.empty[Tree]
@@ -78,7 +101,7 @@ object AssertionMacro {
     val path = if (position != NoPosition) position.source.path else "<unknown>"
     val virtual = position == NoPosition || position.source.file.isVirtual
     c.Expr[Unit](q"""{
-      val _ = ${ c.prefix.tree }
+      val _ = $receiver
       val $recorder = new _root_.izumi.fundamentals.assertions.AssertionRecorder(_root_.scala.Vector(..$sites))
       val result = $instrumented
       $recorder.check(result, $path, $virtual, ${ span(position) }, ${ text(position) }, $context)

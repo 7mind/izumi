@@ -1,9 +1,11 @@
 package izumi.fixtures.assertions
 
+import cats.effect.{IO, IOApp}
 import izumi.fundamentals.assertions.{Assert, AssertionFailure, Assertions, Evaluation}
+import izumi.fundamentals.assertions.cats.CatsAssertionSuspension.*
 
-object PublishedAssertionConsumer {
-  def main(args: Array[String]): Unit = {
+object PublishedAssertionConsumer extends IOApp.Simple {
+  override def run: IO[Unit] = IO.defer {
     var checks = 0
     def value: Int = { checks += 1; 1 }
     Assert.assert(value == 1)
@@ -19,6 +21,18 @@ object PublishedAssertionConsumer {
       true
     }
     if (receiverEvaluations != 1) throw new IllegalStateException("Published assertion evaluated its receiver more than once")
-    println("PUBLISHED_ASSERTION_CONSUMER_OK")
+    var executions = 0
+    val effect: IO[Unit] = Assert.assert1[IO]({ executions += 1; false })
+    if (executions != 0) throw new IllegalStateException("Published unary assertion evaluated during construction")
+    for {
+      first <- effect.attempt
+      second <- effect.attempt
+      _ <- IO.delay {
+        if (executions != 2 || !first.left.exists(_.isInstanceOf[AssertionFailure]) || !second.left.exists(_.isInstanceOf[AssertionFailure]) || first == second) {
+          throw new IllegalStateException("Published unary assertion lost deferred independent executions")
+        }
+        println("PUBLISHED_ASSERTION_CONSUMER_OK plain=true unary=true")
+      }
+    } yield ()
   }
 }

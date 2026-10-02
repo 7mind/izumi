@@ -9,6 +9,38 @@ unchanged. Definitions and consumers compile separately, including test sources.
 An assertion evaluates its receiver, condition, and explicit context once, in
 that order; an exception prevents evaluation of later arguments.
 
+`Assert.assert1[F](condition)` returns `F[Unit]` and requires
+`AssertionSuspension1[F]`. `Assert.assert2[F](condition)` returns
+`F[Nothing, Unit]` and requires `AssertionSuspension2[F]`. Both also accept an
+explicit context as their second argument. The capability's contract requires
+deferred evaluation once per execution and propagation of thrown failures;
+the binary form requires defects rather than typed errors. Constructing an
+effect evaluates the receiver and suspension evidence, but defers the condition,
+context, and recorder. Repeated or concurrent execution gets separate diagnostics.
+
+The optional `fundamentals-assertions-cats` artifact supplies the unary adapter:
+
+```scala
+import cats.effect.IO
+import izumi.fundamentals.assertions.Assert
+import izumi.fundamentals.assertions.cats.CatsAssertionSuspension.*
+
+val check: IO[Unit] = Assert.assert1[IO](1 + 1 == 2)
+```
+
+`fundamentals-assertions-bio` supplies the binary adapter through
+`BIOAssertionSuspension.*`, using `IO2.sync`. For example,
+`Assert.assert2[zio.IO](condition)` is `ZIO[Any, Nothing, Unit]`; assertion and
+operand exceptions become defects. The Cats adapter uses `Sync.delay`.
+Neither adapter infers suspension from `QuasiIO`. The BIO artifact's Native
+variant awaits released interop artifacts; this does not affect the Cats adapter's
+Native variant.
+
+During migration, `izumi.distage.testkit.scalatest.AssertionBridge(check)` adapts
+a successful `Unit` check to ScalaTest's `Assertion` without changing its thrown
+failure. It lives in the separate legacy adapter artifact. The plain assertion
+core and effect adapters depend on no ScalaTest or Scalactic module.
+
 The Scala 2 implementation uses blackbox macros; Scala 3 uses the public quoted
 API. Both emit the same portable runtime representation. Resolved built-in
 Boolean conjunction, disjunction, and negation retain short-circuit evaluation.

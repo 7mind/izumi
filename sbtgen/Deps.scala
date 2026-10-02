@@ -489,6 +489,8 @@ object Izumi {
       final val bio = ArtifactId("fundamentals-bio")
       final val orphans = ArtifactId("fundamentals-orphans")
       final val assertions = ArtifactId("fundamentals-assertions")
+      final val assertionsCats = ArtifactId("fundamentals-assertions-cats")
+      final val assertionsBIO = ArtifactId("fundamentals-assertions-bio")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
 //      final val reflection = ArtifactId("fundamentals-reflection")
@@ -565,6 +567,15 @@ object Izumi {
     "fork" in (SettingScope.Test, Platform.Jvm) := true
   )
 
+  final val assertionFixtureSettings = Seq(
+    "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+    "testOptions" in SettingScope.Test := Const.EmptySeq,
+    "testFull" in SettingScope.Test := """Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed }""".raw,
+    "test" in SettingScope.Test := """(Test / testFull).value""".raw,
+    "scalaJSUseMainModuleInitializer" in (SettingScope.Test, Platform.Js) := true,
+    "scalaJSUseTestModuleInitializer" in (SettingScope.Test, Platform.Js) := false,
+  )
+
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
     artifacts = withTestResourcesOnCompileClasspath(Seq(
@@ -593,20 +604,31 @@ object Izumi {
         name = Projects.fundamentals.assertions,
         libs = Seq(scala_reflect),
         depends = Seq.empty,
-        settings = Seq(
-          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
-          "testOptions" in SettingScope.Test := Const.EmptySeq,
+        settings = assertionFixtureSettings ++ Seq(
           "mainClass" in SettingScope.Test :=
             """{
               |  val options = (Test / scalacOptions).value
               |  val pointOnly = (scalaVersion.value.startsWith("2.12") && !options.contains("-Yrangepos")) || options.contains("-Yrangepos:false")
               |  Some(if (pointOnly) "izumi.fundamentals.assertions.AssertionFixturesWithoutRanges" else "izumi.fundamentals.assertions.AssertionFixtures")
               |}""".stripMargin.raw,
-          "testFull" in SettingScope.Test := """Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed }""".raw,
-          "test" in SettingScope.Test := """(Test / testFull).value""".raw,
-          "scalaJSUseMainModuleInitializer" in (SettingScope.Test, Platform.Js) := true,
-          "scalaJSUseTestModuleInitializer" in (SettingScope.Test, Platform.Js) := false,
         ),
+      ),
+      Artifact(
+        name = Projects.fundamentals.assertionsCats,
+        libs = Seq(cats_effect),
+        depends = Seq(Projects.fundamentals.assertions),
+        settings = assertionFixtureSettings ++ Seq(
+          "mainClass" in SettingScope.Test := "Some(\"izumi.fundamentals.assertions.cats.CatsAssertionFixtures\")".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.fundamentals.assertionsBIO,
+        libs = Seq(zio_core, izumi_reflect).map(_ in Scope.Test.all) ++ Seq(scala_java_time in Scope.Test.js, scala_java_time in Scope.Test.native),
+        depends = Seq(Projects.fundamentals.assertions, Projects.fundamentals.bio),
+        settings = assertionFixtureSettings ++ Seq(
+          "mainClass" in SettingScope.Test := "Some(\"izumi.fundamentals.assertions.bio.BIOAssertionFixtures\")".raw,
+        ),
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
@@ -834,7 +856,7 @@ object Izumi {
           scalamock in Scope.Test.all,
           portable_scala_reflect in Scope.Compile.js,
         ) ++ scalatest_all.map(_ in Scope.Compile.all),
-        depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.testkitCore, Projects.fundamentals.assertions).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
         platforms = Targets.jvmJs,

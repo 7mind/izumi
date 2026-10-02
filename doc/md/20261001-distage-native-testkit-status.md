@@ -41,11 +41,11 @@ head. The spike reports are design evidence, not implementation verification.
 | 1c.3 | in progress | Resolved-graph review and all nine published POMs pass below; final recheck outstanding. |
 | 1c.4 | in progress | Independent portable oracle and external review probes pass below; final recheck outstanding. |
 | 1c.5 | in progress | Current plain-core semantics and diagnostic checkpoint below; final recheck outstanding. |
-| 1d.1 | not started | No evaluation point passed yet. |
-| 1d.2 | not started | No evaluation point passed yet. |
-| 1d.3 | not started | No evaluation point passed yet. |
-| 1d.4 | not started | No evaluation point passed yet. |
-| 1d.5 | not started | No evaluation point passed yet. |
+| 1d.1 | in progress | Cats matrix and BIO JVM/JS checkpoints below; released Native BIO verification outstanding. |
+| 1d.2 | in progress | Cats matrix and BIO JVM/JS checkpoints below; released Native BIO verification outstanding. |
+| 1d.3 | in progress | Actual BIO defects and typed-error preservation verified on six JVM/JS lanes; released Native interop outstanding. |
+| 1d.4 | in progress | Legacy display checkpoint passes on six JVM/JS lanes below; parent-step evaluation outstanding. |
+| 1d.5 | in progress | Explicit suspension boundary and runtime adapters below; final recheck outstanding. |
 | 2a.1 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2a.2 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2a.3 | in progress | Scala 3.9 verification below; gate remains outstanding. |
@@ -119,8 +119,8 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.8 | not started | No evaluation point passed yet. |
 | 5.9 | not started | No evaluation point passed yet. |
 | O.1 | not started | No evaluation point passed yet. |
-| O.2 | not started | No evaluation point passed yet. |
-| O.3 | not started | No evaluation point passed yet. |
+| O.2 | in progress | Effect APIs have explicit requested return types; runtime checkpoints below. |
+| O.3 | in progress | Explicit suspension capability; Cats/BIO law checkpoints below. |
 | O.4 | in progress | No evaluation point passed yet. |
 | O.5 | in progress | No evaluation point passed yet. |
 | O.6 | in progress | No evaluation point passed yet. |
@@ -128,7 +128,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.8 | in progress | No evaluation point passed yet. |
 | O.9 | in progress | No evaluation point passed yet. |
 | O.10 | in progress | No evaluation point passed yet. |
-| O.11 | not started | No evaluation point passed yet. |
+| O.11 | in progress | Separate Cats/BIO artifacts above their runtimes; dependency verification outstanding. |
 | O.12 | not started | No evaluation point passed yet. |
 | O.13 | not started | No evaluation point passed yet. |
 | O.14 | not started | No evaluation point passed yet. |
@@ -150,7 +150,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.30 | not started | No evaluation point passed yet. |
 | O.31 | not started | No evaluation point passed yet. |
 | O.32 | not started | No evaluation point passed yet. |
-| O.33 | not started | No evaluation point passed yet. |
+| O.33 | in progress | Unit-to-Assertion bridge resides in the existing separate legacy artifact. |
 | O.34 | not started | No evaluation point passed yet. |
 | O.35 | not started | No evaluation point passed yet. |
 | O.36 | in progress | Scala 3.9 verification below; gate remains outstanding. |
@@ -788,3 +788,200 @@ build inputs have not changed since the idempotent generation checkpoint.
 This commit records the verified plain-core substep. Complete repository CI,
 effect adapters, and all final-head evaluations remain outstanding; no parent
 step is claimed complete.
+
+## 2026-10-02: committed plain-core CI checkpoint
+
+Plain-core commit: `88dea42eb8606cd4bdd692f258e22c4d546e3fb5`. Before any
+effect changes, regenerate with `--js --native` (`1b-committed-generator.log`,
+exit 0), then `git diff --exit-code build.sbt project/plugins.sbt
+project/build.properties` exits 0 (`1b-committed-generator-diff.log`). This is an
+L5 checkpoint on that commit, separate from the final-head evaluation.
+
+`bash /srv/nvme/tmp/izumi-impl/local-ci-core-platforms.sh` exits 0 on a detached
+worktree at that commit. It runs the exact L2/L3 `mdl :gen` lanes on JDK 21:
+`js-nojvm` uses `:test` on Scala 3 and `:coverage` on Scala 2; `native-nojvm`
+uses `:test` on all three versions. Each lane has a fresh SBT task cache and
+removed target outputs. An isolated direnv data directory allows the worktree
+without writing the sandbox's read-only home state. A Docker wrapper supplies
+an empty container view only for the lane's cleanup; host containers remain
+untouched. Capture: `1b-core-ci-platforms.log`.
+
+| Platform | Scala | ScalaTest succeeded/failed/canceled | Plain-core checks |
+| --- | --- | --- | --- |
+| JS | 3.9.0 | 858/0/19 | 86, ranges |
+| JS | 2.13.18 | 826/0/19 | 86, ranges |
+| JS | 2.12.21 | 825/0/20 | 83, point-only |
+| Native | 3.9.0 | 194/0/0 | 86, ranges |
+| Native | 2.13.18 | 189/0/0 | 86, ranges |
+| Native | 2.12.21 | 189/0/0 | 83, point-only |
+
+The count check parses 13 ScalaTest result groups per JS lane and four per Native
+lane, and separately requires the plain-core execution marker and successful
+terminal lane record. Assertion entry-point checks are not counted as ScalaTest
+tests. The full nine-lane JVM matrix subsequently exits 0 on the isolated
+Docker worker against the same fixed commit. The exact command is
+`bash /home/ubuntu/worker-ci-core-launch.sh` through the worker's login shell;
+the launcher enters the Nix development shell and runs the generated JVM
+`mdl :gen :test` (Scala 3) or `:gen :coverage` (Scala 2) lane in a detached
+worktree. Each lane removes its target outputs and has its own fresh SBT task
+cache. The cleanup checks every container's task-specific label before acting.
+Captures: `1b-core-worker-ci-jvm.log`, with the independently parsed counts in
+`1b-core-worker-ci-counts.log`.
+
+| JVM Scala | JDKs | ScalaTest succeeded/failed/canceled per lane | Plain-core checks per lane |
+| --- | --- | --- | --- |
+| 3.9.0 | 17, 21, 25 | 1576/0/19 | 86, ranges |
+| 2.13.18 | 17, 21, 25 | 1544/0/19 | 86, ranges |
+| 2.12.21 | 17, 21, 25 | 1542/0/20 | 83, point-only |
+
+The count check requires 18 ScalaTest result groups, the plain-core execution
+marker, and the successful terminal record for each of the nine lanes. It prints
+`JVM_CI_MATRIX_OK lanes=9`. Together with the six local platform lanes above,
+this is a complete L1–L3 checkpoint on `88dea42eb`, before the effect changes;
+the final-head evaluations remain outstanding.
+
+## 2026-10-02: step 1d, in progress
+
+`AssertionSuspension1` and `AssertionSuspension2` explicitly require deferred,
+per-execution checks and effect failure/defect handling. `assert1` returns
+`F[Unit]`; `assert2` returns `F[Nothing, Unit]`. Their condition, context, and
+recorder are inside suspension; receiver and capability resolution are at effect
+construction. The plain core depends on neither runtime and exposes no QuasiIO
+guarantee. Separate Cats and BIO artifacts delegate to `Sync.delay` and `IO2.sync`.
+The legacy artifact contains the temporary Unit-to-ScalaTest assertion bridge.
+
+First checks and captured wiring failures:
+
+- `1d-core-api-compile.log`, exit 0: existing JVM plain-core fixtures pass after
+  the API additions on all three compilers (86 trusted-range/83 point checks).
+- `1d-adapter-first.log`: Cats JVM passes 12 public-boundary checks, then BIO
+  test compilation fails for missing `izumi.reflect.Tag`. The ZIO dependency
+  excludes reflect, and optional parent dependencies do not supply it. The BIO
+  fixture now declares the pinned reflect artifact in Test scope.
+- `1d-scala3-first-matrix.log`: Cats JVM/JS/Native each pass 12 checks; actual
+  BIO JVM passes 13, including defect and unchanged typed-error checks. JS linking
+  then fails for missing `java.time.Instant`/`Duration`, before execution. The
+  BIO fixture now declares the same pinned scala-java-time support as the
+  existing BIO tests, in its JS and pending Native Test scopes. The corrected
+  JS rerun is outstanding; this initial matrix is not claimed successful.
+
+The effect fixtures use independent exceptions and counters at the public macro
+and runtime boundary. Actual IO/ZIO repeat and concurrent executions compare
+distinct failures, recorded operand values, branch observations, and preservation
+of earlier diagnostics. Their construction, condition/context exception, and
+return-type checks do not rely on the assertions under test to verify outcomes.
+
+At this boundary the two required Native interop metadata URLs still return
+HTTP 404. Scala compiler metadata's release tag is `3.10.0-RC3`, a prerelease;
+parsing stable version entries confirms 3.9.0 is the latest stable, with no newer
+3.9.x or stable Scala Next consumer lane. Captures:
+`/srv/nvme/tmp/izumi-impl/metadata/*1d-boundary.{xml,txt}`. Native BIO remains
+unavailable in the committed dependency graph pending the named released
+artifacts; all independent work continues.
+
+The corrected BIO JS runtime exits 0 with 13 checks
+(`1d-bio-js-bridge-first.log`), then the bridge fixture's additional status
+predicate fails. Instrumentation (`1d-bridge-instrumented.log`, exit 1) records
+`status=true evaluations=1 failures=1 events=Vector(TestStarting, TestFailed)`.
+Existing `DistageScalatestReporter.endSuite` and registry completion call
+`setCompleted`, without calling `setFailed` for a body failure. The fixture now
+checks the reported `TestFailed`, exact body count, preserved throwable,
+diagnostic, and source; it prints the observed legacy status explicitly.
+This preserves the existing adapter's status behavior and does not repair that
+separate retirement concern. Read-only review confirms that the fixed 1d.4
+display boundary does not require an aggregate-status correction.
+
+The corrected public legacy runner/reporter invocation exits 0 on both JVM and
+JS (`1d-bridge-jvm-js.log`), each printing
+`SCALATEST_ASSERTION_BRIDGE_OK executed=1 failed=1 legacyStatus=true`. The JS
+command sets `Test / mainClass` to the fixture, enables its main initializer,
+disables the test initializer, and runs `distage-testkit-scalatestJS/Test/run`;
+these settings are session-local. The fixture suite has a constructor argument
+and is instantiated explicitly, so the intentional failure is not part of
+ordinary framework discovery.
+
+Independent read-only effect probes pass on all three compilers: construction
+order receiver/evidence/suspend, deferred condition/context, thrown receiver,
+repeat/concurrent independent diagnostics and operand values, and caller source
+attribution. All nine Scala 3 inline cases also pass through `assert1`.
+Captures: `/srv/nvme/tmp/izumi-impl/assertion-review/effect-review/`.
+These probes supplement actual IO/ZIO runtime checks; they do not substitute for
+the Scala 2 runtime matrix or the published effect consumers, which remain
+outstanding at this checkpoint.
+
+### Scala 2 runtime and bridge matrix
+
+`bash /srv/nvme/tmp/izumi-impl/1d-scala2-matrix.sh` exits 0
+(`1d-scala2-matrix.log`). On each of 2.13.18 and 2.12.21, Cats executes on
+JVM/JS/Native and passes 12 checks, BIO executes on JVM/JS and passes 13 checks,
+and the legacy bridge executes on JVM/JS with exactly one reported failure.
+Native outputs are cleaned before linking. Alongside the Scala 3 captures,
+this verifies nine Cats lanes, six BIO lanes, and six legacy bridge lanes.
+Native BIO checks still await the released interop artifacts.
+
+`1d-strict-publish-scala3.log` runs strict Scala 3 options on the eight new/core
+artifact projects. All three plain-core runs pass 86 checks, all three Cats runs
+pass 12, and both BIO runs pass 13. The script then exits 1 at a nonexistent
+`fundamentalsJVM` aggregate name; no publication result is claimed from that
+suffix. The corrected explicit 14-project publication command in
+`/srv/nvme/tmp/izumi-impl/1d-publish-scala3.sh` exits 0
+(`1d-publish-scala3.log`). It publishes all eight Scala 3 assertion variants and
+six JavaScript parent dependencies, from the 3.9.0 producer. The first cleaned
+five-target consumer command (`1d-published-consumers-first.log`, exit 1)
+executes the three plain/unary consumers and BIO JVM successfully, then fails
+to resolve the separately unpublished `fundamentals-functional_sjs1_3` artifact.
+Publishing `fundamentals-functionalJS/publishLocal` exits 0
+(`1d-functional-js-publish.log`). This corrects the local publication closure;
+no consumer source change was needed.
+
+The corrected standalone build command cleans all five targets, then runs
+`consumerJVM/runMain izumi.fixtures.assertions.PublishedAssertionConsumer`,
+`consumerJS/run`, `consumerNative/run`,
+`bioConsumerJVM/runMain izumi.fixtures.assertions.PublishedBIOAssertionConsumer`,
+and `bioConsumerJS/run`, with required properties
+`-Dizumi.fixture.scala-version=3.9.0 -Dizumi.fixture.version=1.3.0-SNAPSHOT`.
+It exits 0 (`1d-published-consumers-final.log`). Each of the three plain/unary
+targets prints `PUBLISHED_ASSERTION_CONSUMER_OK plain=true unary=true`; each of
+the two BIO targets prints
+`PUBLISHED_BIO_ASSERTION_CONSUMER_OK binary=true defects=true`. Producer and
+consumer compilation directories are separate. These public-boundary checks
+verify suspended construction and distinct repeat failures through the
+published adapters, in addition to the existing plain diagnostic checks.
+
+`bash /srv/nvme/tmp/izumi-impl/1c-final-scala2-matrix.sh` exits 0 after the
+effect additions (`1d-plain-range-regression-scala2.log`). It rechecks the plain
+macro across JVM/JS/Native: 2.13 defaults and 2.12 with `-Yrangepos` each pass
+86 checks per target; 2.12 defaults and 2.13 with `-Yrangepos:false` each pass
+83 point/missing-range checks per target. This supplies the twelve Scala 2
+regression lanes after the shared macro expansion gained effect suspension;
+the three strict Scala 3 plain runs above complete the fifteen-mode matrix.
+
+`bash /srv/nvme/tmp/izumi-impl/1d-publish-scala2-and-graphs.sh` exits 0
+(`1d-publish-scala2-and-graphs.log`). It publishes the eight core/Cats/BIO
+variants on each Scala 2 version, then exports both Compile and Test resolved
+dependency classpaths for all eight variants on all three compilers. The
+24-variant artifact checker exits 0 (`1d-artifact-manifest.log`), verifying each
+local jar/POM, platform IR, Scala 3 TASTy, and the absence of ScalaTest/Scalactic
+or an izumi dependency above fundamentals. It prints
+`ASSERTION_ARTIFACT_MANIFEST_OK artifacts=24 native=6 js=9 jvm=9`.
+The resolved-classpath checker exits 0 (`1d-dependency-graph-check.log`),
+requiring all 24 variants and rejecting those dependencies in both scopes.
+Its initial parser expected literal `target/out` paths and failed at its
+nonempty-module invariant; SBT actually abbreviates these paths as `${OUT}`.
+The corrected checker accepts either observed path representation and retains
+the invariant. No dependency-graph claim came from the failed parser.
+
+Regenerating with `JAVA_HOME="$JDK21" bash sbtgen.sc --js --native` exits 0
+(`1d-generator.log`). SHA-256 comparison of all three generated files is
+identical before and after (`1d-generator-idempotence.log`); `git diff --check`
+exits 0. Native BIO remains outstanding; this checkpoint completes the
+independent effect-adapter work, not the parent step or final-head gates.
+
+The read-only requirements reviewer independently checks the 24 fresh jars/POMs,
+48 Compile/Test classpaths, runtime and published-consumer markers, position-mode
+regressions, and the updated ledger. It reports no unresolved implementation
+finding within this independent checkpoint. It confirms that Scala 2 reflect
+remains Provided and BIO fixture runtime dependencies remain Test-only. Native
+BIO and parent/final evaluations are explicitly excluded from the completion
+claim. The local commit containing this checkpoint is identified in the next
+ledger update; it is never pushed.

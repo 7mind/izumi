@@ -1,10 +1,16 @@
 package izumi.fundamentals.assertions
 
 import scala.collection.mutable.ArrayBuffer
-import scala.quoted.{Expr, Quotes, Varargs}
+import scala.quoted.{Expr, Quotes, Type, Varargs}
 
 @scala.annotation.publicInBinary
 private[assertions] object AssertionMacro {
+  def unary[F[_]: Type](condition: Expr[Boolean], context: Expr[AssertionContext], receiver: Expr[Assertions], suspension: Expr[AssertionSuspension1[F]])(using Quotes): Expr[F[Unit]] =
+    '{ val actualReceiver = $receiver; $suspension.suspend(${ expand(condition, context, 'actualReceiver) }) }
+
+  def binary[F[_, _]: Type](condition: Expr[Boolean], context: Expr[AssertionContext], receiver: Expr[Assertions], suspension: Expr[AssertionSuspension2[F]])(using Quotes): Expr[F[Nothing, Unit]] =
+    '{ val actualReceiver = $receiver; $suspension.suspend(${ expand(condition, context, 'actualReceiver) }) }
+
   def expand(condition: Expr[Boolean], context: Expr[AssertionContext], receiver: Expr[Assertions])(using quotes: Quotes): Expr[Unit] = {
     import quotes.reflect.*
 
