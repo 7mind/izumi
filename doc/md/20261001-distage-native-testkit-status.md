@@ -50,17 +50,17 @@ head. The spike reports are design evidence, not implementation verification.
 | 2a.2 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2a.3 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2a.4 | in progress | Scala 3.9 verification below; gate remains outstanding. |
-| 2b.1 | not started | No evaluation point passed yet. |
+| 2b.1 | in progress | Base runner checkpoint: nine artifact POMs and 18 resolved Compile/Test classpaths satisfy the fundamentals/protocol bound below; final evaluation outstanding. |
 | 2b.2 | not started | No evaluation point passed yet. |
 | 2b.3 | not started | No evaluation point passed yet. |
 | 2b.4 | not started | No evaluation point passed yet. |
-| 2b.5 | not started | No evaluation point passed yet. |
+| 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | not started | No evaluation point passed yet. |
-| 2b.7 | not started | No evaluation point passed yet. |
-| 2b.8 | not started | No evaluation point passed yet. |
-| 2b.9 | not started | No evaluation point passed yet. |
+| 2b.7 | in progress | Resource-free plain/provider registration fixtures pass all nine lanes below; distage provider and final evaluation outstanding. |
+| 2b.8 | in progress | Repeated/concurrent plain-session ownership passes all nine lanes below; higher-layer isolation and final evaluation outstanding. |
+| 2b.9 | in progress | Duplicate plain-suite/test IDs reject in all nine lanes below; higher-layer and final evaluation outstanding. |
 | 2b.10 | not started | No evaluation point passed yet. |
-| 2b.11 | not started | No evaluation point passed yet. |
+| 2b.11 | in progress | Plain factories and controlled provider finalization gates pass all nine lanes below; distage resources and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
 | 2c.2 | not started | No evaluation point passed yet. |
 | 2c.3 | not started | No evaluation point passed yet. |
@@ -1190,3 +1190,240 @@ also reruns its 85-check boundary probe against the fresh published JVM jar
 (`bounded-published-protocol-review.log`, exit 0), rather than only scratch
 producer classes. The real-transport and diagnostic-adapter limitations above
 remain outstanding; no parent step or final evaluation is marked done.
+
+
+## Step 2b: base plain-runner implementation in progress (2026-10-02)
+
+The verified protocol checkpoint is committed locally as
+`6c331dc6e27b9eeb74008e644c0d6a3a4cb20790`. No push was performed.
+
+The base runner is a separate artifact depending only on fundamentals assertions
+and the protocol. Its plain front end retains `should`/`must`/`can`/`in` and
+supports synchronous and `Future` bodies. A registration context owns typed
+execution-provider instances; a run session owns factory invocation,
+registration, cancellation and event sequencing. Execution plans are scoped to
+the session that produced them, and terminal IDs are checked against selection.
+Provider completion means resource finalization has completed; the controlled
+fixture gate checks this without sleeps.
+
+The first generated build exits 0 (`2b-base-runner-generator-first.log`), and
+`distage-test-runnerJVM/compile` exits 0 on 3.9.0
+(`2b-base-runner-compile-first.log`). No behavioral acceptance is claimed from
+compilation. JVM behavioral fixtures are running. Test-only fundamentals
+projects, the distage provider/front end, transports, rich structured assertion
+mapping and host integrations remain outstanding.
+
+The first JVM behavioral command exits 1 at the assertion-report oracle
+(`2b-base-runner-jvm-first.log`). An instrumented replay also exits 1
+(`2b-base-runner-assertion-diagnosis.log`) and records the actual failure tree:
+Scala Future's `ExecutionException("Boxed Exception")` retains the original
+`AssertionFailure` as its cause, with the source/expression/value diagnostic
+message intact. This agrees with the official
+[Scala Future exception semantics](https://docs.scala-lang.org/overviews/core/futures.html#exceptions).
+The original fixture incorrectly required AssertionFailure to be the root
+exception. Its corrected oracle examines the retained cause tree; production
+exception reporting was not changed or arbitrarily unwrapped. Structured
+assertion wire mapping remains explicitly outstanding.
+
+With the corrected causal-tree oracle, JVM execution reaches and fails the
+adversarial selection predicate (`2b-base-runner-selection-before.log`, exit 1):
+a provider reintroduces an unselected test from its registrations. Resolution
+now validates returned IDs against the selected provider test set. The first
+three-platform run then exits 0 on actual Scala 3.9.0
+(`2b-base-runner-scala3-first-matrix.log`), passing 27 checks on JVM/JS/Native.
+This does not include later provider-boundary corrections.
+
+Read-only review independently reproduces seven additional boundaries in
+`/srv/nvme/tmp/izumi-impl/base-runner-review/runner-boundaries-before.log` and
+`runner-ownership-before.log`; adjacent `replay-runner-boundaries.sh` and
+`replay-runner-ownership.sh` retain exact commands and the frozen pre-correction
+runner jar. Observations: resolver exceptions escape synchronously; discovery
+accepts another registered suite's test identity; a negative-duration successful
+result cannot encode; unselected events reach the sink; providers exchange
+result IDs while aggregate completeness passes; provider `Finished` precedes a
+controlled finalizer; and observed `PhaseFailed` is lost from successful outcome.
+
+Corrections restrict provider event capability to test starts/completions and
+phase failures, with session lifecycle and run correlation owned by the session.
+Each execution plan has its own event/result validation and reconciliation.
+Invalid payloads and identities fail as transport errors before forwarding;
+reported phase failures survive provider summaries. Schema payload validation
+is shared with the codec without imposing frame size on in-process catalogues.
+Discovery checks each test's owning suite, and resolver exceptions become
+Selection failures. Independent repros and portable regressions are being
+rerun; these corrections are not yet claimed fully verified.
+
+The strengthened portable boundary fixture initially exits 1 before execution
+because its helper parameter shadows `ExecutionPlan.execute`
+(`2b-base-runner-failure-multiplicity-before.log`). Renaming the parameter and
+removing the unnecessary forwarding method corrects that compile-time type
+error; the multiplicity reproduction is rerunning separately.
+
+The corrected first JVM fixture passes 27 checks
+(`2b-base-runner-provider-corrected-first.log`, exit 0). The independent current
+source probe passes 15 further boundary assertions
+(`base-runner-review/runner-corrected-boundaries.log`), including resolver/suite
+ownership, wire-valid invalid-duration rejection, unselected reports/results,
+retained phase failures and finalization ordering. The negative capability
+compile independently exits 1 with E007 for both provider `RunEvent.Finished`
+and forged-run `TestStarted` arguments (`replay-provider-capability-rejection.sh`,
+`provider-capability-rejection.log`). Providers now cannot express those signals.
+
+Both the portable fixture and independent probes then reproduce structural
+failure deduplication. The JVM fixture exits 1 on lost occurrence multiplicity
+(`2b-base-runner-failure-multiplicity-repro.log`). Independent observed counts:
+one provider returning two equal failures produces outcome1/event1; two reports
+plus two returned failures also produce 1/1; two distinct providers returning
+one equal failure each produce outcome2/event1. Occurrence-based reconciliation
+now consumes only matching reported occurrences, preserves every additional
+returned occurrence, and forwards each actual report. The corrected platform
+matrix is running; this correction is not claimed verified yet.
+
+The occurrence correction passes 46 checks on each actual Scala 3.9.0 platform
+(`2b-base-runner-provider-scala3-corrected.log`, exit 0). Independent review
+then reproduces mutable execution-plan ownership and invalid run identities
+(`runner-plan-mutation-before.log`, exact `replay-runner-plan-mutation.sh`):
+mutating two plan getters after planning swaps ownership and reports success;
+empty run identity invokes one body and forwards seven invalid events.
+Execution-plan tests are now immutable vals, and the session retains the
+original resolved per-plan snapshot for reporting. Both execution entry points
+reject empty run identities with a failed Future before discovery/planning or
+reporting. Schema-only validation versus channel budget is documented and has
+portable boundary fixtures.
+
+The first strict final matrix exits 1 before test execution/publication
+(`2b-base-and-protocol-strict-scala3-first.log`): `Map.put` returns an unused
+Option under fatal warnings. `Map.update` expresses the intended Unit-returning
+mutation. A focused strict JVM run is verifying the remaining sources before
+retrying the matrix. No warning suppression was added.
+
+The focused strict JVM command exits 1 before execution
+(`2b-base-runner-strict-jvm-second.log`), finding three bare `in ()` calls whose
+public method was not declared infix and one discarded discovery result. The
+four DSL methods are now declared infix, preserving the requested operator
+syntax, and the intentional discovery result is explicitly discarded. The
+strict six-variant runner/protocol matrix is rerunning with both Compile/Test
+fatal warnings; previous warning failures remain captured.
+
+The next strict run passes JVM's 47 checks, then exits 1 before JS execution
+because `setTimeout` returns an unused handle
+(`2b-base-and-protocol-strict-scala3-corrected.log`). Explicitly discarding that
+handle corrects the fixture warning. The six-variant rerun then exits 0
+(`2b-base-and-protocol-strict-scala3-final.log`), with 47 runner checks on each
+3.9.0 platform and 64 protocol checks on each 3.8.4 platform. It publishes all
+six variants and captures their Compile/Test classpaths. Subsequent Scala 2
+findings require rerunning the runner sources before the checkpoint is final.
+
+The first independent published-runner consumer on 3.9.0 exits 0 on JVM, JS
+and Native (`2b-base-runner-consumer-scala3-first.log`), expanding both public
+registration and assertion macros and round-tripping every emitted event.
+Its three markers report `bodies=2 positions=known`; discovery runs neither
+body. The published Scala 2 matrix remains outstanding.
+
+The first Scala 2 matrix exits 1 on 2.13.18 at a generated equality check for
+the nested Registration case class (`2b-base-and-protocol-final-scala2.log`).
+Registration does not use equality, so a private class with explicit fields
+replaces the case class. The deprecated `Position.isDefined` check also becomes
+an explicit comparison with `NoPosition`. The next replay compiles production
+sources, then exits 1 at a fixture's ambiguous enclosing versus inherited
+ExecutionContext (`2b-base-and-protocol-final-scala2-corrected.log`). Async and
+plain front-end compatibility is being tested before changing that API.
+
+Independent source review passes 18 corrected boundary assertions
+(`base-runner-review/runner-corrected-boundaries-final.log`) and 131 snapshot,
+run-ID and occurrence-count checks (`runner-snapshot-multiplicity-after.log`).
+The 16 report/return count pairs retain multiplicities from zero through three;
+mixed providers retain six equal failure occurrences. Both empty-ID execution
+entry points reject before events/bodies; the request entry point also rejects
+before factories/planning. Compile probes reject mutable plan getters (E164)
+and provider completion/forged run events (E007). Exact adjacent replay scripts
+and frozen pre-correction jars retain these independent observations. Platform
+and publication results remain separate from the JVM source review.
+
+The new portable constructor-context repro exits 1 for the expected failure
+(`2b-base-runner-constructor-context-before.log`): an async suite retaining its
+execution context during construction fails before registration. Independent
+frozen-artifact probes also reproduce plain-suite implicit ambiguity (the
+identical ScalaTest AnyWordSpec control compiles) and rejection of existing
+async context overrides because the old getter is final
+(`base-runner-review/ec-compatibility-before.log`, exact
+`replay-ec-compatibility-before.py`).
+
+Plain AnyWordSpec no longer supplies an implicit execution context. AsyncWordSpec
+provides a public overridable implicit getter, backed by a per-suite forwarding
+context. Constructors can retain that context without allocating an executor;
+scheduling requires registration and delegates to the borrowed session executor.
+The stored context is published through a volatile Option. The corrected async
+fixture is outside the enclosing implicit scope and uses both its captured
+context and the default implicit continuation context.
+
+The first strict replay of that fixture fails before execution because an
+explicit implicit argument requires `using` on source 3.7
+(`2b-base-and-protocol-constructor-context-using-before.log`). Its corrected
+replay exits 0 (`2b-base-and-protocol-strict-scala3-final-source.log`): 47 runner
+checks on each 3.9.0 target, 64 protocol checks on each 3.8.4 target, and all six
+local publications/classpaths. The Scala 2 replay also exits 0
+(`2b-base-and-protocol-final-scala2-final-source.log`): the same 47/64 checks
+on all six 2.13.18/2.12.21 targets and twelve publications/classpaths. The
+final fixture timeout/thread-count constants and published compatibility
+consumers are being checked separately before committing.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-base-runner-artifacts-and-graphs.py`
+exits 0 (`2b-base-runner-artifacts-and-graphs.log`). It checks 18 published
+jars/POMs and 36 Compile/Test classpaths (546 entries), preserving the protocol's
+3.8.4 boundary and the runner's assertions/protocol dependency bound. CRCs,
+JSIR/NIR/TASTy and fixture/package exclusion pass; Scala 2 macro reflection is
+Provided. No graph contains ScalaTest, Scalactic or scalatestplus.
+
+`bash /srv/nvme/tmp/izumi-impl/2b-base-runner-runtime-final.sh` exits 0
+(`2b-base-runner-runtime-final.log`), rerunning the final fixtures with fatal
+Test warnings on 3.9.0/2.13.18/2.12.21, each JVM/JS/Native: nine markers,
+47 checks each. Native outputs are cleaned before each compiler lane. The host
+reports `nproc=48`; fixture executors deliberately use four named worker threads
+and named 30-second completion/shutdown deadlines.
+
+`bash /srv/nvme/tmp/izumi-impl/2b-base-runner-consumer-matrix.sh` exits 0
+(`2b-base-runner-published-consumer-final.log`), cleaning independent JVM/JS/
+Native outputs for 3.9.0, 2.13.18 and 2.12.21. Nine markers report
+`bodies=4 positions=known context=constructor+override`. These consumers expand
+published registration/assertion macros and execute a synchronous body, a plain
+Future using its caller's implicit context, an async Future using a context
+retained at construction, and an async context override. Discovery executes
+none of them. Each event round-trips through the published protocol; all nine
+resolved consumer classpaths are also captured.
+
+The protocol consumer matrix reruns against the new publications:
+`bash /srv/nvme/tmp/izumi-impl/2b-protocol-consumer-matrix.sh` exits 0
+(`2b-base-protocol-published-consumer-final.log`), with twelve consumer markers
+and four isolated-loader String exchanges on actual 3.8.4/3.9.0/2.13.18/2.12.21.
+
+The step-boundary release check at 2026-10-02 07:05:32 UTC still receives
+HTTP 404 for both required Native interop metadata URLs
+(`2b-base-runner-interop-release-boundary.log`). Independent JVM bootstrap,
+test-only project and distage-provider work remains and continues.
+
+Final regeneration with `JAVA_HOME="$JDK21" bash sbtgen.sc --js --native`
+through `direnv exec .` exits 0 (`2b-base-runner-generator-final.log`). All
+three generated files retain their SHA-256 digests
+(`2b-base-runner-generator-idempotence.log`), and `git diff --check` exits 0.
+No generated file was hand-edited.
+
+Independent EC review passes the same 16 runtime checks against fresh Scala 3
+source classes, fresh Scala 2.13 source classes and the published Scala 3 jar
+(`base-runner-review/ec-compatibility-after.log`,
+`ec-published-and-scala213.log`; adjacent `replay-ec-compatibility-after.py` and
+`replay-ec-published-and-scala213.py`). The checks cover trait constructor
+capture, a stable per-suite delegate, zero discovery dispatch, pre-registration
+execute/reportFailure rejection, forwarding to each session's borrowed context,
+rebinding rejection, override scheduling and plain caller-context usage.
+The corrected pinned ScalaTest Async control fails for the enclosing-context
+ambiguity too (`async-outer-scalatest-control-corrected.log`), so that fixture
+ambiguity is not claimed to be a library regression.
+
+The required read-only review directly reruns the artifact/graph verifier and
+reads all final producer/runtime/consumer markers. It closes this plain-runner
+checkpoint without an unresolved concrete defect. This checkpoint does not
+finish step 2b or any final evaluation: unpublished fundamentals test projects,
+the framework bootstrap, distage execution provider/front end and session-owned
+environments, structured assertion wire fidelity, real transports and later
+host integrations remain outstanding.

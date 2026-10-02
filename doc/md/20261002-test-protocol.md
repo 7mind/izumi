@@ -45,6 +45,11 @@ Succeeded and skipped results cannot carry failures. Aggregate success requires
 no run-level failure, no result-level failure and no cancellation.
 Unknown schemas and message kinds are errors.
 
+`ProtocolCodec.validate` checks payload schema without applying the serialized
+frame-size limit. It can validate an in-process catalogue or result without
+creating a channel frame. `encode` and `decode` enforce the channel limit;
+schema validation alone does not certify that a payload fits a frame.
+
 The protocol fixtures use independent checks and a fixed golden frame on each
 compiler/platform lane. Separate builds consume locally published artifacts;
 the JVM fixture also exchanges strings between two isolated classloaders.

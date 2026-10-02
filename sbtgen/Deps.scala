@@ -519,6 +519,7 @@ object Izumi {
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
       final lazy val testProtocol = ArtifactId("distage-test-protocol")
+      final lazy val testRunner = ArtifactId("distage-test-runner")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
       final lazy val testkitScalatestSbtModuleFilteringTest = ArtifactId("distage-testkit-scalatest-sbt-module-filtering-test")
       final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
@@ -758,6 +759,15 @@ object Izumi {
         platforms = Targets.protocol,
         settings = assertionFixtureSettings ++ Seq(
           "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.protocol.ProtocolFixtures\")".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.testRunner,
+        libs = Seq(scala_reflect),
+        depends = Seq(Projects.fundamentals.assertions, Projects.distage.testProtocol),
+        platforms = Targets.cross,
+        settings = assertionFixtureSettings ++ Seq(
+          "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.runner.BaseRunnerFixtures\")".raw,
         ),
       ),
       Artifact(

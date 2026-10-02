@@ -9,6 +9,11 @@ object ProtocolCodec {
   final val MaxJsonDepth = 128
   final val MaxFailureDepth = 32
 
+  def validate(message: ProtocolMessage): Either[ProtocolDecodeError, Unit] = {
+    try messageCodec.decodeJson(messageCodec(message)).left.map(error => ProtocolDecodeError(error.message)).map(_ => ())
+    catch { case error: IllegalArgumentException => Left(ProtocolDecodeError(error.getMessage)) }
+  }
+
   def encode(message: ProtocolMessage): String = {
     val payload = messageCodec(message)
     val frame = Json.obj("schemaVersion" -> Json.fromInt(SchemaVersion), "message" -> payload).noSpaces

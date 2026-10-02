@@ -118,6 +118,8 @@ object ProtocolFixtures {
       s"""{"schemaVersion":1,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
     }
     val deepestSupported = ProtocolMessage.Rejected(run, failureAtDepth(depthLimit))
+    verify(ProtocolCodec.validate(deepestSupported) == Right(()), "Payload validation must accept its failure nesting boundary")
+    verify(ProtocolCodec.validate(ProtocolMessage.Rejected(run, failureAtDepth(depthLimit + 1))).left.exists(_.message.contains("Failure cause depth")), "Payload validation must reject excess failure depth")
     verify(ProtocolCodec.decode(ProtocolCodec.encode(deepestSupported)) == Right(deepestSupported), "Failure nesting boundary must round-trip")
     reject(failureFrameAtDepth(depthLimit + 1), "Failure cause depth")
     rejectProducer(ProtocolMessage.Rejected(run, failureAtDepth(depthLimit + 1)), "Failure cause depth")
@@ -134,6 +136,9 @@ object ProtocolFixtures {
     verify(ProtocolCodec.MaxJsonDepth == jsonDepthLimit, "Published JSON nesting policy must match its boundary fixtures")
     val quotedBraces = ProtocolMessage.Cancel(RunId(("\"\\{}[]" * 300) + "😀"))
     verify(ProtocolCodec.decode(ProtocolCodec.encode(quotedBraces)) == Right(quotedBraces), "Escaped quotes, backslashes and quoted braces must not increase JSON nesting")
+    val oversizedPayload = ProtocolMessage.Rejected(run, failure.copy(message = "x" * (ProtocolCodec.MaxFrameCharacters + 1)))
+    verify(ProtocolCodec.validate(oversizedPayload) == Right(()), "Payload schema validation does not impose channel frame size on in-process values")
+    rejectProducer(oversizedPayload, "character limit")
     println(s"PROTOCOL_FIXTURES_OK checks=$checks schema=${ProtocolCodec.SchemaVersion}")
     println(s"PROTOCOL_GOLDEN $golden")
   }
