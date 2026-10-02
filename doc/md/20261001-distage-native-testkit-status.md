@@ -25,7 +25,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 1a.2 | in progress | No evaluation point passed yet. |
 | 1a.3 | in progress | No evaluation point passed yet. |
 | 1a.4 | in progress | No evaluation point passed yet. |
-| 1a.5 | in progress | Released 23.1.0.14 JVM/JS/Native POMs/JARs now directly verified below; build integration and evaluation remain outstanding. |
+| 1a.5 | in progress | Released 23.1.0.14 artifacts and bounded Native BIO build/runtime/publication now verified below; higher Native graph and final evaluation remain outstanding. |
 | 1a.6 | in progress | No evaluation point passed yet. |
 | 1a.7 | in progress | No evaluation point passed yet. |
 | 1a.8 | in progress | No evaluation point passed yet. |
@@ -41,9 +41,9 @@ head. The spike reports are design evidence, not implementation verification.
 | 1c.3 | in progress | Resolved-graph review and all nine published POMs pass below; final recheck outstanding. |
 | 1c.4 | in progress | Independent portable oracle and external review probes pass below; final recheck outstanding. |
 | 1c.5 | in progress | Current plain-core semantics and diagnostic checkpoint below; final recheck outstanding. |
-| 1d.1 | in progress | Cats matrix and BIO JVM/JS checkpoints below; released Native BIO verification outstanding. |
-| 1d.2 | in progress | Cats matrix and BIO JVM/JS checkpoints below; released Native BIO verification outstanding. |
-| 1d.3 | in progress | Actual BIO defects and typed-error preservation verified on six JVM/JS lanes; released Native BIO verification outstanding. |
+| 1d.1 | in progress | Cats matrix, nine BIO runtime lanes and published JVM/JS/Native consumers below; final evaluation outstanding. |
+| 1d.2 | in progress | Cats matrix, nine BIO runtime lanes and published JVM/JS/Native consumers below; final evaluation outstanding. |
+| 1d.3 | in progress | Actual BIO defects and typed-error preservation verified on all nine lanes and published consumers below; final evaluation outstanding. |
 | 1d.4 | in progress | Legacy display checkpoint passes on six JVM/JS lanes below; parent-step evaluation outstanding. |
 | 1d.5 | in progress | Explicit suspension boundary and runtime adapters below; final recheck outstanding. |
 | 2a.1 | in progress | Scala 3.9 verification below; gate remains outstanding. |
@@ -4331,3 +4331,225 @@ Parallel joins/publication/short-circuit/combiner defects, active session
 cancellation, opaque/handoff ownership, complete compatibility inventory and
 all parent/final evaluation points remain open. No push, acceptance narrowing,
 owner-decision change or whole-goal completion is implied.
+
+## Step 1a part 2: released Native BIO integration (2026-10-02)
+
+The bounded MiniBIO masking/boundary checkpoint is committed locally as
+`256091cc7e7f639ccf1950cf28fbc39606459fca`. Root observes that exact HEAD
+and a clean working tree before the following Native changes. No push occurs.
+The captured parallel and active-session cancellation defects remain open;
+release availability returns work to 1a part 2 in the brief's dependency order.
+
+The directly downloaded 23.1.0.14 POMs require ZIO 2.1.26, so the generator
+inputs now pin those two released versions together. Cats Effect remains
+3.7.1. Only the bounded prerequisite projects `fundamentals-orphans`,
+`fundamentals-bio`, their unpublished `fundamentals-bio-test`, and the BIO
+assertion adapter gain Native in this checkpoint. The remaining logstage and
+distage modules, full lanes L1–L3/L6 and the whole 1a gate remain outstanding.
+No item is narrowed or marked done by the presence of these inputs.
+
+Root downloads and reads the actual JVM/Native ZIO 2.1.26 source JARs;
+their provenance is `native-interop-23.1.0.14-release-audit/zio-sources-provenance.json`.
+Native `ZIOCompanionPlatformSpecific` extends `ZIOPlatformSpecificJVM`, whose
+CompletionStage adapter constructs under a mask, restores `asyncInterrupt`
+and cancels the Java future with `cancel(false)`. The new Native BIO source
+therefore reuses the reviewed JVM CompletionStage integration and its
+platform-specific cancellation case. It does not use the spike's older callback
+substitute. Reviewed JVM blocking, MiniBIO scheduling and Identity threading
+sources are reused; Native avoids SecurityManager lookup and obtains Identity
+runner thread-name UUIDs through the existing IzUUID abstraction. Native UUID
+generation uses the reviewed getentropy binding, with a named 256-byte maximum
+request and checked error returns.
+
+The initial 12-file source provenance is
+`1a-part2-bio-native-platform-source-provenance.json`. Read-only source review
+corrects an inaccurate new comment claiming Native lacks MAC-address APIs;
+the implementation deliberately chooses a random UUID node ID. Existing
+Entropy1 byte-array tests use ordinary Scala Random, so they cannot verify
+the new secure entropy binding. `NativeSecureRandomTest` directly exercises
+zero-length and 255/256/257/1000-byte requests. These checks establish successful
+completion across the POSIX request boundary, not statistical entropy quality.
+The corrected inputs and all Native sources are frozen and hashed under
+`1a-part2-bio-native-first-snapshot/manifest.json` before the first build.
+
+Root runs
+`direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`;
+actual process completion is exit 0, with log
+`1a-part2-bio-native-generator-first.log`. The generated diff adds the four
+Native aliases/settings/aggregate entries and Native scala-java-time test
+dependencies. `direnv exec . python3 -c` with shutil.which verifies clang on
+PATH at `/nix/store/sqlnjj8c3n3si3sjnadhdbcwgrk97g2w-clang-wrapper-21.1.2/bin/clang`
+and the exported JDK21 at
+`/nix/store/p71r5719vxhj2l3qil2bhk6nsi0plj0g-openjdk-headless-21.0.9+10`.
+The plan records the newly observed release availability without changing any
+gate, fallback, owner decision or default.
+
+Verification in progress: `python
+/srv/nvme/tmp/izumi-impl/1a-part2-bio-native-first-matrix.py` starts separate
+batch SBT processes for 3.9.0, 2.13.18 and 2.12.21. Its exact argv/commands,
+logs and actual exit completions are saved per compiler. Scala 3 applies
+`-Wunused:all` to Compile/Test in the four new projects. The matrix checks
+versions, compiles the two production modules, runs both Native test projects,
+captures eight resolved Compile/Test classpaths per compiler, publishes the
+three production artifacts and verifies the test-only project's publication
+skip. No compile/link/runtime/publication success is inferred before the
+corresponding process completes and its output is inspected.
+
+The first matrix completes with actual exits 0/0/0. Its Native BIO counts are
+104/105/105 for Scala 3/2.13/2.12; the BIO assertion adapter prints 13 checks
+on each compiler. Root reads the completion records and runtime summaries.
+`1a-part2-bio-native-first-artifact-audit.py` exits 0 after comparing all nine
+published binary JAR/POM pairs against current entry sets and bytes: 7,488
+binary entries, including 5,159 NIR entries, and 24 fresh resolved classpaths.
+Production scopes contain no test framework or test-support dependency; the
+test-only Native coordinates are absent after all three actual publishLocal
+requests. The first auditor attempt exits 1 because it treats every Native
+subprocess stderr line labeled `[error]` as a task failure. Root inspects those
+lines: they are clang `_FORTIFY_SOURCE` and linker warnings, while the SBT
+processes and tests exit 0. That attempt is retained separately; the corrected
+auditor checks actual completions and SBT task failures instead of the stderr
+label. No production fallback or acceptance change follows from the harness
+correction.
+
+Review strengthens the entropy fixture with a 1,000-byte zero-prefilled buffer
+and ten independent 100-byte observation windows. Each window must contain a
+changed byte. This detects a fill that stops after its first 256-byte request
+without using a one-byte statistical assertion. It checks writes throughout
+the buffer, not entropy quality or that every individual byte changes.
+
+Before the standalone published consumer, root compares its Native Scala 3
+dependency closure with actual Ivy-local bytes. Six older foundation JARs differ
+from current compiled output, including the TagExpr$Strings NIR entry set;
+the three newly published artifacts match. Captured differences are in
+`1a-part2-bio-native-scala3-downstream-before-publication.json`. Root therefore
+cleans the entire Native fundamentals aggregate and republishes that closure;
+it does not claim a current published consumer from the older artifacts.
+
+`1a-part2-bio-native-final-matrix.py` freezes the strengthened sources and
+standalone consumer build, then runs fresh per-compiler processes with
+`fundamentals-native/clean`, `fundamentals-native/Test/testFull`, the four new
+projects' eight classpath captures and `fundamentals-native/publishLocal`.
+The Scala 3 process completes with exit 0: 299 ScalaTest cases, no failures,
+and 86 plain/12 Cats/13 BIO assertion checks, followed by publication. Scala 2
+processes and final artifact/public-consumer verification remain in progress.
+
+The standalone `test-fixtures/assertion-consumer` now also defines
+`bioConsumerNative`, pins ZIO 2.1.26 and supplies Native scala-java-time. Its
+existing public source will check deferred evaluation, repeated independent
+defects and the unchanged typed-error channel against published artifacts.
+It has not run at this evaluation point. Item 1a.5 is still in progress along
+with every parent/final gate. The broader read-only port inventory is
+`1a-part2-remaining-native-inventory/INVENTORY.md`; source counts and API review
+there do not establish Native compatibility.
+
+The clean Native final matrix then completes with actual exits 0/0/0.
+Observed ScalaTest totals are 299/295/295; Native BIO contributes 105/106/106,
+including all six direct secure-random cases. Assertion checks total
+111/111/108: plain range-mode 86 on Scala 3/2.13, default point-mode 83 on
+2.12, plus Cats 12 and BIO 13 on each compiler. Root's initial summary/auditor
+incorrectly assumes range mode for 2.12; the captured point-mode marker corrects
+that assumption. This final auditor's first exit-1 attempt is retained
+separately, with no test or product correction and no acceptance change.
+
+`1a-part2-bio-native-final-artifact-audit.py` subsequently exits 0. It checks
+all 39 current Native fundamentals binary JAR/POM pairs against the clean
+compiled entry sets and bytes, including 14,673 binary/9,368 NIR entries,
+checks the 24 fresh new-project Compile/Test classpaths and all Native
+fundamentals JUnit XMLs against the logged totals. All XMLs report zero
+errors/failures/skips; the secure adapter suite reports six cases per compiler.
+All production POMs remain within fundamentals and contain no test-framework
+dependency. The six unpublished test-only Native coordinates and the legacy
+ScalaTest Native coordinate are absent after aggregate publishLocal. Full
+evidence is `1a-part2-bio-native-final-artifact-summary.json`; root's actual
+process completions are recorded separately. This closes the stale local
+dependency publication discrepancy observed above, not the broader L6 gate.
+
+At 23:13:18 UTC on 2026-10-02, direct primary Maven metadata checks report
+release/latest ZIO 2.1.26 and interop 23.1.0.14, both HTTP 200. XMLs,
+timestamps, URLs and hashes are
+`native-interop-23.1.0.14-release-audit/current-version-discipline-metadata.json`.
+The web reader could not access those XML endpoints; direct HTTP reads provide
+the actual version evidence. Neither a local nor a snapshot interop is used.
+
+Root now runs `1a-part2-bio-jvm-js-regression-matrix.py`: separate Scala
+3.9.0/2.13.18/2.12.21 processes run both full fundamentals aggregates and the
+four higher core/provider fixture lanes, with strict Scala 3 Compile/Test
+options on the twelve impacted projects, 24 fresh classpaths per compiler and
+local publication of both fundamentals aggregates plus the four higher
+artifacts. Frozen sources/argv/commands/logs/completions are retained. These
+checks verify the released dependency upgrade on existing JVM/JS targets;
+they do not stand in for L1's three-JDK full repository matrix, L2's full
+repository lanes, or any 1a parent/final evaluation.
+
+The JVM/JS regression matrix completes with actual exits 0/0/0. Root reads
+all final markers and resolves the collection report arithmetic before claiming
+counts. The first seven ScalaTest cases are IzEither, not a duplicate JSON run;
+they are included in the collections project's combined 33-case result. The
+language project's one case also uses the base framework on JVM. Original
+production-module XMLs are historical; their test-class directories contain
+no class files. Only the current five moved test projects' XMLs are counted.
+`1a-part2-bio-jvm-js-regression-artifact-audit.py` exits 0 and reconciles
+916/918/918 fundamentals cases with the mixed-framework logs, plus 1,013
+higher core/provider checks per compiler (128/103 core and 432/350 provider).
+It compares all 90 published JVM/JS fundamentals/core/provider JAR/POM pairs
+with current compiled entry sets and bytes: 17,651 binary entries, including
+5,493 JS IR entries, and 72 fresh resolved Compile/Test classpath blocks.
+Current XMLs have zero errors/failures/skips; production scopes remain free
+of test-framework/test-support dependencies. BIO remains 434/96, 435/97,
+435/97 on JVM/JS. Both BIO assertion targets report 13 checks per compiler.
+Parent L1/L2 remain outstanding.
+
+The separate published consumer uses exact copies of the five tracked
+`test-fixtures/assertion-consumer` inputs under
+`/srv/nvme/tmp/izumi-impl/1a-part2-assertion-published-consumer/`, with their
+source/copy SHA256 manifest. It executes its own build outside the checkout;
+no producer directory is on any consumer classpath. The first launcher attempt
+exits 1 before compilation because the default SBT thin client cannot connect
+to a newly started server. That exact script/argv/log/completion is retained.
+The corrected batch command adds `--server` and exits 0, after cleaning all
+six targets. JVM/JS/Native each print the plain/unary consumer marker and
+JVM/JS/Native each print the BIO consumer marker. The existing BIO source
+checks suspended condition evaluation, two independent defects and the
+unchanged typed-error channel through actual published adapters.
+
+`1a-part2-assertion-published-consumer-audit.py` exits 0: all six actual
+Compile classpaths are JAR-only, each izumi producer JAR equals the current
+publication auditor's hash, all consumer binary definitions belong to the
+fixture namespace, and all five source/copy hashes match. There are 103
+distinct actual JAR records, six own consumer JARs and six classpath blocks
+with 12/17/24/19/30/31 entries. The auditor's first attempt rejects the absent
+`.jar` suffix on a resolved SBT content-addressed symlink target; its logical
+classpath path is a valid JAR. That failed harness capture is retained, then
+logical entry validation, real-file hashing and archive CRC/namespace checks
+are applied separately. All 103 actual JAR bytes are subsequently frozen under
+the consumer's `frozen-jars/`, with verified hashes in
+`1a-part2-assertion-published-consumer-frozen-summary.json`. These are frozen
+copies of the artifacts actually used, not source-shadow replacements.
+
+The final prescribed `--js --native` generator completes with exit 0 and
+byte-identical build.sbt, plugins.sbt and build.properties. Exact argv,
+before/after hashes, log and actual completion are
+`1a-part2-bio-native-generator-final.*`. Root observes `git diff --check`
+exit 0. Read-only Native-phase review independently reruns the artifact audit
+with exit 0 and finds no concrete remaining Native source/runtime/publication
+defect in this bounded prerequisite. Final combined evidence/document review
+follows before the local commit; every whole-step and final gate remains open.
+
+The final combined read-only review is
+`1a-part2-bio-combined-final-readonly-review/FINAL-REVIEW.md`. It independently
+reruns the Native, JVM/JS and separate-consumer auditors (all actual exit 0),
+verifies all 103 frozen consumer JAR hashes, and checks the final generator's
+actual completion and byte-identical before/after/current outputs. Across all
+three compilers, every shared JS BIO case remains on Native, with exactly nine
+additional Native cases: six entropy, two synchronous-terminal interruption
+and one CompletionStage cancellation case. The review finds no concrete
+residual defect or unsupported completion claim in this bounded prerequisite.
+Root reads the final report and verifies all 28 source/configuration and three
+document hashes in `reviewed-input-manifest.json`; its SHA256 is
+`b77147a6e525de68bfd332bec06e553a73292e6a57f10909935ed8d60030c589`.
+Root runs `git diff --check` before committing. This verified sub-step is
+committed locally as `Enable Native BIO with released interop; verify nine lanes`.
+The remaining Native logstage/distage ports, full L1–L6 evaluations, all parent
+and final gates, active session cancellation and captured MiniBIO parallel
+failures remain open. Work continues in the brief's dependency order; no push
+or acceptance/owner-decision change occurs.

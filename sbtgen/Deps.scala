@@ -649,14 +649,14 @@ object Izumi {
         settings = assertionFixtureSettings ++ Seq(
           "mainClass" in SettingScope.Test := "Some(\"izumi.fundamentals.assertions.bio.BIOAssertionFixtures\")".raw,
         ),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq(Projects.fundamentals.basics),
         settings = Seq.empty,
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.fundamentals.language,
@@ -761,10 +761,10 @@ object Izumi {
         name = Projects.fundamentals.bioTest,
         libs = Seq(scala_reflect, scalac_compat_annotation) ++ allMonadsTest ++
           Seq(cats_effect_laws, cats_effect_testkit, discipline, zio_managed, zio_interop_cats).map(_ in Scope.Test.all) ++
-          Seq(scala_java_time in Scope.Test.js),
+          Seq(scala_java_time in Scope.Test.js, scala_java_time in Scope.Test.native),
         depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
         settings = fundamentalsTestSettings("fundamentals-bio-test"),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
 //      Artifact(
 //        name = Projects.fundamentals.reflection,
@@ -788,7 +788,7 @@ object Izumi {
           Projects.fundamentals.basics,
         ),
         settings = Seq.empty,
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
     )),
     pathPrefix = Projects.fundamentals.basePath,

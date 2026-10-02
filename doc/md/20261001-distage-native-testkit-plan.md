@@ -1119,6 +1119,11 @@ assumptions; a different answer changes the listed steps.
     that use the interop are already JVM-only.
 
   That gives up ZIO–Cats Effect interop on Native.
+  On 2026-10-02, Maven Central publishes release 23.1.0.14 with actual Native
+  artifacts for Scala 3, 2.13 and 2.12; its POMs require ZIO 2.1.26. The
+  [status ledger](20261001-distage-native-testkit-status.md) records the captured
+  metadata and artifact checks. Availability unblocks implementation; build,
+  runtime and publication gates remain required.
 - **Native release timing.** Assumed: step 1a's Native artifacts ship with the
   next regular release, even before step 2a. They add a platform to modules that
   already publish Scala 3 artifacts at the current baseline, and step 2a moves
@@ -1137,8 +1142,9 @@ assumptions; a different answer changes the listed steps.
   addition, not part of step 1a.
 - **Committed build platforms.** Assumed: generated build files use
   `bash sbtgen.sc --js --native`, preserving the JS platform and adding Native.
-  Until the interop release, Native includes the eight independent fundamentals
-  modules; the remaining required modules are pending, not removed from scope.
+  Before interop release 23.1.0.14, Native included the eight independent
+  fundamentals modules; the remaining required modules are pending until their
+  gates pass, not removed from scope.
 - **Native SHA-256.** Assumed: `fundamentals-platform` uses OpenSSL's SHA-256
   API on Native, with `libcrypto` installed for linking and execution. The
   development shell supplies OpenSSL. The implementation's

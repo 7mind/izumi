@@ -19,11 +19,11 @@ lazy val consumerJVM = consumer.jvm
 lazy val consumerJS = consumer.js
 lazy val consumerNative = consumer.native
 
-lazy val bioConsumer = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("bio-consumer"))
+lazy val bioConsumer = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("bio-consumer"))
   .settings(
     libraryDependencies ++= Seq(
       "io.7mind.izumi" %% "fundamentals-assertions-bio" % sys.props("izumi.fixture.version"),
-      "dev.zio" %% "zio" % "2.1.24",
+      "dev.zio" %% "zio" % "2.1.26",
       "dev.zio" %% "izumi-reflect" % "3.0.8",
     ),
     scalacOptions ++= Seq("-release:17", "-Ybackend-parallelism", "1"),
@@ -35,3 +35,5 @@ lazy val bioConsumer = crossProject(JVMPlatform, JSPlatform).crossType(CrossType
 
 lazy val bioConsumerJVM = bioConsumer.jvm
 lazy val bioConsumerJS = bioConsumer.js
+lazy val bioConsumerNative = bioConsumer.native
+  .settings(libraryDependencies += "io.github.cquiroz" %% "scala-java-time" % "2.6.0")
