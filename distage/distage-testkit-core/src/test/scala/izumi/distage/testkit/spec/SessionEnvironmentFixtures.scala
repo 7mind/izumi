@@ -1,9 +1,10 @@
 package izumi.distage.testkit.spec
 
+import distage.Injector
 import izumi.distage.model.definition.{Activation, Module, ModuleBase, ModuleDef}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl}
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl, PluginPackageCache}
 import izumi.distage.plugins.merge.{PluginMergeStrategy, SimplePluginMergeStrategy}
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.model.{TestConfig, TestEnvironment}
@@ -22,8 +23,16 @@ object SessionEnvironmentFixtures {
     val checks = new Checks
     contracts(checks, "production", () => new PluginLoaderDefaultImpl())
     contracts(checks, "dummy", () => new StaticPluginLoader)
-    pluginContracts(checks, "production", () => new PluginLoaderDefaultImpl())
-    pluginContracts(checks, "dummy", () => new StaticPluginLoader)
+    pluginContracts(checks, "production", cache => PluginLoaderDefaultImpl.withPackageCache(cache))
+    pluginContracts(checks, "dummy", _ => new StaticPluginLoader)
+    val wiring = new ModuleDef { make[PluginLoader].from[PluginLoaderDefaultImpl] }
+    checks.verify("default plugin loader retains ordinary DI construction") {
+      Injector().produceRun(wiring)((loader: PluginLoader) => loader.isInstanceOf[PluginLoaderDefaultImpl])
+    }
+    customLoaderPolicies(checks)
+    packageKeySnapshots(checks)
+    requestKeySnapshots(checks)
+    environmentKeySnapshots(checks)
     SessionEnvironmentFixturePlatform.scannedOwners().foreach {
       case (label, condition) => checks.verify(label)(condition)
     }
@@ -32,12 +41,119 @@ object SessionEnvironmentFixtures {
       executionContext =>
         concurrent("production", () => new PluginLoaderDefaultImpl(), executionContext)
           .flatMap(_ => concurrent("dummy", () => new StaticPluginLoader, executionContext))(executionContext)
-          .flatMap(_ => concurrentPlugins("production", () => new PluginLoaderDefaultImpl(), executionContext))(executionContext)
-          .flatMap(_ => concurrentPlugins("dummy", () => new StaticPluginLoader, executionContext))(executionContext)
+          .flatMap(_ => concurrentPlugins("production", cache => PluginLoaderDefaultImpl.withPackageCache(cache), executionContext))(executionContext)
+          .flatMap(_ => concurrentPlugins("dummy", _ => new StaticPluginLoader, executionContext))(executionContext)
     }
   }
 
-  private def concurrentPlugins(label: String, makeLoader: () => PluginLoader, executionContext: ExecutionContext): Future[Unit] = {
+  private def environmentKeySnapshots(checks: Checks): Unit = {
+    val config = PluginConfig.empty.cachePackages(true)
+    checkEnvironmentSnapshot(checks, "enabled", scala.collection.mutable.ArrayBuffer("original"), (values: Seq[String]) => config.copy(packagesEnabled = values))
+    checkEnvironmentSnapshot(checks, "disabled", scala.collection.mutable.ArrayBuffer("original"), (values: Seq[String]) => config.copy(packagesDisabled = values))
+    checkEnvironmentSnapshot(checks, "merges", scala.collection.mutable.ArrayBuffer(Module.empty), (values: Seq[Module]) => config.copy(merges = values))
+    checkEnvironmentSnapshot(checks, "overrides", scala.collection.mutable.ArrayBuffer(Module.empty), (values: Seq[Module]) => config.copy(overrides = values))
+  }
+
+  private def checkEnvironmentSnapshot[A](
+    checks: Checks,
+    label: String,
+    input: scala.collection.mutable.ArrayBuffer[A],
+    makeConfig: Seq[A] => PluginConfig,
+  ): Unit = {
+    Vector(false, true).foreach {
+      bootstrap =>
+        val values = input.clone()
+        val request = makeConfig(values.toSeq)
+        val original = makeConfig(values.toVector)
+        val initial = if (bootstrap) TestConfig.empty.copy(bootstrapPluginConfig = request) else TestConfig.empty.copy(pluginConfig = request)
+        val repeatedConfig = if (bootstrap) TestConfig.empty.copy(bootstrapPluginConfig = original) else TestConfig.empty.copy(pluginConfig = original)
+        val owner = new SessionTestEnvironment(new TestEnvironmentFactory.Impl)
+        val loader = new RecordingLoader(new PluginLoader {
+          override def load(config: PluginConfig): LoadedPlugins = LoadedPlugins(Nil, config.merges, config.overrides)
+        })
+        val first = load(owner, loader, initial, Module.empty)
+        values.clear()
+        val repeated = load(owner, loader, repeatedConfig, Module.empty)
+        checks.verify("environment snapshots plugin sequences field=" + label + " bootstrap=" + bootstrap) {
+          (first eq repeated) && loader.count.get() == 2
+        }
+    }
+  }
+
+  private def requestKeySnapshots(checks: Checks): Unit = {
+    val config = PluginConfig.empty.cachePackages(true)
+    checkRequestSnapshot(checks, "enabled", scala.collection.mutable.ArrayBuffer("original"), (values: Seq[String]) => config.copy(packagesEnabled = values))
+    checkRequestSnapshot(checks, "disabled", scala.collection.mutable.ArrayBuffer("original"), (values: Seq[String]) => config.copy(packagesDisabled = values))
+    checkRequestSnapshot(checks, "merges", scala.collection.mutable.ArrayBuffer(Module.empty), (values: Seq[Module]) => config.copy(merges = values))
+    checkRequestSnapshot(checks, "overrides", scala.collection.mutable.ArrayBuffer(Module.empty), (values: Seq[Module]) => config.copy(overrides = values))
+  }
+
+  private def checkRequestSnapshot[A](
+    checks: Checks,
+    label: String,
+    input: scala.collection.mutable.ArrayBuffer[A],
+    makeConfig: Seq[A] => PluginConfig,
+  ): Unit = {
+    val original = makeConfig(input.toVector)
+    val request = makeConfig(input.toSeq)
+    val loads = new AtomicInteger(0)
+    val owner = new SessionPluginLoader(_ => new PluginLoader {
+      override def load(config: PluginConfig): LoadedPlugins = {
+        loads.incrementAndGet().discard()
+        LoadedPlugins(Nil, config.merges, config.overrides)
+      }
+    })
+    val first = owner.load(request)
+    input.clear()
+    val repeated = owner.load(original)
+    checks.verify("complete plugin requests snapshot caller sequences field=" + label) {
+      loads.get() == 1 && (first eq repeated) && first.merges == original.merges && first.overrides == original.overrides
+    }
+  }
+
+  private def packageKeySnapshots(checks: Checks): Unit = {
+    Vector(false, true).foreach {
+      whitelist =>
+        val cache = new PluginPackageCache.Impl
+        val input = scala.collection.mutable.ArrayBuffer("original")
+        val supplied = input.toSeq
+        val loads = new AtomicInteger(0)
+        def load: Seq[izumi.distage.plugins.PluginBase] = {
+          loads.incrementAndGet().discard()
+          Nil
+        }
+        val empty = Vector.empty[String]
+        if (whitelist) cache.getOrCompute("fixture-package", supplied, empty)(load).discard()
+        else cache.getOrCompute("fixture-package", empty, supplied)(load).discard()
+        input(0) = "changed"
+        if (whitelist) cache.getOrCompute("fixture-package", Vector("original"), empty)(load).discard()
+        else cache.getOrCompute("fixture-package", empty, Vector("original"))(load).discard()
+        checks.verify("package cache snapshots its caller sequences whitelist=" + whitelist)(loads.get() == 1)
+    }
+  }
+
+  private def customLoaderPolicies(checks: Checks): Unit = {
+    Vector(false, true).foreach {
+      mapped =>
+        val failure = new IllegalStateException("custom plugin loading policy")
+        val calls = new AtomicInteger(0)
+        val owner = new SessionPluginLoader(_ => {
+          val loader = new PluginLoader {
+            override def load(config: PluginConfig): LoadedPlugins = {
+              calls.incrementAndGet().discard()
+              throw failure
+            }
+          }
+          if (mapped) loader.map(loaded => loaded) else loader
+        })
+        val result = Try(owner.load(PluginConfig.empty.cachePackages(true)))
+        checks.verify("custom loading policy survives session ownership mapped=" + mapped) {
+          calls.get() == 1 && result.failed.toOption.exists(_ eq failure)
+        }
+    }
+  }
+
+  private def concurrentPlugins(label: String, makeLoader: PluginPackageCache => PluginLoader, executionContext: ExecutionContext): Future[Unit] = {
     val provisions = new AtomicInteger(0)
     val definitions = new ModuleDef {
       make[FixtureValue].from {
@@ -47,9 +163,16 @@ object SessionEnvironmentFixtures {
       }
     }
     val config = PluginConfig.constUnchecked(definitions).cachePackages(true)
-    val delegate = new RecordingLoader(makeLoader())
-    val firstOwner = new SessionPluginLoader(delegate)
-    val secondOwner = new SessionPluginLoader(delegate)
+    val loads = new AtomicInteger(0)
+    val create = (cache: PluginPackageCache) => new PluginLoader {
+      private val delegate = makeLoader(cache)
+      override def load(config: PluginConfig): LoadedPlugins = {
+        loads.incrementAndGet().discard()
+        delegate.load(config)
+      }
+    }
+    val firstOwner = new SessionPluginLoader(create)
+    val secondOwner = new SessionPluginLoader(create)
     val first = Vector.fill(ConcurrentRequests)(Future(firstOwner.load(config))(executionContext))
     val second = Vector.fill(ConcurrentRequests)(Future(secondOwner.load(config))(executionContext))
     implicit val ec: ExecutionContext = executionContext
@@ -58,13 +181,13 @@ object SessionEnvironmentFixtures {
         val left = loaded.take(ConcurrentRequests)
         val right = loaded.drop(ConcurrentRequests)
         require(left.forall(_.eq(left.head)) && right.forall(_.eq(right.head)), label + " concurrently duplicated a cached plugin request")
-        require((left.head ne right.head) && delegate.count.get() == 2, label + " plugin request crossed owner boundaries or reloaded")
+        require((left.head ne right.head) && loads.get() == 2, label + " plugin request crossed owner boundaries or reloaded")
         require(provisions.get() == 0, label + " plugin loading executed a bound provider")
         println("SESSION_PLUGIN_CONCURRENT_OK adapter=" + label + " requests=" + (ConcurrentRequests * 2))
     }
   }
 
-  private def pluginContracts(checks: Checks, label: String, makeLoader: () => PluginLoader): Unit = {
+  private def pluginContracts(checks: Checks, label: String, makeLoader: PluginPackageCache => PluginLoader): Unit = {
     val provisions = new AtomicInteger(0)
     val definitions = new ModuleDef {
       make[FixtureValue].from {
@@ -75,21 +198,21 @@ object SessionEnvironmentFixtures {
     }
     val config = PluginConfig.constUnchecked(definitions).cachePackages(true)
     val requests = scala.collection.mutable.ArrayBuffer.empty[PluginConfig]
-    val delegate = new PluginLoader {
-      private val loader = makeLoader()
+    val create = (cache: PluginPackageCache) => new PluginLoader {
+      private val loader = makeLoader(cache)
       override def load(config: PluginConfig): LoadedPlugins = {
         requests += config
         loader.load(config)
       }
     }
-    val owner = new SessionPluginLoader(delegate)
+    val owner = new SessionPluginLoader(create)
     checks.verify(label + " plugin cache construction is deferred")(requests.isEmpty && provisions.get() == 0)
     val first = owner.load(config)
     val repeated = owner.load(config)
     checks.verify(label + " plugin cache repeats within one owner") {
       (first eq repeated) && requests.size == 1 && first.merges == config.merges && first.overrides == config.overrides
     }
-    val independent = new SessionPluginLoader(delegate).load(config)
+    val independent = new SessionPluginLoader(create).load(config)
     checks.verify(label + " plugin cache loads independently for another owner")((first ne independent) && requests.size == 2)
 
     val uncachedFirst = owner.load(config.cachePackages(false))
@@ -101,14 +224,14 @@ object SessionEnvironmentFixtures {
     checks.verify(label + " plugin requests preserve different definitions") {
       requests.size == 5 && changedResult.overrides == Seq(overrideModule) && first.overrides.isEmpty
     }
-    checks.verify(label + " plugin cache bypasses delegate caching without provisioning") {
-      requests.forall(!_.cachePackages) && requests.head == config.cachePackages(false) && requests.last == changed.cachePackages(false) && provisions.get() == 0
+    checks.verify(label + " plugin cache preserves complete requests without provisioning") {
+      requests.toVector == Vector(config, config, config.cachePackages(false), config.cachePackages(false), changed) && provisions.get() == 0
     }
 
     val failure = new IllegalStateException(label + " cached plugin failure")
     val attempts = new AtomicInteger(0)
-    val failing = new SessionPluginLoader(new PluginLoader {
-      private val loader = makeLoader()
+    val failing = new SessionPluginLoader(cache => new PluginLoader {
+      private val loader = makeLoader(cache)
       override def load(config: PluginConfig): LoadedPlugins = {
         if (attempts.getAndIncrement() == 0) throw failure
         loader.load(config)

@@ -20,15 +20,19 @@ final class SessionTestEnvironment(factory: TestEnvironmentFactory) {
     tagK: TagK[F],
     defaultModule: DefaultModule[F],
   ): TestEnvironment = {
+    val config = testConfig.copy(
+      pluginConfig = testConfig.pluginConfig.snapshot(),
+      bootstrapPluginConfig = testConfig.bootstrapPluginConfig.snapshot(),
+    )
     val key = SessionTestEnvironment.CacheKey(
-      testConfig,
+      config,
       new SessionTestEnvironment.Identity(pluginLoader),
       roles,
       new SessionTestEnvironment.Identity(mergeStrategy),
       tagK,
       defaultModule.module,
     )
-    cache.getOrCompute(key, factory.create(testConfig, pluginLoader, roles, mergeStrategy, tagK, () => defaultModule.module))
+    cache.getOrCompute(key, factory.create(config, pluginLoader, roles, mergeStrategy, tagK, () => defaultModule.module))
   }
 }
 

@@ -26,6 +26,13 @@ final case class PluginConfig(
 
   def cachePackages(cachePackages: Boolean): PluginConfig = copy(cachePackages = cachePackages)
   def debug(debug: Boolean): PluginConfig = copy(debug = debug)
+
+  def snapshot(): PluginConfig = copy(
+    packagesEnabled = packagesEnabled.toVector,
+    packagesDisabled = packagesDisabled.toVector,
+    merges = merges.toVector,
+    overrides = overrides.toVector,
+  )
 }
 
 object PluginConfig extends PluginConfigStatic {

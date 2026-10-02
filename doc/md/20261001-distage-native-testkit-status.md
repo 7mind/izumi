@@ -2041,3 +2041,178 @@ control, and observes no unresolved checkpoint defect. `git diff --check`
 passes. This section records the verified plugin-loading checkpoint in its
 containing local commit; its exact hash is recorded at the next checkpoint.
 No complete step-2b or final evaluation is claimed here.
+
+## Step 2b: plugin-cache memoization and immutable request correction
+
+The preceding plugin-loading checkpoint is local commit
+`f4bb6ddb1d7b3f04cc503585f765d44e7f812618`. Its recorded checks did not cover
+memoization across distinct complete plugin requests. A subsequent actual-engine
+review disproves the assumption that disabling the delegate's package cache
+preserves that behavior. The historical checkpoint above retains its provenance;
+the correction described here supersedes its full-request-only cache policy.
+All new captures in this section are under `/srv/nvme/tmp/izumi-impl/`, unless
+otherwise stated. Earlier captures under `target/native-testkit-evidence/`
+remain distinct.
+
+Frozen published before controls in `session-plugin-cache-memoization-review/`
+compile successfully and run the actual TestkitRunnerModule with two different
+suites rooted in one scanned Lifecycle resource. The legacy loader shares one
+acquisition/release for identical requests and requests differing only in merges,
+overrides or debug. The preceding session owner instead acquires/releases twice
+for those three variations, despite both bodies succeeding. Their runtime exits
+are 1 for the expected sharing assertion. The permanent fixture reproduces this
+before correction (`2b-session-plugin-memoization-before.log`): compilation
+succeeds, then the merges sharing assertion fails with two acquisitions and two
+releases. No correction existed at that failing evaluation point.
+
+The package-domain before controls in
+`session-plugin-cache-package-domain-review/` additionally establish shared
+definitions across subset, overlapping and reordered enabled packages. Parent
+and child package names, changed unrelated exclusions and reordered exclusions
+already have distinct legacy boundaries. The correction retains those boundaries;
+it neither folds ancestor packages together nor sorts exclusions.
+
+SessionPluginLoader now creates an instance-owned PluginPackageCache and gives it
+to a required loader-construction factory. Its complete-request cache remains
+separate. The JVM default factory constructs a private owned implementation;
+normal cached Classgraph scans reuse definitions by exact package name, whitelist
+and exclusion sequence. The legacy default still uses its original global
+MurmurHash-derived string key. Uncached requests always delegate, and original
+request flags and module definitions reach the ordinary unary load method. This
+unreleased session API is preparation for the execution provider; it does not
+change the existing suite hook into a cache-factory requirement.
+
+Two intermediate corrections are rejected by observed controls and removed.
+Adding a separate cache-aware load overload bypasses existing unary load and
+protected scan overrides, both directly and through map: four corrected-approach
+controls fail after six baseline controls pass, in
+`session-plugin-cache-dispatch-review/{before,after}/`. Changing the public
+default loader's primary constructor also fails ordinary
+`make[PluginLoader].from[PluginLoaderDefaultImpl]` wiring with a missing
+PluginPackageCache instance (`2b-session-plugin-constructor-before.log`), after
+successful compilation. The final source retains the zero-argument primary
+constructor, unary virtual dispatch and protected scan hook. PluginLoader's
+interface and map implementation have no final diff.
+
+Scala 2.12 source-frozen probes then reproduce mutable-sequence retention defects
+at three boundaries. Both whitelist/exclusion keys miss after caller mutation
+(`session-plugin-cache-mutable-key-review/`, two owned failures versus passing
+legacy controls). All four complete-request fields miss, and retained merge or
+override payloads change (`session-plugin-cache-full-mutable-key-review/`, four
+failures). Application and bootstrap configuration keys likewise miss for all
+four fields (`session-environment-mutable-config-domain-review/`, eight mutable
+failures versus eight immutable controls). Each failed runtime follows successful
+probe compilation and fails for the recorded cache-reuse assertion.
+
+PluginPackageCache snapshots its key sequences into immutable vectors.
+PluginConfig.snapshot centralizes snapshots of enabled packages, disabled
+packages, merges and overrides. Both SessionPluginLoader and
+SessionTestEnvironment use it; the environment owner snapshots both application
+and bootstrap configs before its key and the actual factory call. Frozen after
+replays pass the two package controls, four full-request controls, and all sixteen
+environment controls. The final shared-policy replay is
+`session-environment-mutable-config-domain-after-review/`: every environment
+case creates once, loads twice and returns the same instance; every loader case
+loads once, returns the same result and retains original overlay payloads. Its
+source-manifest and exact commands distinguish source-shadow Scala 2.12 evidence
+from published-artifact evidence. Permanent fixtures cover all fourteen sequence
+boundaries on each supported JVM/JS compiler lane.
+
+The final producer matrix uses separate fresh SBT processes through
+`direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G
+"<commands>"'`. Each compiler runs the following JVM actions, then the same
+actions with the JS project IDs:
+`distage-testkit-coreJVM/testFull;
+distage-extension-pluginsJVM/testFull;
+distage-testkit-scalatestJVM/testFull;
+distage-extension-pluginsJVM/publishLocal;
+distage-testkit-coreJVM/publishLocal;
+show distage-testkit-coreJVM/Compile/fullClasspath;
+show distage-testkit-coreJVM/Test/fullClasspath;
+show distage-extension-pluginsJVM/Compile/fullClasspath;
+show distage-extension-pluginsJVM/Test/fullClasspath`.
+Scala 2 processes first select `++2.13.18` or `++2.12.21`. Scala 3 separately
+adds `-Wunused:all` to both core and plugins via LocalProject settings on each
+platform. Those Scala 3 settings never enter a Scala 2 process.
+
+All three final batches exit 0:
+`2b-session-plugin-memoization-complete-{scala3,scala213,scala212}-final.log`.
+Each compiler passes 77 JVM and 59 JS checks. The eleven JVM actual-engine
+memoization cases execute 22 bodies, acquire 14 resources and release all 14.
+The sharing and distinct-scan controls have their expected counts; independent
+owners remain distinct. Totals are 408 checks, 66 memoization bodies, 42 matched
+acquisitions/releases, 768 environment requests and 768 direct plugin requests.
+All executor/asynchronous completion markers occur. The legacy regression
+suite passes 345 JVM and 137 JS tests per compiler, with zero failures and 19
+cancellations per lane: 1,446 successes and 114 cancellations. The plugin JVM
+suite additionally passes seven tests per compiler. The JS plugin action succeeds
+but has no corresponding ScalaTest test-count claim.
+`python /srv/nvme/tmp/izumi-impl/2b-session-plugin-memoization-matrix-audit.py`
+exits 0 and checks every terminal, all 33 memoization cases and all 54 completed
+commands (`2b-session-plugin-memoization-matrix-audit.log` and summary JSON).
+
+Incomplete harness captures do not count as passing evidence. These include the
+initial incorrect project ID, intermediate fixture syntax/import errors, a
+source-shadow classpath token error, and a Scala 2.13 compile failure for missing
+generic-lambda parameter types. The latter is retained as
+`2b-session-plugin-memoization-scala213-fixture-type-inference-failure.log`.
+Explicit Seq[String]/Seq[Module] annotations correct the eight missing parameter
+types, and the complete final matrix is rerun after that fixture-only correction.
+The earlier passing Scala 3 capture retains its separate name
+`2b-session-plugin-memoization-scala3-before-explicit-fixture-types.log`.
+
+The independent final production replay in
+`session-plugin-cache-central-snapshot-final-review/` passes 29 controls:
+22 actual-engine memoization/package-domain cases, six unary/mapped custom
+dispatch cases, and ordinary zero-argument DI wiring. Exact compiler/runtime
+commands, source adaptation diffs and frozen published dependency hashes remain
+there. It uses published Izumi jars, with no producer class directory on its
+runtime classpath. The generic dispatch controls declare their request-normalizing
+policy in their construction factory; these are cache-policy controls, not the
+import-only suite compatibility gate. The frozen core/plugin jars contain 236/58
+class/TASTy entries, all byte-identical to final compiled output. Comparing them
+with the final republished jars confirms identical binary entries and entry sets;
+only X-Build-Timestamp in the manifests changes
+(`2b-session-plugin-memoization-frozen-final-binary-comparison.log`).
+
+`python /srv/nvme/tmp/izumi-impl/2b-session-plugin-memoization-artifact-audit.py`
+exits 0 (`2b-session-plugin-memoization-artifact-audit.log` and summary JSON):
+all twelve POMs/jars and 2,268 exact binary entries match compiled output.
+Fixture/scratch classes do not leak. All 24 actual classpath blocks are checked;
+core Compile/Test and plugin Compile contain no ScalaTest or unrelated test/helper
+output. A core Test fullClasspath includes its own test-classes directory, which
+the first audit incorrectly rejected; that failed capture is retained as
+`2b-session-plugin-memoization-artifact-audit-own-test-output-first.log`.
+The corrected audit permits exactly that directory on the six core Test blocks,
+while retaining the rejection of all other test/helper outputs there. The plugin
+Test configurations intentionally retain their legacy ScalaTest dependencies.
+Production POMs introduce no dependency or graph edge: core's only Izumi
+dependency remains framework, and plugins' remains core-api. The preceding
+observed project-graph acyclicity evidence remains applicable to this unchanged
+graph.
+
+Final `direnv exec . sh -c 'export JAVA_HOME="$JDK21";
+exec bash sbtgen.sc --js --native'` exits 0
+(`2b-session-plugin-memoization-generator-final.log`). All three generated
+outputs retain their captured SHA-256 values
+(`2b-session-plugin-memoization-generator-idempotence.log`). The 12:33 UTC
+primary Maven metadata check observes HTTP 404 for both Native interop artifact
+families (`2b-session-plugin-memoization-interop-release-boundary-final.log`).
+Native higher-layer verification remains pending released artifacts; independent
+engine/provider work continues. Parent items 2b.6/7/8/11, O.1 and O.18 and the
+import-only compatibility gate remain outstanding. This correction establishes
+cache semantics and local ownership, not completion of step 2b or a final gate.
+
+The required read-only final reviewer independently reruns both audit scripts
+with exit 0, reads the six lane terminals and legacy outcomes, compares the
+frozen/final binary entries, and verifies the generated hashes and release
+boundary capture. One unused inherited hash field in the replay's classpath JSON
+still referred to the earlier checkpoint. The original is preserved as
+`session-plugin-cache-central-snapshot-final-review/classpath-inherited-metadata.json`;
+the corrected metadata and replay script derive the frozen core hash from the
+actual jar. `metadata-correction.json` records that compiler/runtime paths are
+unchanged. The artifact-manifest's hashes were already correct; execution
+evidence is unchanged. No unresolved checkpoint defect is observed.
+`git diff --check` passes. This section records the verified correction in its
+containing local commit; its exact hash is recorded at the next checkpoint.
+Nothing is pushed.

@@ -78,17 +78,43 @@ requests within one owner share their environment, while independent owners
 load separately. Failed construction propagates its original exception and does
 not populate the cache.
 
-The production-loader and in-memory-loader fixtures exercise static modules,
-including concurrent requests on JVM and JS. `SessionPluginLoader` owns its
-cache of full plugin requests. Cached misses delegate with caching disabled, so
-the owner retains results locally without entering the delegate's global package
-cache. Requests with caching disabled always delegate; other request fields and
-definitions remain intact. Failed loads retain their original exception and may
-be retried. JVM fixtures also check distinct scanned plugin objects across
-owners and suspended providers. JS supports static modules and rejects package
-scanning through its existing backend.
+The environment owner snapshots both application and bootstrap plugin requests
+before retaining its configuration key or invoking the factory. Those snapshots
+use the same `PluginConfig.snapshot()` policy as the plugin loader.
 
-The higher execution provider remains subsequent work. The legacy
+The production-loader and in-memory-loader fixtures exercise static modules,
+including concurrent requests on JVM and JS. `SessionPluginLoader` takes a loader
+factory and supplies its own `PluginPackageCache`:
+
+```scala
+new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))
+```
+
+The factory must construct its loader with the supplied cache and remain
+declarative. The owner caches complete requests separately from package scans.
+Both cache boundaries snapshot their sequence inputs into immutable vectors,
+including request overlays, so Scala 2.12 mutable sequences cannot alter stored
+keys or request-owned payload fields after loading.
+Identical package names, scanner whitelists and exclusion sequences reuse scanned
+definitions within that owner, even when request overlays, debug settings or
+enabled-package combinations differ. Each request keeps its own merges and
+overrides. Parent/child package names and changed exclusion sequences retain
+separate scan boundaries. This preserves the existing memoization behavior of
+function and resource providers. Independent owners scan fresh class instances.
+Uncached requests always delegate; failed complete loads retain their original
+exception and may be retried. A successful package scan remains cached when a
+later step fails, as with the legacy package cache.
+
+The loader's ordinary `load` and protected `scanClasspath` methods retain virtual
+dispatch, including through `map`. The default loader retains its zero-argument
+primary constructor for existing DI wiring; its private owned implementation
+receives the package cache explicitly. JVM fixtures exercise actual planner and
+resource acquisition/release alongside custom loading policies. JS supports
+static modules and rejects package scanning through its existing backend.
+
+The higher execution provider and its import-only compatibility gate remain
+subsequent work, including the existing `makePluginloader(): PluginLoader` suite
+hook. The legacy
 `DistageTestEnv` delegates construction to the same factory and retains its
 existing global cache policy. The legacy default loader's package cache policy
 also remains unchanged.
