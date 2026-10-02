@@ -26,7 +26,7 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
 
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F])
 
-  class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F: SyncSafe1[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
+  class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F0: SyncSafe1[F]) extends LogCreateIOSyncSafeInstance[F](F0) with UnsafeLogIO[F] {
     override def unsafeLog(entry: Entry): F[Unit] = {
       F.syncSafe(logger.unsafeLog(entry))
     }
@@ -38,8 +38,8 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
 
   class UnsafeLogIOSyncSafeInstanceF[F[_]](
     logger: AbstractLoggerF[F]
-  )(F: SyncSafe1[F] // Used in LogCreateIOSyncSafeInstance
-  ) extends LogCreateIOSyncSafeInstance[F](F)
+  )(F0: SyncSafe1[F] // Used in LogCreateIOSyncSafeInstance
+  ) extends LogCreateIOSyncSafeInstance[F](F0)
     with UnsafeLogIO[F] {
     override def unsafeLog(entry: Entry): F[Unit] = {
       logger.unsafeLog(entry)

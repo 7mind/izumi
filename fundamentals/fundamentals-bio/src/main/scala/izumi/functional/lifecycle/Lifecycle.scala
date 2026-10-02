@@ -781,7 +781,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
+  open class Make_[+F[_], A](acquire0: => F[A])(release: => F[Unit]) extends Make[F, A](acquire0)(_ => release)
 
   /**
     * Class-based variant of [[makePair]]:
@@ -846,7 +846,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
-  open class FromAutoCloseable[+F[_]: QuasiIO, +A <: AutoCloseable](acquire: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire))
+  open class FromAutoCloseable[+F[_]: QuasiIO, +A <: AutoCloseable](acquire0: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire0))
 
   /**
     * Trait-based proxy over a [[Lifecycle]] value

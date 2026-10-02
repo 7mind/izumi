@@ -218,7 +218,7 @@ object Exit {
     def fromExit[E, A](exit: Exit[E, A]): zio.Exit[E, A] = exit match {
       case Success(value) =>
         zio.Exit.Success(value)
-      case failure: Failure[E] =>
+      case failure: Failure[E @unchecked] =>
         zio.Exit.Failure(causeFromExit(failure))
     }
 

@@ -382,12 +382,16 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
                     futureB.map(exitB => (exitA, exitB))(using ec)
                 }(using ec)
               combined.onComplete {
-                case Success((exitA: Exit.Success[A], exitB: Exit.Success[B])) =>
-                  cb(Exit.Success(f(exitA.value, exitB.value)))
-                case Success((exitA: Exit.FailureUninterrupted[E], _)) =>
-                  cb(exitA)
-                case Success((_, exitB: Exit.FailureUninterrupted[E])) =>
-                  cb(exitB)
+                case Success((Exit.Success(a), Exit.Success(b))) =>
+                  cb(Exit.Success(f(a, b)))
+                case Success((failure: Exit.Error[E @unchecked], _)) =>
+                  cb(failure)
+                case Success((failure: Exit.Termination, _)) =>
+                  cb(failure)
+                case Success((_, failure: Exit.Error[E @unchecked])) =>
+                  cb(failure)
+                case Success((_, failure: Exit.Termination)) =>
+                  cb(failure)
                 case Failure(t) =>
                   cb(Exit.Termination.forThrowable(t))
               }(using ec)
@@ -483,7 +487,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
                     cleanupOnFailure = {
                       failure =>
                         val failureUninterrupted = failure match {
-                          case uninterrupted: Exit.FailureUninterrupted[E] => uninterrupted
+                          case uninterrupted: Exit.FailureUninterrupted[E @unchecked] => uninterrupted
                           case i @ Exit.Interruption(_, _, _) => Exit.Termination.forThrowable(i.toThrowable)
                         }
                         sync(earlyFailure.compareAndSet(None, Some(failureUninterrupted)).discard())

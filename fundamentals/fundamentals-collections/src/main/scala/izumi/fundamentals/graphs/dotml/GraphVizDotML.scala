@@ -2,6 +2,7 @@ package izumi.fundamentals.graphs.dotml
 
 import java.io.{File, PrintWriter}
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
@@ -192,6 +193,7 @@ abstract class GraphVizDotML(
   * @param edgeAttr Mapping of (attribute, value) pairs set for all edges.
   * @param body ArrayBuffer of lines to add to the graph body.
   */
+@nowarn("msg=shadows field")
 class Graph(
   name: String = null,
   comment: String = null,
@@ -210,6 +212,7 @@ class Graph(
 /**
   * Directed graph source code in the DOT language.
   */
+@nowarn("msg=shadows field")
 class Digraph(
   name: String = null,
   comment: String = null,

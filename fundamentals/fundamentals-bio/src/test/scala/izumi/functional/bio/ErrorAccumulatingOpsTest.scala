@@ -15,7 +15,7 @@ final class ErrorAccumulatingOpsTestMiniBIO extends ErrorAccumulatingOpsTest[Min
   override implicit def F: Error2[MiniBIO] = MiniBIO.IOForMiniBIO
   override def unsafeRun[E, A](f: MiniBIO[E, A]): Either[E, A] = f.run() match {
     case Exit.Success(value) => Right(value)
-    case uninterrupted: Exit.FailureUninterrupted[E] =>
+    case uninterrupted: Exit.FailureUninterrupted[E @unchecked] =>
       uninterrupted match {
         case Exit.Error(error, _) => Left(error)
         case Exit.Termination(compoundException, _, _) => throw compoundException

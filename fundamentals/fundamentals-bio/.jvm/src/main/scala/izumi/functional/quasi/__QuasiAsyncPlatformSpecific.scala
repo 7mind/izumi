@@ -82,7 +82,7 @@ private[quasi] object __QuasiAsyncPlatformSpecific {
       }
     result match {
       case Exit.Success(value) => value
-      case failure: Exit.FailureUninterrupted[Throwable] => throw failure.toThrowable
+      case failure: Exit.FailureUninterrupted[Throwable @unchecked] => throw failure.toThrowable
     }
   }
 

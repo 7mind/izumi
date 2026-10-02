@@ -435,8 +435,8 @@ object CatsConversions {
 
     override final def memoize[A](fa: F[Throwable, A]): F[Throwable, F[Throwable, A]] = super.memoize(fa)
     override final def parReplicateAN[A](n: Int)(replicas: Int, ma: F[Throwable, A]): F[Throwable, List[A]] = super.parReplicateAN(n)(replicas, ma)
-    override final def parSequenceN[T[_], A](n: Int)(tma: T[F[Throwable, A]])(implicit evidence$1: Traverse[T]): F[Throwable, T[A]] = super.parSequenceN(n)(tma)
-    override final def parTraverseN[T[_], A, B](n: Int)(ta: T[A])(f: A => F[Throwable, B])(implicit evidence$2: Traverse[T]): F[Throwable, T[B]] =
+    override final def parSequenceN[T[_], A](n: Int)(tma: T[F[Throwable, A]])(implicit traverse: Traverse[T]): F[Throwable, T[A]] = super.parSequenceN(n)(tma)
+    override final def parTraverseN[T[_], A, B](n: Int)(ta: T[A])(f: A => F[Throwable, B])(implicit traverse: Traverse[T]): F[Throwable, T[B]] =
       super.parTraverseN(n)(ta)(f)
   }
 

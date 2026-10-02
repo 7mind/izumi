@@ -36,9 +36,9 @@ object RoleAppEntrypoint {
       val rolesToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
-            case Some(_: RoleTask[F]) =>
+            case Some(_: RoleTask[F @unchecked]) =>
               Seq.empty
-            case Some(value: RoleService[F]) =>
+            case Some(value: RoleService[F @unchecked]) =>
               Seq(value -> r)
             case None =>
               throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")
@@ -83,9 +83,9 @@ object RoleAppEntrypoint {
       val tasksToRun = parameters.roles.flatMap {
         r =>
           index.get(r.role) match {
-            case Some(value: RoleTask[F]) =>
+            case Some(value: RoleTask[F @unchecked]) =>
               Seq(value -> r)
-            case Some(_: RoleService[F]) =>
+            case Some(_: RoleService[F @unchecked]) =>
               Seq.empty
             case None =>
               throw new DIAppBootstrapException(s"Inconsistent state: requested entrypoint ${r.role} is missing")

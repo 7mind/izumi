@@ -37,7 +37,7 @@ trait MiniBIOAsyncPlatformSpecific {
     override final def unsafeRun[E, A](io: => MiniBIOAsync[E, A]): A = {
       unsafeRunSync(io) match {
         case Exit.Success(value) => value
-        case failure: Exit.Failure[E] => throw failure.trace.unsafeAttachTraceOrReturnNewThrowable()
+        case failure: Exit.Failure[E @unchecked] => throw failure.trace.unsafeAttachTraceOrReturnNewThrowable()
       }
     }
 
