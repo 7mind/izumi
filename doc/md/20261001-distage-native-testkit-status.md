@@ -51,15 +51,15 @@ head. The spike reports are design evidence, not implementation verification.
 | 2a.3 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2a.4 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2b.1 | in progress | Base runner checkpoint: nine artifact POMs and 18 resolved Compile/Test classpaths satisfy the fundamentals/protocol bound below; final evaluation outstanding. |
-| 2b.2 | not started | No evaluation point passed yet. |
-| 2b.3 | not started | No evaluation point passed yet. |
-| 2b.4 | not started | No evaluation point passed yet. |
+| 2b.2 | in progress | Observed graph below is acyclic: 107 nodes, 208 scoped records / 206 dependency pairs; final evaluation outstanding. |
+| 2b.3 | in progress | Five fundamentals test projects run all 42 lanes; 51 actual publishLocal requests create no artifacts below; final evaluation outstanding. |
+| 2b.4 | in progress | All 42 moved lanes preserve the original 3,219 JUnit cases below; step-2b evaluation remains outstanding. |
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | not started | No evaluation point passed yet. |
 | 2b.7 | in progress | Resource-free plain/provider registration fixtures pass all nine lanes below; distage provider and final evaluation outstanding. |
 | 2b.8 | in progress | Repeated/concurrent plain-session ownership passes all nine lanes below; higher-layer isolation and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain-suite/test IDs reject in all nine lanes below; higher-layer and final evaluation outstanding. |
-| 2b.10 | not started | No evaluation point passed yet. |
+| 2b.10 | in progress | Existing pure plain suites migrate through import lines only; resolved implicit Scalactic users remain legacy; higher/final compatibility fixtures outstanding. |
 | 2b.11 | in progress | Plain factories and controlled provider finalization gates pass all nine lanes below; distage resources and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
 | 2c.2 | not started | No evaluation point passed yet. |
@@ -131,7 +131,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.11 | in progress | Separate Cats/BIO artifacts above their runtimes; dependency verification outstanding. |
 | O.12 | in progress | Portable protocol checkpoint passes all nine producer lanes, twelve published consumers and four isolated-loader exchanges; real transports and final evaluation remain outstanding. |
 | O.13 | not started | No evaluation point passed yet. |
-| O.14 | not started | No evaluation point passed yet. |
+| O.14 | in progress | Five test projects retain original packages, source variants and supported platforms below; final evaluation outstanding. |
 | O.15 | not started | No evaluation point passed yet. |
 | O.16 | not started | No evaluation point passed yet. |
 | O.17 | not started | No evaluation point passed yet. |
@@ -1646,3 +1646,177 @@ This is a local JVM bootstrap sub-step, not completion of step 2b, step 2d or a
 final evaluation point. Unpublished fundamentals test projects, the higher
 execution provider/front end, rich assertion wire mapping, real transports and
 the full host integration gates remain outstanding.
+
+## Step 2b: unpublished fundamentals test projects in progress (2026-10-02)
+
+The verified JVM bootstrap checkpoint is committed locally as
+`58a50c3bcfadfed62643bd5bef2d26a35de90990`; the working tree is clean immediately
+after that commit. No push was performed. The final read-only audit independently
+reruns artifact/graph verification, reads the final producer/host results and
+generated-file hashes, and reports no discrepancy. Its direct cleanup probe
+against the final published Scala 3 jar passes
+(`bootstrap-review/published-final-cleanup-runtime.log`, exact adjacent command
+JSON): released1 before return, original interruption/flag, cancelled group,
+later Success+Error. Root reads that log too.
+
+Before relocating sources, `bash
+/srv/nvme/tmp/izumi-impl/2b-fundamentals-test-projects-baseline.sh` exits 0
+(`2b-fundamentals-test-projects-baseline.log`). It shows every project's compiler
+and `Test/definedTests`, then runs `testFull` for platform, bio, collections,
+json-circe and language on 3.9.0/2.13.18/2.12.21 and every supported platform:
+42 project runs, all tests passed. BIO has JVM/JS lanes while released Native
+interop remains absent. `2b-fundamentals-test-projects-baseline-snapshot.py`
+captures 42 exact JUnit suite/test/status sets and 73 source/resource SHA-256
+digests (`2b-fundamentals-test-projects-baseline-snapshot.log`), with original
+XMLs under `/srv/nvme/tmp/izumi-impl/fundamentals-test-projects-before/`.
+The initial snapshot guessed `target/out/js`; the actual JS directory is
+`target/out/sjs1`, which the corrected snapshot uses. These are reported sets,
+not claimed independent body counters for the pre-existing suites.
+
+The five source/resource trees move to unpublished `fundamentals-*-test`
+projects. Their test dependencies and Circe derivation source selection move
+with them; resource macro filesystem strings point to the moved files. Two
+existing consumers of platform test helpers now depend on the platform test
+project while retaining their production dependency. A small unpublished
+`fundamentals-test-support` artifact centralizes the staged front-end choice:
+JVM extends the base AnyWordSpec, JS/Native extend ScalaTest until step 2e.
+Eligible collections and language suites change only their import line. Other
+facilities remain on the legacy framework during the staged retirement.
+New JVM test projects register both frameworks and scope each framework's
+arguments explicitly, including the bootstrap's required identities.
+
+The initial moved collections compile exits 1 at
+`implicitly[Factory[String, NEList[String]]] ne null`
+(`2b-fundamentals-test-projects-jvm-first.log`). The initial hypothesis was that
+assertion instrumentation lost an adaptation. Minimal controls rule it out:
+plain Scala and Predef.assert reject the same Factory `ne` expression, and so
+does Assert.assert (`assertion-universal-reference/*-before.log`, exact command
+JSON). A ScalaTest control compiles and its typed tree resolves
+`convertToEqualizer[Factory[...]](value) ne null`
+(`scalatest-before.log`). This suite uses an inherited implicit Scalactic
+facility, rather than only WordSpec/assertion primitives, and is retained on the
+legacy framework for step 5. Its test body is unchanged; no assertion macro
+correction is made from the rejected hypothesis.
+
+The moved platform macro compile separately exits 1 with
+NoClassDefFoundError/ClassNotFoundException for `io.github.classgraph.ClassGraph`
+(`2b-fundamentals-test-projects-other-jvm-first.log`). Its former provided compiler
+dependency is not exported transitively into the new test project. Adding that
+same pinned ClassGraph dependency in provided scope restores the compiler
+boundary. Regeneration exits 0 (`2b-fundamentals-test-projects-generator-first.log`,
+`2b-fundamentals-test-projects-generator-classpath-corrected.log`). Corrected
+JVM execution then exits 0
+(`2b-fundamentals-test-projects-jvm-classification-corrected.log`): platform
+156, BIO 415, collections 33, json-circe 7 and language 1 cases on Scala 3.9.0.
+Collections executes 26 cases through the base runner and seven through the
+retained legacy suite; language executes its one case through the base runner.
+
+The independent ScalaTest runtime control also calls the inherited assertion
+with a null Factory and exits 0, printing
+`SCALATEST_NULL_FACTORY_WRAPPER_PASSED`
+(`/srv/nvme/tmp/izumi-impl/assertion-universal-reference/scalatest-null-control.log`,
+exact adjacent command JSON). Its `ne null` compares the converted Equalizer
+wrapper rather than the Factory. This is an additional retirement inventory
+facility and a reproduced ineffective non-null check; it is not copied into
+the new assertion API. The retained suite remains byte-identical here, with
+replacement assigned to step 5.
+The same expression appears in the retained BIO ErrorAccumulatingOpsTest;
+`2b-fundamentals-test-projects-scalactic-facility-inventory.log` captures both
+source occurrences and their legacy base classes. The plan's descriptive
+retirement inventory adds these two confirmed consumers; no gate or owner
+decision changes.
+
+`bash /srv/nvme/tmp/izumi-impl/2b-fundamentals-test-projects-final-matrix.sh`
+exits 0 (`2b-fundamentals-test-projects-matrix-first.log`). On
+3.9.0/2.13.18/2.12.21 it checks the old production projects' `Test/definedTests`,
+the new projects' compiler, `publish/skip`, definitions and Test classpaths,
+runs every moved test project's `testFull`, and compiles the two JVM DI
+consumers of platform helpers: 42 moved test runs and six consumer compiles.
+Both old and new Native project outputs are cleaned before each Native run,
+as required for moved/deleted sources. JS/Native retain ScalaTest here; only
+the six eligible JVM suites use the base framework.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-fundamentals-test-projects-report-audit.py`
+exits 0 (`2b-fundamentals-test-projects-report-audit-first.log`), comparing all
+42 saved pre-move reports with the new reports by suite name and every case's
+class, name and status. All 3,219 cases match exactly. This includes Scala 2's
+extra BIO suite and its two Native Circe cases, compared against their own
+baselines rather than Scala 3's set. Existing report counts are not promoted
+to independent execution-counter evidence.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-fundamentals-test-projects-source-audit.py`
+exits 0 (`2b-fundamentals-test-projects-source-audit.log`). It compares each
+of the 73 original file hashes with commit
+`58a50c3bcfadfed62643bd5bef2d26a35de90990`, requires every old path absent and
+every new path present with no extra test files, and verifies 66 byte-identical
+files, six import-only changes, and one resource-path-only change. Its captured
+unified diffs preserve the six compatibility suites for the final 2b.10 check.
+The first oracle expected 11 path occurrences; the original source has nine
+(`2b-fundamentals-test-projects-source-audit-oracle-first.log`). Correcting
+that measured count changes no production/test source.
+
+`bash /srv/nvme/tmp/izumi-impl/2b-fundamentals-test-projects-consumers-and-publication.sh`
+exits 0 (`2b-fundamentals-test-projects-consumers-and-publication-first.log`).
+It requests `testFull` on distage-core and extension-plugins, JVM/JS, on all
+three compilers: twelve requests with nine nonempty test lanes. The observed
+summaries are core JVM/JS 400/335 on Scala 3, 366/302 on 2.13, and 365/301 on
+2.12; plugin JVM runs seven on each compiler, and its JS lanes have no tests.
+In total 2,090 succeed, zero fail and two cancel. Both cancellations are the
+unchanged FunctoidTest constant-type case's explicit Scala >= 2.13 `assume`
+precondition on 2.12, one per platform. The script then invokes `publishLocal`
+for the seventeen supported new project variants on each compiler: 51 actual
+publication requests. A pre-request local-Ivy directory snapshot is empty;
+`2b-fundamentals-test-projects-publication-audit.py` exits 0 afterwards
+(`2b-fundamentals-test-projects-publication-audit.log`), verifying no new helper
+or test-project artifact directory exists.
+
+`2b-fundamentals-test-projects-matrix-audit.py` exits 0
+(`2b-fundamentals-test-projects-matrix-audit.log`): 42 empty old-project
+definition results, 51 true skip flags, fourteen compiler observations per
+compiler, and 42 resolved new Test classpaths. Each contains its production
+module and test support, with the base runner only on JVM and no higher distage
+module. It also reconciles the consumer summaries above.
+
+Plain `show buildDependencies` prints only an object identity, not the graph.
+The pinned SBT 2.0.9 binary's inspected BuildDependencies API exposes
+`classpath` (`2b-fundamentals-test-projects-build-dependencies-api.log`).
+`2b-fundamentals-test-projects-observed-graph.sh` exits 0
+(`2b-fundamentals-test-projects-observed-graph-first.log`), extracting every
+actual project and scoped dependency through a session-only setting.
+`2b-fundamentals-test-projects-graph-audit.py` exits 0
+(`2b-fundamentals-test-projects-graph-audit.log`): 107 nodes, 208 distinct
+scoped dependency records, 206 endpoint pairs, no cycle, fourteen test project
+variants and three helper variants, and preserved lower-layer bounds.
+
+The first graph oracle confuses records with endpoint pairs
+(`2b-fundamentals-test-projects-graph-audit-oracle-first.log`). The two extra
+records are unchanged distage-framework JVM/JS -> extension-plugins mappings
+with distinct Test configurations. Its next over-strong assumption requires
+every inbound edge to a new project to start in Test
+(`2b-fundamentals-test-projects-graph-audit-docs-assumption-first.log`), whereas
+the existing unpublished microsite intentionally depends on all artifacts for
+documentation. Those six JVM Compile mappings sit above the runner layers and
+do not violate the fixed acyclicity or lower-layer requirements. The corrected
+oracle validates exactly that documentation aggregation and requires all other
+inbound new-project mappings to start in Test. No production code, plan or
+acceptance item changes to accommodate either oracle correction.
+
+Final regeneration with `direnv exec . sh -c 'export JAVA_HOME="$JDK21";
+exec bash sbtgen.sc --js --native'` exits 0
+(`2b-fundamentals-test-projects-generator-final.log`). SHA-256 comparisons
+verify all three generated outputs are unchanged
+(`2b-fundamentals-test-projects-generator-idempotence.log`). The checkpoint's
+09:21 UTC Maven metadata check still returns HTTP 404 for both released Native
+interop artifacts (`2b-fundamentals-test-projects-interop-release-boundary.log`);
+independent higher-layer work continues.
+
+The required read-only reviewer independently reruns the 73-file/source and
+42-report comparisons, observes publication and generator postconditions, and
+compares every static generated dependency record with the actual SBT graph.
+Its initial count of 206 refers to endpoint pairs; its reconciliation confirms
+the 208 scoped records and the two unchanged pairs with multiple configurations.
+It finds no unresolved checkpoint defect and verifies that this ledger does not
+claim parent-step or final completion. `git diff --check` passes. This section
+records the verified fundamentals-test-project checkpoint in the local commit
+containing it; the exact hash is recorded at the next checkpoint. No complete
+step-2b or final evaluation is claimed here.

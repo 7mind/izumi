@@ -1046,6 +1046,15 @@ commit) the test sources contain:
 | ScalaCheck environments for those laws | 4 | Property execution without `scalatestplus-scalacheck`, which `scalatest_all` adds to every module |
 | ScalaMock's ScalaTest integration | 1 | A framework-neutral mocking integration, or removal |
 | ScalaTest matchers | 2 | The new assertions |
+| Inherited Scalactic Equalizer conversion for `Factory` reference checks | 2 confirmed | Explicit checks of the Factory value without an implicit wrapper |
+
+The additional Equalizer dependency was confirmed during the test-project move
+in `IzEitherTest` and `ErrorAccumulatingOpsTest` (see the
+[status ledger](20261001-distage-native-testkit-status.md)). The plain compiler
+rejects their universal-trait Factory `ne null` expression. ScalaTest compiles
+it by converting the value to an Equalizer first; an independent runtime
+control also passes for a null Factory. Retirement must replace that ineffective
+check rather than preserve the wrapper comparison.
 
 Cancellation and wiring tests are also in scope. User-facing documentation
 migrates as well: 44 lines of the microsite's `distage-testkit.md` page mention

@@ -494,6 +494,12 @@ object Izumi {
       final val assertions = ArtifactId("fundamentals-assertions")
       final val assertionsCats = ArtifactId("fundamentals-assertions-cats")
       final val assertionsBIO = ArtifactId("fundamentals-assertions-bio")
+      final val testSupport = ArtifactId("fundamentals-test-support")
+      final val platformTest = ArtifactId("fundamentals-platform-test")
+      final val bioTest = ArtifactId("fundamentals-bio-test")
+      final val collectionsTest = ArtifactId("fundamentals-collections-test")
+      final val jsonCirceTest = ArtifactId("fundamentals-json-circe-test")
+      final val languageTest = ArtifactId("fundamentals-language-test")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
 //      final val reflection = ArtifactId("fundamentals-reflection")
@@ -581,6 +587,15 @@ object Izumi {
     "scalaJSUseTestModuleInitializer" in (SettingScope.Test, Platform.Js) := false,
   )
 
+  private def fundamentalsTestSettings(targetName: String): Seq[SettingDef] = Seq(
+    "skip" in SettingScope.Raw("publish") := true,
+    "testOptions" in SettingScope.Test := """Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"))""".raw,
+    "testFrameworks" in (SettingScope.Test, Platform.Jvm) :=
+      """Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
+    "testOptions" in (SettingScope.Test, Platform.Jvm) +=
+      s"""Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "$targetName-jvm", "--catalogue-id", "$targetName-catalogue")""".raw,
+  )
+
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
     artifacts = withTestResourcesOnCompileClasspath(Seq(
@@ -660,7 +675,6 @@ object Izumi {
           scala_reflect,
           fast_classpath_scanner in Scope.Provided.all,
           scala_java_time in Scope.Compile.native,
-          scala_java_time_tzdb in Scope.Test.native,
           scalajs_macrotask_executor in Scope.Compile.js
         ),
         depends = Seq(
@@ -691,26 +705,65 @@ object Izumi {
           scala_reflect,
           circe_core in Scope.Compile.all,
           circe_generic in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala3),
-        ) ++ Seq(
+        ),
+        depends = Seq(Projects.fundamentals.platform),
+        settings = Seq.empty,
+      ),
+      Artifact(
+        name = Projects.fundamentals.testSupport,
+        libs = scalatest_all.flatMap(library => Seq(library in Scope.Compile.js, library in Scope.Compile.native)),
+        depends = Seq(Projects.distage.testRunner in Scope.Compile.jvm),
+        settings = Seq("skip" in SettingScope.Raw("publish") := true),
+      ),
+      Artifact(
+        name = Projects.fundamentals.platformTest,
+        libs = Seq(scala_reflect, fast_classpath_scanner in Scope.Provided.all, scala_java_time_tzdb in Scope.Test.native),
+        depends = Seq(Projects.fundamentals.platform, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
+        settings = fundamentalsTestSettings("fundamentals-platform-test") ++ testResourcesOnCompileClasspath,
+      ),
+      Artifact(
+        name = Projects.fundamentals.collectionsTest,
+        libs = Seq(scala_reflect),
+        depends = Seq(Projects.fundamentals.collections, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
+        settings = fundamentalsTestSettings("fundamentals-collections-test"),
+      ),
+      Artifact(
+        name = Projects.fundamentals.languageTest,
+        libs = Seq(scala_reflect),
+        depends = Seq(Projects.fundamentals.language, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
+        settings = fundamentalsTestSettings("fundamentals-language-test"),
+      ),
+      Artifact(
+        name = Projects.fundamentals.jsonCirceTest,
+        libs = Seq(scala_reflect) ++ Seq(
           circe_derivation_scala2 in Scope.Test.jvm.scalaVersion(ScalaVersionScope.AllScala2),
           circe_derivation_scala2 in Scope.Test.js.scalaVersion(ScalaVersionScope.AllScala2),
           circe_generic in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           circe_literal in Scope.Test.all,
         ),
-        depends = Seq(Projects.fundamentals.platform),
-        settings = Seq(
+        depends = Seq(Projects.fundamentals.jsonCirce, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
+        settings = fundamentalsTestSettings("fundamentals-json-circe-test") ++ Seq(
           "unmanagedSourceDirectories" in (SettingScope.Test, Platform.Jvm) +=
-            """file("fundamentals/fundamentals-json-circe/src/test/scala-derivation").getAbsoluteFile""".raw,
+            """file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile""".raw,
           "unmanagedSourceDirectories" in (SettingScope.Test, Platform.Js) +=
-            """file("fundamentals/fundamentals-json-circe/src/test/scala-derivation").getAbsoluteFile""".raw,
+            """file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile""".raw,
           "unmanagedSourceDirectories" in (SettingScope.Test, Platform.Native) ++=
-            """{ if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe/src/test/scala-derivation").getAbsoluteFile) else Seq.empty }""".raw,
+            """{ if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile) else Seq.empty }""".raw,
           //        workaround for:
           //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
           //          +- io.circe:circe-derivation_2.13:0.13.0-M5           (depends on 0.13.0)
           "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
           "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
         ),
+      ),
+      Artifact(
+        name = Projects.fundamentals.bioTest,
+        libs = Seq(scala_reflect, scalac_compat_annotation) ++ allMonadsTest ++
+          Seq(cats_effect_laws, cats_effect_testkit, discipline, zio_managed, zio_interop_cats).map(_ in Scope.Test.all) ++
+          Seq(scala_java_time in Scope.Test.js),
+        depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
+        settings = fundamentalsTestSettings("fundamentals-bio-test"),
+        platforms = Targets.jvmJs,
       ),
 //      Artifact(
 //        name = Projects.fundamentals.reflection,
@@ -726,10 +779,7 @@ object Izumi {
         libs = allMonadsOptional ++
           Seq(scalac_compat_annotation) ++
           Seq(zio_managed in Scope.Optional.all) ++
-          Seq(zio_interop_tracer in Scope.Compile.all) ++
-          Seq(cats_effect_laws, cats_effect_testkit, discipline).map(_ in Scope.Test.all) ++
-          Seq(zio_interop_cats in Scope.Test.all) ++
-          Seq(scala_java_time in Scope.Test.js),
+          Seq(zio_interop_tracer in Scope.Compile.all),
         depends = Seq(
           Projects.fundamentals.language,
           Projects.fundamentals.orphans,
@@ -806,7 +856,8 @@ object Izumi {
         depends = Seq(
           Projects.distage.coreApi in Scope.Compile.all,
           Projects.distage.proxyBytebuddy in Scope.Compile.jvm,
-          Projects.fundamentals.platform tin Scope.Compile.all,
+          Projects.fundamentals.platform in Scope.Compile.all,
+          Projects.fundamentals.platformTest tin Scope.Test.all,
         ),
         platforms = Targets.jvmJs,
       ),
@@ -845,7 +896,7 @@ object Izumi {
           Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect, javaXInject).map(_ in Scope.Test.jvm),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
-          Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platform tin Scope.Test.jvm),
+          Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platformTest tin Scope.Test.jvm),
         platforms = Targets.jvmJs,
       ),
       Artifact(

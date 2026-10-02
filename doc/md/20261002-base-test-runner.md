@@ -61,6 +61,30 @@ spent. Projected host exceptions retain the protocol failure's cause tree.
 
 The independent JVM framework consumer compares actual body records with JUnit
 test identities under SBT 1 and 2. The status ledger records the exact scope and
-results. Fundamentals test-only projects, the distage execution provider/front
-end, rich assertion wire mapping, transports and host plugins remain subsequent
-implementation.
+results. The distage execution provider/front end, rich assertion wire mapping,
+transports and host plugins remain subsequent implementation.
+
+## Fundamentals test projects
+
+Platform, BIO, collections, json-circe and language tests live in unpublished
+`fundamentals-*-test` projects, with their original Scala packages, source
+variants and resources. These projects depend on the production modules through
+their Test configuration. Production modules do not depend on the test projects.
+Distage core and extension-plugins import platform test helpers through a
+Test dependency on `fundamentals-platform-test`.
+
+`fundamentals-test-support` is an unpublished platform-specific front end.
+Its JVM `izumi.fundamentals.testkit.AnyWordSpec` extends the base runner;
+its JS and Native variants extend ScalaTest during the staged migration to
+step 2e. Five collections suites and the language suite use this import.
+The JVM test projects register both frameworks and send their arguments to
+the corresponding framework explicitly. Suites using additional ScalaTest or
+Scalactic facilities stay on the legacy framework pending their replacement.
+
+Run the moved suites with, for example,
+`fundamentals-collections-testJVM/testFull`,
+`fundamentals-collections-testJS/testFull`, or
+`fundamentals-collections-testNative/testFull`. The test projects retain the
+production modules' supported compilers and platforms. BIO remains JVM/JS
+pending the released Native interop artifacts. Circe's Scala 2 derivation tests
+remain JVM/JS because their dependency has no Native artifact.
