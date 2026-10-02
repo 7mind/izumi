@@ -78,7 +78,9 @@ object IndividualTestRunner {
                               F.definitelyRecoverWithTrace {
                                 restore {
                                   locator.run(test.test).map(_ => Right(()): Either[(Throwable, Exit.Trace[Throwable]), Unit])
-                                }.guaranteeOnInterrupt {
+                                }
+                              }(recoverWithTrace = (error, trace) => F.pure(Left((error, trace))))
+                                .guaranteeOnInterrupt {
                                   trace =>
                                     sampleTiming().flatMap {
                                       interruptedExecTime =>
@@ -91,7 +93,6 @@ object IndividualTestRunner {
                                         }
                                     }
                                 }
-                              }(recoverWithTrace = (error, trace) => F.pure(Left((error, trace))))
                           }
                           executionResult <- successfulTestOutput
                             .foldEither(

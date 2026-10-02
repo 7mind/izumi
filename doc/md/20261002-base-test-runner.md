@@ -162,6 +162,10 @@ failures. This policy avoids letting a transport exception suppress a lifecycle
 exception in an effect whose bracket keeps only its use failure. Reporter
 identity and ordering invariants still throw; they are outside callback
 recovery. Precondition skips emit the protocol's failure-free Skipped result.
+An independent `InterruptedException` thrown by an Identity body follows ordinary
+error recovery and emits one Test-phase failure for that logical identity.
+The interruption reporting hook wraps ordinary recovery, so a recovered body
+exception does not generate an additional terminal report.
 
 Cancellation requested before execution acquires no application resource;
 active interruption remains subsequent work.

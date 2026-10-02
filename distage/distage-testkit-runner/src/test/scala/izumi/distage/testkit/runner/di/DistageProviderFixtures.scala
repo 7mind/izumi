@@ -62,6 +62,7 @@ object DistageProviderFixtures {
         .flatMap(_ => skipped(checks))
         .flatMap(_ => reporterInvariants(checks))
         .flatMap(_ => SpecFrontendFixtures.run(context, checks.verify))
+        .flatMap(_ => SpecInterruptionFixtures.run(context, checks.verify))
         .flatMap(_ => SpecActivationFixtures.run(context, checks.verify))
         .flatMap(_ => SpecConfigurationFixtures.run(context, checks.verify))
         .flatMap(_ => SpecCompatibilityFixtures.run(context, checks.verify))

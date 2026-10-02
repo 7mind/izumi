@@ -3791,3 +3791,252 @@ hashes and document scopes. It finds no additional material defect or acceptance
 overclaim in this bounded portion. `git diff --check` exits 0 before the local
 commit; its exact hash is recorded at the next evaluation point. All parent and
 final gates remain open.
+
+## Step 2b/O.18: active cancellation investigation (2026-10-02)
+
+The atomic plain-registration checkpoint is committed locally as
+`eb0481071eccddec6190255de5434f6df7a7ee9a`. Exact HEAD and a clean working
+tree were observed after the commit. No push was performed.
+
+Hypothesis: the higher provider uses its non-interruptible `runFuture` route
+and only samples the session cancellation flag, so cancellation cannot stop an
+already suspended effect. Before any correction, a published-only public
+consumer reproduces the failure in
+`/srv/nvme/tmp/izumi-impl/distage-active-cancellation-before/`. Its exact source,
+compiler/runtime argv, frozen 49-jar classpath, source hash and results are
+retained there. Compilation exits 0. Runtime exits 1 at the expected active
+cancellation assertion after safely opening its body gate and terminating the
+probe executor.
+
+Observed: discovery acquires nothing and starts no body; the IO body then holds
+one acquired resource. After `session.cancel()`, the run remains pending over
+the probe's named two-second observation interval while its body gate stays
+closed, with acquired=1/released=0. Manually opening that gate permits normal
+completion: the body reports Succeeded, the run's cancelled flag is true, and
+released=1 before Finished. The finite interval is a reproduction observation,
+not an additional acceptance deadline. The first probe's `IO.fromFuture` wait
+is itself uncancelable in the pinned Cats Effect 3.7.1 implementation, so its
+closed-gate completion assertion is not a valid cancellation oracle. Its
+measurements are retained, but the explicitly cancelable reproduction below
+supersedes that assertion. The inspected execution path calls
+`effectRunner.runFuture(runner.runPrepared(prepared))` and has no registration
+link between `Cancellation.request()` and an active interrupt action. This
+supports the missing-link hypothesis; it does not yet verify a correction.
+
+The existing core `RunnerToF.AsyncImpl` runs each nested effect interruptibly and
+awaits its interrupt action in guarantee cleanup. QuasiIORunner exposes the
+same interruptible Future route on JVM and JS. The higher provider's owned
+cancellation link, active finalization/reporting semantics and plain-body
+cancellation still require implementation and verification. The plan's later
+cancellation/IDE gates remain open; acceptance and owner decisions are unchanged.
+
+Root's corrected published-only reproduction is
+`distage-active-cancelable-before/ActiveCancelableProbe.scala`, SHA
+e91cc04ee4d4c77945852de0682160404bcce7b48ec6c8ff0c2bd4d9708a0854.
+It uses `IO.fromFutureCancelable` with an explicit cancellation action. The
+directory retains all 49 jar hashes, exact compiler/runtime argv, source and
+classpath manifests, pinned authoritative source captures, and `replay.py`.
+`python3 /srv/nvme/tmp/izumi-impl/distage-active-cancelable-before/replay.py`
+records compile=0/runtime=1. Root reads the expected failing assertion and
+the same measured held-resource state, manual-opening result and terminated
+executor. No production source has changed. The reviewer's independent
+`distage-active-cancellation-cancelable-before-review/` also records
+compile=0/runtime=1 with the same explicitly cancelable wait.
+
+A direct outer interruption substitution has a separate reproduced lifecycle
+defect: `active-cancellation-bridge-cancelable-finalizer-before/` uses the
+published core `RunnerToF.AsyncImpl`, incoming Cats IO and outer MiniBIOAsync.
+Compilation exits 0 and runtime exits 1 for the expected lifetime assertion.
+After outer interruption, incoming interruption is invoked once and its
+finalizer starts, but the outer execution settles while released=0 and the
+finalizer gate is still closed. Cleanup safely opens the gate and observes
+released=1. Root reads its exact source, results and runtime log. This rules
+out treating a direct outer interrupt link alone as a verified correction.
+
+The reviewer's `active-cancellation-cats-direct-cancelable-control/` and
+`active-cancellation-identity-finalizer-control/` each compile and run with
+exit 0. Root reads their sources and outputs: direct Cats interruption reaches
+the held finalizer without completing execution; Identity's interrupt-action
+Future completes before its held finalizer and original execution. The latter
+establishes that interrupt-token completion alone is not a general lifecycle
+completion contract. These controls support the next implementation decision;
+they do not verify an active session correction. Pinned Cats Effect sources:
+[Async.scala](https://raw.githubusercontent.com/typelevel/cats-effect/v3.7.1/kernel/shared/src/main/scala/cats/effect/kernel/Async.scala)
+and [IO.scala](https://raw.githubusercontent.com/typelevel/cats-effect/v3.7.1/core/shared/src/main/scala/cats/effect/IO.scala).
+
+The completed read-only investigation is
+`active-cancellation-readonly-review/REPORT.md` and `evidence-audit.json`.
+Root reads both and independently verifies every recorded source, artifact,
+command/result and log hash for all seven authoritative cases;
+`root-seven-control-audit.json` records exit=0 and 378 artifact records.
+The earlier five-case root audit is `active-cancellation-root-controls-audit.json`;
+its first schema attempt stopped on non-list classpath metadata, then the
+corrected audit verified explicit compiler/consumer lists and exited 0.
+No source or artifact changed to satisfy an auditor.
+
+Two additional captures constrain cancellation implementation. The incoming
+MiniBIO finalizer probe compiles with exit 0 and fails the expected lifetime
+assertion with exit 1: both its interruption action and original execution
+settle while acquired=1/released=0 and the finalizer gate is closed. After
+manual gate opening and executor termination, released remains 0. The direct
+pinned Cats cancellation/finalizer-error control compiles and runs with exit 0:
+its finalizer executes and throws once, but the original error is absent from
+both returned Future cause/suppressed trees and appears on stderr instead.
+Root reads each exact source and output. Neither observation proves behavior
+of an unimplemented provider correction. Both prevent claiming that joining
+interruption and execution Futures alone meets the full lifecycle/error gates.
+Active cancellation, generic effect lifecycle safety, external-interruption
+status policy and later host/IDE gates remain open.
+
+## Step 2b: independent Identity interruption reporting (2026-10-02)
+
+Before any correction, the public published-only consumer
+`active-cancellation-identity-reporting-before/IdentityReportingProbe.scala`
+compiles with exit 0 and runs with exit 1 for its expected reporting assertion.
+A body independently throws its original InterruptedException without a
+session cancellation request. Observed acquired=1/released=1/bodies=1,
+one Failed test, cancelled=false, and an additional Finalization failure:
+`Engine reported a repeated test completion`. Root reads its source, original
+failure stack, results and runtime log, and verifies its hashes in the seven-case
+audit. The stack and inspected source show `guaranteeOnInterrupt` reporting
+inside `definitelyRecoverWithTrace`, then Identity's catch-all recovery reaching
+the ordinary failure branch and reporting the same test again. This is a
+separate reproduced defect; it does not establish active session cancellation.
+
+The permanent shared regression adds two independent InterruptedException
+bodies and an ordinary failure to one sequential Identity suite, repeated in a
+fresh session. Repeated Cats and ZIO self-interruption controls retain their
+observed outcome baselines, identities, phases, body/resource counts, terminal
+events and event ordinals. Self-interruption outcomes do not by themselves
+prove the external interruption reporting hook was invoked. The reviewer
+identifies ZIO's internal-interruption recovery path explicitly; no hook
+preservation claim follows solely from a Failed payload.
+
+Initial permanent harness captures are retained separately:
+`2b-identity-interruption-before.*` fails fixture compilation for an extra
+Lifecycle parameter list; `2b-identity-interruption-before-valid.*` fails for a
+missing generic TagK. Both are corrected only in the new fixture and establish
+no product reproduction. `2b-identity-interruption-failing-regression.*`
+compiles and measures Cats' one incoming Finalization failure and ZIO's zero;
+its unsupported equal-count assertion fails. The fixture is corrected to those
+observed per-runtime baselines before any production edit.
+`2b-identity-interruption-actual-before.*` then passes both repeated controls and
+fails Identity's terminal-ID assertion with one body/result and three run
+failures. A final diagnostic capture records the exact failure payload below.
+All source snapshots, argv, logs and process completions remain under
+`/srv/nvme/tmp/izumi-impl/`; none of these preliminary failures is a passing gate.
+
+`2b-identity-interruption-confirmed-before.*` is the final permanent fail-first
+capture. Strict Scala 3 compilation succeeds, both repeated Cats/ZIO controls
+pass, and the process exits 1 at Identity's exact selected-result assertion.
+The added diagnostic records one body/result, acquired=1/released=1 and these
+three failures: Finalization `Engine reported a repeated test completion`, then
+two Transport reconciliation failures for the omitted selected IDs. Its frozen
+source snapshot retains the unchanged core implementation. Root reads this
+payload before applying the production correction.
+
+The correction moves `guaranteeOnInterrupt` outside
+`definitelyRecoverWithTrace` in `IndividualTestRunner`. Identity's independently
+thrown InterruptedException is recovered first and therefore reaches only the
+ordinary failure report. Unrecovered effect interruptions still surround that
+recovery operation structurally; external interruption hook/status/lifetime
+behavior is not claimed verified by these self-interruption controls. No
+per-test deduplication state, broad exception-type cancellation predicate,
+Cancellation registry or outer/incoming MiniBIO runtime change is added.
+
+Read-only review identifies that a payload-set assertion could permit failure
+payloads to be exchanged between logical IDs. Root interrupts only the owned
+SBT process before final verification, strengthens the Identity assertion to
+compare each logical path with its corresponding original class/message, and
+restarts the full matrix. The interruption ownership/PID/argv/signal record is
+`2b-identity-interruption-oracle-revision-interrupt.json`. The first process's
+actual exit 1, argv/log/completion and original matrix script are retained in
+`identity-interruption-first-matrix/`; its original source snapshot remains
+`identity-interruption-final-snapshot/`. It is not a final passing matrix. The
+final stronger source snapshot is
+`identity-interruption-final-verified-snapshot/manifest.json` and its three code/
+fixture hashes are checked unchanged after the final matrix.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-identity-interruption-final-matrix.py`
+runs three fresh, sequential root SBT processes at Scala 3.9.0, 2.13.18 and
+2.12.21. Each runs `Test/testFull`, shows fresh Compile/Test fullClasspath and
+publishes core and higher provider on JVM and JS (four projects per version).
+Scala 3 sets Compile/Test `-Wunused:all` using exact LocalProject names; Scala 2
+receives no Scala-3-only flag. Exact argv, complete producer output and actual
+process exits are retained as `2b-identity-interruption-{scala3,scala213,scala212}-final.*`.
+Every process exits 0; the root matrix tool process is observed closed with
+exit 0. `2b-identity-interruption-final-test-summary.json` verifies 3,039 checks:
+693 core (128 JVM/103 JS per compiler) and 2,346 higher (432 JVM/350 JS per
+compiler). The new 60 checks per higher lane total 360; 36 repeated public
+interruption cases measure 60 bodies and 36 acquired/released shared resources.
+Each Identity case reports all three original failures on their own logical
+IDs, with no run failure, no cancellation flag and exactly one start/completion
+per test. Cats retains its one incoming Finalization failure per case; ZIO
+retains zero run failures. Existing body, planning, provisioning, finalizer,
+transport, owner, bootstrap and import-only compatibility controls pass.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-identity-interruption-artifact-audit.py`
+exits 0 and records `2b-identity-interruption-artifact-summary.json` and its log.
+It verifies all 12 current published JAR/POM pairs, complete binary entry sets
+and exact 2,167 current class/TASTy/Scala.js bytes, fixture exclusion, required
+front ends and dependency scopes/layers. All 24 Compile/Test classpaths are
+fresh; no prior classpath output is substituted. Generator/build inputs have
+not changed, so the prior three exact 109-node/213-scoped-edge graphs are
+explicitly reused and checked against the unchanged generated definitions;
+this is not a fresh graph execution.
+
+The independent Scala 3 published-only consumer proof is
+`identity-interruption-published-final-review/`. Its unchanged original public
+Identity source and eight original compiled class/TASTy entries are copied
+exactly from the captured failure. The final 49-jar consumer/7-jar compiler
+closures are frozen, with only current core/higher published JARs replacing
+predecessors. All five commands in `commands.json` exit 0: old-binary runtime
+before recompilation, identical-source compilation/runtime, and separate
+compilation/runtime of the exact permanent public fixture with a small owned-
+executor consumer driver. The original consumer now records one Failed test,
+zero run failures, cancelled=false and acquired=1/released=1/bodies=1. The
+separate consumer executes all 60 stronger checks, ten bodies and six released
+resource scopes. All three consumer executors terminate. No production class directory or
+shadow source is on either runtime/compilation dependency path; the test fixture
+and driver define no class/TASTy entry present in the published dependency jars.
+These are Scala 3 consumer proofs; they do not substitute for the other compiler
+lanes' producer or later final-head consumer gates.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-identity-interruption-root-publication-audit.py`
+exits 0 and writes `root-evidence-audit.json`. It verifies all 56 artifact
+records, three source records, old-binary identity, exact command/classpath
+closures, runtime postconditions, final source snapshot and all 295 exact
+current core/higher JVM Scala 3 binary entries. The immutable producer-log SHA
+is fe911770fa604d176aad1c172b1de3d0d64dd6a06bdf60bac900d6a65768c1c1.
+The proof's `replay.py`, old/new consumer hashes, POMs, jar/class comparison and
+producer provenance remain alongside its commands/results and logs.
+
+The prescribed `direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`
+exits 0 with byte-identical build.sbt, project/plugins.sbt and build.properties.
+Before/after hashes, exact argv/log and actual completion are retained as
+`2b-identity-interruption-generator-final.*`. The two Native interop primary
+metadata endpoints again return HTTP 404 at 21:05:56 UTC on 2026-10-02;
+responses/hashes are in `2b-identity-interruption-release-metadata.json` and its
+XML captures. Higher Native remains waiting on the release; this independent
+reporting work proceeds without waiting. The product documentation describes
+one Test-phase report for an independent Identity interruption. Read-only
+bounded evidence/document closure follows below before the local commit.
+
+This checkpoint does not close parent 2b, active cancellation, full custom-hook/
+compatibility inventories, the opaque/handoff reconstruction ownership defects,
+MiniBIO cancellation lifetime/error behavior, host/CLI/IDE integration, higher
+Native or final-head evaluation. Acceptance and owner decisions are unchanged.
+
+The read-only closure is
+`identity-interruption-bounded-final-review/document-closure-verdict.json`.
+Root reads the complete verdict, supplemental audit and replay results, checks
+all five reviewed file hashes and every successful runtime marker, and observes
+`git diff --check` exit 0. The reviewer finds no concrete residual defect or
+acceptance overclaim in this bounded reporting correction, reruns both artifact/
+publication auditors with exit 0 and independently replays all five published
+commands in separate outputs with exit 0. Its first supplemental audit expected
+an EXIT footer in the generator text log; the prescribed generator capture uses
+actual completion JSON instead. That auditor assumption is corrected and
+retained separately, with no product/source/acceptance change and no duplicate
+runtime execution. Parent and final gates remain open. The local commit's exact
+hash is recorded at the next evaluation point; no push is performed.
