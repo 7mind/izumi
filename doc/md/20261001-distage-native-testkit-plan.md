@@ -837,6 +837,15 @@ involved has not been identified, so dropping `-explain-cyclic` may only hide th
 race. Until a fixed compiler ships, 3.9.0 builds use backend parallelism 1, the
 mitigation exercised by the controls; these finite runs do not prove that every
 compiler race is eliminated.
+Step 2a's implementation also reproduced the Swing classfile crash tracked in
+[scala/scala3#26622](https://github.com/scala/scala3/issues/26622), with a standalone
+`typeCheckErrors("import javax.swing.*; summon[Ordering[JPanel]]")` on 3.9.0/JDK 21.
+The fix is assigned to 3.10; the pinned 3.9.0 build disables import suggestions
+with `-Ximport-suggestion-timeout:0`. This preserves type checking but omits
+suggested imports from diagnostics; the status ledger records the failing
+reproduction and passing control. This mitigation is additional to backend
+parallelism 1.
+
 Separately, the generated PureConfig dependency condition and compiler flags
 match only the exact version 3.7.4 and must be corrected for 3.9.0.
 

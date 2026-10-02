@@ -46,10 +46,10 @@ head. The spike reports are design evidence, not implementation verification.
 | 1d.3 | not started | No evaluation point passed yet. |
 | 1d.4 | not started | No evaluation point passed yet. |
 | 1d.5 | not started | No evaluation point passed yet. |
-| 2a.1 | not started | No evaluation point passed yet. |
-| 2a.2 | not started | No evaluation point passed yet. |
-| 2a.3 | not started | No evaluation point passed yet. |
-| 2a.4 | not started | No evaluation point passed yet. |
+| 2a.1 | in progress | Scala 3.9 verification below; gate remains outstanding. |
+| 2a.2 | in progress | Scala 3.9 verification below; gate remains outstanding. |
+| 2a.3 | in progress | Scala 3.9 verification below; gate remains outstanding. |
+| 2a.4 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2b.1 | not started | No evaluation point passed yet. |
 | 2b.2 | not started | No evaluation point passed yet. |
 | 2b.3 | not started | No evaluation point passed yet. |
@@ -153,7 +153,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.33 | not started | No evaluation point passed yet. |
 | O.34 | not started | No evaluation point passed yet. |
 | O.35 | not started | No evaluation point passed yet. |
-| O.36 | not started | No evaluation point passed yet. |
+| O.36 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | O.37 | in progress | No evaluation point passed yet. |
 | O.38 | not started | No evaluation point passed yet. |
 
@@ -198,7 +198,7 @@ No Native suite or lane is marked passed until its command terminates and the
 captured test reports are checked.
 
 Requirement-enumeration commit: `d30020eb07853800972a4aee72eb695b9fe6a92e`.
-Implementation changes are in the commit containing this entry.
+Part-1 implementation commit: `09f9cefd3607821ea3c9a00bc03e9d39f708310a`.
 Requirement-enumeration reviewer: `requirements_audit` (read-only), completed
 2026-10-02. Its 37 proposed items are included, plus typed in-process models
 (O.38). Adapter requirements stay transitional and are superseded by 5.5.
@@ -314,3 +314,156 @@ The remaining distage plugin-loader audit belongs to part 2 and is not complete.
 
 L1/L2/L3 remain in progress only as partial fundamentals evidence; full-repository
 CI-equivalent lane commands have not passed. No final or step gate is marked done.
+
+## 2026-10-02: step 2a, in progress
+
+Independent of the interop release. Compiler target is 3.9.0; the source dialect
+remains 3.7 to preserve existing source behavior. Scala 3 option selection now
+uses the major version; PureConfig selects every Scala 3 compiler. The SBT 2
+plugin retains its separately generated 3.8.4 baseline and no izumi dependencies.
+No new Scala 3 artifacts are released before this gate (O.36).
+
+- Reproduction before edits: `direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G "++3.9.0!; show distage-extension-configJVM/libraryDependencies; show distage-frameworkJVM/scalacOptions; distage-extension-configJVM/compile"'`.
+  Exit 1 (`2a-before.log`). The dependency listing omits PureConfig, options omit
+  kind-projector and max-inlines, and BIO compilation reports 448 errors,
+  beginning with unsupported underscore type-lambda syntax. That failure
+  demonstrates the omitted flags; it prevents reaching the missing-PureConfig
+  compilation failure. No source patch is justified by those parser errors.
+- Maven metadata on 2026-10-02 lists 3.9.0 as the latest stable Scala 3 version;
+  no newer stable 3.9.x or Scala Next lane exists. Captured at
+  `/srv/nvme/tmp/izumi-impl/metadata/scala3-compiler.txt`.
+- [scala/scala3#27209](https://github.com/scala/scala3/issues/27209) remains open
+  (API capture `scala3-27209.txt` in the same directory). The configured backend
+  parallelism is 1, the plan's explicit mitigation. Existing spike results are
+  its provenance; no claim of a complete upstream correction is made.
+- First generation succeeded, but build loading failed on an unbraced generated
+  `if` expression in settings varargs (`2a-jvm.log`). Added braces in the generator
+  input and regenerated (`2a-generate-final.log`, exit 0). This intermediate
+  build-loading failure is not acceptance evidence.
+
+### Actual Native CI commands for part 1
+
+Detached worktree `/srv/nvme/tmp/izumi-impl/native-ci-part1` is at `09f9cefd3`.
+`direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'export PATH="/srv/nvme/tmp/izumi-impl/native-ci-tools:$PATH"; exec mdl -u platform:native-nojvm -u java_version:21 -u scala_version:<3|2.13|2.12> :gen :test --without-nix --verbose --simple-log'`.
+`--without-nix` uses the already loaded dev shell. Native tests use no Docker;
+that PATH contains an explicit empty Docker CLI view for the legacy bulk cleanup,
+so unrelated host containers cannot be removed. Any other Docker command fails.
+
+The first run (`1a-native-ci-3.log`, exit 0) compiled clean outputs but SBT history
+skipped unchanged suites: only 14 platform checks ran. It is not evidence that
+all shared suites executed. Fresh runs use a worktree-only `native-ci-cache.sbt`
+setting `Global / localCacheDirectory := file("/srv/nvme/tmp/izumi-impl/native-ci-cache-part1")`.
+This isolates persistent task results and test history; it changes no production
+source. All three fresh commands exited 0; logs are `1a-native-ci-fresh-{3,2.13,2.12}.log`.
+Observed test totals are respectively 194, 189, 189, with zero failures and
+`NativePlatformTest` executed in each. This closes the actual CI-command check
+for part 1; the full step waits for the other Native modules.
+
+### Scala 3.9 evidence so far
+
+- `direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G "fundamentals-native/clean; fundamentals-native/Test/compile; fundamentals-native/testFull"'`:
+  exit 0, 194 Native tests, zero failures (`2a-native.log`).
+- `izumi-js/Test/compile` then `izumi-js/testFull` in separate batch SBT JVMs:
+  both exit 0; full JS run executes 858 tests with zero failures
+  (`2a-js-compile.log`, `2a-js-test.log`).
+- JVM command with library/option listings, config compilation,
+  `izumi-jvm/Test/compile; izumi-jvm/testFull`: config compilation succeeds,
+  flags/dependencies are present, but test compilation exits 1 in the legacy
+  adapter, with `AssertionError: failure to resolve inner class`
+  `javax.swing.RepaintManager$PaintManager`. Stack includes compiler
+  `ImportSuggestions` and `ClassfileParser` (`2a-jvm-final.log`). No test success
+  claimed. The cause and a minimal public reproduction are under investigation.
+- `izumi-jvm/publishLocal`: exit 0 (`2a-publish-local.log`).
+- Separate build under `test-fixtures/compiler-consumer`:
+  `direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G -Dizumi.fixture.scala-version=3.9.0 -Dizumi.fixture.version=1.3.0-SNAPSHOT "checks/runMain izumi.fixtures.compiler.CompilerConsumer 9 0"'`:
+  exit 0, `COMPILER_CONSUMER_OK release=3(9,0) good=true missing=false`
+  (`2a-compiler-consumer-server.log`). It expands the published plan-check macro
+  twice, including the compiler-context branch for `onlyWarn`, and the published
+  ScalaRelease macro. Test module and macro producer compile separately.
+  Initial invocations without `--server` failed to start a thin client and are
+  not macro evidence (`2a-compiler-consumer.log`).
+
+### Scala 3.9 import-suggestion compiler defect
+
+Existing upstream reports: [scala/scala3#26622](https://github.com/scala/scala3/issues/26622)
+(regression since 3.9.0-RC1; fix assigned to 3.10) and
+[scala/scala3#20438](https://github.com/scala/scala3/issues/20438)
+(Swing classfile parsing on Java 17+). Tracker API search captured in
+`/srv/nvme/tmp/izumi-impl/metadata/scala3-paintmanager-issues.txt`.
+No issue was filed. This is an external compiler defect, not missing project
+source or an izumi classpath mutation.
+
+Minimal independent SBT build in
+`/srv/nvme/tmp/izumi-impl/import-suggestions-repro`: SBT 2.0.9, Scala 3.9.0,
+`scalacOptions ++= Seq("-release:17", "-explain", "-Ybackend-parallelism", "1")`,
+and this single source:
+
+```scala
+object Main {
+  val errors = scala.compiletime.testing.typeCheckErrors("import javax.swing.*; summon[Ordering[JPanel]]")
+  def main(args: Array[String]): Unit = {
+    require(errors.nonEmpty)
+    println("TYPECHECK_ERRORS_OK")
+  }
+}
+```
+
+`direnv exec /home/pavel/work/safe/7mind/izumi sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "clean; runMain Main"'`:
+exit 1, the same Swing `AssertionError` from `ImportSuggestions`
+(`2a-import-suggestions-given-repro.log`). Undefined-variable probes alone
+succeeded and are not reproductions (`2a-import-suggestions-minimal-server.log`,
+`2a-import-suggestions-swing-repro.log`). An unmanaged-jar experiment failed
+on an SBT 2 File/HashedVirtualFileRef setting type mismatch and is not evidence.
+
+Controls in the same build: `++3.7.4!; clean; runMain Main; ++3.9.0!; set scalacOptions += "-Ximport-suggestion-timeout:0"; clean; runMain Main`:
+exit 0, both programs print `TYPECHECK_ERRORS_OK`
+(`2a-import-suggestions-controls.log`). Scala 3.7.4 logs the classfile exception
+but recovers; 3.9.0 with import suggestions disabled does not traverse that path.
+The [pinned compiler source](https://github.com/scala/scala3/blob/3.9.0/compiler/src/dotty/tools/dotc/typer/ImportSuggestions.scala)
+returns no suggestions when its time budget is zero. The build applies this
+flag only on 3.9.0. Residual limitation: missing-implicit/extension diagnostics
+omit suggested imports on that compiler. Type checking and the captured primary
+errors remain enabled; no test is removed. A released fix can replace this
+mitigation after verification under the fixed compiler.
+
+### Final compiler-option reruns
+
+After the import-suggestion mitigation, `izumi-jvm/Test/compile` succeeds.
+`izumi-jvm/testFull` then exits 1: 26 Docker integration tests fail with HTTP 500,
+`making volume mountpoint .../src/test/resources/sql: mkdir /home/pavel/work:
+permission denied` (`2a-jvm-mitigated.log`). The bound service is Podman through
+`DOCKER_HOST=unix:///run/podman-llm/podman.sock`, with storage under another service
+user's home. This is an observed fixture-mount accessibility failure, not evidence
+of a Scala compiler regression. No exclusion or production correction is applied.
+Worker verification is being prepared; full JVM gate remains in progress.
+
+`project docs; makeSite` through batch SBT/JDK21: exit 0 (`2a-site.log`), mdoc
+reports zero errors. This checks the Scala 3.9 documentation module but does not
+substitute for the exact mdl L4 command.
+Final JS and Native runs with the mitigation are captured in `2a-js-final.log`
+and `2a-native-final.log`; Native exits 0 with 194 successful tests. JS exits 0 with 858 successes and 19 expected cancellations. JS's previous run reports 858 succeeded and 19 canceled. The expected canceled
+cases are: skip/assume and deliberately unavailable integration checks in the legacy
+runner fixtures. Those cases are explicit fixture outcomes, not omitted suites.
+
+Compiler-upgrade substep summary: all current Scala 3 sources, including the
+ScalaTest adapter's JVM tests, compile. Final JVM run records 1535 successes,
+26 fixture-mount failures, 19 expected cancellations. Final JS/Native runs exit
+0 (858/194 successes), and the documentation module's makeSite exits 0.
+The Scala-CLI generator itself now compiles on 3.9.0; generated files are
+regenerated with `--js --native`. The step remains in progress until the full
+JVM run, reviewer audit, and gate evidence are complete.
+
+The provided Ubuntu worker is being prepared for the container tests. Docker
+was absent before installation; batch `apt-get install -y docker.io` exited 0
+(`2a-worker-docker-setup.log`). No host Podman mounts, permissions, or unrelated
+containers were changed. The worker's Nix profile is present but requires a
+login shell to appear on PATH. Code transfer and run results remain pending.
+
+Read-only compiler-upgrade substep reviewer: `requirements_audit`, 2026-10-02.
+No concrete implementation defect found. It independently inspected 28 generated
+option blocks, verified the SBT2 helper's published POM selects Scala 3.8.4 and
+has no izumi dependencies, and reconciled final test outcomes. Its full-step
+verification gaps remain tracked above. Generator compilation on 3.9.0 and
+subsequent idempotence both exit 0 (`2a-generator-compiler39.log`,
+`2a-generator-idempotence.log`): all three generated files are byte-identical
+before/after the latter command. No full step or final gate marked done.
