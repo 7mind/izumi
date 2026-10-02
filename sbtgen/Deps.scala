@@ -273,6 +273,7 @@ object Izumi {
     )
 
     final val cross = Seq(jvmPlatform, jsPlatform, nativePlatform)
+    final val protocol = cross.map(_.copy(language = Seq(ScalaVersion("3.8.4"), scala213, scala212)))
     final val jvmJs = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
@@ -517,6 +518,7 @@ object Izumi {
       final lazy val frameworkApi = ArtifactId("distage-framework-api")
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
+      final lazy val testProtocol = ArtifactId("distage-test-protocol")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
       final lazy val testkitScalatestSbtModuleFilteringTest = ArtifactId("distage-testkit-scalatest-sbt-module-filtering-test")
       final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
@@ -749,6 +751,15 @@ object Izumi {
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
     artifacts = withTestResourcesOnCompileClasspath(Seq(
+      Artifact(
+        name = Projects.distage.testProtocol,
+        libs = Seq(circe_core, circe_parser),
+        depends = Seq.empty,
+        platforms = Targets.protocol,
+        settings = assertionFixtureSettings ++ Seq(
+          "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.protocol.ProtocolFixtures\")".raw,
+        ),
+      ),
       Artifact(
         name = Projects.distage.coreApi,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),

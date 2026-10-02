@@ -129,7 +129,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.9 | in progress | No evaluation point passed yet. |
 | O.10 | in progress | No evaluation point passed yet. |
 | O.11 | in progress | Separate Cats/BIO artifacts above their runtimes; dependency verification outstanding. |
-| O.12 | not started | No evaluation point passed yet. |
+| O.12 | in progress | Portable protocol checkpoint passes all nine producer lanes, twelve published consumers and four isolated-loader exchanges; real transports and final evaluation remain outstanding. |
 | O.13 | not started | No evaluation point passed yet. |
 | O.14 | not started | No evaluation point passed yet. |
 | O.15 | not started | No evaluation point passed yet. |
@@ -985,3 +985,208 @@ remains Provided and BIO fixture runtime dependencies remain Test-only. Native
 BIO and parent/final evaluations are explicitly excluded from the completion
 claim. The local commit containing this checkpoint is identified in the next
 ledger update; it is never pushed.
+
+## 2026-10-02: effect checkpoint commit and step 2b start
+
+Verified effect checkpoint commit:
+`c34b65cd45bbd83c1b0f0b72368ec243a62e39f6`. After committing, the exact
+`--js --native` regeneration exits 0 (`1d-committed-generator.log`), and
+`git diff --exit-code build.sbt project/plugins.sbt project/build.properties`
+exits 0 (`1d-committed-generator-diff.log`). This is an L5 checkpoint on that
+commit. No push or history rewrite occurred.
+
+Step 2b proceeds independently of Native interop:
+
+1. Add the portable protocol, compiled with 3.8.4 for its Scala 3 variants and
+   with the repository's two Scala 2 versions, without izumi dependencies.
+   Verify its wire fixtures on JVM/JS/Native and its published consumer boundary.
+2. Add the plain WordSpec front end and base runner. Verify synchronous/Future
+   execution, declarative discovery, stable path IDs, duplicates, and independent
+   repeated/concurrent session factories and finalization through public fixtures.
+3. Move fundamentals suites to unpublished test-only projects, retaining the
+   existing JS/Native execution during the transition, and plug the preserved
+   distage engine/front ends into the same runner contract. Verify the project
+   graph, suite counts, dependency boundaries, and the import-only compatibility
+   fixtures before claiming the parent step.
+
+The generated protocol projects use Scala 3.8.4 explicitly on JVM/JS/Native,
+alongside 2.13.18 and 2.12.21. They have no izumi project dependency and use the
+repository's pinned Circe core/parser. Portable named IDs retain target, suite,
+path segments and variant; the data model includes catalogue identity, effective
+settings, overrides, structured failures and correlated events. Schema 1 uses
+compact JSON frames on an explicit channel; actual channel transports remain
+later work. Locations document missing columns explicitly rather than inventing
+them. Frames reject raw line separators, unknown versions/kinds, malformed
+identities and oversized input.
+
+The first `distage-test-protocolJVM/testFull` exits 0 on the observed compiler
+3.8.4 (`2b-protocol-jvm-first.log`), passing 42 wire checks. A strengthened
+producer-boundary reproduction then exits 1 for the expected invariant:
+`Producer must reject an invalid explicit selection before emitting a protocol
+frame` (`2b-protocol-producer-invariant-before.log`). Encoding had no schema
+validation while decoding did. Encoding now uses the same schema decoder to
+validate its generated payload before returning the frame, so malformed
+internal records cannot be emitted as valid protocol messages.
+
+The first corrected producer matrix exits 1 after its JVM run passes 47 checks:
+the JS round-trip of `Long.MaxValue` fails (`2b-protocol-scala3-matrix.log`).
+The instrumented JS reproduction also exits 1 and captures the decoded value
+as `Left(ProtocolDecodeError(Long))`
+(`2b-protocol-js-long-diagnosis.log`). Circe's documented native-JavaScript
+number parsing cannot preserve arbitrary 64-bit integers; this is the limitation
+tracked in [circe/circe#393](https://github.com/circe/circe/issues/393) and the
+[parsing documentation](https://circe.io/circe/parsing.html).
+The protocol now represents durations and sequence numbers as decimal strings,
+preserving the full supported integer domain rather than narrowing the fixture.
+The unchanged boundary-value round-trip passes on JVM/JS/Native, each with 47
+checks and the identical golden schema frame
+(`2b-protocol-scala3-corrected.log`, exit 0). That command also publishes all
+three protocol variants from the 3.8.4 compiler and exports their resolved
+Compile dependency classpaths. Scala 2 and independent consumers are running;
+neither is claimed complete yet.
+
+`bash /srv/nvme/tmp/izumi-impl/2b-protocol-scala2-matrix.sh` subsequently exits 0
+(`2b-protocol-scala2-matrix.log`). Both Scala 2 versions run JVM/JS/Native, each
+passing 47 checks and emitting the same golden frame; Native outputs are cleaned
+before linking. The command publishes all six Scala 2 variants and exports their
+Compile classpaths. Together with the corrected Scala 3 producer matrix, all
+nine protocol lanes now pass.
+
+The first independent 3.8.4 consumer exits 1 during build-definition compilation
+(`2b-protocol-published-consumer-first.log`), before any consumer source runs:
+the SBT 2 classloader fixture's `.files` classpath extension requires an explicit
+`xsbti.FileConverter`. Inspection of the pinned
+[SBT 2.0.9 source](https://github.com/sbt/sbt/blob/v2.0.9/main/src/main/scala/sbt/Defaults.scala)
+confirms the public `fileConverter` key and the extension's `Seq[Path]` result.
+The fixture supplies that public key as a given and uses path strings; it calls
+no SBT private API. The corrected standalone runtime and classloader checks are
+outstanding at this point.
+
+That corrected consumer executes its JVM golden/request checks, then exits 1
+with `ClassNotFoundException` for the JVM-only classloader fixture
+(`2b-protocol-published-consumer-corrected.log`). The source-directory inspection
+exits 0 (`2b-protocol-consumer-jvm-source-dirs.log`): CrossType.Pure's JVM base is
+`consumer/.jvm`, and the configured extra directory incorrectly points below
+that base. Its source list contains only the shared consumer. The corrected
+directory is the base's parent followed by `src/main/scala-jvm`, where the actual
+driver source resides. A fresh four-compiler standalone matrix is running;
+the prior partial command is not claimed successful.
+
+The corrected `2b-protocol-consumer-matrix.sh` exits 0
+(`2b-protocol-published-consumer-matrix.log`). Actual observed compiler values
+are 3.8.4, 3.9.0, 2.13.18 and 2.12.21. Each lane cleans and runs all three
+published consumers and executes the JVM classloader exchange: twelve
+`PUBLISHED_PROTOCOL_CONSUMER_OK schema=1` and four
+`PROTOCOL_CLASSLOADER_CONSUMER_OK isolated=2 exchange=String` markers. This
+checks the SBT 2 baseline consuming the 3.8.4 artifact, the testkit's 3.9 baseline,
+and both Scala 2 coordinates without sharing producer classes.
+
+A strengthened success/failure invariant reproduction exits 1 for the expected
+`Successful test must not carry a failure` predicate
+(`2b-protocol-success-invariant-before.log`). The schema had accepted a
+successful status paired with a structured failure. Its result decoder now
+rejects that contradictory state; the shared producer validation uses the
+same check. The producer/consumer matrices are rechecked after this last
+semantic correction before the protocol substep is committed.
+
+Strict producer compilation initially exits 1 before tests or publication
+(`2b-protocol-final-producer-scala3.log`). Scala 3.8.4's source-3.7 migration
+warning rejects an explicit argument to an implicit parameter. Making the
+private message codec implicit and allowing ordinary inference preserves the
+shared Scala 2 syntax; no compiler warning suppression was added.
+
+Independent review reproduces recursive decoding/encoding stack overflow below
+the frame limit. The exact frozen-artifact compile/runtime replay is
+`bash /srv/nvme/tmp/izumi-impl/protocol-review/replay-nesting-reproduction.sh`;
+its adjacent `.log` exits 0 while the diagnostic probe captures
+`StackOverflowError` from both paths. The probe's printed depth 512 means 512
+cause edges around a leaf (root-inclusive depth 513), and its raw frame is
+52,914 characters. Current-source `current-invariants-before.log` reproduces
+the same failure and locates the decoder recursion in `ProtocolCodec`/Circe.
+The JVM boundary fixture independently exits 1 on accepting root-inclusive
+depth 33 (`2b-protocol-depth-bound-before.log`).
+
+The correction bounds JSON containers at 128 before parsing and failure causes
+at root-inclusive depth 32 during encoding/decoding. Both reject excess nesting
+explicitly without truncation or an exception-catching fallback. Fixtures
+exercise both boundaries, one level beyond each boundary, root-inclusive depth
+512, and escaped quotes/backslashes with hundreds of quoted braces. The fixed
+strict 3.8.4 producer command
+`bash /srv/nvme/tmp/izumi-impl/2b-protocol-final-producers.sh` exits 0
+(`2b-protocol-final-producer-scala3-corrected.log`): 60 checks on each platform,
+identical golden frames, all three local publications, and resolved Compile/Test
+graphs. Native is cleaned before linking.
+
+Review also reproduces skipped-with-failure aggregate success. The fail-first
+JVM fixture exits 1 on that exact predicate
+(`2b-protocol-skipped-invariant-before.log`). The result codec now rejects a
+skipped status carrying a failure, and `RunOutcome.successful` requires no
+result-level failure even for directly constructed records. Skipping without a
+failure remains a non-failing result. The 60-check fixture includes this
+postcondition. Scala 2 republication and independent consumers are still
+pending at this recording point.
+
+The first final Scala 2 command runs all three 2.13.18 lanes successfully, then
+exits 1 before 2.12 execution (`2b-protocol-final-producer-scala2.log`): that
+compiler cannot parse escaped quotes within two interpolated fixture literals.
+Triple-quoted literals preserve the same input frames. The fresh command
+`bash /srv/nvme/tmp/izumi-impl/2b-protocol-final-scala2-matrix.sh` exits 0
+(`2b-protocol-final-producer-scala2-corrected.log`): all six lanes pass 60
+checks, publish their artifacts and export Compile/Test classpaths. Native
+outputs are cleaned per compiler.
+
+The read-only reviewer independently compiles the current protocol and passes
+85 additional JVM checks (`bash
+/srv/nvme/tmp/izumi-impl/protocol-review/replay-bounded-protocol-review.sh`,
+adjacent `bounded-protocol-review.log`). Root-inclusive depths 1/31/32
+round-trip through rejection, phase-failure and completion messages;
+33/63/64/512/2048 reject. JSON depths through 128 pass and 129/1024 reject;
+52 quote/backslash parity cases preserve quoted braces. Succeeded/skipped
+results carrying a failure reject. This is independent evidence in addition
+to the portable fixture, not a replacement for its platform matrix.
+
+The strict Scala 3 producer is rerun after the shared fixture literal correction:
+`bash /srv/nvme/tmp/izumi-impl/2b-protocol-final-producers.sh`, exit 0,
+`2b-protocol-final-producer-scala3-final.log`. Each actual 3.8.4 JVM/JS/Native
+lane passes 60 checks with the same golden frame and publishes locally.
+Together with `2b-protocol-final-producer-scala2-corrected.log`, this is the
+final source's nine-lane producer checkpoint.
+
+The strengthened standalone consumers run against those publications:
+`bash /srv/nvme/tmp/izumi-impl/2b-protocol-consumer-matrix.sh`, exit 0,
+`2b-protocol-published-consumer-final.log`. Observed compilers are 3.8.4, 3.9.0,
+2.13.18 and 2.12.21. Each cleans its JVM/JS/Native outputs and checks the common
+wire frame, structured request, depth-32 round-trip, depth-33 rejection and
+skipped-with-failure policy. There are twelve
+`PUBLISHED_PROTOCOL_CONSUMER_OK schema=1 boundaries=verified` markers and four
+`PROTOCOL_CLASSLOADER_CONSUMER_OK isolated=2 exchange=String` markers.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-protocol-artifacts-and-graphs.py` exits 0
+(`2b-protocol-artifacts-and-graphs.log`), inspecting nine published jars/POMs
+and 18 resolved Compile/Test classpaths (251 entries). Jar CRCs, package contents,
+JSIR/NIR and Scala 3 TASTy pass. There is no izumi, ScalaTest, Scalactic or
+scalatestplus dependency, and no 3.9 language dependency in a 3.8.4 producer.
+The reviewer separately inspects the nine jars/POMs and observes Scala 3.8.4
+TASTy headers for all three Scala 3 artifacts.
+
+Regeneration with `--js --native` exits 0 and is SHA-256 idempotent for all three
+generated files; `git diff --check` exits 0
+(`2b-protocol-generator-final.log`, `2b-protocol-generator-idempotence.log`).
+The boundary metadata check at 2026-10-02 05:39:56 UTC still receives HTTP 404
+for both Native interop metadata URLs
+(`2b-protocol-interop-release-boundary.log`). Independent runner work continues.
+
+This checkpoint does not finish step 2b or O.12's final evaluation. Real process
+transports remain outstanding. Review also identifies a future assertion adapter
+requirement: the current wire diagnostic's location does not preserve the
+fundamentals relative/absolute/virtual identity and range/point/unavailable span
+variants. Preserve these distinctions when implementing that adapter; do not
+claim transported structured diagnostic fidelity from this codec checkpoint.
+
+The required read-only review closes with no unresolved concrete defect in this
+codec-only checkpoint. Its final log inspection confirms all twelve consumer
+and four classloader markers and all four observed compiler lanes. The reviewer
+also reruns its 85-check boundary probe against the fresh published JVM jar
+(`bounded-published-protocol-review.log`, exit 0), rather than only scratch
+producer classes. The real-transport and diagnostic-adapter limitations above
+remain outstanding; no parent step or final evaluation is marked done.
