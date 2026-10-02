@@ -1941,3 +1941,103 @@ items as outstanding. No unresolved checkpoint defect is observed.
 `git diff --check` passes. This section records the verified environment
 checkpoint in the local commit containing it; its exact hash is recorded at the
 next checkpoint. No complete step-2b or final evaluation is claimed here.
+
+## Step 2b: verified session-owned plugin loading checkpoint
+
+The preceding environment-construction checkpoint is local commit
+`ea8ff5c05dcf2199a2c77375ba000695f6989e34` (2026-10-02). The working tree is
+observed clean after that commit. Nothing is pushed.
+
+`bash /srv/nvme/tmp/izumi-impl/2b-session-plugin-loader-legacy-repro.sh` adds only
+scratch test sources to the JVM core through a session setting, compiles them
+successfully, scans exactly its one plugin class, and exits 1 for the expected
+ownership assertion (`2b-session-plugin-loader-legacy-before.log`):
+`sameCachedPlugin=true sameUncachedPlugin=false`. Two fresh default-loader
+objects reuse the same plugin instance through the production loader's global
+package cache. Uncached scans demonstrate that fresh instances can be produced.
+This is evidence against using that global cache for the new session path, not
+a scheduled change to the legacy loader's public cache policy.
+
+SessionPluginLoader keeps an instance-owned cache of full PluginConfig requests
+and explicitly delegates cache misses with `cachePackages=false`. Thus the new
+owner stores results locally instead of entering the delegate's global package
+cache. Uncached requests always delegate. Other query fields and definition
+modules are preserved; failed loads propagate their original exception and do
+not populate the cache. This class is preparation for the higher provider and
+does not by itself integrate the new path into that provider.
+
+The shared fixture adds the same eight static-module cache checks against the
+actual default loader and the manual in-memory loader. JVM-only checks perform
+actual classpath scans and distinguish the scanned plugin objects across owners;
+JS claims no package scanning. Strict Scala 3 JVM/JS compilation and the first
+contract runs exit 0 (`2b-session-plugin-loader-scala3-first.log`), with 45 JVM
+and 42 JS checks, unchanged environment concurrent checks and explicit completion
+markers. Direct concurrent plugin-load checks are then added to ensure the
+plugin cache itself suppresses duplicate loads within each owner without sharing
+results between owners. Parent items 2b.6/7/8/11 and O.18 remain outstanding;
+no parent-step or final completion is claimed.
+
+The final six-lane command batch uses
+`direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G "$1"' sh
+'<commands>'`, with `distage-testkit-core<platform>/testFull;
+distage-testkit-core<platform>/publishLocal;
+show distage-testkit-core<platform>/Compile/dependencyClasspath;
+show distage-testkit-core<platform>/Test/dependencyClasspath` for JVM, then JS,
+first on the default Scala 3.9.0, then after `++2.13.18`, then `++2.12.21`.
+It exits 0 (`2b-session-plugin-loader-matrix-final.log`): 45 JVM and 42 JS checks
+per compiler (261 total), 768 environment requests and 768 direct plugin requests,
+all six core publications, twelve classpath displays, and each platform's executor
+or asynchronous completion marker. `python
+/srv/nvme/tmp/izumi-impl/2b-session-plugin-loader-matrix-audit.py` exits 0
+(`2b-session-plugin-loader-matrix-audit.log` and summary JSON), checking every
+terminal and all twenty-four completed commands.
+
+The final strict replay sets `LocalProject("distage-testkit-coreJVM") /
+scalacOptions += "-Wunused:all"`, runs its `testFull` and `publishLocal`, and
+repeats those settings/actions for core JS. All four actions succeed with the
+same 45/42 check terminals and both concurrency pairs. The same batch then adds
+the original scratch probe directory to core JVM Test, compiles it successfully,
+and runs PluginOwnerCacheRepro. Its final exit 1 is the expected unchanged legacy
+assertion/marker, not a fixture or publication failure
+(`2b-session-plugin-loader-strict-final-legacy-after.log`). No existing legacy
+runtime implementation or production dependency changes in this checkpoint;
+the preceding six legacy regression lanes retain their recorded provenance.
+
+The required read-only reviewer creates a separate real-scan consumer under
+`/srv/nvme/tmp/izumi-impl/session-plugin-loader-review/`. Its initial compile
+omits PluginDef's required `-Yretain-trees` option and stops at that explicit
+precondition; the harness failure and exact commands remain in
+`published-scan-without-retain-trees-*`. The corrected compile/runtime both exit
+0. The consumer warms the legacy package cache, then verifies that the new owner
+bypasses that object; it varies all six request fields, verifies exact normalized
+forwarding, package exclusions, original error/retry and suspended providers,
+and completes 64 actual scanning requests across two owners before confirming
+executor termination. Frozen pre-strict evidence remains distinct from the
+final jar/replay.
+
+`python /srv/nvme/tmp/izumi-impl/session-plugin-loader-review/replay-all-published-scan.py`
+also compiles and runs with exit 0 against the final published core and nineteen
+frozen published Izumi dependency jars, with no producer class directory on its
+runtime classpath. Exact commands, frozen hashes and results are in that
+directory's `all-published-scan-commands.json`, `published-dependencies.json`, and
+`all-published-scan-{compile,runtime}.log`. The final core jar SHA-256 is
+`bbd84a36ed1f147a7dfb1f453f8d0af1dae2d5c1d10fd9a3bce3585f4859d9b7`.
+The reviewer reruns `audit-six-artifacts.py` there with exit 0
+(`artifact-audit-final.log`): six POMs/jars, twelve actual classpath blocks and
+1,790 exact class/TASTy/JSIR entries match compiled outputs. SessionPluginLoader
+is present; fixture classes, ScalaTest dependencies and unpublished test/helper
+outputs do not leak. The graph and generated dependency edges are unchanged.
+
+Final `direnv exec . sh -c 'export JAVA_HOME="$JDK21";
+exec bash sbtgen.sc --js --native'` exits 0
+(`2b-session-plugin-loader-generator-final.log`), with all three generated
+outputs SHA-identical (`2b-session-plugin-loader-generator-idempotence.log`).
+The 10:51 UTC Maven metadata check still observes HTTP 404 for both released
+Native interop artifact families (`2b-session-plugin-loader-interop-release-boundary.log`).
+Native core/provider coverage remains pending that release; independent
+higher-provider work continues. The required read-only final reviewer confirms
+the ledger/docs scope, generator hashes, artifact audit and external-boundary
+control, and observes no unresolved checkpoint defect. `git diff --check`
+passes. This section records the verified plugin-loading checkpoint in its
+containing local commit; its exact hash is recorded at the next checkpoint.
+No complete step-2b or final evaluation is claimed here.

@@ -22,12 +22,102 @@ object SessionEnvironmentFixtures {
     val checks = new Checks
     contracts(checks, "production", () => new PluginLoaderDefaultImpl())
     contracts(checks, "dummy", () => new StaticPluginLoader)
+    pluginContracts(checks, "production", () => new PluginLoaderDefaultImpl())
+    pluginContracts(checks, "dummy", () => new StaticPluginLoader)
+    SessionEnvironmentFixturePlatform.scannedOwners().foreach {
+      case (label, condition) => checks.verify(label)(condition)
+    }
     println("SESSION_ENVIRONMENT_CONTRACTS_OK checks=" + checks.count)
     SessionEnvironmentFixturePlatform.concurrent {
       executionContext =>
         concurrent("production", () => new PluginLoaderDefaultImpl(), executionContext)
           .flatMap(_ => concurrent("dummy", () => new StaticPluginLoader, executionContext))(executionContext)
+          .flatMap(_ => concurrentPlugins("production", () => new PluginLoaderDefaultImpl(), executionContext))(executionContext)
+          .flatMap(_ => concurrentPlugins("dummy", () => new StaticPluginLoader, executionContext))(executionContext)
     }
+  }
+
+  private def concurrentPlugins(label: String, makeLoader: () => PluginLoader, executionContext: ExecutionContext): Future[Unit] = {
+    val provisions = new AtomicInteger(0)
+    val definitions = new ModuleDef {
+      make[FixtureValue].from {
+        () =>
+          provisions.incrementAndGet().discard()
+          new FixtureValue
+      }
+    }
+    val config = PluginConfig.constUnchecked(definitions).cachePackages(true)
+    val delegate = new RecordingLoader(makeLoader())
+    val firstOwner = new SessionPluginLoader(delegate)
+    val secondOwner = new SessionPluginLoader(delegate)
+    val first = Vector.fill(ConcurrentRequests)(Future(firstOwner.load(config))(executionContext))
+    val second = Vector.fill(ConcurrentRequests)(Future(secondOwner.load(config))(executionContext))
+    implicit val ec: ExecutionContext = executionContext
+    Future.sequence(first ++ second).map {
+      loaded =>
+        val left = loaded.take(ConcurrentRequests)
+        val right = loaded.drop(ConcurrentRequests)
+        require(left.forall(_.eq(left.head)) && right.forall(_.eq(right.head)), label + " concurrently duplicated a cached plugin request")
+        require((left.head ne right.head) && delegate.count.get() == 2, label + " plugin request crossed owner boundaries or reloaded")
+        require(provisions.get() == 0, label + " plugin loading executed a bound provider")
+        println("SESSION_PLUGIN_CONCURRENT_OK adapter=" + label + " requests=" + (ConcurrentRequests * 2))
+    }
+  }
+
+  private def pluginContracts(checks: Checks, label: String, makeLoader: () => PluginLoader): Unit = {
+    val provisions = new AtomicInteger(0)
+    val definitions = new ModuleDef {
+      make[FixtureValue].from {
+        () =>
+          provisions.incrementAndGet().discard()
+          new FixtureValue
+      }
+    }
+    val config = PluginConfig.constUnchecked(definitions).cachePackages(true)
+    val requests = scala.collection.mutable.ArrayBuffer.empty[PluginConfig]
+    val delegate = new PluginLoader {
+      private val loader = makeLoader()
+      override def load(config: PluginConfig): LoadedPlugins = {
+        requests += config
+        loader.load(config)
+      }
+    }
+    val owner = new SessionPluginLoader(delegate)
+    checks.verify(label + " plugin cache construction is deferred")(requests.isEmpty && provisions.get() == 0)
+    val first = owner.load(config)
+    val repeated = owner.load(config)
+    checks.verify(label + " plugin cache repeats within one owner") {
+      (first eq repeated) && requests.size == 1 && first.merges == config.merges && first.overrides == config.overrides
+    }
+    val independent = new SessionPluginLoader(delegate).load(config)
+    checks.verify(label + " plugin cache loads independently for another owner")((first ne independent) && requests.size == 2)
+
+    val uncachedFirst = owner.load(config.cachePackages(false))
+    val uncachedSecond = owner.load(config.cachePackages(false))
+    checks.verify(label + " uncached plugin requests always delegate")((uncachedFirst ne uncachedSecond) && requests.size == 4)
+    val overrideModule = new ModuleDef { make[String].fromValue("plugin-request-override") }
+    val changed = config.overriddenBy(Seq(overrideModule))
+    val changedResult = owner.load(changed)
+    checks.verify(label + " plugin requests preserve different definitions") {
+      requests.size == 5 && changedResult.overrides == Seq(overrideModule) && first.overrides.isEmpty
+    }
+    checks.verify(label + " plugin cache bypasses delegate caching without provisioning") {
+      requests.forall(!_.cachePackages) && requests.head == config.cachePackages(false) && requests.last == changed.cachePackages(false) && provisions.get() == 0
+    }
+
+    val failure = new IllegalStateException(label + " cached plugin failure")
+    val attempts = new AtomicInteger(0)
+    val failing = new SessionPluginLoader(new PluginLoader {
+      private val loader = makeLoader()
+      override def load(config: PluginConfig): LoadedPlugins = {
+        if (attempts.getAndIncrement() == 0) throw failure
+        loader.load(config)
+      }
+    })
+    val rejected = Try(failing.load(config))
+    checks.verify(label + " plugin cache retains the original failure")(rejected.failed.toOption.exists(_ eq failure))
+    val retried = failing.load(config)
+    checks.verify(label + " failed plugin loading is not cached")((retried eq failing.load(config)) && attempts.get() == 2 && provisions.get() == 0)
   }
 
   private def contracts(checks: Checks, label: String, makeLoader: () => PluginLoader): Unit = {

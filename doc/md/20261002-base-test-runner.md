@@ -79,9 +79,19 @@ load separately. Failed construction propagates its original exception and does
 not populate the cache.
 
 The production-loader and in-memory-loader fixtures exercise static modules,
-including concurrent requests on JVM and JS. Package scanning and the higher
-execution provider remain subsequent work. The legacy `DistageTestEnv` delegates
-construction to the same factory and retains its existing global cache policy.
+including concurrent requests on JVM and JS. `SessionPluginLoader` owns its
+cache of full plugin requests. Cached misses delegate with caching disabled, so
+the owner retains results locally without entering the delegate's global package
+cache. Requests with caching disabled always delegate; other request fields and
+definitions remain intact. Failed loads retain their original exception and may
+be retried. JVM fixtures also check distinct scanned plugin objects across
+owners and suspended providers. JS supports static modules and rejects package
+scanning through its existing backend.
+
+The higher execution provider remains subsequent work. The legacy
+`DistageTestEnv` delegates construction to the same factory and retains its
+existing global cache policy. The legacy default loader's package cache policy
+also remains unchanged.
 
 ## Fundamentals test projects
 
