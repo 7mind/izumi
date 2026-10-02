@@ -20,7 +20,7 @@ head. The spike reports are design evidence, not implementation verification.
 | L4 | not started | No evaluation point passed yet. |
 | L5 | not started | No evaluation point passed yet. |
 | L6 | in progress | Part-1 verification below; full gate remains outstanding. |
-| G.1 | not started | No evaluation point passed yet. |
+| G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
 | 1a.1 | in progress | No evaluation point passed yet. |
 | 1a.2 | in progress | No evaluation point passed yet. |
 | 1a.3 | in progress | No evaluation point passed yet. |
@@ -32,15 +32,15 @@ head. The spike reports are design evidence, not implementation verification.
 | 1a.9 | in progress | No evaluation point passed yet. |
 | 1a.10 | in progress | No evaluation point passed yet. |
 | 1a.11 | in progress | No evaluation point passed yet. |
-| 1b.1 | not started | No evaluation point passed yet. |
-| 1b.2 | not started | No evaluation point passed yet. |
-| 1b.3 | not started | No evaluation point passed yet. |
-| 1b.4 | not started | No evaluation point passed yet. |
-| 1c.1 | not started | No evaluation point passed yet. |
-| 1c.2 | not started | No evaluation point passed yet. |
-| 1c.3 | not started | No evaluation point passed yet. |
-| 1c.4 | not started | No evaluation point passed yet. |
-| 1c.5 | not started | No evaluation point passed yet. |
+| 1b.1 | in progress | Plain-core Native build, execution, and publication checkpoint below; final recheck outstanding. |
+| 1b.2 | in progress | Plain-core strict Scala 3.9 checkpoint below; final recheck outstanding. |
+| 1b.3 | in progress | Cleaned published-artifact consumer checkpoint below; final recheck outstanding. |
+| 1b.4 | in progress | No evaluation point passed yet. |
+| 1c.1 | in progress | Current plain-core checkpoint: all nine baseline targets pass; final recheck outstanding. |
+| 1c.2 | in progress | Current plain-core checkpoint: six additional range-mode runs pass; final recheck outstanding. |
+| 1c.3 | in progress | Resolved-graph review and all nine published POMs pass below; final recheck outstanding. |
+| 1c.4 | in progress | Independent portable oracle and external review probes pass below; final recheck outstanding. |
+| 1c.5 | in progress | Current plain-core semantics and diagnostic checkpoint below; final recheck outstanding. |
 | 1d.1 | not started | No evaluation point passed yet. |
 | 1d.2 | not started | No evaluation point passed yet. |
 | 1d.3 | not started | No evaluation point passed yet. |
@@ -121,13 +121,13 @@ head. The spike reports are design evidence, not implementation verification.
 | O.1 | not started | No evaluation point passed yet. |
 | O.2 | not started | No evaluation point passed yet. |
 | O.3 | not started | No evaluation point passed yet. |
-| O.4 | not started | No evaluation point passed yet. |
-| O.5 | not started | No evaluation point passed yet. |
-| O.6 | not started | No evaluation point passed yet. |
-| O.7 | not started | No evaluation point passed yet. |
-| O.8 | not started | No evaluation point passed yet. |
-| O.9 | not started | No evaluation point passed yet. |
-| O.10 | not started | No evaluation point passed yet. |
+| O.4 | in progress | No evaluation point passed yet. |
+| O.5 | in progress | No evaluation point passed yet. |
+| O.6 | in progress | No evaluation point passed yet. |
+| O.7 | in progress | No evaluation point passed yet. |
+| O.8 | in progress | No evaluation point passed yet. |
+| O.9 | in progress | No evaluation point passed yet. |
+| O.10 | in progress | No evaluation point passed yet. |
 | O.11 | not started | No evaluation point passed yet. |
 | O.12 | not started | No evaluation point passed yet. |
 | O.13 | not started | No evaluation point passed yet. |
@@ -467,3 +467,324 @@ verification gaps remain tracked above. Generator compilation on 3.9.0 and
 subsequent idempotence both exit 0 (`2a-generator-compiler39.log`,
 `2a-generator-idempotence.log`): all three generated files are byte-identical
 before/after the latter command. No full step or final gate marked done.
+
+Compiler-upgrade implementation commit: `3005b1aa53da2fb461a090795b4a401ef8f973c1`.
+After that commit, `git diff --exit-code build.sbt project/plugins.sbt
+project/build.properties` exits 0. This is substep evidence for L5, not its final
+evaluation point.
+
+### Ubuntu worker verification
+
+The fresh task checkout `/home/ubuntu/izumi-native-testkit-3005b1aa5` on
+`ubuntu@llm-ubuntu-0.pgtr.7mind.io` was cloned from a local Git bundle. Its HEAD
+is the compiler-upgrade commit above. The bundle contains the branch history
+but not tags; sbt-git reports that it cannot describe a tag. No code was changed
+in the worker checkout. SSH uses a task-specific known-hosts file under scratch.
+Batch Docker/direnv installation and cloning exit 0 (`2a-worker-clone.log`).
+Nix development environment realization exits 0 (`2a-worker-devshell.log`).
+Initial direnv-only launches did not load the environment correctly; an
+initial explicitly supplied JDK path was absent. Those launch logs are not
+compilation or test evidence. The corrected launch uses the actual `$JDK21`
+exported by the flake in the worker shell.
+
+Command: SSH login shell, `NIX_CONFIG='experimental-features = nix-command
+flakes' nix develop --command bash /home/ubuntu/worker-jvm.sh`; the script checks
+the exact HEAD and executes `direnv exec . sbt -java-home "$JDK21" -batch
+-J-Xmx6G 'izumi-jvm/Test/compile; izumi-jvm/testFull'`.
+First full run exits 1 (`2a-worker-jvm-final.log`): all 18 test groups complete,
+1575 successes, one failure, 19 expected cancellations. All SQL fixture mounts
+and the previously failing container acquisition checks work on this worker.
+The remaining failure is `DockerPullWithPlatformTestZIO`: inspection reports
+an empty architecture instead of `riscv64`.
+
+Reproduction (`2a-worker-image-inspect.log`): with fresh Docker 29.1.3's
+containerd image store, `docker pull --platform linux/riscv64
+library/hello-world:latest` succeeds, but its v1.44 image-inspection response
+has `Architecture:""` and `Os:""`. A v1.52 inspection with the explicit platform
+returns `riscv64` and `linux`. This is a daemon/API representation difference,
+not evidence of a compiler defect. [Docker's documentation](https://docs.docker.com/engine/storage/containerd/)
+describes the changed default and the reversible storage-backend switch.
+
+Worker runtime configuration is now `containerd-snapshotter:false`, selecting
+the supported legacy `overlay2` store. Before restarting, the daemon config was
+absent and all ten containers were verified to carry this task's single
+`distage.jvmrun` label; only those labeled scratch containers were removed.
+The previous image-store data remains on disk. The control image inspection
+now returns `riscv64 linux` (`2a-worker-legacy-docker.log`, exit 0).
+The full unchanged-code rerun is in progress; no failed suite is excluded and
+no Docker production code is changed. Host Podman containers remain untouched.
+
+That unchanged-code rerun exits 0 (`2a-worker-jvm-legacy.log`): 18 completed test
+groups, 1576 successes, zero failures, and 19 expected cancellations. Its command
+is the exact worker command above, with the same HEAD. This establishes the
+full Scala 3.9 JVM test run on JDK21 at the compiler-upgrade substep. L1's complete
+JDK/Scala CI matrix and later heads remain outstanding.
+
+## 2026-10-02: steps 1b–1c, in progress
+
+The plain `fundamentals-assertions` module, its source/observation model, both
+compiler implementations, portable renderer, and independent behavioral
+fixtures are under verification. Source conventions and rendering policy are
+specified in [the assertion contract](20261002-assertion-source-diagnostics.md).
+No step or final gate is complete.
+
+At this boundary, Python `urllib.request` reads both required Native interop
+metadata URLs again: HTTP 404 for both. Captures:
+`/srv/nvme/tmp/izumi-impl/metadata/{zio-interop-cats,zio-interop-tracer}-1b-boundary.txt`.
+Independent plain-assertion work continues.
+
+Initial SBT task definitions failed on the SBT 2 `TestResult` type, input-task
+dependency syntax, and missing cache codec; these are captured in the
+`1c-jvm-*.log`, `1c-scala2-jvm.log`, and `1c-cross-initial.log` files. The
+fixture task explicitly executes its entry point and does not cache a successful
+runtime result. A concurrent launch failed on the SBT bootstrap socket
+(`1c-scala2-jvm-initial.log`), before compilation; subsequent root builds run
+sequentially.
+
+`direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G
+"fundamentals-assertionsJVM/test"'` on 3.9.0 exits 0
+(`1c-jvm-execution.log`): `ASSERTION_FIXTURES_OK checks=54 positions=range`.
+This verifies macro semantics and diagnostics on that target only; the full
+Scala/platform and range-position matrices remain under verification.
+
+### Compiler-upgrade CI verification on the worker
+
+On the isolated Ubuntu Docker worker at `3005b1aa53da2fb461a090795b4a401ef8f973c1`,
+the exact Scala 3 JVM CI command passes under JDK 17, 21, and 25:
+
+```sh
+direnv exec . mdl -u platform:jvm -u java_version:<17|21|25> -u scala_version:3 :gen :test --without-nix --verbose --simple-log
+```
+
+The parent process enters the repository's Nix development shell before running
+this command. Each lane uses its own fresh `Global / localCacheDirectory` in the
+detached `/home/ubuntu/izumi-ci-3005b1aa5` worktree. Tags are fetched from a local
+bundle before generation. Scripts: `/srv/nvme/tmp/izumi-impl/worker-ci-3.sh` and
+`worker-ci-3-jdks.sh`. Captures: `target/native-testkit-evidence/2a-worker-ci-3.log`
+(JDK21), and `2a-worker-ci-3-jdks.log` (JDK17, then JDK25); both processes exit 0.
+Each lane completes 18 test groups with 1576 successes, zero failures, and 19
+expected cancellations. Counts are summed from the 18 ScalaTest result records;
+each lane also ends with `Execution completed successfully`. This supplies
+Scala 3 L1 substep evidence at that commit; Scala 2 coverage lanes and evaluation
+points on later heads remain outstanding.
+
+### Plain-assertion reproductions and corrections
+
+The read-only review found six defects. Reproductions preceded corrections:
+
+- Explicit Scala 3 context evaluated before the condition: the added independent
+  ordering fixture fails with `Condition is evaluated before its explicit context`
+  (`1c-context-order-before.log`, exit 1). The context parameter is now inline,
+  and emitted code evaluates it after the condition; a throwing condition does
+  not evaluate the context.
+- Scala 2 omitted evaluation of a trait receiver: the receiver fixture fails
+  with `Assertion receiver evaluates once before the condition`
+  (`1c-receiver-before.log`, exit 1). Emitted code now evaluates `c.prefix.tree`
+  once before the condition, preserving receiver exceptions.
+- Lexical normalization removed roots: the independent path oracle fails for
+  Windows drive parents, absolute parents, and a relative `.` source root
+  (`1c-source-root-oracle-before.log`, exit 1). Normalization now preserves
+  POSIX, drive, and UNC roots, and unresolved relative parents.
+- Scala 3 inline expansion recorded another file's spans under the caller's
+  identity: the new separate-file fixture fails its opaque-call requirement
+  (`1c-inline-before.log`, exit 1). Only a quote's `Inlined(None, Nil, body)`
+  wrapper is now decomposed; inline helper calls stay opaque at their caller.
+  The fixture also checks observation ranges and text against the recorded
+  calling expression.
+- Strict compiler settings reject the private macro accessor with E192:
+  `Compile / scalacOptions ++= Seq("-WunstableInlineAccessors", "-Wconf:any:error",
+  "-Wconf:cat=deprecation:warning")`, then `fundamentals-assertionsJVM/clean;
+  fundamentals-assertionsJVM/compile` fails twice (`1c-strict-before.log`, exit 1).
+  `@scala.annotation.publicInBinary` supplies a stable binary access path while
+  retaining package visibility in source. The identical compile command then
+  exits 0 (`1c-strict-after.log`); the separate public SourceFile API deprecation
+  remains a warning.
+- A valid `RenderLimits(8,16,1,128,Int.MaxValue)` caused tab expansion to allocate
+  beyond the total bound: `RenderProbe.scala` under JVM `-Xmx64m` prints
+  `BOUNDED_RENDER_THROW=java.lang.OutOfMemoryError:Requested array size exceeds VM limit`
+  (`1c-render-bound-before.log`). Tabs and pointers now allocate only within the
+  remaining output budget. The portable regression fixture uses the maximal tab
+  width and checks message length against the total limit.
+
+Other captured failures identify the Scala 2 typed-tree instrumentation defect
+(`1c-matrix-first.log`: compiler assertion during `superaccessors`) and partial
+synthesized ranges on Scala 2.12 (`1c-scala212-source-repro.log`). Fresh comparison
+trees retain the resolved method symbol. Range/text recording trusts an actual
+range on the macro's enclosing position as well as the expression tree, marking
+untrusted synthesized ranges unavailable. The initial compiler-settings heuristic
+fails the 2.13 disabled-range fixture (`1c-range-matrix.log`, exit 1), because
+`c.compilerSettings` omits false Boolean options. Six separate scratch consumer
+compiles on 2.12/2.13, each with default, true, and false range options, confirm
+that the enclosing position preserves the range mode while expression trees may
+retain synthesized ranges. Captures and public compiler-source provenance:
+`/srv/nvme/tmp/izumi-impl/assertion-review/range-settings/`.
+No external compiler defect is inferred from those implementation defects.
+
+### Plain-assertion baseline matrix
+
+The command below exits 0 on the current uncommitted implementation:
+
+```sh
+direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G "fundamentals-assertionsJVM/testFull; fundamentals-assertionsJS/testFull; fundamentals-assertionsJS/testFull; fundamentals-assertionsNative/clean; fundamentals-assertionsNative/testFull; ++2.13.18; fundamentals-assertionsJVM/testFull; fundamentals-assertionsJS/testFull; fundamentals-assertionsNative/clean; fundamentals-assertionsNative/testFull; ++2.12.21; fundamentals-assertionsJVM/testFull; fundamentals-assertionsJS/testFull; fundamentals-assertionsNative/clean; fundamentals-assertionsNative/testFull"'
+```
+
+Capture: `target/native-testkit-evidence/1c-matrix-final-review.log`. Every
+3.9.0/2.13.18 target prints `ASSERTION_FIXTURES_OK checks=73 mode=range positions=range`;
+every 2.12.21 target prints `checks=70 mode=point positions=point`. The repeated
+JS task prints its execution marker twice, establishing that it executes twice
+instead of reusing a cached successful runtime result. Earlier baseline captures
+are retained as intermediate evidence, not substituted for this rerun.
+
+The read-only review inspected all nine dependency graphs and found no
+ScalaTest/Scalactic or higher izumi module. Published-artifact and additional
+range-mode checks remain in progress. No 1b/1c step or final item is marked done.
+
+At the consumer boundary, Maven metadata again reports Scala 3.9.0 as its latest
+stable compiler; no newer 3.9.x patch or stable Scala Next lane exists. Native
+ZIO interop metadata still returns HTTP 404 for both required artifacts.
+Captures: `/srv/nvme/tmp/izumi-impl/metadata/*consumer-boundary.{xml,txt}`.
+
+### Plain-core publication checkpoint
+
+Additional review reproductions (`assertion-review/deep-inline/root-bounds.log`)
+show that drive-relative roots `C:`/`C:.` stripped an absolute drive prefix,
+`1:` was incorrectly treated as a drive letter, and excerpt/value truncation
+introduced unpaired UTF-16 surrogates. Root comparison now preserves the
+absolute/relative kind and uses the same alphabetic-drive policy as normalization.
+Truncation and tab expansion now preserve complete valid surrogate pairs.
+The independent portable fixtures cover all three output bounds and those path
+cases. These captures precede the later prefix-preservation correction below.
+
+Commands/scripts and observed results:
+
+- `/srv/nvme/tmp/izumi-impl/1c-final-matrix.sh` runs strict Scala 3
+  compile-and-execute tasks on JVM, JS, and Native, repeats the JS task, and
+  publishes all three artifacts. Every target passes 80 checks with exact ranges,
+  and the repeated JS invocation prints twice. Capture: `1c-published-matrix.log`.
+  The subsequent Scala 2 continuation exits 1 because the session-local setting
+  guard read the root Scala version and retained a Scala 3-only compiler flag.
+  This is a verification-script failure, before Scala 2 producer compilation.
+- `bash /srv/nvme/tmp/izumi-impl/1c-final-scala2-matrix.sh` exits 0
+  (`1c-published-scala2-matrix.log`). It runs the 2.13.18 and 2.12.21 baseline
+  fixtures and `publishLocal` on JVM/JS/Native, then explicitly adds
+  `Test / scalacOptions += "-Yrangepos"` for all three 2.12 targets, and switches
+  to 2.13 with `Test / scalacOptions ~= (_.filterNot(_ == "-Yrangepos") :+
+  "-Yrangepos:false")`. It prints the selected compiler options before each
+  special range mode. All 12 invocations pass: 80 checks with ranges on default
+  2.13 and range-enabled 2.12, 77 checks with explicit point-only diagnostics on
+  default 2.12 and range-disabled 2.13. Native outputs are cleaned before each
+  mode. Together the two scripts verify the nine baseline targets and six
+  additional range-mode targets on the corrected producer.
+- From `test-fixtures/assertion-consumer`,
+  `direnv exec ../.. sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G
+  -Dizumi.fixture.scala-version=3.9.0 -Dizumi.fixture.version=1.3.0-SNAPSHOT
+  "consumerJVM/runMain izumi.fixtures.assertions.PublishedAssertionConsumer;
+  consumerJS/run; consumerNative/run"'` exits 0 (`1b-published-consumer-3.9-platform.log`).
+  Each target prints `PUBLISHED_ASSERTION_CONSUMER_OK`, checking separately
+  expanded macros, evaluation counts, a skipped branch, and a usable message.
+  The build shares no producer class directory and uses the published artifacts.
+  Initial fixture wiring fails before expansion on `%%%` (E008), and then on a
+  doubled explicit platform suffix; captures `1b-published-consumer-3.9.log` and
+  `1b-published-consumer-3.9-resolved.log`. The correction uses SBT 2's `%%`
+  platform-aware declaration, as documented by the
+  [Scala Center announcement](https://github.com/scala/scala-lang/blob/main/blog/_posts/2026-06-29-sbt2.md#using-cross-published-libraries).
+- Python `zipfile` and `xml.etree.ElementTree` inspect all nine published binary
+  jars and POMs (`1b-published-artifact-manifest.log`): all have classfiles,
+  Scala 3 has TASTy, all three JS artifacts have JS IR, and all three Native
+  artifacts have NIR. None of the nine POMs depends on ScalaTest, Scalactic,
+  ScalaTestplus, or another izumi artifact. The module has no izumi dependency;
+  Scala 2 reflect is provided. This corroborates the review's resolved-graph
+  check, rather than substituting POM contents for that check.
+- Regenerate with `direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash
+  sbtgen.sc --js --native'` (`1b-generator-idempotence.log`, exit 0). SHA-256 hashes
+  of `build.sbt`, `project/plugins.sbt`, and `project/build.properties` are
+  unchanged across generation. `git diff --check` exits 0.
+
+Earlier strict-fixture checking also exposed non-Unit statement warnings
+(`1c-strict-matrix.log`, exit 1). Explicit discards and the independent oracle's
+`expectFailure` method make the corrected fixtures compile under strict warnings
+on Scala 3 and under Scala 2.12's binding rules. Intermediate captures are
+retained; only the final source checks above support this substep.
+
+This verified substep adds the plain core and its consumer fixture. Effects and
+the complete parent-step CI gates are still outstanding. The parent steps and
+final evaluation points remain in progress.
+
+### Prefix-preservation correction and rerun
+
+The last rendering review found a separate defect: with the compiled excerpt
+`🐒abc` and only one UTF-16 unit of remaining total budget, tab expansion skipped
+the leading two-unit codepoint and displayed `a` at the pointer origin. The
+strengthened public rendering fixture fails first (`1c-prefix-bound-before.log`,
+exit 1: `Insufficient Unicode output budget never skips into a later source position`).
+Expansion now stops when the next complete codepoint cannot fit. It does not
+advance to later source characters. This supersedes the renderer results in the
+publication-checkpoint captures above.
+
+`bash /srv/nvme/tmp/izumi-impl/1c-final-scala3-matrix.sh` exits 0
+(`1c-final-prefix-scala3.log`): strict compile-and-run on all three targets,
+81 checks with ranges, repeated JS execution, and three updated local artifacts.
+`bash /srv/nvme/tmp/izumi-impl/1c-final-scala2-matrix.sh` exits 0
+(`1c-final-prefix-scala2.log`): six baseline runs, six additional range-mode runs,
+and six updated local artifacts. Trusted-range modes pass 81 checks; point-only
+modes pass 78. These two scripts verify all 15 required compiler/platform/range
+modes on the corrected core. Their exact commands are retained in the scripts.
+
+### Stable Scala 3 receiver correction
+
+The final review independently reproduces omitted stable receiver evaluation on
+Scala 3: lazy and module initialization are absent, and a field access through a
+null holder is omitted. Equivalent Scala 2 consumers retain those effects. The
+portable regression fails before the correction with `Lazy receiver initializes
+before condition evaluation` (`1c-stable-receiver-before.log`, exit 1). Scala 3
+inline expansion omits a stable prefix when the body does not reference `this`.
+Both public overloads now pass a quote of `this` into the macro, which explicitly
+evaluates it before the recorder and condition. The narrow JVM rerun exits 0 and
+passes 86 checks (`1c-stable-receiver-after.log`).
+
+The first strict matrix passes JVM and stops at the new JS null-field fixture:
+the receiver access throws `UndefinedBehaviorError`, while the fixture catches
+only `NullPointerException`. The captured excerpt is retained in
+`1c-receiver-js-fixture-failure.txt`; the complete initial log was replaced by
+the rerun, as that capture explicitly records. Generated JS retains the null
+access before the condition. This is the documented default
+[Scala.js fast-linking semantics](https://www.scala-js.org/doc/semantics.html),
+not a failure of the receiver correction. The fixture now compares the thrown
+class against direct field access in the same runtime and verifies that the
+condition did not execute; production behavior is unchanged by that fixture
+correction.
+
+`bash /srv/nvme/tmp/izumi-impl/1c-final-scala3-matrix.sh` then exits 0
+(`1c-final-receiver-scala3.log`): strict compilation, 86 checks on each target,
+repeated JS execution, a clean Native link, and three updated local artifacts.
+The read-only reviewer independently recompiles the current producer and consumer
+with strict Scala 3 options. Lazy/module/null-field controls, explicit context
+order, thrown receiver behavior, subclass `this`, all nine deep-inline cases,
+root identities, Unicode bounds, and maximal-tab checks pass. Captures:
+`/srv/nvme/tmp/izumi-impl/assertion-review/final-current/receiver-corrected/`.
+Its review reports no concrete residual plain-core defect; this is review
+evidence, separate from the portable runtime and publication checks.
+
+`bash /srv/nvme/tmp/izumi-impl/1c-final-scala2-matrix.sh` exits 0
+(`1c-final-receiver-scala2.log`): all six baseline and six additional range-mode
+runs pass, with six updated local artifacts. All trusted-range modes pass 86
+checks; point-only modes pass 83. Together the scripts verify all 15
+compiler/platform/range modes on the current core. The extra five checks cover
+lazy and module receivers plus preservation of a failing stable field access.
+
+From `test-fixtures/assertion-consumer`, the following exits 0 against the newly
+published 3.9.0 artifacts, after cleaning all consumer outputs:
+
+```sh
+direnv exec ../.. sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G -Dizumi.fixture.scala-version=3.9.0 -Dizumi.fixture.version=1.3.0-SNAPSHOT "consumerJVM/clean; consumerJS/clean; consumerNative/clean; consumerJVM/runMain izumi.fixtures.assertions.PublishedAssertionConsumer; consumerJS/run; consumerNative/run"'
+```
+
+Capture: `1b-published-consumer-receiver-final.log`. Each actual target prints
+`PUBLISHED_ASSERTION_CONSUMER_OK`, including the additional lazy receiver
+initialization check. Python `zipfile` and `ElementTree` inspection again verifies
+all nine published binary jars and POMs, including TASTy/JS IR/NIR and dependency
+exclusions (`1b-published-artifact-receiver-manifest.log`, exit 0). The generated
+build inputs have not changed since the idempotent generation checkpoint.
+This commit records the verified plain-core substep. Complete repository CI,
+effect adapters, and all final-head evaluations remain outstanding; no parent
+step is claimed complete.

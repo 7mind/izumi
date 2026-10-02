@@ -488,6 +488,7 @@ object Izumi {
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
       final val orphans = ArtifactId("fundamentals-orphans")
+      final val assertions = ArtifactId("fundamentals-assertions")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
 //      final val reflection = ArtifactId("fundamentals-reflection")
@@ -587,6 +588,25 @@ object Izumi {
           Projects.fundamentals.functional,
         ),
         settings = Seq.empty,
+      ),
+      Artifact(
+        name = Projects.fundamentals.assertions,
+        libs = Seq(scala_reflect),
+        depends = Seq.empty,
+        settings = Seq(
+          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+          "testOptions" in SettingScope.Test := Const.EmptySeq,
+          "mainClass" in SettingScope.Test :=
+            """{
+              |  val options = (Test / scalacOptions).value
+              |  val pointOnly = (scalaVersion.value.startsWith("2.12") && !options.contains("-Yrangepos")) || options.contains("-Yrangepos:false")
+              |  Some(if (pointOnly) "izumi.fundamentals.assertions.AssertionFixturesWithoutRanges" else "izumi.fundamentals.assertions.AssertionFixtures")
+              |}""".stripMargin.raw,
+          "testFull" in SettingScope.Test := """Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed }""".raw,
+          "test" in SettingScope.Test := """(Test / testFull).value""".raw,
+          "scalaJSUseMainModuleInitializer" in (SettingScope.Test, Platform.Js) := true,
+          "scalaJSUseTestModuleInitializer" in (SettingScope.Test, Platform.Js) := false,
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.orphans,
