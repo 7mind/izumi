@@ -1820,3 +1820,124 @@ claim parent-step or final completion. `git diff --check` passes. This section
 records the verified fundamentals-test-project checkpoint in the local commit
 containing it; the exact hash is recorded at the next checkpoint. No complete
 step-2b or final evaluation is claimed here.
+
+## Step 2b: verified session-owned environment construction checkpoint
+
+The preceding verified test-project checkpoint is local commit
+`59534b6d5709b66cb327531cd5dd58983cacd1fa` (2026-10-02). The working tree is
+observed clean after that commit. Nothing is pushed.
+
+Before changing environment construction, `bash
+/srv/nvme/tmp/izumi-impl/2b-session-environment-legacy-repro.sh` compiles a
+minimal independent-owner control against the current core, then exits 1 for
+the expected runtime assertion (`2b-session-environment-legacy-before.log`):
+`sameEnvironment=true firstLoads=2 secondLoads=0 secondDefaultRetained=false`.
+Both new owner objects receive the first environment/default module because
+the legacy companion caches omit the loader/default-module identities and
+outlive the owners. This demonstrates why a new session cannot use that path;
+it does not schedule a correction to the released legacy runner.
+
+The implementation separates stateless environment construction into
+TestEnvironmentFactory and adds SessionTestEnvironment with an instance-owned
+cache keyed by explicit configuration, loader, roles, merge strategy, effect
+tag and default module. Legacy DistageTestEnv delegates construction while
+retaining its cache policy; its lazy default-module callback remains after
+plugin loading to preserve that ordering. Pure reflective bootstrap definitions
+move to the factory companion, and TestPlanner uses those definitions without
+initializing the legacy cache companion. This is preparation for the higher
+execution provider. Items 2b.6/7/8/11 and O.18 remain outstanding; their complete
+provider, discovery and resource-ownership boundaries are not established by this
+environment-only checkpoint. No parent-step or final completion is claimed.
+
+The required read-only reviewer finds a defect in the first cache key:
+PluginLoader and PluginMergeStrategy use value equality even though they are
+executable collaborators. Its independent `replay-loader-identity.py` and
+`replay-merge-identity.py` under
+`/srv/nvme/tmp/izumi-impl/session-environment-review/` compile successfully against
+a frozen copy of the published first implementation, then each exits 1:
+distinct equal-valued collaborators produce `sameEnvironment=true`, zero calls
+to the second collaborator and `secondDefinitions=false`. Adjacent
+`*-identity-before-{commands.json,compile.log,runtime.log}` preserve those
+commands and failures. Before changing the key, the expanded common fixture
+also compiles and fails at the expected equal-loader runtime assertion with
+`direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G
+"distage-testkit-coreJVM/testFull"'`
+(`2b-session-environment-equal-collaborators-before.log`, exit 1).
+
+The correction wraps just these two fields in typed reference-identity keys,
+using `eq` and `System.identityHashCode`. Configuration, roles, effect tag and
+module retain their value-domain equality. The fixture now requires each
+distinct equal-valued loader/strategy to retain its own definitions, receive two
+initial calls, and receive no further call on an identical repeated request.
+Both the actual production loader and a manual in-memory loader run the same
+contract. This covers static explicit modules, not classpath package scanning.
+
+Three separate final SBT batches exit 0 on 2026-10-02. Each uses
+`direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G "$1"'
+sh '<commands>'`, with these commands in order for JVM and then JS:
+`distage-testkit-core<platform>/testFull;
+distage-testkit-scalatest<platform>/testFull;
+distage-testkit-core<platform>/publishLocal;
+show distage-testkit-core<platform>/Compile/dependencyClasspath;
+show distage-testkit-core<platform>/Test/dependencyClasspath`.
+The Scala 3 batch first sets
+`LocalProject("distage-testkit-coreJVM") / scalacOptions += "-Wunused:all"`;
+the Scala 2 batches first use `++2.13.18` and `++2.12.21` respectively. Their
+full captured outputs are `2b-session-environment-{scala3,scala213,scala212}-final.log`.
+Each JVM/JS lane passes 26 synchronous contract checks and 64 concurrent requests
+per production/dummy adapter, with an owned-executor termination or asynchronous
+JS completion marker. Totals: 156 contract checks and 768 requests. No bound
+fixture provider executes during environment construction. The unchanged legacy
+suite passes 345 JVM and 137 JS tests per compiler: 1,446 successes, zero failures,
+and 19 cancellations per lane (114 total).
+
+`python /srv/nvme/tmp/izumi-impl/2b-session-environment-final-matrix-audit.py`
+exits 0 (`2b-session-environment-final-matrix-audit.log` and summary JSON), checking
+all six contract/concurrency terminals, legacy outcomes and all thirty completed
+commands. The earlier single all-compiler batch is incomplete, not passing
+evidence: it stops emitting output after the Scala 2.13 JS fixture. A captured
+JVM thread dump shows Coursier computing dependency resolution for over eight
+minutes; the exact task JVM is terminated with SIGTERM (exit 143). The capture is
+`/srv/nvme/tmp/izumi-impl/session-environment-first-matrix-thread-dump.log` and
+its SBT output is `2b-session-environment-matrix-first.log`. Fresh independent
+compiler batches complete without dependency-policy changes. This observation
+does not establish a third-party defect.
+
+The reviewer independently replays both published probes with
+`python /srv/nvme/tmp/izumi-impl/session-environment-review/replay-loader-identity-after.py`
+and the corresponding merge script. Both compile and runtime exits are 0;
+`sameEnvironment=false`, two second-collaborator calls, and
+`secondDefinitions=true`. Before controls remain frozen. The fresh Scala 3
+published jar has 187 classes, all byte-identical to current compiled output.
+`audit-six-artifacts.py` under that review directory exits 0 and checks all six
+published POMs/jars plus 1,779 class/TASTy/JSIR entries and exact entry sets
+against compiled outputs. No fixture, ScalaTest dependency, or unpublished
+test/helper output leaks into the artifacts or any of the twelve actual final
+classpath displays. Production POMs retain exactly their prior framework Izumi
+dependency; no new production dependency is introduced. The generated diff adds
+fixture entry settings and changes no interproject dependency edge, so the
+preceding observed acyclicity evidence remains applicable.
+
+Rerunning `bash /srv/nvme/tmp/izumi-impl/2b-session-environment-legacy-repro.sh`
+exits 1 after successful compilation for the same expected assertion and exact
+`sameEnvironment=true firstLoads=2 secondLoads=0 secondDefaultRetained=false`
+marker (`2b-session-environment-legacy-after.log`). This control verifies that
+the released legacy global-cache policy remains unchanged; it does not establish
+legacy session isolation. The new owner contracts establish their separate
+instance-owned path.
+
+Final `direnv exec . sh -c 'export JAVA_HOME="$JDK21";
+exec bash sbtgen.sc --js --native'` exits 0
+(`2b-session-environment-generator-final.log`), and SHA-256 comparisons prove all
+three generated outputs unchanged (`2b-session-environment-generator-idempotence.log`).
+The 10:25 UTC Maven metadata check still observes HTTP 404 for both Native interop
+artifact families (`2b-session-environment-interop-release-boundary.log`). Native
+core/provider coverage remains pending that release; independent higher-layer
+work continues. The required read-only final reviewer confirms the failure
+controls, corrected source, six-lane outcomes, artifact/classpath postconditions,
+legacy control and generator evidence. Its ledger consistency finding is
+resolved by retaining the individual table states and describing the parent
+items as outstanding. No unresolved checkpoint defect is observed.
+`git diff --check` passes. This section records the verified environment
+checkpoint in the local commit containing it; its exact hash is recorded at the
+next checkpoint. No complete step-2b or final evaluation is claimed here.

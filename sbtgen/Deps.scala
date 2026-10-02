@@ -923,6 +923,9 @@ object Izumi {
         libs = Seq.empty,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
         platforms = Targets.jvmJs,
+        settings = assertionFixtureSettings ++ Seq(
+          "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.spec.SessionEnvironmentFixtures\")".raw,
+        ),
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,

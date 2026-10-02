@@ -64,6 +64,25 @@ test identities under SBT 1 and 2. The status ledger records the exact scope and
 results. The distage execution provider/front end, rich assertion wire mapping,
 transports and host plugins remain subsequent implementation.
 
+## Distage environment ownership
+
+`distage-testkit-core` exposes stateless `TestEnvironmentFactory` construction
+and `SessionTestEnvironment`, whose cache belongs to one owner. Constructing the
+owner loads no plugins and provisions no dependencies. Loading an environment
+preserves module definitions without executing their providers.
+
+Requests include configuration, roles, effect tag, default module, plugin loader
+and merge strategy. The executable collaborators use reference identity; equal
+but distinct loaders or merge strategies retain their own definitions. Repeated
+requests within one owner share their environment, while independent owners
+load separately. Failed construction propagates its original exception and does
+not populate the cache.
+
+The production-loader and in-memory-loader fixtures exercise static modules,
+including concurrent requests on JVM and JS. Package scanning and the higher
+execution provider remain subsequent work. The legacy `DistageTestEnv` delegates
+construction to the same factory and retains its existing global cache policy.
+
 ## Fundamentals test projects
 
 Platform, BIO, collections, json-circe and language tests live in unpublished

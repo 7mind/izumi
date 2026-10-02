@@ -17,7 +17,7 @@ import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
 import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging}
-import izumi.distage.testkit.spec.DistageTestEnv
+import izumi.distage.testkit.spec.TestEnvironmentFactory
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
@@ -185,7 +185,7 @@ class TestPlanner(
     // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
     BootstrapLocator.selfReflectionKeys ++
     // test runtime adds more informative bootstrap keys:
-    DistageTestEnv.testkitBootstrapReflectiveKeys ++
+    TestEnvironmentFactory.testkitBootstrapReflectiveKeys ++
     hackyKeys
   }
 
