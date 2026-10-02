@@ -16,5 +16,6 @@ object FixturePlatform {
       executionContext.shutdown()
       if (!executionContext.awaitTermination(TimeoutSeconds, TimeUnit.SECONDS)) throw new IllegalStateException("Fixture execution context did not terminate")
     }
+    bootstrap.BootstrapFixtures.main(Array.empty)
   }
 }

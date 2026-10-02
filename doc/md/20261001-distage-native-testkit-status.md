@@ -1427,3 +1427,222 @@ finish step 2b or any final evaluation: unpublished fundamentals test projects,
 the framework bootstrap, distage execution provider/front end and session-owned
 environments, structured assertion wire fidelity, real transports and later
 host integrations remain outstanding.
+
+## Step 2b: JVM framework bootstrap in progress (2026-10-02)
+
+The plain-runner checkpoint is committed locally as
+`527ced5dc74154982c065ff9ac78cf77e15c89c5`; the working tree is clean after
+that commit. No push was performed.
+
+Next sub-step: implement the target-side JVM test-classpath bootstrap, with one
+session per `Runner.tasks` selected group and ordinary per-suite task handlers.
+Verify first-task launch without an all-task barrier, concurrent task execution,
+handler lifetime, failed test/run status and resource/executor release. Then use
+the verified bootstrap for unpublished fundamentals test projects. The host
+plugins and JS/Native framework adapters remain later work under their fixed
+evaluation points.
+
+The published Maven metadata for `org.scala-sbt:test-interface` reports release
+1.0. Official v1.0 Runner/Task sources are downloaded to
+`/srv/nvme/tmp/izumi-impl/test-interface-docs/` and read: a Runner may receive
+multiple task groups; `done` makes it spent, prohibits subsequent task requests,
+and must await logging/reporting completion. This production implementation will
+use the public interface, not copy the measured spike's implementation.
+
+The first bootstrap generator exits 1 because the new version was added to
+project Versions but omitted from the generator's own V aliases
+(`2b-bootstrap-generator-first.log`). A prematurely started compile consequently
+exits 1 at the missing `sbt.testing` import
+(`2b-bootstrap-compile-first.log`); this is not evidence about framework behavior.
+Adding the required alias corrects generation
+(`2b-bootstrap-generator-corrected.log`, exit 0). The new production SDK
+dependency is JVM-only; JS/Native sources retain their existing dependency graph.
+
+The initial bootstrap accepts explicit catalogue identity flags and ordinary
+suite selectors. Other selectors reject explicitly while the application/plugin
+selection integration is pending. Per-task projections buffer inactive suites
+and serialize active handler calls. Session completion waits for its owned
+executor to terminate, and Runner.done waits for active task lifetimes. These
+are intended postconditions; the first strict JVM fixtures are still running.
+
+The first strict fixture command compiles production sources, then exits 1
+because its parallel-test Await result is intentionally discarded without an
+explicit discard (`2b-bootstrap-jvm-fixtures-first.log`). The corrected fixture
+then reaches behavioral execution and exits 1 at its assertion-message check
+(`2b-bootstrap-jvm-fixtures-corrected-first.log`). An instrumented replay
+(`2b-bootstrap-assertion-projection-before.log`) observes a ProjectedFailure
+with no Java cause, while the retained protocol Failure has the original
+AssertionFailure beneath Future's Boxed Exception. Projection now builds the
+Throwable cause/suppressed tree from the validated protocol tree; the oracle
+checks that tree rather than requiring the assertion at its root.
+
+Independent review reproduces two handler boundaries against frozen pre-fix
+source (`bootstrap-review/attach-before.log`, `live-handler-before.log`, exact
+`replay-bootstrap-boundaries-before.py`). A buffered handler exception leaves
+the handler attached after its task returns, permitting a second callback. A
+live handler exception ends its task and shuts down the executor while another
+test owns a pending resource: acquired1/released0, followed by
+RejectedExecutionException when its release gate opens. Callback errors are now
+retained and disable further calls to the failed handler, while engine
+completion/finalization continue. The task rethrows the original callback error
+after that completion; the invocation records Transport failures for SDK
+delivery errors. Attachment is enclosed by cleanup, and cleanup clears rejected
+buffers without masking the original exception.
+
+A separate Java static-initializer reproduction observes
+ExceptionInInitializerError on the first task, NoClassDefFoundError on the
+second, and zero SDK error events (`launch-2-before.log`, exact
+`replay-bootstrap-launch-before.py`). Reflection-boundary LinkageErrors now
+become Discovery failures, so the selected group's common launch result is
+memoized. The observed initializer count is one; no repeated initializer
+execution is claimed.
+
+The independent healthy concurrency probe passes four fresh suite instances,
+50 actual bodies and 50 callbacks in two concurrent groups
+(`concurrency-1-before.log`). Its entry counter precedes the handler lock and
+observes maximum overlap1. The repository fixture now adopts that independent
+entry counter; its earlier inside-lock flag could not detect overlapping caller
+threads. Corrected boundary/runtime verification remains in progress.
+
+Further fail-first replays against frozen intermediate source reproduce host
+caller interruption and SDK InterruptedException/LinkageError boundaries
+(`interruption-1-before.log`, `boundary-5-after-1.log`,
+`callback-interrupted-after-1.log`, `callback-linkage-after-1.log`, with adjacent
+exact replay scripts). Host interruption returns before a pending resource is
+released and executor shutdown prevents its finalizer. An SDK LinkageError
+escapes the Future callback and leaves invocation completion pending. Completion
+now uses a once-only Promise; per-caller interruption requests cancellation,
+continues waiting for finalization/executor termination, then propagates the
+original interruption and restores its flag. SDK callback InterruptedException
+and LinkageError are retained at the delivery boundary and propagated after
+resource release. Fatal VM failures are not converted into domain successes.
+
+The follower-task interruption reproduction also fails against intermediate
+source (`waiting-interrupt-1-after-1.log`): the follower returns before resource
+release. Its initial scratch compile tokenization error is preserved separately
+and is not claimed as the runtime reproduction. Against frozen after-2 source,
+ten independent replays exit 0 (`boundary-1..10-after-2.log`, exact
+`replay-bootstrap-boundaries-after-2.py` and command JSON). Root inspected the
+actual logs: owner and follower interruptions await released1; Runtime,
+InterruptedException and LinkageError callback probes retain the original
+exception and await released1; launch errors yield two suite error events;
+handler attachment clears on return; 50 concurrent events reach handlers with
+maximum overlap1.
+
+A buffered callback error observed after engine completion initially leaves the
+memoized group successful and a third suite reporting only Success
+(`late-callback-1-after-1.log`, exit 1). Each result read now merges current SDK
+delivery failures into the cached engine outcome without relaunching it. The
+replay observes successful=false/failures1 and a later Success+Error projection
+(`boundary-8-after-2.log`, exit 0). The repository SDK fixture adds this regression
+and passes 22 checks on 3.9.0/2.13.18/2.12.21
+(`2b-bootstrap-jvm-late-callback-corrected.log`,
+`2b-bootstrap-jvm-scala2-first.log`). Those runs precede the final cancellation
+correction below and are not the final-source verification.
+
+A cleanup-phase interruption reproduction correctly drains the executor worker
+and restores interruption, but initially loses the cancellation after forming
+the engine outcome (`shutdown-interrupt-1-after-2.log`, exit 1: released1,
+cancelled=false/successful=true). Result reads now preserve invocation
+cancellation observed during cleanup as well. The strict Scala 3 final-source
+verification and independent corrected cleanup replay are in progress.
+
+The bootstrap fixtures are Behavioral-Active Blackbox-Group checks through the
+public SDK. JVM `testFull` now runs them after the 47-check base fixture has
+released its executor. An attempted combined strict Scala 3/Scala 2 command
+retained `-Wunused:all` after switching compilers; it exits 1 on 2.12's invalid
+option (`2b-bootstrap-jvm-testFull-regression.log`). Separate compiler-appropriate
+commands replace that invalid check; no production correction is inferred from
+the compiler-option failure.
+
+An independent published consumer in `test-fixtures/framework-consumer` compares
+per-body CREATE_NEW execution records with exact JUnit suite/test identities.
+The first SBT 2 fixture build rejects omitted PathFinder.get parentheses
+(`2b-bootstrap-host-sbt2-scala3-first.log`). After that correction, it reaches
+15 actual failed bodies because its preparation used SBT 2's relocated target
+while the explicitly supplied audit path used the fixture's ordinary target
+(`2b-bootstrap-host-sbt2-scala3-build-corrected.log`, XML NoSuchFileException).
+Preparation, verification and fork arguments now use the same required audit
+path; the corrected 15-body/15-report run exits 0
+(`2b-bootstrap-host-sbt2-scala3-audit-corrected.log`). These are harness failures,
+not bootstrap defects.
+
+`python3 test-fixtures/framework-consumer/verify-matrix.py --artifact-version
+1.3.0-SNAPSHOT --sbt-version 1.13.0 2.0.9 --scala-version 3.9.0 2.13.18 2.12.21
+--evidence-dir target/native-testkit-evidence` exits 0 on the intermediate
+published jars (`2b-bootstrap-host-matrix-first.log`): six lanes, eight cases
+each. Cases verify five suites/15 bodies under default scheduling, two explicit
+suites/six bodies, the repeated selected request, serial scheduling, one wildcard
+suite/three bodies, a host task limit of one, forked partial groups and forked
+complete groups. Exact actual/report sets agree in all 48 cases. Only the target
+framework is registered. These Behavioral-Active Effectual Good-Communication
+checks do not establish DI sharing, plugin invalidation, streaming, or the full
+step-2d matrix. Final-source publication and host replay remain pending.
+
+## Step 2b: verified JVM bootstrap checkpoint (2026-10-02)
+
+The final cleanup replay against frozen current source exits 0
+(`bootstrap-review/shutdown-interrupt-0-after-3.log`, exact
+`compile-bootstrap-after-3.sh` and
+`replay-bootstrap-shutdown-interrupt-after-3.py`): the task does not return before
+release, released1, original InterruptedException, caller flag restored,
+cancelled=true/successful=false, later Success+Error. Root reads the actual log.
+The read-only reviewer closes all reproduced source defects and finds no
+remaining concrete bootstrap defect; final artifact/ledger review follows below.
+
+Final producer commands, each through `direnv exec . sbt -java-home "$JDK21"
+-batch -J-Xmx6G`, exit 0:
+
+- Scala 3.9.0 JVM: session-set `LocalProject("distage-test-runnerJVM") / Compile
+  / scalacOptions` and `Test / scalacOptions` add `-Wunused:all`/`-Werror`, then
+  `distage-test-runnerJVM/testFull; distage-test-runnerJVM/publishLocal; show
+  distage-test-runnerJVM/Compile/dependencyClasspath; show
+  distage-test-runnerJVM/Test/dependencyClasspath`
+  (`2b-bootstrap-jvm-scala3-final-source.log`). It passes base47 and bootstrap22.
+- `bash /srv/nvme/tmp/izumi-impl/2b-bootstrap-final-scala2.sh` runs
+  `++2.13.18` and `++2.12.21`, each platform's runner `testFull`, JVM
+  `publishLocal`, and each Compile/Test dependency classpath
+  (`2b-bootstrap-final-scala2.log`). All six base47 runs and both bootstrap22
+  runs pass. The script records exact compiler/project commands.
+- Scala 3.9.0 `distage-test-runnerJS/testFull` and
+  `distage-test-runnerNative/testFull`, with each compiler version and
+  Compile/Test dependency classpath shown
+  (`2b-bootstrap-final-scala3-portable.log`): both base47 runs pass.
+
+All three final JVM jars are published before the final independent host replay.
+The same `verify-matrix.py` command above uses `--evidence-dir
+target/native-testkit-evidence/bootstrap-host-final`; its aggregate log is
+`2b-bootstrap-host-matrix-final.log`, and the six adjacent lane logs preserve
+each exact host result. Exit 0, six lanes, 48 independently checked cases,
+486 actual body records and 486 matching reported test cases. The target
+bootstrap alone serves the exercised in-process and forked plain-suite cases;
+this does not close the broader 2d.20 matrix or justify host substitution.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-bootstrap-artifacts-and-graphs.py` exits 0
+(`2b-bootstrap-artifacts-and-graphs.log`): nine runner artifacts, 18 fresh
+Compile/Test classpaths, 301 entries, six JVM SDK classpaths. All POM izumi
+dependencies remain exactly assertions/protocol; there are no ScalaTest,
+Scalactic or distage-engine dependencies. `org.scala-sbt:test-interface:1.0`
+and bootstrap classes occur only on JVM. Every bootstrap class byte matches
+the corresponding final compiled class in its published jar, all jar CRCs pass,
+and no fixture class is published. JS IR/Native NIR remain present. The first
+verifier wrongly expected an explicit POM compile scope; Maven omits it for this
+default dependency (`2b-bootstrap-artifacts-and-graphs-first.log`). Its second
+iteration wrongly required the runner's own classes on Compile dependency
+classpaths (`2b-bootstrap-artifacts-and-graphs-membership-before.log`). These
+oracle errors are corrected against the observed POM/classpaths, not by changing
+production artifacts.
+
+Final `JAVA_HOME="$JDK21" bash sbtgen.sc --js --native` through `direnv exec .`
+exits 0 (`2b-bootstrap-generator-final.log`). All three generated files retain
+their pre-regeneration SHA-256 digests
+(`2b-bootstrap-generator-idempotence.log`); no generated file was hand-edited.
+`git diff --check` exits 0. The 2026-10-02 08:17:00 UTC release-boundary check
+still observes HTTP 404 for both required Native interop metadata URLs
+(`2b-bootstrap-interop-release-boundary.log`). Independent test-only project and
+distage-provider work remains and continues.
+
+This is a local JVM bootstrap sub-step, not completion of step 2b, step 2d or a
+final evaluation point. Unpublished fundamentals test projects, the higher
+execution provider/front end, rich assertion wire mapping, real transports and
+the full host integration gates remain outstanding.

@@ -30,6 +30,7 @@ object Izumi {
     val jawn = Version.VExpr("V.jawn")
     val doobie = Version.VExpr("V.doobie")
     val classgraph = Version.VExpr("V.classgraph")
+    val sbt_test_interface = Version.VExpr("V.sbt_test_interface")
     val slf4j = Version.VExpr("V.slf4j")
     val typesafe_config = Version.VExpr("V.typesafe_config")
     val bytebuddy = Version.VExpr("V.bytebuddy")
@@ -135,6 +136,7 @@ object Izumi {
 //    final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
+    final val sbt_test_interface = Library("org.scala-sbt", "test-interface", V.sbt_test_interface, LibraryType.Invariant) in Scope.Compile.jvm
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.AutoJvm) in Scope.Provided.all.scalaVersion(
       ScalaVersionScope.AllScala3
@@ -763,7 +765,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testRunner,
-        libs = Seq(scala_reflect),
+        libs = Seq(scala_reflect, sbt_test_interface),
         depends = Seq(Projects.fundamentals.assertions, Projects.distage.testProtocol),
         platforms = Targets.cross,
         settings = assertionFixtureSettings ++ Seq(

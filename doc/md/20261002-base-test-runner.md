@@ -40,6 +40,27 @@ before any registration, planning or event.
 
 The base fixtures use controlled finalization gates and independent counters on
 JVM/JS/Native. Separate builds consume the published jars and expand their
-macros. The status ledger records actual verification and scope: fundamentals
-test-only projects, the distage execution provider/front end, rich assertion
-wire mapping, transports and host adapters remain subsequent implementation.
+macros. On the JVM, those fixtures also exercise the public test-interface
+bootstrap after releasing the base fixture executor.
+
+The JVM bootstrap is `izumi.distage.testkit.runner.bootstrap.Framework`. Its
+arguments require explicit `--build-id`, `--target-id` and `--catalogue-id`
+values. At this implementation stage it accepts suite selectors; other selectors
+reject explicitly. Each `Runner.tasks` group launches one session on its first
+ordinary suite task. Inactive suites buffer their SDK events until their own
+tasks execute, and active handlers receive serialized callbacks within that
+task's lifetime. Separate groups instantiate fresh suites and own executors.
+
+Tasks await engine finalization and owned-executor termination. Caller
+interruption requests cancellation and waits for cleanup before propagating the
+original interruption and restoring its flag. Callback errors disable that
+handler, survive in later group projections as transport failures, and propagate
+after cleanup. Cancellation observed during executor shutdown also survives in
+the group outcome. `Runner.done` waits for active tasks and makes the runner
+spent. Projected host exceptions retain the protocol failure's cause tree.
+
+The independent JVM framework consumer compares actual body records with JUnit
+test identities under SBT 1 and 2. The status ledger records the exact scope and
+results. Fundamentals test-only projects, the distage execution provider/front
+end, rich assertion wire mapping, transports and host plugins remain subsequent
+implementation.
