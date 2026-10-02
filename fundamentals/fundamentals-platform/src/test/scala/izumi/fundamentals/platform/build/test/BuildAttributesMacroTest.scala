@@ -5,7 +5,7 @@ import izumi.fundamentals.platform.build.BuildAttributes
 import org.scalatest.wordspec.AnyWordSpec
 
 import java.nio.file.Paths
-import java.time.{LocalDateTime, ZoneOffset}
+import java.time.{LocalDateTime, ZoneId, ZoneOffset}
 
 class BuildAttributesMacroTest extends AnyWordSpec {
 
@@ -13,7 +13,7 @@ class BuildAttributesMacroTest extends AnyWordSpec {
 
     "return java.home at time of compilation" in {
       val javaHome = BuildAttributes.javaHome()
-      if (IzPlatform.isScalaJS) {
+      if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
         assert(javaHome.isDefined)
       } else {
         val currentHome = Option(System.getProperty("java.home"))
@@ -23,7 +23,7 @@ class BuildAttributesMacroTest extends AnyWordSpec {
 
     "return java.home at time of compilation using `buildTimeProperty`" in {
       val javaHome = BuildAttributes.buildTimeProperty("java.home")
-      if (IzPlatform.isScalaJS) {
+      if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
         assert(javaHome.isDefined)
       } else {
         val currentHome = Option(System.getProperty("java.home"))
@@ -41,8 +41,9 @@ class BuildAttributesMacroTest extends AnyWordSpec {
 
       "return compilation timestamp" in {
         val buildTime = BuildAttributes.buildTimestamp()
+        val compilationTimezone = ZoneId.of(BuildAttributes.buildTimeProperty("user.timezone").get, ZoneId.SHORT_IDS)
         assert(buildTime.isAfter(LocalDateTime.ofEpochSecond(0, 0, ZoneOffset.UTC)))
-        assert(buildTime.isBefore(LocalDateTime.now()))
+        assert(buildTime.isBefore(LocalDateTime.now(compilationTimezone)))
       }
 
     }

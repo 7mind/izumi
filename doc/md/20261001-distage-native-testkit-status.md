@@ -14,12 +14,12 @@ head. The spike reports are design evidence, not implementation verification.
 
 | Item | State | Evaluation-point evidence |
 | --- | --- | --- |
-| L1 | not started | No evaluation point passed yet. |
-| L2 | not started | No evaluation point passed yet. |
-| L3 | not started | No evaluation point passed yet. |
+| L1 | in progress | Part-1 verification below; full gate remains outstanding. |
+| L2 | in progress | Part-1 verification below; full gate remains outstanding. |
+| L3 | in progress | Part-1 verification below; full gate remains outstanding. |
 | L4 | not started | No evaluation point passed yet. |
 | L5 | not started | No evaluation point passed yet. |
-| L6 | not started | No evaluation point passed yet. |
+| L6 | in progress | Part-1 verification below; full gate remains outstanding. |
 | G.1 | not started | No evaluation point passed yet. |
 | 1a.1 | in progress | No evaluation point passed yet. |
 | 1a.2 | in progress | No evaluation point passed yet. |
@@ -118,7 +118,6 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.7 | not started | No evaluation point passed yet. |
 | 5.8 | not started | No evaluation point passed yet. |
 | 5.9 | not started | No evaluation point passed yet. |
-
 | O.1 | not started | No evaluation point passed yet. |
 | O.2 | not started | No evaluation point passed yet. |
 | O.3 | not started | No evaluation point passed yet. |
@@ -198,10 +197,16 @@ compilation after replacing the stale files, per scala-native/scala-native#5084.
 No Native suite or lane is marked passed until its command terminates and the
 captured test reports are checked.
 
-Commits: none for implementation yet. Requirement-enumeration reviewer: `requirements_audit` (read-only), completed
+Requirement-enumeration commit: `d30020eb07853800972a4aee72eb695b9fe6a92e`.
+Implementation changes are in the commit containing this entry.
+Requirement-enumeration reviewer: `requirements_audit` (read-only), completed
 2026-10-02. Its 37 proposed items are included, plus typed in-process models
 (O.38). Adapter requirements stay transitional and are superseded by 5.5.
-Step-1a implementation reviewer: pending.
+Step-1a part-1 implementation reviewer: `requirements_audit` (read-only), completed
+2026-10-02. Findings: normalize legacy timezone IDs, strengthen O.36 to every
+new Scala 3 artifact, cover empty/binary/multiblock SHA inputs, document the
+Native filesystem surface, and repair the ledger table. All are addressed in
+this substep; this review does not establish completion of step 1a.
 
 ### Additional reproductions and corrections
 
@@ -263,3 +268,49 @@ and does not depend on this candidate artifact.
 The SHA-256 vectors in NativePlatformTest were independently generated with
 Python hashlib for bytes `i % 256`, lengths 0, 1, 55, 56, 63, 64, 65, 1000.
 They cover empty/binary inputs, padding transitions, and multiple blocks.
+
+### Part-1 verification, 2026-10-02
+
+All commands below terminated with exit 0. Logs are under
+`target/native-testkit-evidence/`; this verifies the eight independent modules,
+not the full step-1a lanes or L6.
+
+- Native: `direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G "fundamentals-native/clean; fundamentals-native/Test/compile; fundamentals-native/testFull; ++2.13.18; fundamentals-native/clean; fundamentals-native/Test/compile; fundamentals-native/testFull; ++2.12.21; fundamentals-native/clean; fundamentals-native/Test/compile; fundamentals-native/testFull"'`.
+  Log: `1a-native-verified.log`. Scala 3.7.4: 194 tests; Scala 2.13.18 and
+  2.12.21: 189 each. XML reports have zero failures/errors. The five derivation
+  tests run on Native Scala 3; Scala 2 exclusion is explicitly documented per
+  1a.7. Each platform run includes 153 platform checks, including Native identity,
+  unavailable JVM introspection, and eight independent SHA-256 vectors.
+- JVM: the same command form with `fundamentals-jvm/Test/compile` and
+  `fundamentals-jvm/testFull` for 3.7.4, 2.13.18, and 2.12.21.
+  Log: `1a-fundamentals-jvm.log`. Respectively 612, 613, 613 tests, zero failures.
+- JS: the same command form with `fundamentals-js/Test/compile` and
+  `fundamentals-js/testFull` on all three versions, after `direnv exec . npm ci`.
+  Logs: `1a-fundamentals-js.log`, `1a-npm-ci.log`. Respectively 269, 270, 270
+  tests, zero failures.
+- After the timezone alias normalization, JVM
+  `fundamentals-platformJVM/testOnly izumi.fundamentals.platform.build.test.BuildAttributesMacroTest`
+  passed four tests on each version (`1a-jvm-timestamp-final.log`), and JS
+  `fundamentals-platformJS/Test/compile` passed on each version
+  (`1a-js-timestamp-final.log`). The clean Native run above includes that change.
+- Local publication: `direnv exec . sh -c 'exec sbt -java-home "$JDK21" -batch -J-Xmx6G "fundamentals-native/publishLocal; ++2.13.18; fundamentals-native/publishLocal; ++2.12.21; fundamentals-native/publishLocal"'`.
+  Log: `1a-native-publish-local.log`. Python `zipfile` inspected all 24 Ivy-local
+  artifacts under `~/.ivy2/local/io.7mind.izumi/`: one binary jar containing NIR
+  and one POM per module/version. No Native legacy adapter coordinate exists.
+  This does not satisfy publication of the remaining modules in L6.
+- Regeneration with the committed `--js --native` flags: exit 0, SHA-256
+  digests of `build.sbt`, `project/plugins.sbt`, and `project/build.properties`
+  unchanged (`1a-generator-idempotence.log`). L5 awaits the committed-head check.
+- `git diff --check`: exit 0. A byte-prefix comparison against acceptance at
+  `aefd8fea0` confirms all original items are preserved. O.36 is strengthened
+  from the requirement-enumeration commit to include all new Scala 3 artifacts.
+
+O.26 audit: Native `IzFiles` uses only `FsGet`, matching the portable JS boundary.
+The additional JVM filesystem traits remain absent and are documented; no
+implementation is silently substituted. SHA-256 uses
+OpenSSL directly after the candidate dependency reproduction above. Native
+classpath/JMX return empty lists because those JVM mechanisms do not exist.
+The remaining distage plugin-loader audit belongs to part 2 and is not complete.
+
+L1/L2/L3 remain in progress only as partial fundamentals evidence; full-repository
+CI-equivalent lane commands have not passed. No final or step gate is marked done.

@@ -42,6 +42,11 @@
 
             docker
             scala-cli
+
+            llvmPackages_21.clang
+            llvmPackages_21.llvm
+            llvmPackages_21.lld
+            openssl
           ];
 
           shellHook = ''

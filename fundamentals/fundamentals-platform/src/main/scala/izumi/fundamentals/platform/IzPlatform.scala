@@ -5,13 +5,15 @@ import izumi.fundamentals.platform.os.{IzOs, OsType}
 object IzPlatform extends AbstractIzPlatform with __AbstractIzPlatformPlatformSpecific {
   override def platform: ScalaPlatform = if (isScalaJS) {
     ScalaPlatform.Js
+  } else if (isScalaNative) {
+    ScalaPlatform.Native
   } else if (isGraalNativeImage) {
     ScalaPlatform.GraalVMNativeImage
   } else {
     ScalaPlatform.JVM
   }
 
-  override def isGraalNativeImage: Boolean = !isScalaJS && {
+  override def isGraalNativeImage: Boolean = !isScalaJS && !isScalaNative && {
     val props = Seq(
       "org.graalvm.nativeimage.imagecode",
       "org.graalvm.nativeimage.kind",

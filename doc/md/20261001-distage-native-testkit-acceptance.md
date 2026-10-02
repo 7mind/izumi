@@ -580,8 +580,10 @@ step 1a, as the "Other requirements" rule specifies.
   suite/finder classes before both frameworks can coexist": remove that inheritance
   before coexistence to prevent duplicate discovery.
 - **O.36** (step 2a): Plan line 798, "2a should precede any release", and lines
-  973–974, "their first release follows step 2a": do not release new Scala 3
-  assertion artifacts before the move; `publishLocal` is distinct from a release.
+  973–974, "their first release follows step 2a": do not release any new Scala 3
+  artifacts before the move, including assertion artifacts; `publishLocal` is
+  distinct from a release. Existing modules' new Native coordinates follow the
+  plan's Native release-timing default at lines 799–801 and 1104–1108.
 - **O.37** (final, step 1a): Plan lines 1116–1119, "Native uses the JS circe JSON
   configuration implementation": preserve that default; HOCON remains an addition.
 - **O.38** (final, step 2b): Plan lines 16–17, "JSON is a boundary format; the

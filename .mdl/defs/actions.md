@@ -17,7 +17,7 @@
 - `CI`
 
 # Axis
-- `platform`=`{jvm*|js|js-nojvm}`
+- `platform`=`{jvm*|js|js-nojvm|native|native-nojvm|js-native}`
 - `java_version`=`{17|21*|25}`
 - `scala_version`=`{2.13*|3}`
 
@@ -187,9 +187,15 @@ elif [[ "$PLATFORM" == "js" ]]; then
   ARGS=("--js")
 elif [[ "$PLATFORM" == "js-nojvm" ]]; then
   ARGS=("--nojvm" "--js")
+elif [[ "$PLATFORM" == "native" ]]; then
+  ARGS=("--native")
+elif [[ "$PLATFORM" == "native-nojvm" ]]; then
+  ARGS=("--nojvm" "--native")
+elif [[ "$PLATFORM" == "js-native" ]]; then
+  ARGS=("--js" "--native")
 else
   echo "Unknown platform: $PLATFORM" >&2
-  exit 0
+  exit 1
 fi
 
 bash sbtgen.sc "${ARGS[@]}"

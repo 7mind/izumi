@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext
 
 trait __AbstractIzPlatformPlatformSpecific {
   final val isScalaJS = false
+  final val isScalaNative = false
 
   def getenvOption(s: String): Option[String] = Option(System.getenv(s))
 

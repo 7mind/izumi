@@ -15,6 +15,7 @@ object Izumi {
     val scalatestplus_scalacheck = Version.VExpr("V.scalatestplus_scalacheck")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
+    val scalac_compat_annotation = Version.VExpr("V.scalac_compat_annotation")
     val discipline = Version.VExpr("V.discipline")
     val discipline_scalatest = Version.VExpr("V.discipline_scalatest")
     val zio = Version.VExpr("V.zio")
@@ -58,6 +59,7 @@ object Izumi {
     sbtTarget = SbtTarget.Sbt2,
     sbtVersion = Some("2.0.9"),
     scalaJsVersion = Version.VExpr("PV.scala_js_version"),
+    scalaNativeVersion = Version.VConst("0.5.12"),
     crossProjectVersion = Version.VConst("1.4.0"),
     bundlerVersion = None,
     sbtJsDependenciesVersion = None,
@@ -90,6 +92,9 @@ object Izumi {
 
     final val cats_core = Library("org.typelevel", "cats-core", V.cats, LibraryType.Auto)
     final val cats_effect = Library("org.typelevel", "cats-effect", V.cats_effect, LibraryType.Auto)
+    final val scalac_compat_annotation = Library("org.typelevel", "scalac-compat-annotation", V.scalac_compat_annotation, LibraryType.AutoJvm) in Scope.Provided.all.scalaVersion(
+      ScalaVersionScope.AllScala2
+    )
     final val cats_all = Seq(cats_core, cats_effect)
     final val cats_effect_laws = Library("org.typelevel", "cats-effect-laws", V.cats_effect, LibraryType.Auto)
     final val cats_effect_testkit = Library("org.typelevel", "cats-effect-testkit", V.cats_effect, LibraryType.Auto)
@@ -147,6 +152,7 @@ object Izumi {
     final val fast_classpath_scanner = Library("io.github.classgraph", "classgraph", V.classgraph, LibraryType.Invariant)
 
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
+    final val scala_java_time_tzdb = Library("io.github.cquiroz", "scala-java-time-tzdb", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
     final val scalajs_macrotask_executor = Library("org.scala-js", "scala-js-macrotask-executor", V.scalajs_macrotask_executor, LibraryType.Auto)
 
@@ -256,7 +262,18 @@ object Izumi {
       ),
     )
 
-    final val cross = Seq(jvmPlatform, jsPlatform)
+    private val nativePlatform = PlatformEnv(
+      platform = Platform.Native,
+      language = targetScala3,
+      settings = Seq(
+        "coverageEnabled" := false,
+        // The target test interface must match the Native plugin's host adapter.
+        "libraryDependencySchemes" += """"org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always""".raw,
+      ),
+    )
+
+    final val cross = Seq(jvmPlatform, jsPlatform, nativePlatform)
+    final val jvmJs = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
 
@@ -576,6 +593,7 @@ object Izumi {
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq(Projects.fundamentals.basics),
         settings = Seq.empty,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.fundamentals.language,
@@ -594,6 +612,8 @@ object Izumi {
           izumi_reflect in Scope.Compile.all,
           scala_reflect,
           fast_classpath_scanner in Scope.Provided.all,
+          scala_java_time in Scope.Compile.native,
+          scala_java_time_tzdb in Scope.Test.native,
           scalajs_macrotask_executor in Scope.Compile.js
         ),
         depends = Seq(
@@ -625,12 +645,19 @@ object Izumi {
           circe_core in Scope.Compile.all,
           circe_generic in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala3),
         ) ++ Seq(
-          circe_derivation_scala2 in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
+          circe_derivation_scala2 in Scope.Test.jvm.scalaVersion(ScalaVersionScope.AllScala2),
+          circe_derivation_scala2 in Scope.Test.js.scalaVersion(ScalaVersionScope.AllScala2),
           circe_generic in Scope.Test.all.scalaVersion(ScalaVersionScope.AllScala2),
           circe_literal in Scope.Test.all,
         ),
         depends = Seq(Projects.fundamentals.platform),
         settings = Seq(
+          "unmanagedSourceDirectories" in (SettingScope.Test, Platform.Jvm) +=
+            """file("fundamentals/fundamentals-json-circe/src/test/scala-derivation").getAbsoluteFile""".raw,
+          "unmanagedSourceDirectories" in (SettingScope.Test, Platform.Js) +=
+            """file("fundamentals/fundamentals-json-circe/src/test/scala-derivation").getAbsoluteFile""".raw,
+          "unmanagedSourceDirectories" in (SettingScope.Test, Platform.Native) ++=
+            """{ if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe/src/test/scala-derivation").getAbsoluteFile) else Seq.empty }""".raw,
           //        workaround for:
           //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
           //          +- io.circe:circe-derivation_2.13:0.13.0-M5           (depends on 0.13.0)
@@ -650,6 +677,7 @@ object Izumi {
       Artifact(
         name = Projects.fundamentals.bio,
         libs = allMonadsOptional ++
+          Seq(scalac_compat_annotation) ++
           Seq(zio_managed in Scope.Optional.all) ++
           Seq(zio_interop_tracer in Scope.Compile.all) ++
           Seq(cats_effect_laws, cats_effect_testkit, discipline).map(_ in Scope.Test.all) ++
@@ -662,6 +690,7 @@ object Izumi {
           Projects.fundamentals.basics,
         ),
         settings = Seq.empty,
+        platforms = Targets.jvmJs,
       ),
     )),
     pathPrefix = Projects.fundamentals.basePath,
@@ -687,7 +716,7 @@ object Izumi {
           Projects.fundamentals.functoid,
           Projects.fundamentals.bio,
         ).map(_ in Scope.Compile.all),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.distage.proxyBytebuddy,
@@ -699,7 +728,7 @@ object Izumi {
         name = Projects.distage.frameworkApi,
         libs = Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.distage.core,
@@ -714,7 +743,7 @@ object Izumi {
           Projects.distage.proxyBytebuddy in Scope.Compile.jvm,
           Projects.fundamentals.platform tin Scope.Compile.all,
         ),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.distage.config,
@@ -731,7 +760,7 @@ object Izumi {
         ) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
         settings = Seq.empty,
       ),
       Artifact(
@@ -743,7 +772,7 @@ object Izumi {
         depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.distage.plugins,
@@ -752,7 +781,7 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
           Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platform tin Scope.Test.jvm),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.distage.framework,
@@ -763,7 +792,7 @@ object Izumi {
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
         settings = Seq.empty,
       ),
       Artifact(
@@ -777,7 +806,7 @@ object Izumi {
         name = Projects.distage.testkitCore,
         libs = Seq.empty,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.distage.testkitScalatest,
@@ -788,7 +817,7 @@ object Izumi {
         depends = Seq(Projects.distage.testkitCore).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
-        platforms = Targets.cross,
+        platforms = Targets.jvmJs,
       ),
       Artifact(
         name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
@@ -803,7 +832,7 @@ object Izumi {
       ),
     )),
     pathPrefix = Projects.distage.basePath,
-    defaultPlatforms = Targets.cross,
+    defaultPlatforms = Targets.jvmJs,
     groups = Groups.distage,
   )
 
@@ -852,7 +881,7 @@ object Izumi {
     )),
     pathPrefix = Projects.logstage.basePath,
     groups = Groups.logstage,
-    defaultPlatforms = Targets.cross,
+    defaultPlatforms = Targets.jvmJs,
   )
 
   val all = Seq(fundamentals, distage, logstage)

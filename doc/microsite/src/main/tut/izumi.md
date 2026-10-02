@@ -59,6 +59,31 @@ libraryDependencies ++= Seq(
 Development
 -----------
 
+Scala Native builds use Native 0.5.12. Native support is currently available for
+`fundamentals-basics`, `fundamentals-functional`, `fundamentals-collections`,
+`fundamentals-literals`, `fundamentals-language`, `fundamentals-platform`,
+`fundamentals-functoid`, and `fundamentals-json-circe` on Scala 2.12, 2.13, and 3.
+The remaining library ports are pending the released ZIO interop Native artifacts.
+
+Native SHA-256 in `fundamentals-platform` requires OpenSSL's `libcrypto` at link
+and execution time. The development shell supplies it; outside the shell install
+the OpenSSL development package and make its libraries available to the linker.
+Native has no JVM classpath or JMX introspection: `getClasspath()` and
+`getRuntimeMXBeanJVMArgs()` return empty sequences. Compile-time build attributes
+refer to the compiler JVM, including its Java home and timezone.
+Native `IzFiles` exposes `FsGet.getFs`, which obtains or creates a filesystem
+for a URI, matching the portable JS surface. The additional JVM filesystem
+traits are not exposed: their implementation has not been ported.
+Applications using named timezones must also add `scala-java-time-tzdb`;
+fixed offsets are supported without that optional database.
+
+On Native Scala 2, `WithCirce` and the `DerivationDerivedEncoder`,
+`DerivationDerivedDecoder`, and `DerivationDerivedCodec` materializers are
+unavailable because circe-derivation has no Native artifact. The JSON flattener
+remains available. On Native Scala 3, circe derivation is available and its tests
+run. The derivation suite lives in the `scala-derivation` source set, enabled for
+JVM/JS and Native Scala 3. Native Scala 2 runs the JSON flattener suite.
+
 * [GitHub](https://github.com/7mind/izumi)
 
 Documentation

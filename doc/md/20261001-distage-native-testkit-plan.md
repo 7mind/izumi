@@ -1117,3 +1117,15 @@ assumptions; a different answer changes the listed steps.
   configuration implementation, as the spike does. HOCON on Native needs a Native
   HOCON parser, such as sconfig, which publishes Native 0.5 artifacts; it is an
   addition, not part of step 1a.
+- **Committed build platforms.** Assumed: generated build files use
+  `bash sbtgen.sc --js --native`, preserving the JS platform and adding Native.
+  Until the interop release, Native includes the eight independent fundamentals
+  modules; the remaining required modules are pending, not removed from scope.
+- **Native SHA-256.** Assumed: `fundamentals-platform` uses OpenSSL's SHA-256
+  API on Native, with `libcrypto` installed for linking and execution. The
+  development shell supplies OpenSSL. The implementation's
+  `target/native-testkit-evidence/1a-native3-first.log` reproduces the missing
+  `java.security.MessageDigest` Native API. The candidate
+  scala-native-crypto 0.4.0 also produces unresolved OpenSSL symbols in programs
+  that never use crypto (`1a-native3-213.log`); a direct SHA-256 binding avoids
+  that dependency's unrelated C objects and retains the existing hash API.
