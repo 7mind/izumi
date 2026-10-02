@@ -208,6 +208,14 @@ object Izumi {
 
   private final val JvmRelease = "17"
 
+  /**
+    * Scala 3.9.0 crashes intermittently with `-Ybackend-parallelism` > 1 and `-explain-cyclic`: backend threads
+    * race the main thread on shared compiler state, surfacing as `IndexOutOfBoundsException` in
+    * `SymDenotations$BaseDataImpl`, `NoDenotation.owner` assertions and intact classpath jars read back as garbage
+    * ("wrong magic number", "class file is broken"). Scala 3.7.4 does not exhibit it.
+    *
+    * Tracked in https://github.com/scala/scala3/issues/27209; restore the flag for Scala 3 once that is fixed.
+    */
   private def withoutBackendParallelism(options: Seq[Const]): Seq[Const] = {
     val index = options.indexOf(Const.CString("-Ybackend-parallelism"))
     if (index < 0) options else options.patch(index, Nil, 2)
@@ -397,6 +405,13 @@ object Izumi {
                 Seq[Const](
                   "-source:3.9",
                   "-Xkind-projector:underscores",
+                  // Scala 3.9.0 scans every classpath root, including sbt's synthesized JDK `rt.jar`, to suggest
+                  // imports for "not found"/"missing given" errors. On JDK 21+ that parse trips an inner-class
+                  // assertion (`javax.swing.RepaintManager$PaintManager`) and crashes the compiler instead of
+                  // reporting the error; the typecheck-expecting tests in distage-testkit-scalatest hit it
+                  // deterministically. Disabling the suggestions only loses the "did you mean to import" hints.
+                  //
+                  // Tracked in https://github.com/scala/scala3/issues/25451; drop this flag once that is fixed.
                   "-Ximport-suggestion-timeout:0",
                 ) ++ Defaults.Scala3Options
                   .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
