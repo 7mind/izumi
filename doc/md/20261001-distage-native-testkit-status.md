@@ -57,7 +57,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | in progress | Owned higher provider and all four spec entry points pass six JVM/JS lanes below; common host integration and final evaluation remain outstanding. |
 | 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
-| 2b.8 | in progress | Plain/raw DI, atomic higher registration, delegating bootstrap and forwarding/direct synchronous cached custom-plugin controls pass below; opaque/handoff reconstruction ownership defects, complete custom-hook audit, higher Native and final evaluation outstanding. |
+| 2b.8 | in progress | Atomic plain registration passes nine JVM/JS/Native lanes and higher registration passes six JVM/JS lanes below, alongside delegating bootstrap and forwarding/direct synchronous cached custom-plugin controls. Opaque/handoff reconstruction ownership defects, complete custom-hook audit, higher Native and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain IDs reject in all nine lanes and distage path/suite/test IDs reject in six JVM/JS lanes below; higher Native and final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
@@ -3639,3 +3639,155 @@ The revised documents distinguish the corrected synchronous routes from the two
 published residual routes. All parent and final gates remain open. `git diff
 --check` exits 0 before the local commit; its exact hash is recorded at the next
 evaluation point.
+
+## Step 2b: atomic plain registration in progress (2026-10-02)
+
+The verified synchronous custom-loader portion is committed locally as
+`22eee8ef9054ce52a0c707e9a02451fa40d378a0`; exact HEAD and a clean working tree
+were observed after the commit. No push was performed. Its two published
+opaque/handoff reconstruction defects and all parent/final gates remain open.
+
+Hypothesis: `AnyWordSpec.register` checks and sets its ownership flag without a
+shared lock, so two sessions may accept the same suite instance. The unchanged
+public consumer in
+`/srv/nvme/tmp/izumi-impl/plain-concurrent-registration-before/` confirms this:
+its separate JDK 21/Scala 3.9 compiler exits 0, then its runtime exits 1 after
+both simultaneously entering sessions return successful catalogues on attempt
+0. Its exact `commands.json`, frozen published-only `classpath.json`, source,
+manifest, `compile.log`, `runtime.log` and `results.json` retain the reproduction.
+The probe's literal `resources=0 bodies=0` labels are not counter observations.
+
+Before changing production, the permanent black-box regression fixture runs
+through a fresh strict Scala 3 root process. Its command is captured in
+`/srv/nvme/tmp/izumi-impl/2b-plain-registration-before.commands.json`; adjacent
+snapshot files preserve the unchanged production source and the added fixtures.
+Compilation succeeds, then `distage-test-runnerJVM/Test/testFull` exits 1 at
+the intended invariant: `synchronous` attempt 1 accepts both `first` and
+`second`. The full log and completion JSON retain the failure. Only after
+reading this failure, the correction synchronizes the complete existing
+registration transition. `AsyncWordSpec` inherits that transition.
+
+Both front ends now have 64 paired shared-instance discoveries. JVM and Native
+helpers hold both worker invocations at a start gate; JS queues both calls and
+does not claim simultaneous threads. Each pair requires exactly one accepted
+owner, a Discovery failure with the existing rejection message for the second,
+and an unchanged registered test. Measured counters require both factories,
+zero body evaluations and zero reports. Fresh suite instances in independent
+sessions remain covered by the existing controls. Final nine-lane execution,
+publication, independent consumers, artifact inspection and read-only closure
+are in progress; this is not completion of 2b.8 or step 2b.
+
+The first matrix passes Scala 3 JVM/JS/Native, then Scala 2.13 rejects the new
+fixture's anonymous async suite: the enclosing implicit `ec` conflicts with
+the inherited `executionContext`. This is a fixture compilation failure, not
+a production runtime result. The first script, commands, logs and completion
+JSONs are retained in `plain-registration-first-matrix/`, with its original
+`plain-registration-production-snapshot/`. Moving the two ownership fixtures
+to private sibling suite classes removes the competing enclosing context while
+retaining inherited async dispatch. Production is unchanged. The restarted
+matrix freezes all five final sources in `plain-registration-final-snapshot/`
+and rechecks every compiler/platform; earlier fixture passes are not used as
+final verification.
+
+The second matrix passes all Scala 3 and 2.13 platforms, then Scala 2.12 rejects
+two wildcard discard bindings in one callback block. This is another fixture
+compilation failure. `plain-registration-second-matrix/` retains all three
+compiler logs, commands, completion JSONs and the script. The fixture now uses
+one discard binding for the event and counter increment. Production remains
+the one-line synchronized transition. The final matrix starts with 2.12 and
+freezes its five sources in `plain-registration-final-verified-snapshot/`.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-plain-registration-final-matrix.py` now
+exits 0 in three fresh root processes. Exact argv and compiler commands are in
+`2b-plain-registration-{scala212,scala213,scala3}-final.commands.json`, with
+matching logs and completion JSONs. All nine JVM/JS/Native lanes pass 436 base
+checks each (3,924 total), including 386 added ownership assertions per lane;
+the three JVM bootstrap runs also pass 22 checks each (66 total). All 1,152
+paired discoveries retain one accepted and one explicitly rejected owner:
+768 pairs use simultaneous JVM/Native workers, 384 are queued JS pairs. All
+measured body and report counters remain zero. Native outputs are cleaned in
+each compiler process; Scala 3 applies `-Wunused:all` to Compile and Test
+through the three exact LocalProject IDs, with no Scala 3 flags on Scala 2.
+Native toolchain diagnostics include warnings logged with SBT's error prefix;
+the Native executions and actual process exit codes are successful.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-plain-registration-artifact-audit.py`
+exits 0. Its summary checks nine current jars/POMs and all 1,320 binary entries
+against their compiled sets and bytes, all 18 fresh Compile/Test classpaths,
+the five unchanged source snapshots, all execution/ownership/bootstrap markers,
+the expected dependency scopes and absence of ScalaTest/Scalactic and fixture
+leakage. The base dependency boundary remains fundamentals assertions and the
+portable protocol; Scala 3 still resolves the protocol's 3.8.4 classes. The build
+graph inputs are unchanged; this reuses prior verified graph evidence rather
+than claiming a fresh graph observation.
+
+`bash /srv/nvme/tmp/izumi-impl/2b-base-runner-consumer-matrix.sh` also exits 0,
+captured by `2b-plain-registration-consumers-final.commands.json`, log and
+completion JSON. Its independent builds clean and execute all nine compiler/
+platform outputs. Nine markers retain four completed sync/Future bodies,
+source positions, constructor-captured and overridden execution contexts,
+resource-free discovery and event wire round-trips. The root consumer audit
+records nine published-only classpaths (145 entries), seven source/build hashes
+and the log SHA256 in `2b-plain-registration-consumer-audit.json`.
+
+At 2026-10-02 20:12:42 UTC both primary Native interop metadata URLs still
+return HTTP 404 (`2b-plain-registration-release-metadata.json` and adjacent
+response files). Higher Native remains pending while independent work continues.
+Generator idempotence, published old-binary registration replay, final read-only
+closure and the local commit are recorded below when complete. No parent or
+final gate is marked done.
+
+Final generation with
+`direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`
+exits 0 (`2b-plain-registration-generator-final.commands.json`, log and
+completion JSON). All three generated files retain the prior SHA256 digests:
+build.sbt cd9a723e92db4e4652a1ccc91fb92ad7b09f0a982e97ca2b3ec83094f81e6e56,
+plugins.sbt 3d66e16d3eb977416f059d7e2ec2ff87c323636db4ea49b2d5bf043431f73c34,
+build.properties 669fae6680792604c3020a33e1d814dfef7b17fedb0ff6a843cc520685db984e.
+The generator log has no synthetic exit footer; its actual completion records
+exit 0 and byte identity. `git diff --check` exits 0.
+
+The independent actual-publication proof is retained in
+`/srv/nvme/tmp/izumi-impl/plain-registration-published-final-review/`.
+The unchanged fail-first consumer's five old class/TASTy files execute first
+against the new frozen base jar, then the identical source compiles and its
+five new files execute. All three captured JDK 21 commands exit 0; each runtime
+completes 65,536 paired attempts with no double admission and terminates its
+executor. This original oracle requires absence of double admission; the
+stronger exact-one-owner and measured zero-body/report postconditions come
+from the nine producer fixtures, not its literal labels. Consumer classpaths
+contain 49 frozen published jars and no production class directories or shadow
+sources. The proof records 55 artifact records (54 unique jars and the new
+base POM), two source records, all old/new hashes, the five-source final
+snapshot, and all 109 exact current base JVM binary entries. The base jar SHA
+is 76e2ba7084d3aa0f5f6994cd5f0bc5760fdc90058a7876f4763dfb81139a5008.
+Only META-INF/MANIFEST.MF differs between the intermediate and final packaging;
+their complete binary sets and bytes are identical. Final runs use the final
+packaging. The immutable producer-log SHA is
+75ddda327a2b331aa0fe302904323ee916e3c0992cfbe5a27ea603d0e46d7631.
+
+The reviewer's publication `audit.py` and root's independent
+`python3 /srv/nvme/tmp/izumi-impl/2b-plain-registration-root-publication-audit.py`
+both exit 0. Root verifies every manifest hash, original source and old-binary
+identity, the exact 49-jar closure replacement, all current binary bytes,
+producer provenance, packaging difference, command/classpath and actual runtime
+oracle. Its result is `root-evidence-audit.json`. The reviewer's attempted
+Scala 2 source harness stopped while resolving an unrelated unpublished higher
+prerequisite; it establishes no compilation or product result. The authoritative
+root failures and subsequent final nine-lane results are recorded above.
+
+The product documentation now states atomic admission for both plain front
+ends. Read-only source/API review finds no additional defect in this bounded
+registration correction; final document closure is pending below. Parent 2b,
+the two custom-plugin reconstruction defects, complete compatibility/custom-hook
+audits, active cancellation, common host integration, higher Native and final
+head evaluations remain open. Acceptance and owner decisions are unchanged.
+
+The final read-only closure is
+`plain-registration-bounded-final-review/document-closure-verdict.json`. The
+reviewer independently reruns both artifact/publication auditors and verifies
+the final nine consumer markers, all 145 published classpath entries, generated
+hashes and document scopes. It finds no additional material defect or acceptance
+overclaim in this bounded portion. `git diff --check` exits 0 before the local
+commit; its exact hash is recorded at the next evaluation point. All parent and
+final gates remain open.

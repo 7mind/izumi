@@ -5,7 +5,8 @@ with `should`/`must`/`can`/`in`. It inherits the fundamentals assertions and
 accepts synchronous or Future test bodies. Registration stores bodies without
 evaluating them; compiler macros record source positions separately from IDs.
 Nested branches restore their parent path. Registration freezes when a session
-discovers the suite, and a suite instance cannot register in another session.
+discovers the suite. Concurrent discovery of a shared plain or async suite
+admits one session; the others retain an explicit Discovery failure.
 Plain suites use the caller's implicit context for Future construction.
 Async suites expose an overridable implicit `executionContext`. Its default is
 a per-suite forwarding context that constructors may retain; scheduling through

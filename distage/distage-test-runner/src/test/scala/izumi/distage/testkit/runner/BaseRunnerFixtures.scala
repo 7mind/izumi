@@ -7,6 +7,15 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object BaseRunnerFixtures {
+  private final val OwnershipAttempts = 64
+
+  private final class SharedSyncSuite(bodies: AtomicInteger) extends AnyWordSpec {
+    "body" in { val _ = bodies.incrementAndGet(); () }
+  }
+  private final class SharedAsyncSuite(bodies: AtomicInteger) extends AsyncWordSpec {
+    "body" in Future { val _ = bodies.incrementAndGet(); () }
+  }
+
   private final class PlainSuite(instances: AtomicInteger, syncBodies: AtomicInteger, futureBodies: AtomicInteger) extends AsyncWordSpec {
     instances.incrementAndGet()
     val capturedExecutionContext: ExecutionContext = executionContext
@@ -154,9 +163,38 @@ object BaseRunnerFixtures {
         val selectedId = catalogue(invalid).tests.head.id
         verify(invalid.resolve(RunRequest(identity, Selection.Only(Vector.empty, Vector(selectedId)), inherited)).isLeft, "Provider resolution must not reintroduce an unselected registered test")
         ProviderBoundaryFixtures.run(identity, verify)
-      }.map { _ =>
+      }.flatMap(_ => registrationOwnership(ec, verify)).map { _ =>
         println(s"BASE_RUNNER_FIXTURES_OK checks=${checks.get()} sessions=isolated finalization=awaited")
       }
     }
+  }
+
+  private def registrationOwnership(context: ExecutionContext, verify: (Boolean, String) => Unit): Future[Unit] = {
+    implicit val ec: ExecutionContext = context
+    val frontends = Vector[(String, AtomicInteger => TestSuite)](
+      "synchronous" -> (bodies => new SharedSyncSuite(bodies)),
+      "asynchronous" -> (bodies => new SharedAsyncSuite(bodies)),
+    )
+    frontends.foldLeft(Future.successful(())) { case (before, (name, create)) => before.flatMap { _ =>
+      val factories = new AtomicInteger(0)
+      val bodies = new AtomicInteger(0)
+      val reports = new AtomicInteger(0)
+      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = { val _ = (event, reports.incrementAndGet()) } }
+      (1 to OwnershipAttempts).foldLeft(Future.successful(())) { (previous, attempt) => previous.flatMap { _ =>
+        val suite = create(bodies)
+        val sessions = Vector("first", "second").map { owner =>
+          val identity = CatalogueIdentity(BuildId("plain-registration"), BuildTargetId("plain-target"), CatalogueId(name + "-" + attempt + "-" + owner))
+          new RunSession(identity, Vector(() => { val _ = factories.incrementAndGet(); suite }), context, sink)
+        }
+        FixturePlatform.concurrentDiscovery(sessions, context).map { outcomes =>
+          verify(outcomes.count(_.isRight) == 1, name + " shared suite must have exactly one session owner: " + outcomes.map(_.map(_.identity.catalogue.value)))
+          verify(outcomes.flatMap(_.left.toOption).forall(failure => failure.phase == FailurePhase.Discovery && failure.message.contains("Suite instance cannot be shared between sessions")), name + " shared suite must retain its explicit ownership rejection")
+          verify(outcomes.flatMap(_.toOption).forall(_.tests.size == 1), name + " accepted owner must retain its registered test")
+        }
+      } }.map { _ =>
+        verify(factories.get() == OwnershipAttempts * 2 && bodies.get() == 0 && reports.get() == 0, name + " concurrent discovery must call both factories without evaluating bodies or reports")
+        println("PLAIN_SHARED_OWNERS frontend=" + name + " attempts=" + OwnershipAttempts + " acceptedPerAttempt=1 rejectedPerAttempt=1 bodies=" + bodies.get() + " reports=" + reports.get())
+      }
+    } }
   }
 }

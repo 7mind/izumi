@@ -58,7 +58,7 @@ abstract class AnyWordSpec extends Assertions with TestSuite {
     }
   }
 
-  final override def register(context: RegistrationContext): RegisteredSuite = {
+  final override def register(context: RegistrationContext): RegisteredSuite = synchronized {
     require(!registered, "Suite instance cannot be shared between sessions")
     registered = true
     ownedExecutionContext = Some(context.executionContext)
