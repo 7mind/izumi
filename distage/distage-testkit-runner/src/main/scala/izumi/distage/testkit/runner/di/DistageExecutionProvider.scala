@@ -26,8 +26,8 @@ final class DistageExecutionProvider(
   configLoader: TestConfigLoader,
   options: DistageRunnerOptions,
 ) extends ExecutionProvider {
-  private[distage] val environments = new SessionTestEnvironment(new SessionEnvironmentFactory(new TestEnvironmentFactory.Impl, new SessionBootstrapFactory))
   private[distage] val defaultPluginLoader = new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))
+  private[distage] val environments = new SessionTestEnvironment(new SessionEnvironmentFactory(new TestEnvironmentFactory.Impl, new SessionBootstrapFactory, defaultPluginLoader.packageCache))
   private type RunnerF[A] = MiniBIOAsync[Throwable, A]
   private val configuration = new SessionTestConfigLoader(configLoader)
   private val engine = new DistageEngine[RunnerF](configuration, options)

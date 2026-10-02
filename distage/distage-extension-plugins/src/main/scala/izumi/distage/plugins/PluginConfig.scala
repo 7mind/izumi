@@ -1,10 +1,11 @@
 package izumi.distage.plugins
 
 import izumi.distage.model.definition.ModuleBase
+import izumi.distage.plugins.load.PluginPackageCache
 import izumi.fundamentals.platform.language.SourcePackageMaterializer
 
 /** @see [[https://izumi.7mind.io/distage/distage-framework#plugins Plugins]] */
-final case class PluginConfig(
+case class PluginConfig(
   packagesEnabled: Seq[String],
   packagesDisabled: Seq[String],
   cachePackages: Boolean,
@@ -12,6 +13,11 @@ final case class PluginConfig(
   merges: Seq[ModuleBase],
   overrides: Seq[ModuleBase],
 ) {
+  private[distage] def packageCacheOwner: Option[PluginPackageCache] = None
+
+  private[distage] def withPackageCacheOwner(owner: PluginPackageCache): PluginConfig =
+    new PluginConfig.Owned(packagesEnabled, packagesDisabled, cachePackages, debug, merges, overrides, owner)
+
   def enablePackages(packagesEnabled: Seq[String]): PluginConfig = copy(packagesEnabled = this.packagesEnabled ++ packagesEnabled)
   def enablePackage(packageEnabled: String): PluginConfig = enablePackages(Seq(packageEnabled))
 
@@ -36,6 +42,27 @@ final case class PluginConfig(
 }
 
 object PluginConfig extends PluginConfigStatic {
+  private final class Owned(
+    packagesEnabled: Seq[String],
+    packagesDisabled: Seq[String],
+    cachePackages: Boolean,
+    debug: Boolean,
+    merges: Seq[ModuleBase],
+    overrides: Seq[ModuleBase],
+    owner: PluginPackageCache,
+  ) extends PluginConfig(packagesEnabled, packagesDisabled, cachePackages, debug, merges, overrides) {
+    override private[distage] val packageCacheOwner: Option[PluginPackageCache] = Some(owner)
+
+    override def copy(
+      packagesEnabled: Seq[String],
+      packagesDisabled: Seq[String],
+      cachePackages: Boolean,
+      debug: Boolean,
+      merges: Seq[ModuleBase],
+      overrides: Seq[ModuleBase],
+    ): PluginConfig = new Owned(packagesEnabled, packagesDisabled, cachePackages, debug, merges, overrides, owner)
+  }
+
   /** Scan the specified package at runtime for classes and objects that inherit [[PluginBase]] */
   def cached(pluginsPackage: String): PluginConfig = PluginConfig(pluginsPackage :: Nil, Nil, cachePackages = cacheEnabled, debug = false, Nil, Nil)
 

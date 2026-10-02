@@ -4,6 +4,7 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.PluginBase
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderClassgraphImpl, PluginLoaderDefaultImpl, PluginPackageCache}
 import izumi.distage.testkit.spec.sessionplugins.SessionScannedPlugin
+import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -32,7 +33,33 @@ private[spec] object SessionEnvironmentFixturePlatform {
       "JVM scanned plugins repeat inside one owner" -> ((first eq repeated) && (plugins(0) eq plugins(1))),
       "JVM independent owners scan distinct plugin objects" -> ((plugins(0) ne plugins(2)) && (plugins(0).provisions ne plugins(2).provisions)),
       "JVM uncached scans are fresh and all providers remain suspended" -> ((plugins(3) ne plugins(4)) && plugins.forall(_.provisions.get() == 0)),
-    ) ++ PluginMemoizationFixtures.checks() ++ customDispatch()
+    ) ++ PluginMemoizationFixtures.checks() ++ customDispatch() ++ explicitPackageCache()
+  }
+
+  private def explicitPackageCache(): Vector[(String, Boolean)] = {
+    val plugin = new SessionScannedPlugin
+    val calls = new AtomicInteger(0)
+    val getters = new AtomicInteger(0)
+    val explicit = new PluginPackageCache {
+      override def getOrCompute(packageName: String, whitelistClasses: Seq[String], excludedPackages: Seq[String])(load: => Seq[PluginBase]): Seq[PluginBase] = {
+        val _ = (packageName, whitelistClasses, excludedPackages, () => load)
+        calls.incrementAndGet().discard()
+        Seq(plugin)
+      }
+    }
+    val owner = new PluginPackageCache {
+      override def getOrCompute(packageName: String, whitelistClasses: Seq[String], excludedPackages: Seq[String])(load: => Seq[PluginBase]): Seq[PluginBase] = {
+        val _ = (packageName, whitelistClasses, excludedPackages, () => load)
+        throw new IllegalStateException("Explicit plugin cache must retain its policy")
+      }
+    }
+    val loader = new PluginLoaderClassgraphImpl {
+      override protected def packageCache: PluginPackageCache = { val _ = getters.incrementAndGet(); explicit }
+    }
+    val request = PluginConfig.empty.enablePackages(Seq("nomatching.first", "nomatching.second")).cachePackages(true).withPackageCacheOwner(owner)
+    val loaded = loader.load(request.snapshot())
+    Vector("JVM explicit custom package-cache policy and getter dispatch survive owned requests" ->
+      (loaded.loaded == Seq(plugin, plugin) && calls.get() == 2 && getters.get() == 2 && plugin.provisions.get() == 0 && plugin.acquired.get() == 0 && plugin.released.get() == 0))
   }
 
   private def customDispatch(): Vector[(String, Boolean)] = {

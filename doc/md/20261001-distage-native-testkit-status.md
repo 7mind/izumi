@@ -57,7 +57,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | in progress | Owned higher provider and all four spec entry points pass six JVM/JS lanes below; common host integration and final evaluation remain outstanding. |
 | 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
-| 2b.8 | in progress | Plain/raw DI ownership, four-front-end atomic registration and delegating bootstrap controls pass below; reproduced cached custom-plugin isolation failure and final evaluation outstanding. |
+| 2b.8 | in progress | Plain/raw DI, atomic registration, delegating bootstrap and request-preserving cached custom-plugin controls pass below; request-reconstruction ownership defect, complete custom-hook audit, higher Native and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain IDs reject in all nine lanes and distage path/suite/test IDs reject in six JVM/JS lanes below; higher Native and final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
@@ -135,7 +135,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.15 | not started | No evaluation point passed yet. |
 | O.16 | not started | No evaluation point passed yet. |
 | O.17 | in progress | Declarative registration and arbitrary-constructor side-effect boundary documented; no-resource front-end discovery verified below; final evaluation outstanding. |
-| O.18 | in progress | Owned provider/default and delegating bootstrap controls preserve the static router below; cached custom-plugin isolation, complete custom-hook audit and final evaluation outstanding. |
+| O.18 | in progress | Owned/default/delegating bootstrap and request-preserving custom-plugin controls pass below; request-reconstruction ownership defect, complete custom-hook audit and final evaluation outstanding. |
 | O.19 | not started | No evaluation point passed yet. |
 | O.20 | not started | No evaluation point passed yet. |
 | O.21 | not started | No evaluation point passed yet. |
@@ -3253,3 +3253,242 @@ core/classpath/graph provenance, the test-helper/auditor failure captures and
 the cached custom-plugin, full O.18, parent and final-head work. This verified
 bootstrap portion is committed locally; its exact hash is recorded at the next
 ledger evaluation after commit creation. No push is performed.
+
+### Verified request-preserving cached custom-plugin portion
+
+The verified delegating bootstrap portion is committed locally as
+`7ed12ae9b6fd21f9b1298d404f9bf3735edd7b23` on 2026-10-02. Root verifies the
+hash and observes a clean tree immediately afterward. No push is performed.
+
+The unchanged published CustomPluginLoaderStateProbe still demonstrates the
+expected isolation failure before this correction: two fresh zero-argument
+custom loaders use the library's legacy global package cache, both bodies
+succeed, and mutable scanned state yields Vector(1,2) instead of Vector(1,1).
+The captured-definition same-session control also rejects replacing that cache
+with separate per-loader caches. A permanent actual-engine fixture is added
+before changing the production cache ownership policy. Its checks require fresh
+state across owners, compatible sharing within each owner, suspended resources
+during discovery/planning, preserved forwarding/map/copy hooks and release
+before Finished. Verification is pending at installation.
+
+The fresh strict Scala 3 permanent-fixture reproduction compiles and exits 1
+for its expected repeated-owner isolation oracle
+(`2b-spec-plugin-ownership-before.*`). Both owners execute their two bodies
+successfully. The first reports counts=1,2, shared=true, acquired=1/released=1;
+the repeated owner reports counts=3,4, shared=true, acquired=2/released=2. Its
+failure is "repeated custom plugin owner starts with fresh scanned state".
+The exact fixture sources are frozen in `spec-plugin-ownership-before-sources/`
+before changing the production policy. This also confirms that compatible
+same-owner memoization passes in the pre-correction library.
+
+The production correction carries the provider's existing package-cache owner
+through both app and bootstrap PluginConfig requests. Forwarding/custom loader
+dispatch is retained; Classgraph selects this owner only for its built-in legacy
+cache route, retaining an explicitly supplied protected cache collaborator and
+one getter invocation per package. Default and fresh custom loaders in a session
+therefore use the same package cache rather than separate caches or disabled
+caching. PluginConfig retains its six fields, generated copy/default getters,
+constructor, extractor and Product shape. Its final modifier is removed solely
+to permit a private immutable Owned subclass whose exact six-argument copy
+override has no new defaults. Scope metadata survives copy/snapshot/helpers and
+is excluded from value equality/Product reconstruction; reconstructing a fresh
+six-field value does not reconstruct its runtime owner. This is an explicit
+implementation tradeoff, not an assertion of actual public API compatibility.
+The independent model passes 18 commands on the three compilers, but actual
+published old-binary/source/Mirror controls remain pending.
+
+The current build defines extension-plugins only for JVM/JS. No higher Native
+ownership result is inferred from the common source change. Existing Native
+implementation and interop gates remain open. A fresh strict Scala 3 core/higher
+JVM/JS runtime sequence is running, without publication while the reviewer
+freezes actual pre-correction PluginConfig artifacts. It found missing Scala 2
+published core-api prerequisites; these unchanged modules must be published
+before the complete actual published-only API baseline can run. Producer class
+directories or unrelated released artifacts will not substitute for that gate.
+
+The first strict Scala 3 correction attempt stops at compilation of the new
+snapshot test helper: ArrayBuffer is not the API's Seq parameter type
+(`2b-spec-plugin-ownership-scala3-first.*`, exit 1). Root corrects only the
+helper's .toSeq conversion; the production correction is unchanged. A fresh
+rerun is captured separately. The reviewer freezes all three actual old
+extension-plugin JARs/POMs before publication; twenty missing prerequisite
+coordinates are recorded in its `plugin-config-actual-published-api-before-review/`
+prerequisite-gaps.json. Separate fresh Scala 2 compiler processes publish only
+those ten unchanged prerequisite projects per version. They do not publish the
+changed extension-plugin module or substitute producer classes for API evidence.
+
+The corrected strict Scala 3 runtime sequence exits 0: core checks=122 JVM/103
+JS, higher checks=302 JVM/272 JS
+(`2b-spec-plugin-ownership-scala3-corrected.*`). The unchanged-production
+isolation oracle now observes counts=1,2/shared=true/acquired=1/released=1 for
+each of the four initial custom-loader owners. The JVM fixture is strengthened
+after its runtime task completes, while the active JS/prerequisite graphs exclude
+those JVM-only test sources: Cats IO now holds each owner's second body until
+all concurrent scopes have acquired their resource, and a fifth owner mixes the
+default and fresh custom route. Final reruns must verify this revision instead
+of attributing its stronger guarantees to the earlier 302-check capture.
+Both ten-project Scala 2 prerequisite publication sequences finish with exit 0
+(`2b-spec-plugin-api-prerequisites-{scala213,scala212}.*`). The reviewer observes
+and freezes complete published-only baseline closures, without producer classes
+or unrelated releases. Actual pre-correction API baseline completion is pending.
+
+The strengthened JVM fixture initially fails because its gate assumes the
+debug=true suite runs second. The observed engine runs it first. Root preserves
+the failed final-lane capture as
+`2b-spec-plugin-ownership-scala3-final-initial-fixture.*`, adds only diagnostics,
+and reproduces the actual cause in `2b-spec-plugin-owner-gate-before.*`, exit 1:
+the gate observes counts=1/acquired=1/released=0 and the protocol outcome retains
+the named "first custom plugins hold every owner's resource before opening the
+gate" Test failure. This is a test-harness ordering assumption, not a production
+ownership defect. Only after capturing that cause does the helper change:
+Statistics atomically returns whether the second body has completed, and that
+body enters the gate regardless of suite identity. Production policy remains
+unchanged. All final lanes and publications will be rerun; the failed capture
+is not treated as successful evidence.
+
+The corrected final Scala 3 sequence now exits 0
+(`2b-spec-plugin-ownership-scala3-final.*`): 122/103 core and 331/290 higher
+checks on JVM/JS, seven unchanged extension JVM test cases across three suites,
+four fresh extension Compile/Test classpath captures and six publications. The
+five scanned owners include the mixed default/custom route; all report two
+successful results, fresh counts=1,2 and shared=true/acquired=1/released=1.
+The concurrent gate explicitly observes counts=1,2;1,2, acquired=1,1 and
+released=0,0 before releasing either owner. The common static-request fixture
+checks both app/bootstrap scope forwarding and original cache flags on JVM/JS;
+JS runtime scanning remains unsupported and no JS scanning result is claimed.
+All three final compilers and after-publication proofs remain pending closure.
+
+The actual BEFORE API gate passes all thirteen commands on Scala 3.9, 2.13 and
+2.12. Shared Scala consumers check the original six-argument constructor/apply,
+copy/defaults/extractor/Product/snapshot/helpers; Java directly links all six
+synthetic copy-default getters and copy6; Scala 3 Mirror.fromProduct6 passes.
+The reviewer freezes 127 artifacts (70 JARs/57 POMs), 24 production-provenance
+sources, 162 old producer binary entries and thirteen compiled consumer files.
+Root reads the full three consumer sources and independently audits thirteen
+exact JDK21 commands/results, all 127 artifact hashes, four source hashes,
+thirteen consumer binary hashes and 162 producer entries, exit 0
+(`root-before-api-evidence-audit.json`). The frozen original PluginConfig source
+matches git show at 7ed12ae9 exactly. Consumer paths use published-only closures,
+without producer classes or production-source shadowing. The review preserves
+an initial invalid Scala reference to JVM synthetic getters as a harness failure;
+the explicit Java consumer supplies that linkage check. These successful before
+controls do not establish compatibility with the changed producer.
+
+The final Scala 2.13 sequence passes the same checks and six publications, exit
+0. Scala 2.12 stops at a newly introduced test-helper compilation error:
+two val _ declarations in one block are rejected by 2.12
+(`2b-spec-plugin-ownership-scala212-final-pre-helper-correction.*`, exit 1).
+Root reads the exact "_ is already defined as value _" diagnostic before
+replacing only that second discarded result with the project's Discarder
+syntax. The product policy is unchanged. Earlier successful Scala 3/2.13
+captures are preserved separately, and final consistent helper/runtime and
+publication sequences are rerun on all three compilers.
+
+The initial published Scala 3 AFTER consumer gate passes eight commands: all
+three byte-frozen before consumer binaries link, and identical Scala/Java/Mirror
+sources recompile and run. The separate six unchanged public runtime probes
+pass eleven commands, including the original cached-plugin state oracle
+(Vector(1,1), sharedState=false, both successful) and captured-definition sharing
+control (two results/two loaders, acquired=1/released=1/shared=true). Registration,
+bootstrap/property and explicit role-app controls remain passing. These are
+initial after captures pending final artifact closure, not final-head claims.
+
+Republishing after the Scala 2.12 test-helper correction changes three Scala 3
+whole-JAR hashes. Root's initial current-artifact assertion fails before writing
+its result. The follow-up ZIP comparison observes identical entry sets and all
+entry bytes except META-INF/MANIFEST.MF; the only changed line is
+X-Build-Timestamp. `root-repackaging-comparison.json` and the review's
+`spec-plugin-ownership-publication-repackaging-comparison.json` preserve the
+observed manifests. All 354 class/TASTy bytes still match. This is evidenced
+repackaging, not an inferred source or binary change. Prior immutable captures
+are retained; the reviewer freezes and replays the actual final-helper JARs in
+fresh directories so final whole-artifact provenance is direct.
+
+All three consistent-helper final sequences finish with exit 0
+(`2b-spec-plugin-ownership-{scala3,scala213,scala212}-final.*`). Each fresh
+compiler runs six module testFull commands and six publications; only Scala 3
+sets -Wunused:all in Compile/Test for all six named LocalProjects. The matrix
+auditor exits 0 (`2b-spec-plugin-ownership-final-audit.*`): 2,538 primary checks,
+675 core and 1,863 higher, including 264 added plugin checks. It separately
+counts 21 unchanged extension JVM test cases, fifteen scanned-owner scopes,
+thirty successful scanned terminal results, three controlled overlapping-owner
+pairs and 24 static-request owner scopes. Every held pair observes both resources
+acquired and neither released; Finished observers require release before the
+event. All five production sources remain identical to their recorded policy
+snapshot, captured during the final runtime sequence.
+
+The artifact auditor exits 0 (`2b-spec-plugin-ownership-artifact-audit.*`):
+eighteen fresh artifacts contain exactly 2,654 current binary entries, compared
+byte for byte. It checks expected POM scopes, higher optional ZIO/test Cats
+Effect and absence of fixtures. Twelve extension Compile/Test classpath blocks
+are fresh; 24 prior unchanged-build core/higher blocks and three graphs (109
+nodes, 213 scoped edges, no cycle per compiler) are explicitly reused. Extension
+Test may retain its existing ScalaTest dependencies; none leak into the core or
+higher modules. The fresh generator exits 0 with all three generated output
+hashes unchanged (`2b-spec-plugin-ownership-generator-final.*`). All root SBT
+and generator processes have completed.
+
+The actual final AFTER API gate in
+`plugin-config-actual-published-api-after-final-helper-review/` passes twenty
+exact commands. Frozen old consumers link on each compiler, and identical
+Scala/Java/Mirror sources recompile and run against the actual final published
+PluginConfig. Root independently audits all 127 artifacts, three unchanged
+consumer sources, 26 consumer files (thirteen identical old files), twenty
+commands/results and all 165 current extension JVM binary entries, exit 0
+(`root-after-api-evidence-audit.json`). Its two initial schema assertions used
+the wrong recompiled directory name and treated a per-compiler binary object
+as a list; only those auditor assumptions are corrected. No product or probe
+changes are involved. The review also preserves an earlier deferred Scala 2
+freeze guard when the expected completion record was absent after historical
+capture renaming; it performed no artifact freeze and is not a compiler failure.
+
+The final runtime replay in `spec-plugin-ownership-published-final-helper-review/`
+passes eleven commands with six byte-identical prior public probes. Root audits
+all 78 artifact hashes/bytes (54 JARs/24 POMs), 26 sources (six compiled and
+twenty production-provenance-only), exact consumer classpaths/commands/results,
+and all 354 current JVM3 core/higher/extension binary entries, exit 0
+(`root-after-runtime-evidence-audit.json`). The actual final immutable producer
+log SHA256 is
+6c3e7a7246e4393ffff7f27748da0ace01dd0660de3133f9d340cd26b9410c8d.
+The original cached custom-plugin failure is corrected: both owner bodies
+succeed with fresh Vector(1,1) and sharedState=false. The captured-definition
+same-session sharing control remains acquired=1/released=1/shared=true.
+Registration, duplicate, bootstrap/property and explicit role-app controls pass.
+No consumer compilation uses producer classes or production-source shadowing.
+
+Primary Native interop metadata returns HTTP 404 at 18:55:58 UTC on 2026-10-02
+(`2b-spec-plugin-ownership-release-metadata.json` and response XML). Higher Native
+work remains waiting on that named release condition. The bounded cached-loader
+correction leaves parent 2b, the complete custom-hook audit, remaining compatibility
+inventory, cancellation and final-head gates open. The acceptance checklist and
+owner decisions remain unchanged. Final read-only closure and local commit are
+pending below.
+
+The read-only review reproduces a remaining ownership defect in a public custom
+load override that reconstructs PluginConfig from its six fields before calling
+super.load. The new value loses the request's owner and reaches the legacy
+global package cache. The final published probe in
+`spec-plugin-ownership-reconstruction-boundary-review/` compiles with exit 0
+and fails the original isolation assertion with exit 1: both owners' bodies
+succeed, but seen=Vector(1,2), sharedState=true. Root reads its full source,
+exact commands and captured failure before making any further product change.
+The API documentation now states this residual defect explicitly. Requiring
+users to preserve an otherwise equivalent request is not adopted as a narrowed
+acceptance criterion; complete ownership remains unfinished. This checkpoint
+verifies the request-preserving routes and their same-owner sharing only.
+Parent 2b.8/O.18 and the reconstruction correction remain open. The reviewer
+also retains an extra generator-log EXIT marker assertion as an auditor
+assumption: generator completion and all actual output hashes pass, while that
+command's log contains only direnv output.
+
+Final read-only review closes this bounded portion with no additional findings:
+`spec-plugin-ownership-bounded-final-review/review-verdict.json` records five
+successful auditors/diff checks, generator completion and three exact hashes,
+13 before/20 after API commands and 11 runtime commands. Root independently
+checks the reconstruction capture with
+`spec-plugin-ownership-reconstruction-boundary-review/root-reconstruction-evidence-audit.json`
+(exit 0): seven compiler and 49 published consumer JARs, source hash, exact
+compile 0/runtime 1 commands and the expected isolation assertion. Its
+`root-source-variant.diff` confirms only the custom six-field reconstruction
+differs from the preceding passing public probe. Local commit below records
+this verified forwarding portion; no parent or final gate is marked done.

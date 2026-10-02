@@ -67,6 +67,8 @@ object DistageProviderFixtures {
         .flatMap(_ => SpecCompatibilityFixtures.run(context, checks.verify))
         .flatMap(_ => SpecRegistrationFixtures.run(context, checks.verify))
         .flatMap(_ => SpecBootstrapFixtures.run(context, checks.verify))
+        .flatMap(_ => SpecPluginRequestFixtures.run(context, checks.verify))
+        .flatMap(_ => ProviderFixturePlatform.pluginOwnership(context, checks.verify))
         .map { _ => println("DISTAGE_PROVIDER_CONTRACTS_OK checks=" + checks.count) }
     }
   }

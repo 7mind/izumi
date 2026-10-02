@@ -39,7 +39,9 @@ open class PluginLoaderClassgraphImpl extends PluginLoader {
     } else {
       enabledPackages.flatMap {
         pkg =>
-          packageCache.getOrCompute(pkg, whitelistedClasses, disabledPackages)(loadPkgs(Seq(pkg)))
+          val configured = packageCache
+          val cache = if (configured eq PluginLoaderClassgraphImpl.legacyPackageCache) config.packageCacheOwner.getOrElse(configured) else configured
+          cache.getOrCompute(pkg, whitelistedClasses, disabledPackages)(loadPkgs(Seq(pkg)))
       }
     }
   }

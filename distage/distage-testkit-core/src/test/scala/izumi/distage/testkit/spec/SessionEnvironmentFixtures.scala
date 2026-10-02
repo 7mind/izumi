@@ -32,6 +32,7 @@ object SessionEnvironmentFixtures {
     customLoaderPolicies(checks)
     packageKeySnapshots(checks)
     requestKeySnapshots(checks)
+    pluginConfigurationOwnership(checks)
     environmentKeySnapshots(checks)
     PreparedExecutionFixtures.checks().foreach {
       case (label, condition) => checks.verify(label)(condition)
@@ -46,6 +47,36 @@ object SessionEnvironmentFixtures {
           .flatMap(_ => concurrent("dummy", () => new StaticPluginLoader, executionContext))(executionContext)
           .flatMap(_ => concurrentPlugins("production", cache => PluginLoaderDefaultImpl.withPackageCache(cache), executionContext))(executionContext)
           .flatMap(_ => concurrentPlugins("dummy", _ => new StaticPluginLoader, executionContext))(executionContext)
+    }
+  }
+
+  private def pluginConfigurationOwnership(checks: Checks): Unit = {
+    val first = new PluginPackageCache.Impl
+    val second = new PluginPackageCache.Impl
+    val original = PluginConfig.cached(Seq("original"))
+    val owned = original.withPackageCacheOwner(first)
+    checks.verify("owned plugin configuration retains six-field equality and product shape") {
+      owned == original && owned.hashCode() == original.hashCode() && owned.productArity == 6 && owned.productIterator.toVector == original.productIterator.toVector && owned.productPrefix == original.productPrefix
+    }
+    checks.verify("owned plugin configuration retains six-field construction and extraction") {
+      val PluginConfig(enabled, disabled, cached, debug, merges, overrides) = owned
+      new PluginConfig(enabled, disabled, cached, debug, merges, overrides) == original
+    }
+    val transformed = Vector(
+      owned.copy(debug = true), owned.snapshot(), owned.enablePackage("enabled"), owned.disablePackage("disabled"),
+      owned ++ Module.empty, owned.overriddenBy(Module.empty), owned.cachePackages(false), owned.debug(true),
+    )
+    checks.verify("plugin copy, snapshot and all request helpers preserve their owner") {
+      transformed.forall(config => config.packageCacheOwner.exists(_ eq first))
+    }
+    checks.verify("plugin configuration can enter another owner without changing its original scope") {
+      owned.withPackageCacheOwner(second).packageCacheOwner.exists(_ eq second) && owned.packageCacheOwner.exists(_ eq first) && original.packageCacheOwner.isEmpty
+    }
+    val packages = scala.collection.mutable.ArrayBuffer("snapshot")
+    val snapshot = owned.copy(packagesEnabled = packages.toSeq).snapshot()
+    (packages += "changed").discard()
+    checks.verify("owned plugin snapshot freezes mutable packages and retains its cache") {
+      snapshot.packagesEnabled == Vector("snapshot") && snapshot.packageCacheOwner.exists(_ eq first)
     }
   }
 
