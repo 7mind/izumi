@@ -119,6 +119,22 @@ hook. The legacy
 existing global cache policy. The legacy default loader's package cache policy
 also remains unchanged.
 
+The core DistageTestRunner exposes planning separately from execution.
+`plan(tests)` returns a PreparedRun containing the existing typed planning result;
+`runPrepared(prepared)` executes those trees without loading configuration or
+planning them again. The value is bound to its creating runner and can start once.
+Foreign-owner and repeated execution fail before scope reporting. Keep the
+runner's surrounding lifecycle open through execution: bootstrap injectors in
+the plan retain that runner's locator. These values are in-process engine state;
+the protocol carries descriptions and identities instead.
+
+Planning executes configuration loading and bootstrap/planning extensions, while
+leaving application resource providers and test bodies suspended. Abandoned plans
+acquire no application resources. Execution retains the existing body, provisioning
+and finalizer failure behavior. A finalizer failure propagates and prevents a
+successful scope completion. The legacy `run(tests)` still begins its reporting
+scope before planning.
+
 ## Fundamentals test projects
 
 Platform, BIO, collections, json-circe and language tests live in unpublished

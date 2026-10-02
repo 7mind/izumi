@@ -2216,3 +2216,153 @@ evidence is unchanged. No unresolved checkpoint defect is observed.
 `git diff --check` passes. This section records the verified correction in its
 containing local commit; its exact hash is recorded at the next checkpoint.
 Nothing is pushed.
+
+## Step 2b: prepared core execution boundary
+
+The preceding verified cache correction is local commit
+`ef531e40dd62106cdac271570e1ffdad7951e9d9` (2026-10-02). The tree is observed
+clean immediately after that commit; no push occurs.
+
+Before changing the execution boundary, a standalone probe against frozen
+published jars records the original behavior in
+`/srv/nvme/tmp/izumi-impl/prepared-execution-baseline/`. Exact compiler/runtime
+commands and a validated source hash remain there. Both validated controls
+compile and run with exit 0. Success loads configuration once, executes two
+bodies with one resource acquisition/release and emits one begin/end scope.
+A deliberate release exception preserves the exact exception object, after two
+successful bodies, and emits no endScope. The probe's release counter records
+the release callback invocation, including the deliberate failure; it does not
+assert successful finalization in that control.
+
+DistageTestRunner now exposes plan and runPrepared over its existing typed
+planner result. PreparedRun belongs to the creating runner and atomically permits
+one execution. Ownership rejection precedes the single-use claim; both precede
+scope reporting. The legacy run method retains beginScope before planning.
+The previous execution body is extracted unchanged, including environment merging,
+proceedEnv and lifecycle usage. Prepared values remain in-process state, and
+callers must keep the runner's surrounding lifecycle open through execution.
+Planning still loads configuration and creates bootstrap injectors; the
+resource-free claim applies to application/runtime providers and test bodies.
+
+The first strict Scala 3 compile succeeds for production but catches a draft
+fixture reading out directly from the new wrapper
+(`2b-prepared-execution-scala3-first.log`). Correcting that inspection exposes
+an unsupported fixture classification: its missing dependency yields TestStatus
+Failed, not FailedInitialPlanning. The status capture is
+`2b-prepared-execution-planning-status-observation.log`. A separate original-runner
+published control in `prepared-execution-missing-baseline/` compiles/runs with
+exit 0 and confirms two Failed:InstantiationFailure statuses, zero bodies or
+application resources, and one begin/end scope. The fixture now preserves that
+provisioning classification and separately injects a configuration-loading
+exception to exercise the planning boundary. No production correction is made
+for the fixture's initial assumption. The corrected strict JVM run exits 0 with
+116 checks (`2b-prepared-execution-domain-corrected-scala3.log`); full compiler,
+platform, publication and final-review evidence follows when complete.
+
+Final checkpoint commands use three fresh SBT processes, JDK 21, batch mode and
+`-J-Xmx6G`. The Scala 3 process retains the generated Scala 3.9.0 settings and
+adds `-Wunused:all` to core JVM/JS scalacOptions before the corresponding platform
+actions. The other processes start with `++2.13.18` and `++2.12.21`, respectively,
+so Scala 3-only options do not cross compiler boundaries. Each process runs these
+ten actions, JVM then JS:
+
+```text
+distage-testkit-coreJVM/testFull
+distage-testkit-scalatestJVM/testFull
+distage-testkit-coreJVM/publishLocal
+show distage-testkit-coreJVM/Compile/fullClasspath
+show distage-testkit-coreJVM/Test/fullClasspath
+distage-testkit-coreJS/testFull
+distage-testkit-scalatestJS/testFull
+distage-testkit-coreJS/publishLocal
+show distage-testkit-coreJS/Compile/fullClasspath
+show distage-testkit-coreJS/Test/fullClasspath
+```
+
+All three processes exit 0. Captures under `/srv/nvme/tmp/izumi-impl/` are
+`2b-prepared-execution-scala3-final.log`,
+`2b-prepared-execution-scala213-final.log` and
+`2b-prepared-execution-scala212-final.log`.
+`python /srv/nvme/tmp/izumi-impl/2b-prepared-execution-matrix-audit.py` exits 0
+(`2b-prepared-execution-matrix-audit.log` and summary JSON). Each compiler reports
+116 JVM and 98 JS checks: 642 checks total, including 234 new prepared-execution
+criteria. All 36 domain controls preserve configuration count 1; successful,
+body-failing and finalizer-failing executions run two bodies with one application
+resource each; abandoned, provisioning-failing and configuration-failing controls
+run no bodies and acquire no application resources. The original body/finalizer/
+configuration exception identities and InstantiationFailure classification are
+asserted in the fixture, beyond its summary markers. Foreign-owner rejection
+leaves a prepared plan available to its owner, and reuse adds no scope reporting.
+
+The existing ownership/cache controls still pass: 768 environment and 768 plugin
+requests, 33 memoization controls with 66 bodies and 42 matched resource
+acquisitions/releases, plus all six owned-executor/JS completion markers. Legacy
+regression suites report 345 JVM and 137 JS successes per compiler, zero failures
+and 19 intentional cancellations per platform: 1,446 successes and 114
+cancellations overall. Thirty action completion markers are checked. No plugin
+source or dependency changes in this checkpoint; its preceding six-lane evidence
+retains that provenance rather than being presented as a new plugin test run.
+
+The read-only reviewer independently probes nonempty prepared plans in
+`prepared-execution-boundary-review/`: reuse after success, reuse after the
+original finalizer failure, and a concurrent contender while the first body is
+held at a latch. The contender fails before a second beginScope or acquisition;
+the first execution subsequently finishes both bodies and releases once. Its
+owned executor terminates. `prepared-execution-deferred-io-review/` additionally
+checks Cats IO: constructing planning/execution actions performs no corresponding
+configuration/acquisition/reporting, and evaluating the same execution action
+again rejects reuse, including after finalizer failure. Initial missing
+cats.mtl.LiftValue captures are preserved as the harness's omitted direct Cats
+Effect dependency, with its authoritative cached POM and correction JSON; no
+project dependency is changed. Both initial probe directories source-shadow the
+runner over frozen prior published dependencies. Their runner source SHA-256
+equals current `4215fe088b61e4aaaeec718ba4a4fd7ded9d67469475ac6e74268be83b8fb74f`.
+
+The final independent replay in `prepared-execution-published-final-review/`
+uses the newly published core jar and frozen dependencies, compiles both probe
+sources byte-for-byte unchanged, and passes all five runtime controls with exit 0.
+There is no source-shadowed runner and no producer class directory on its compiler
+or runtime classpath. Exact argument arrays, all artifact/source SHA-256 values,
+logs and the binary comparison remain there. The frozen core's 238 class/TASTy
+entries exactly match current compiled output. Root inspection checks every
+frozen hash, source equality, the two compiled probe sources, all dependency
+classpath entries and absence of runner classes in consumer output
+(`2b-prepared-execution-published-provenance-audit.log`). The success and deliberate
+finalizer-failure probes retain one configuration load, one acquisition, one
+release callback and two bodies; the latter preserves the original exception
+and absence of endScope. A release callback counter alone is not proof of
+successful finalization.
+
+`python /srv/nvme/tmp/izumi-impl/2b-prepared-execution-artifact-audit.py` exits 0
+(`2b-prepared-execution-artifact-audit.log` and summary JSON). All six published
+core jars/POMs and 1,808 binary entries match current compiled output exactly,
+including PreparedRun and JS IR. No fixture/probe leakage occurs. The twelve
+actual Compile/Test classpath blocks contain no ScalaTest or unrelated test/helper
+output; each core Test block permits exactly its own test-classes directory.
+Production POMs retain framework as their only Izumi dependency and introduce no
+new graph edge. Previous graph acyclicity evidence remains applicable to the
+unchanged build graph.
+
+Final `direnv exec . sh -c 'export JAVA_HOME="$JDK21";
+exec bash sbtgen.sc --js --native'` exits 0
+(`2b-prepared-execution-generator-final.log`). All three generated SHA-256 values
+match the before capture (`2b-prepared-execution-generator-idempotence.log`).
+The final primary Maven metadata requests still return HTTP 404 for both Native
+interop families (`2b-prepared-execution-interop-release-boundary-final.log`).
+Higher-layer Native verification awaits published artifacts; independent work
+continues. This checkpoint supplies a core planning/execution seam, not the
+distage execution provider, four replacement front ends, import-only compatibility
+fixture, or session bootstrap/logging audit. Parent items 2b.6/7/8/11, O.1 and
+O.18 remain outstanding. The acceptance checklist and plan's owner decisions are
+unchanged. Final read-only checkpoint review and commit follow below.
+
+The required read-only reviewer independently reruns the matrix/artifact audits
+with exit 0 (captures `prepared-execution-published-final-review/matrix-audit-review.log`
+and `artifact-audit-review.log`), rechecks all 44 frozen artifact hashes, the three
+source equalities, six argument arrays and absence of runner classes/producer
+directories, and verifies the current published core hash equals its frozen jar.
+The reviewer also checks generated hashes, the release-boundary capture, fixture
+failure identities and docs' lifecycle scope. No concrete checkpoint defect or
+unsupported completion claim is observed. Root `git diff --check` passes. This
+section records the verified seam in its containing local commit; its exact hash
+is recorded at the next checkpoint. Nothing is pushed.
