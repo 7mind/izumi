@@ -3,6 +3,7 @@ package izumi.distage.testkit.runner
 import izumi.distage.testkit.protocol.*
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 object ProviderBoundaryFixtures {
   def run(identity: CatalogueIdentity, verify: (Boolean, String) => Unit)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -18,7 +19,7 @@ object ProviderBoundaryFixtures {
     def contribution(suite: SuiteId, tests: Vector[TestDescriptor], provider: ExecutionProvider): TestSuite = new TestSuite {
       override def register(context: RegistrationContext): RegisteredSuite = RegisteredSuite(SuiteDescriptor(suite, suite.value), tests, provider)
     }
-    def session(suites: Vector[TestSuite], sink: Sink): RunSession = new RunSession(identity, suites.map(suite => () => suite), ec, sink)
+    def session(suites: Vector[TestSuite], sink: EventSink): RunSession = new RunSession(identity, suites.map(suite => () => suite), ec, sink)
     def provider(body: (Vector[TestDescriptor], RunExecutionContext) => Future[ProviderOutcome]): ExecutionProvider = new ExecutionProvider {
       override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
       override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
@@ -98,6 +99,31 @@ object ProviderBoundaryFixtures {
         verify(!result.successful && result.failures.contains(failure), "Reported phase failures must survive an inconsistent provider summary")
         verify(sink.events.count(_.event == RunEvent.PhaseFailed(result.run, failure)) == 1, "A reported phase failure must not be replayed at completion")
         checkWire(result, sink)
+      }
+    }.flatMap { _ =>
+      val callbackFailure = new IllegalStateException("event was recorded before delivery failed")
+      var messages = Vector.empty[ProtocolMessage.Event]
+      val sink = new EventSink {
+        override def accept(event: ProtocolMessage.Event): Unit = synchronized {
+          messages :+= event
+          event.event match {
+            case _: RunEvent.TestStarted => throw callbackFailure
+            case _ => ()
+          }
+        }
+      }
+      val draining = provider((_, context) => {
+        val failures = try {
+          context.emit(ProviderEvent.TestStarted(success.id))
+          Vector.empty[Failure]
+        } catch { case NonFatal(cause) => Vector(RunnerFailure.fromThrowable(FailurePhase.Transport, cause)) }
+        context.emit(ProviderEvent.TestCompleted(success))
+        Future.successful(ProviderOutcome(Vector(success), failures, cancelled = false))
+      })
+      session(Vector(contribution(descriptor.id.suite, Vector(descriptor), draining)), sink).execute(RunId("partial-event-delivery"), request).map { outcome =>
+        verify(!outcome.successful && outcome.failures.exists(failure => failure.phase == FailurePhase.Transport && failure.message == callbackFailure.getMessage), "A partially delivered callback failure must remain observable")
+        verify(messages.map(_.sequence) == messages.indices.map(_.toLong).toVector, "A recorded event that throws must consume its ordinal before the next event")
+        verify(messages.last.event == RunEvent.Finished(outcome.run, outcome) && outcome.results == Vector(success), "Draining a callback failure must preserve terminal results and completion")
       }
     }.flatMap { _ =>
       val failure = RunnerFailure.message(FailurePhase.Finalization, "repeated finalization failure")

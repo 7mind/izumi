@@ -31,6 +31,9 @@ session reconciles each provider's terminal results with its selected set and
 reported completions before announcing `RunEvent.Finished`. Invalid reports
 fail explicitly as transport errors. Equal failure records retain occurrence
 counts, and summary reconciliation does not replay already reported failures.
+Each event consumes its sequence before the external sink is called. A sink
+that records an event and then throws cannot cause the next event to reuse that
+sequence. Failed event delivery is not retried.
 
 Provider payloads undergo schema validation before reporting. Invalid payloads
 are rejected with transport failures rather than forwarded. In-process schema
@@ -61,7 +64,7 @@ spent. Projected host exceptions retain the protocol failure's cause tree.
 
 The independent JVM framework consumer compares actual body records with JUnit
 test identities under SBT 1 and 2. The status ledger records the exact scope and
-results. The distage execution provider/front end, rich assertion wire mapping,
+results. The distage front end, rich assertion wire mapping,
 transports and host plugins remain subsequent implementation.
 
 ## Distage environment ownership
@@ -112,7 +115,7 @@ receives the package cache explicitly. JVM fixtures exercise actual planner and
 resource acquisition/release alongside custom loading policies. JS supports
 static modules and rejects package scanning through its existing backend.
 
-The higher execution provider and its import-only compatibility gate remain
+The higher front end and its import-only compatibility gate remain
 subsequent work, including the existing `makePluginloader(): PluginLoader` suite
 hook. The legacy
 `DistageTestEnv` delegates construction to the same factory and retains its
@@ -134,6 +137,35 @@ acquire no application resources. Execution retains the existing body, provision
 and finalizer failure behavior. A finalizer failure propagates and prevents a
 successful scope completion. The legacy `run(tests)` still begins its reporting
 scope before planning.
+
+## Distage execution provider
+
+`distage-testkit-runner` adds `DistageExecutionProvider` to the base runner's
+provider contract. Registration retains callbacks; resolution constructs the
+selected environments; planning uses the core PreparedRun; execution reports
+the selected logical IDs and awaits the existing engine's resource release.
+The provider receives its execution context, configuration loader and runner
+options explicitly. It owns registration, environment/plugin caches and
+reporting state. The outer runtime uses the supplied context.
+
+The instance-only engine parent supplies the effect tag, effect operations and
+reporter without acquiring an additional runner lifecycle. The owned default
+bootstrap disables process-global logging-router installation. A suite's custom
+bootstrap factory is preserved; arbitrary custom hooks still require an
+isolation audit.
+
+NonFatal reporting callback exceptions are recorded immediately as Transport
+failures. Reporting callbacks then return normally, allowing selected test
+bodies and finalizers to settle under their existing effect semantics. The
+provider outcome remains unsuccessful and retains independent finalizer
+failures. This policy avoids letting a transport exception suppress a lifecycle
+exception in an effect whose bracket keeps only its use failure. Reporter
+identity and ordering invariants still throw; they are outside callback
+recovery. Precondition skips emit the protocol's failure-free Skipped result.
+
+The replacement spec front ends and compatibility fixture are still under
+implementation. Cancellation requested before execution acquires no application
+resource; active interruption remains subsequent work.
 
 ## Fundamentals test projects
 

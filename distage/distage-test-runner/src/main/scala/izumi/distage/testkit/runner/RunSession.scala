@@ -200,8 +200,9 @@ private[runner] final class RunEventEmitter(run: RunId, sink: EventSink) {
   def emit(event: RunEvent): Unit = synchronized {
     require(!finished, "Event emitted after terminal run completion")
     require(event.run == run, "Event belongs to a different run")
-    sink.accept(ProtocolMessage.Event(sequence, event))
+    val message = ProtocolMessage.Event(sequence, event)
     sequence += 1
+    sink.accept(message)
     event match {
       case _: RunEvent.Finished => finished = true
       case RunEvent.PhaseFailed(_, failure) => reportedFailures :+= failure

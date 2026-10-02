@@ -51,16 +51,16 @@ head. The spike reports are design evidence, not implementation verification.
 | 2a.3 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2a.4 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | 2b.1 | in progress | Base runner checkpoint: nine artifact POMs and 18 resolved Compile/Test classpaths satisfy the fundamentals/protocol bound below; final evaluation outstanding. |
-| 2b.2 | in progress | Observed graph below is acyclic: 107 nodes, 208 scoped records / 206 dependency pairs; final evaluation outstanding. |
+| 2b.2 | in progress | Current generated/observed graphs match: 109 nodes, 213 scoped records, no cycle; final evaluation outstanding. |
 | 2b.3 | in progress | Five fundamentals test projects run all 42 lanes; 51 actual publishLocal requests create no artifacts below; final evaluation outstanding. |
 | 2b.4 | in progress | All 42 moved lanes preserve the original 3,219 JUnit cases below; step-2b evaluation remains outstanding. |
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
-| 2b.6 | not started | No evaluation point passed yet. |
-| 2b.7 | in progress | Resource-free plain/provider registration fixtures pass all nine lanes below; distage provider and final evaluation outstanding. |
-| 2b.8 | in progress | Repeated/concurrent plain-session ownership passes all nine lanes below; higher-layer isolation and final evaluation outstanding. |
+| 2b.6 | in progress | Owned higher-provider implementation passes six JVM/JS lanes below; spec front ends and final evaluation remain outstanding. |
+| 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI discovery passes six below; complete front-end and final evaluation outstanding. |
+| 2b.8 | in progress | Plain and raw DI ownership controls pass below; complete higher-layer/custom-hook isolation and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain-suite/test IDs reject in all nine lanes below; higher-layer and final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain suites migrate through import lines only; resolved implicit Scalactic users remain legacy; higher/final compatibility fixtures outstanding. |
-| 2b.11 | in progress | Plain factories and controlled provider finalization gates pass all nine lanes below; distage resources and final evaluation outstanding. |
+| 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
 | 2c.2 | not started | No evaluation point passed yet. |
 | 2c.3 | not started | No evaluation point passed yet. |
@@ -135,7 +135,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.15 | not started | No evaluation point passed yet. |
 | O.16 | not started | No evaluation point passed yet. |
 | O.17 | not started | No evaluation point passed yet. |
-| O.18 | not started | No evaluation point passed yet. |
+| O.18 | in progress | Owned provider/default bootstrap controls preserve the static router below; complete custom-hook isolation and final evaluation outstanding. |
 | O.19 | not started | No evaluation point passed yet. |
 | O.20 | not started | No evaluation point passed yet. |
 | O.21 | not started | No evaluation point passed yet. |
@@ -2366,3 +2366,219 @@ failure identities and docs' lifecycle scope. No concrete checkpoint defect or
 unsupported completion claim is observed. Root `git diff --check` passes. This
 section records the verified seam in its containing local commit; its exact hash
 is recorded at the next checkpoint. Nothing is pushed.
+
+## Step 2b: higher execution provider implementation in progress
+
+The verified prepared core seam is local commit
+`21657effa5755996b946dfc16b83af1fa1121721` (2026-10-02). The tree is observed clean
+after that commit. Nothing is pushed.
+
+Before adding the provider, `distage-provider-manual-parent-probe/` under
+`/srv/nvme/tmp/izumi-impl/` checks the instance-only LocatorDef parent against the
+published engine. Success, deliberate finalizer failure and controlled concurrent
+reuse compile/run with exit 0 and retain the prior counters, exception identity
+and reporting boundaries. The initial compile omitted an explicit QuasiAsync
+constructor argument; its separate failed capture is retained. These Identity
+controls establish only their measured domain, not arbitrary effect support.
+
+The new distage-testkit-runner module depends on core and the base runner, with
+deferred registration/resolution and existing core planning/execution. Generated
+files are produced from sbtgen/Deps.scala with --js --native. Its initial strict
+SBT expression used a hyphenated project name as a Scala identifier and failed
+before compiling (`2b-distage-provider-scala3-compile-first.log`); corrected
+commands use LocalProject. The next compile finds an omitted explicit
+SessionTestEnvironment factory (`2b-distage-provider-scala3-first.log`).
+
+The first actual provider fixture then fails its expected resource count
+(`2b-distage-provider-scala3-explicit-factory.log`). Captured engine outcomes in
+`2b-distage-provider-resource-observation.log` show zero acquisitions/bodies:
+the instance parent lacks the outer effect TagK binding that the legacy runner
+module supplies. Runtime provisioning fails with missing Tag[MiniBIOAsync[Throwable,_]].
+Its failed setup completion also violates the base protocol's start-before-failed-
+completion invariant and is incorrectly recovered as Finalization. Parent
+bindings and attempt reporting are corrected only after this observed failure;
+their same-fixture verification is pending below.
+
+The bootstrap source audit also observes the default factory's static-router
+installation path through ModuleProvider and LogstageModule. Independent
+session-level mutation, skipped-status schema and thrown-reporting callback
+reproductions are underway, before any policy correction. No provider, session
+isolation, front-end or compatibility acceptance item is marked done.
+
+The corrected parent/attempt fixture runs with strict Scala 3 unused checks on
+JVM and JS: 64 checks per platform, exit 0
+(`2b-distage-provider-parent-attempt-corrected-scala3.log`). Adding the
+process-wide-router invariant fails before correction in
+`2b-distage-provider-static-routing-before.log`, with the expected planning
+mutation. The owned default bootstrap disables static router setup, while the
+environment factory preserves a non-default custom bootstrap instance. The
+same fixture then passes 65 checks on each platform, exit 0
+(`2b-distage-provider-static-routing-after-scala3.log`). This does not establish
+isolation for arbitrary custom hooks.
+
+The read-only reviewer freezes independent sources/dependencies and reproduces
+three additional boundaries in `distage-provider-boundary-before-review/`:
+two plans replace the global router; a precondition skip fails the existing
+protocol schema because it carries a failure; and a controlled reporting
+callback exception is labeled Finalization. Each corrected harness compiles
+with exit 0 and each runtime fails with exit 1 for its expected invariant.
+The initial harness type errors are retained separately. The byte-for-byte
+probe replay in `distage-provider-boundary-after-review/` compiles/runs with
+exit 0 after the default-bootstrap, skipped-payload and reporting-capture
+corrections; final-source verification is still pending.
+
+A permanent combined reporting/finalizer control exposes another boundary
+before further correction: `2b-distage-provider-combined-reporting-observation.log`
+has exit 1. Callback-only failure preserves Transport and waits for a held
+release gate. Callback plus deliberate release failure completes cleanup but
+returns only the original callback exception, omitting the finalizer exception.
+The inspected MiniBIOAsync.bracketCase explicitly discards release errors when
+use fails. Because the incoming effect is MiniBIOAsync, changing only the
+provider's outer effect would not correct that behavior. Reporting-boundary
+policy and the pre-cancelled callback path remain under investigation at this
+capture; it does not establish provider completion.
+
+### Verified provider portion and reporting boundaries
+
+The selected policy records each NonFatal external callback failure immediately
+as Transport, returns normally from that callback boundary, and lets selected
+bodies and finalizers settle under the existing effect semantics. The outcome
+remains unsuccessful. Identity, ordering and missing-context invariants throw
+outside callback recovery. Callback failures are retained per occurrence, even
+when distinct events throw the same Throwable; an independent finalizer failure
+retains its Finalization phase even when it reuses that Throwable. Failed event
+delivery is never retried.
+
+The preceding controls are reproduced before each correction:
+
+- `2b-distage-provider-precancel-reporting-isolated-before.log` exits 1 with
+  the controlled cancelled-result callback exception escaping instead of an
+  outcome. The recording policy corrects both execution paths.
+- `distage-provider-sequence-before-review/` compiles with exit 0 and runs with
+  exit 1: a sink records Started then throws, and a distinct Finished delivery
+  reuses ordinal 0. RunEventEmitter now consumes an ordinal before calling the
+  sink. Permanent base-session and higher-provider controls cover partial
+  delivery through their actual event paths.
+- `2b-distage-provider-failure-occurrences-before.log` exits 1 because distinct
+  cancelled-result events lose failure occurrences through exception-object
+  deduplication. Occurrence capture then returns both selected Cancelled IDs
+  and both Transport records.
+- `2b-distage-provider-shared-throwable-phases-before.log` exits 1 after the
+  callback-only and independent-exception controls pass: sharing the Throwable
+  across callback and release suppresses the Finalization record. Removing
+  phase suppression preserves both failure contexts.
+- `distage-provider-candidate-policy-review/occurrence-runtime.log` exits 1:
+  reporting before begin is incorrectly captured as Transport. The context
+  is now validated before state mutation and before callback recovery. The
+  unchanged probe passes in `distage-provider-context-invariant-after-review/`;
+  its other four unchanged controls also compile/run with exit 0.
+
+Two fixture-only portability failures are preserved separately. The first JS
+link reaches java.security.SecureRandom through a newly added randomUUID call
+(`2b-distage-provider-reporting-policy-after-scala3.log`); it is replaced by the
+existing portable UUID generator. The next JS run fails on the fixture's
+default Europe/Dublin timezone (`2b-distage-provider-scala3-timezone-first.*`);
+its zero-duration timing now explicitly uses UTC. Scala 2.12 rejects two
+wildcard declarations in one fixture block
+(`2b-distage-provider-scala212-wildcard-first.*`); the project discard helper
+replaces the second declaration. No production correction is inferred from
+these fixture failures.
+
+All evidence below is under `/srv/nvme/tmp/izumi-impl/`. The reproducible matrix
+driver records the exact SBT argv and commands in each `.commands.json`, uses
+JDK 21/SBT 2.0.9 in batch mode and starts a fresh process per compiler:
+
+```sh
+python3 /srv/nvme/tmp/izumi-impl/2b-distage-provider-run-matrix.py scala3
+python3 /srv/nvme/tmp/izumi-impl/2b-distage-provider-run-matrix.py scala213
+python3 /srv/nvme/tmp/izumi-impl/2b-distage-provider-run-matrix.py scala212
+python3 /srv/nvme/tmp/izumi-impl/2b-distage-provider-artifact-audit.py
+```
+
+All three final matrix logs exit 0. Each process runs base testFull on
+JVM/JS/Native and higher-provider testFull on JVM/JS, publishes those five
+artifacts locally and captures their Compile/Test classpaths and the observed
+SBT project graph. Scala 3 adds -Wunused:all to Compile/Test in all five
+projects using LocalProject; 2.13.18 and 2.12.21 use their pinned flags without
+Scala 3 flag leakage. There are 20 successful task actions per process.
+
+The primary observed counts are 94 provider checks in each of six lanes (564),
+50 base checks in each of nine lanes (450), and 22 JVM bootstrap checks per
+compiler (66): 1080 checks. Thirty-six logged provider domain cases cover
+success, body failure, finalizer failure, configuration failure, provisioning
+failure and disabled cross-test memoization. Each evaluates configuration once.
+Ordinary successful sharing acquires/releases one resource across two suites;
+disabled memoization acquires/releases one per test while the Pair binding
+retains sharing inside each graph. Deliberate release failure counts release
+attempts, not successful finalization. Additional controlled gates prove that
+normal and transport-failing runs remain pending until release; simultaneous
+owners retain separate configuration, registration, resource objects and gates.
+Abandoned planning acquires no application resources and preserves the global
+router. Pre-execution cancellation acquires no application resources. Owned
+executor termination and JS completion markers occur once per lane.
+
+Artifact/graph audit exits 0: 15 published JAR/POM variants, 30 captured
+Compile/Test classpaths and 1491 binary entries match compiled entry sets and
+bytes. The artifacts contain no fixture/probe classes or ScalaTest/Scalactic
+dependency. The higher POMs depend on core and the base runner; the base's
+Izumi dependencies remain assertions and protocol. All three SBT graphs match
+the generated dependency multiset exactly: 109 nodes, 213 scoped dependency
+records, no cycle. Native C/ld warning output labeled [error] on stderr is not
+an SBT task failure; actual task-error records, exits and runtime markers are
+checked separately.
+
+The final independent JVM consumer in
+`distage-provider-published-final-review/` compiles and runs all five unchanged
+controls with exit 0. It uses consumer classes plus a frozen 43-entry published
+dependency closure, comprising 24 Izumi modules; there are no source-shadowed
+production classes or producer class directories. Forty-eight distinct JARs,
+43 POMs, four unchanged probe sources and seven uncompiled provenance sources
+have hash/equality manifests. Base/higher JARs match 109/26 compiled binary
+entries exactly (135 total). The base SHA256 is
+`08b1c529af8f2912f12976cb3e29d4250646b36752b566e4e031ce8073ae2533`;
+the higher SHA256 is
+`396824ee31bd533a577bb8c7b47a32703610414aee547af405a06803258aedfc`.
+The initial scratch freeze rejects a byte-identical compiler/runtime library
+alias before compilation; that harness capture is retained separately and the
+corrected freeze changes no product or probe input.
+
+The final fixture discard change is recompiled and executed in separate fresh
+Scala 3 and 2.13 processes: each runs higher-provider JVM/JS testFull with exit
+0 and 94 checks per platform (376 revalidation checks). Scala 3 again adds
+-Wunused:all to those Compile/Test scopes; 2.13 starts with ++2.13.18. Captures
+are `2b-distage-provider-{scala3,scala213}-final-fixture-revalidation.log`.
+`2b-distage-provider-matrix-audit.py` exits 0 and records all primary and
+revalidation counts in its JSON summary. The independent reviewer reruns the
+artifact/graph audit and separately verifies the primary matrix, both with exit
+0. Its initial warning-only oracle failure is retained separately; it causes
+no product correction.
+
+The final generated-build check runs
+`direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`
+with exit 0 (`2b-distage-provider-generator-final.log`). Before/after hash
+manifests agree for all three generated outputs:
+
+- build.sbt: `ff7e1475115a1c269f4f649ccd99287ec2201f6b1596d891a7b33e28f944b82c`
+- project/plugins.sbt: `3d66e16d3eb977416f059d7e2ec2ff87c323636db4ea49b2d5bf043431f73c34`
+- project/build.properties: `669fae6680792604c3020a33e1d814dfef7b17fedb0ff6a843cc520685db984e`
+
+The final read-only checkpoint review independently reruns both auditors and
+rechecks published/source provenance and generator completion, with exit 0.
+Its captures are in `distage-provider-final-checkpoint-review/`; generator
+argv/exit/before-and-after hashes are preserved in
+`2b-distage-provider-generator-final.{commands,completion}.json`. The reviewer
+finds no concrete residual defect or overstated acceptance claim in this
+portion, while retaining all outstanding parent requirements below.
+
+The two required primary Native interop metadata URLs still return HTTP 404
+at 14:42:58 UTC on 2026-10-02, captured in
+`2b-distage-provider-release-metadata-final.json` and the response bodies. The
+browser tool cannot access these URLs; the primary HTTP requests provide the
+status evidence. This does not prevent independent front-end work.
+
+These observations verify an implementation portion, not the complete step-2b
+evaluation point. The four replacement spec entry points, effective activation
+and custom suite hooks, import-only compatibility gate, active interruption,
+complete isolation audit and final-head lanes remain outstanding. Parent items
+2b.6/7/8/11 and O.18 stay in progress; no acceptance item or owner decision is
+narrowed or marked done by this checkpoint.
