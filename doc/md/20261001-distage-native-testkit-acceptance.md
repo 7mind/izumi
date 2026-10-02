@@ -461,3 +461,128 @@ the owner confirms it.
 
 The implementing agent adds items O.1 onwards here before the first commit of
 step 1a, as the "Other requirements" rule specifies.
+
+- **O.1** (final, step 2b): Plan line 44, "Preserve the existing planning,
+  environment merging, memoization trees, and effect execution."
+- **O.2** (final, step 1d): Plan lines 117–118, "`F[Unit]`" and
+  "`F[Nothing, Unit]`": preserve the effect assertion return types.
+- **O.3** (final, step 1d): Plan lines 123–128, "requires evidence for suspension
+  and failure handling" and "small, explicitly lawful boundary": require those
+  capabilities explicitly, with lawful adapters for any shared capability.
+- **O.4** (final, step 1c): Plan lines 139–145, "Use two compiler implementations",
+  "one portable diagnostic model and renderer", and "Separate macro definition
+  compilation": Scala 2 blackbox and Scala 3 quotes/reflection implementations
+  share runtime representation and fixtures, not an abstraction over compiler AST
+  APIs. Emitted code is portable, and definitions and consumers compile separately
+  where required.
+- **O.5** (final, step 1c): Plan lines 148–152, "normalized path relative to a
+  supplied source root", "absolute and virtual-source paths", and "Specify
+  offset, line, and column conventions": normalize source identity and document
+  all path and indexing conventions; render tabs and Unicode separately from
+  compiler offsets.
+- **O.6** (final, step 1c): Plan lines 156–158, "Validate available source content
+  against the recorded span/content before placing pointers".
+- **O.7** (final, step 1c): Plan lines 170–171, "Introduce a richer
+  assertion-specific type without forcing an unrelated repository-wide position
+  migration."
+- **O.8** (final, step 1c): Plan lines 183–185, "expression structure to associate
+  values with spans" and "instead of using a compiler pretty-print as the primary
+  diagnostic": observations use subexpression spans; compiled source supplies the
+  primary diagnostic text.
+- **O.9** (final, step 1c): Plan lines 189–191, "Start with Boolean leaves,
+  built-in `&&`, `||`, `!`" and "Preserve the resolved operator and operand
+  types": implement the conservative recognized set without rewriting by spelling.
+- **O.10** (final, step 1c): Plan lines 869–870, "New assertion macros use only
+  the public `scala.quoted` API."
+- **O.11** (final, step 1d): Plan lines 239–241, "its BIO and Cats Effect adapters
+  sit above those libraries": runtime-specific adapters remain above their
+  runtimes, and the plain module is independent of both.
+- **O.12** (final, step 2b): Plan lines 222–223, "Share protocol data independently
+  of SBT's classloader and Scala version", and lines 847–856, "with no izumi
+  dependencies" and "same wire schema": shared types cross-build on 2.12, 2.13,
+  and 3.8.4 for JVM/JS/Native, depend on no izumi modules, and use one wire schema
+  across classloader/process boundaries without assuming Scala objects cross them.
+- **O.13** (final, step 2b): Plan lines 243–248, "`Spec1`, `Spec2`, `SpecZIO`,
+  and `SpecIdentity`" and "One SBT plugin, framework registration, protocol, and
+  IntelliJ adapter": retain all four entry points and the common integration
+  contract for plain and distage suites.
+- **O.14** (final, step 2b): Plan lines 262–265, "Test-only projects are
+  cross-built for the same platforms" and "keep the tested packages": preserve
+  platforms and package-private access when moving tests.
+- **O.15** (final, step 5): Plan lines 254–256, "Modules above the base runner
+  ... keep their plain suites in place": move tests only where runner dependency
+  layering requires it.
+- **O.16** (final, step 2c): Plan lines 280–286, "Expose four logical operations":
+  expose discover, resolve, plan, and execute, with platform launchers around the
+  same core.
+- **O.17** (final, step 2b): Plan lines 291–292, "require declarative
+  registration": require it and document the boundary around arbitrary user
+  constructor side effects.
+- **O.18** (final, step 2b): Plan lines 296–300, "A `RunSession` owns" and
+  "Inspect static logging setup and other bootstrap hooks": sessions own
+  configuration snapshots, environment caches, memoized resources, cancellation,
+  and reporting alongside registration; audit bootstrap hooks for concurrency.
+- **O.19** (final, step 2c): Plan line 308, "Selection must precede provisioning."
+- **O.20** (final, step 2d): Plan lines 365–370, "names ... remain the ordinary
+  suite names", "Distage owns scheduling", and "Honor explicit fork groups":
+  preserve suite names, scheduling, compatible sharing and process/group boundaries;
+  never silently merge explicit fork groups.
+- **O.21** (final, step 2d): Plan lines 409–418, "narrow version-specific bindings
+  over public keys" and "Do not use classes in SBT's private packages as an API",
+  and line 540, "sharing its protocol/logic": use public version-specific
+  bindings, reuse public discovery/filter/listener keys where possible, register
+  matching fingerprints, and share plugin protocol/logic. Establish whether a
+  small upstream extension is preferable to copying orchestration.
+- **O.22** (final, step 2e): Plan lines 430–431, "composes with their value instead
+  of replacing it": compose `loadedTestFrameworks` with the platform proxies.
+- **O.23** (final, step 2d): Plan lines 455–474, "Add a DI digest" and "custom
+  configuration loaders and planning extensions must declare their inputs":
+  cached skips require a tracked closure of plugin-wired classes/resources,
+  configuration, normalized options, and activation properties/environment.
+  Extensions declare inputs before caching; unknown inputs force explicit reruns.
+- **O.24** (final, step 2d): Plan lines 518–520, "portable `sbt.testing.Framework`
+  for other hosts" and "without narrowing its resource lifetime": the target
+  bootstrap supplies that contract and projects suite tasks onto sharing groups.
+- **O.25** (final, step 2c): Plan lines 655–661, "explicit catalogue of suite
+  factories" and "Avoid runtime classpath scanning as the portable discovery
+  mechanism": standalone discovery uses explicit factories; SBT can use supported
+  discovery/reflection, and portable discovery does not scan the runtime classpath.
+- **O.26** (final, step 1a): Plan lines 702–703, "production should audit them":
+  audit reused JVM/JS implementations for Native semantics, beyond linking.
+- **O.27** (final, step 1a): Plan lines 714–718, "Native builds must also clean
+  their outputs when a source moves or is removed": clean throughout implementation
+  after source relocation/removal, independently of CI's clean builds.
+- **O.28** (final, step 2d): Plan lines 874–875, "correlated run/suite/test events
+  and a terminal result model" and "projections of this model": console and JUnit
+  reports derive from that common model.
+- **O.29** (final, step 3): Plan lines 887–888, "first integrate Scoverage" and
+  "through every launch mode": begin with Scoverage and validate every supported
+  launch mode.
+- **O.30** (final, step 3): Plan lines 904–911, "Do not create a new
+  instrumentation engine", "Keep code coverage separate", and "Defer
+  attribution": add no instrumentation engine, separate coverage from execution
+  accounting, and defer per-test attribution.
+- **O.31** (final, step 4): Plan lines 914–917, "Scala PSI recognition, gutter
+  actions" and "should not invent a second execution model": implement PSI and
+  suite/test gutter actions; resolve dynamic tests through the shared protocol.
+- **O.32** (final, step 4): Plan lines 932–935, "reads the explicit-channel
+  protocol" and "Check the actual supported Scala-plugin extension points": feed
+  the structured console from that channel and verify the supported extension
+  points used by the adapter.
+- **O.33** (step 1d, superseded by 5.5): Plan line 223, "Keep ScalaTest
+  compatibility in its own artifact", and line 1020, "separate compatibility
+  adapter": temporary translation lives in a separate artifact.
+- **O.34** (step 2b, superseded by 5.5): Plan lines 1018–1020, "allow both
+  directions": demonstrate new assertions under the old runner and old ScalaTest
+  failures under the new runner during migration (the first direction also holds
+  at 1d through 1d.4).
+- **O.35** (final, step 2b): Plan lines 1021–1022, "must stop inheriting ScalaTest
+  suite/finder classes before both frameworks can coexist": remove that inheritance
+  before coexistence to prevent duplicate discovery.
+- **O.36** (step 2a): Plan line 798, "2a should precede any release", and lines
+  973–974, "their first release follows step 2a": do not release new Scala 3
+  assertion artifacts before the move; `publishLocal` is distinct from a release.
+- **O.37** (final, step 1a): Plan lines 1116–1119, "Native uses the JS circe JSON
+  configuration implementation": preserve that default; HOCON remains an addition.
+- **O.38** (final, step 2b): Plan lines 16–17, "JSON is a boundary format; the
+  in-process engine uses typed models": use typed models within the engine.
