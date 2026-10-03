@@ -28,10 +28,11 @@ import scala.util.matching.Regex
 object ScaladocAnchors {
   final case class Resolved(mappings: Seq[(File, String)])
 
-  private val idPattern: Regex = """\bid="([^"]+)"""".r
+  private val idPattern: Regex = """\sid="([^"]+)"""".r
   private val hashedIdSuffix: Regex = """-[0-9a-f]+""".r
 
   def resolve(mappings: Seq[(File, String)], apiSubdir: String, output: File, log: Logger): Resolved = {
+    IO.delete(output)
     val apiPrefix = s"$apiSubdir/"
     val apiPages: Map[String, File] = mappings.collect { case (file, path) if path.startsWith(apiPrefix) => path.stripPrefix(apiPrefix) -> file }.toMap
     val ids = collection.mutable.Map.empty[String, Set[String]]
