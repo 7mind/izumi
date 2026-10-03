@@ -17,10 +17,15 @@ class IzResourcesTest extends AnyWordSpec {
       val file = root.resolve("nested").resolve("resource.txt")
       Files.createDirectories(file.getParent)
       Files.write(file, "directory-backed".getBytes(StandardCharsets.UTF_8))
-      val directoryResources = IzResources(new URLClassLoader(Array(root.toUri.toURL), null))
-
-      assert(directoryResources.materialize("nested/resource.txt", "izumi-test").contains(file))
-      assert(directoryResources.materialize("nested", "izumi-test").contains(file.getParent))
+      Seq(root, file.getParent, file).foreach(_.toFile.deleteOnExit())
+      val loader = new URLClassLoader(Array(root.toUri.toURL), null)
+      try {
+        val directoryResources = IzResources(loader)
+        assert(directoryResources.materialize("nested/resource.txt", "izumi-test").contains(file))
+        assert(directoryResources.materialize("nested", "izumi-test").contains(file.getParent))
+      } finally {
+        loader.close()
+      }
     }
 
     "extract a jar-packaged file" in {

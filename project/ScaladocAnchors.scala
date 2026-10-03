@@ -29,6 +29,7 @@ object ScaladocAnchors {
   final case class Resolved(mappings: Seq[(File, String)])
 
   private val idPattern: Regex = """\bid="([^"]+)"""".r
+  private val hashedIdSuffix: Regex = """-[0-9a-f]+""".r
 
   def resolve(mappings: Seq[(File, String)], apiSubdir: String, output: File, log: Logger): Resolved = {
     val apiPrefix = s"$apiSubdir/"
@@ -36,7 +37,7 @@ object ScaladocAnchors {
     val ids = collection.mutable.Map.empty[String, Set[String]]
     def idsOf(page: String): Set[String] = ids.getOrElseUpdate(page, idPattern.findAllMatchIn(read(apiPages(page))).map(_.group(1)).toSet)
 
-    val linkPattern: Regex = ("""href="((?:\.\./)*/?)""" + Regex.quote(s"$apiSubdir/") + """([^"#]+)(?:#([^"]+))?"""").r
+    val linkPattern: Regex = ("""href="((?:https://izumi\.7mind\.io)?(?:\./|(?:\.\./)*)/?)""" + Regex.quote(s"$apiSubdir/") + """([^"#]+)(?:#([^"]+))?"""").r
     val problems = collection.mutable.ListBuffer.empty[String]
     var rewritten = 0
 
@@ -86,7 +87,7 @@ object ScaladocAnchors {
           if (ids.contains(member)) {
             Right(Some(member))
           } else {
-            val candidates = ids.filter(id => id.startsWith(s"$member-") && id.drop(member.length + 1).forall(c => c.isDigit || ('a' to 'f').contains(c)))
+            val candidates = ids.filter(id => id.startsWith(member) && hashedIdSuffix.matches(id.drop(member.length)))
             candidates.toList match {
               case Nil => Left("no such member")
               case single :: Nil => Right(Some(single))

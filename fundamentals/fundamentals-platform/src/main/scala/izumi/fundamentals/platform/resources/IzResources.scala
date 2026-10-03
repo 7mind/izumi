@@ -42,16 +42,22 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
     getPath(resPath).map {
       case LoadablePathReference(path, _) if path.getFileSystem == FileSystems.getDefault =>
         path
-      case LoadablePathReference(path, _) if Files.isDirectory(path) =>
-        val target = Files.createTempDirectory(tempPrefix)
-        target.toFile.deleteOnExit()
-        IzResources.copyTree(path, target).foreach(_.toFile.deleteOnExit())
-        target
-      case LoadablePathReference(path, _) =>
-        val target = Files.createTempFile(tempPrefix, "-" + path.getFileName.toString)
-        target.toFile.deleteOnExit()
-        Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
-        target
+      case reference @ LoadablePathReference(path, _) =>
+        try {
+          if (Files.isDirectory(path)) {
+            val target = Files.createTempDirectory(tempPrefix)
+            target.toFile.deleteOnExit()
+            IzResources.copyTree(path, target).foreach(_.toFile.deleteOnExit())
+            target
+          } else {
+            val target = Files.createTempFile(tempPrefix, "-" + path.getFileName.toString)
+            target.toFile.deleteOnExit()
+            Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
+            target
+          }
+        } finally {
+          reference.close()
+        }
       case UnloadablePathReference(uri) =>
         throw new IllegalStateException(s"Resource `$resPath` exists at $uri but its filesystem cannot be opened")
     }
