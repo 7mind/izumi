@@ -20,8 +20,8 @@ private[spec] object SessionEnvironmentFixturePlatform {
 
   def scannedOwners(): Vector[(String, Boolean)] = {
     val config = PluginConfig(Seq("izumi.distage.testkit.spec.sessionplugins"), Nil, cachePackages = true, debug = false, Nil, Nil)
-    val firstOwner = new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))
-    val secondOwner = new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))
+    val firstOwner = new SessionPluginLoader(new PluginPackageCache.Impl, cache => PluginLoaderDefaultImpl.withPackageCache(cache))
+    val secondOwner = new SessionPluginLoader(new PluginPackageCache.Impl, cache => PluginLoaderDefaultImpl.withPackageCache(cache))
     val first = firstOwner.load(config)
     val repeated = firstOwner.load(config)
     val second = secondOwner.load(config)
@@ -121,7 +121,7 @@ private[spec] object SessionEnvironmentFixturePlatform {
       mapped =>
         val failure = new IllegalStateException("custom classgraph loading policy")
         val loadCalls = new AtomicInteger(0)
-        val loadOwner = new SessionPluginLoader(cache => {
+        val loadOwner = new SessionPluginLoader(new PluginPackageCache.Impl, cache => {
           val loader = new PluginLoaderClassgraphImpl {
             override protected val packageCache: PluginPackageCache = cache
             override def load(config: PluginConfig): LoadedPlugins = {
@@ -134,7 +134,7 @@ private[spec] object SessionEnvironmentFixturePlatform {
         val rejected = Try(loadOwner.load(config))
         val scanCalls = new AtomicInteger(0)
         val plugin = new SessionScannedPlugin
-        val scanOwner = new SessionPluginLoader(cache => {
+        val scanOwner = new SessionPluginLoader(new PluginPackageCache.Impl, cache => {
           val loader = new PluginLoaderClassgraphImpl {
             override protected val packageCache: PluginPackageCache = cache
             override protected def scanClasspath(config: PluginConfig): Seq[PluginBase] = {

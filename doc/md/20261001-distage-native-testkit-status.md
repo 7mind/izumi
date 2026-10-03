@@ -57,7 +57,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
 | 2b.6 | in progress | Owned higher provider and all four spec entry points now pass nine JVM/JS/Native producer lanes below; common host integration and final evaluation remain outstanding. |
 | 2b.7 | in progress | Resource-free plain registration and raw DI/four-spec discovery pass nine lanes below; final evaluation outstanding. |
-| 2b.8 | in progress | Atomic plain and higher registration pass nine JVM/JS/Native lanes below, alongside delegating bootstrap and forwarding/direct synchronous cached custom-plugin controls. Opaque/handoff reconstruction ownership defects, complete custom-hook audit and final evaluation outstanding. |
+| 2b.8 | in progress | Atomic registration and owner-approved loader factories pass nine producer and nine published-consumer lanes below, including opaque/warmed-worker isolation and held-resource overlap. Complete custom-hook audit and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain and distage path/suite/test IDs reject in all nine JVM/JS/Native lanes below; final evaluation outstanding. |
 | 2b.10 | waiting on owner | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below. The approved factory migration requires non-import edits to eligible custom hooks; the fixed item remains unmet for those hooks. Complete inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
@@ -118,7 +118,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.7 | not started | No evaluation point passed yet. |
 | 5.8 | not started | No evaluation point passed yet. |
 | 5.9 | not started | No evaluation point passed yet. |
-| O.1 | not started | No evaluation point passed yet. |
+| O.1 | in progress | Factory migrations preserve the tested eager/captured-definition memoization controls and existing engine/spec fixtures below. Complete planning/merging/memoization/effect inventory and final evaluation outstanding. |
 | O.2 | in progress | Effect APIs have explicit requested return types; runtime checkpoints below. |
 | O.3 | in progress | Explicit suspension capability; Cats/BIO law checkpoints below. |
 | O.4 | in progress | No evaluation point passed yet. |
@@ -135,7 +135,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.15 | not started | No evaluation point passed yet. |
 | O.16 | not started | No evaluation point passed yet. |
 | O.17 | in progress | Declarative registration and arbitrary-constructor side-effect boundary documented; no-resource front-end discovery verified below; final evaluation outstanding. |
-| O.18 | in progress | Owned/default/delegating bootstrap and forwarding/direct synchronous custom-plugin controls pass below; opaque/handoff reconstruction ownership defects, complete custom-hook audit and final evaluation outstanding. |
+| O.18 | in progress | Provider-owned loader factories and bootstrap controls pass below, including opaque/warmed-worker request reconstruction, distinct owner caches, retained creation failures and held-creator concurrency. Caller-owned prebuilt state/incompatible policies, complete custom-hook audit and final evaluation outstanding. |
 | O.19 | not started | No evaluation point passed yet. |
 | O.20 | not started | No evaluation point passed yet. |
 | O.21 | not started | No evaluation point passed yet. |
@@ -8019,3 +8019,193 @@ hook order and ordinary legacy policy. Shared mutable delegates/Scala objects/
 captured values and incompatible classloader/cache domains remain explicit caller
 preconditions and conformance limits. Factory creation-failure policy must be
 specified and tested in the following implementation, not inferred from this review.
+
+The reporting checkpoint's actual local commit is
+`bf67380c846fe110d2271d10d082e91c51323ccb`. Root reads the complete bounded
+completion review at
+`/srv/nvme/tmp/izumi-impl/2b-throwable-capture-completion-readonly-review-first/COMPLETION-REVIEW.md`
+and verifies report SHA-256
+`237a5dd4238550d38051be3c7755607f2929588aa22aaae000acfe211f44f5f3`
+and schema-1 manifest SHA-256
+`3cc2d7fafdcfa5c6a16da022bdca4d5ba6e9a9ae312c46ffc0a6490acbcb5ca9`.
+It confirms the frozen reporting inputs match that commit, the 27 publications
+and 21 consumers match their captured bytes/classpaths, and D1/T1/P1 are resolved.
+It identifies no concrete introduced reporting defect or overclaim. Later
+factory-related working-tree changes are preserved separately and excluded from
+that verdict; whole-current-checkout equality is not claimed.
+
+### Owned loader factories: implementation and verification in progress — 2026-10-03
+
+The owner-approved API is now an uncommitted factory slice after reporting
+commit `bf67380c846fe110d2271d10d082e91c51323ccb`. Items 2b.8/O.18/O.1 remain
+open, and fixed 2b.10 remains waiting on owner for the non-import hook edits.
+No rejected constructor-provenance prototype is integrated. The source changes
+are PluginLoaderFactory.create(cache), a stackable hook contract, one package
+cache per provider, stable loader materialization per factory reference,
+retention of one NonFatal creation success/failure, explicit cache input to
+SessionPluginLoader, and direct environment-factory delegation. Ordinary
+zero-argument loaders and retained core legacy/internal owner controls remain.
+
+Executed captures under `/srv/nvme/tmp/izumi-impl/`:
+
+- `python3 2b-plugin-factory-migration-fail-first.py`: harness 0, all five
+  public sources compile 0. Opaque and warmed-worker reconstruction run 1 for
+  the expected fresh-state assertion (seen 1/2, shared state). Ordinary
+  constructor handling and both same-session memoization controls run 0.
+  Every current dependency/source hash is frozen and unchanged.
+- `python3 2b-plugin-factory-jvm-pilot-first.py`: actual SBT 1 after core's
+  143 checks pass; a provider fixture still refers to the removed private
+  defaultPluginLoader field. This is a migration compilation failure, not a
+  reproduced ownership failure. The old-field call is migrated to registry
+  resolution, and the harness's core marker is corrected to the actual name.
+- `python3 2b-plugin-factory-jvm-pilot-second.py`: terminal/actual SBT 0,
+  core 143 and higher 502, including 15 portable factory assertions. Source
+  inputs remain stable. The JVM warmed-worker held-resource scenario is not
+  yet in this pilot's source freeze.
+- `python3 2b-plugin-factory-migrated-replay-first.py`: terminal 0, all ten
+  actual compile/runtime commands 0. The ordinary constructor source is
+  byte-identical. Four separately archived migrations change imports and
+  the hook/factory/cache-construction boundary only; their exact diffs are in
+  `2b-plugin-factory-migrated-probes-first/`. Original bodies/resource oracles
+  remain unchanged. Opaque and worker reconstruction now see 1/1 and distinct
+  state; eager PluginBase.from transformation and captured definitions keep
+  one acquisition/release and a shared resource for two bodies. All owned
+  executors terminate. This is Scala 3/JVM producer-class evidence, not
+  publication or complete platform verification.
+- `python3 2b-plugin-factory-nine-lane-first.py`: harness 1, actual Scala 3
+  SBT 0. All twelve protocol/base/core/higher JVM/JS/Native tasks pass. It
+  records base 671/671/671, core 143/103/118, higher 543/420/420, including
+  the new permanent warmed-worker repeated/mixed/overlapping owner cases.
+  The validator incorrectly expects two core cleanup markers; three occur,
+  from JVM custom-dispatch concurrency, JVM main concurrency and Native main
+  concurrency. Scala 2 is not reached in this attempt.
+- `python3 2b-plugin-factory-nine-lane-second.py`: retains the preceding
+  Scala 3 raw log byte-for-byte, records its explicit reuse and corrects only
+  the marker expectation. It proceeds with fresh Scala 2.13: actual SBT 1
+  after JVM protocol/base/core pass. Scala 2 emits the fatal unchecked outer
+  reference warning for the nested FactoryIdentity pattern. Remaining lanes
+  are not reached. The production correction moves that key type to the
+  companion object; no warning suppression is introduced.
+
+Root reads the complete preparatory factory review and verifies report SHA-256
+`2e314b64a2275f35cba6bcdb46c2af1d7876f345e8ea6987868966e697813df0`
+and schema-1 manifest SHA-256
+`feed4666af9502b99133c9c25f115d6a787045e75b41bae973b663861d6e3dbe`
+under `2b-plugin-factory-preparatory-readonly-review-first/`. It establishes no
+introduced production defect from source/pilot inspection. Its focused proof
+gaps are public creation-failure Planning classification and actual held-creator
+overlap/independent progress. Fresh public controls are prepared for those gaps,
+but have not run yet. Its warmed-worker source delta is subsequently exercised
+by the first matrix's actual Scala 3 tasks. The documentation now distinguishes
+same-thread reentry rejection from the caller prohibition on cross-thread or
+cross-factory recursive resolution. No unreproduced deadlock correction is made.
+
+At this preparatory checkpoint, `python3 2b-plugin-factory-nine-lane-third.py`
+had completed Scala 3 with actual 0 and was running Scala 2.13. Its subsequent
+terminal result and the publication/boundary/consumer executions are recorded
+below. No pending result is counted as a pass.
+
+### Owned loader factories: verified implementation checkpoint — 2026-10-03
+
+All driver names below are relative to `/srv/nvme/tmp/izumi-impl/`; run them
+with `python3`. Each corresponding capture contains the actual argv/cwd,
+raw logs and terminal outcomes. No source overlay or warning suppression is
+used for the final producer matrix. The verified local commit is intended to
+be `Own plugin loaders through factories; verify nine published consumer lanes`;
+its actual hash will be recorded after creation. This is a bounded checkpoint
+for 2b.8/O.18/O.1, not completion of step 2b or a final-head/CI gate.
+
+- `2b-plugin-factory-nine-lane-third.py`: terminal 0; three fresh JDK 21 SBT
+  processes, actual 0 each. All 36 protocol/base/core/higher `Test/testFull`
+  tasks pass across Scala 3.9.0/2.13.18/2.12.21 and JVM/JS/Native. Protocol
+  stays pinned to 3.8.4; Scala 3 Compile/Test use `-Wunused:all`. Each compiler
+  cleans all four Native projects. Per compiler, protocol checks are
+  116/116/116, core 143/103/118 and higher 543/420/420. Base is 671/671/671
+  for Scala 3 and 2.13, 670/670/670 for 2.12. Held warmed-worker cleanup
+  occurs once per compiler, core concurrency cleanup three times per
+  compiler, and Native DI plus four-test shared-resource acquisition/release
+  markers pass. All 1,611 non-ledger source inputs remain unchanged throughout
+  execution. These are producer fixture checks, not full Native CI reruns.
+- `2b-plugin-factory-boundary-probe-first.py`: terminal 0; compile, planning
+  and concurrent commands all actual 0 against current Scala 3/JVM classes.
+  Public suite/session positive and creation-failure controls keep discovery
+  suspended, preserve the original Planning failure, attempt creation once
+  and acquire/run nothing on failure. The held creator admits two overlapping
+  lookup callers, retains one loader/attempt and allows a different factory
+  to complete before release. Latches and pending futures establish the
+  overlap; this is not a thread-state inspection or a recursive-cycle proof.
+  Correlated event frames round-trip and the terminal event follows resource
+  release. The borrowed executor terminates in both modes. All dependencies
+  are frozen and hash-verified.
+- `2b-plugin-factory-publication-first.py`: terminal 0; three fresh JDK 21
+  processes actual 0. Explicit `publishLocal` of extension-plugins, testkit-core
+  and testkit-runner on all platforms/compilers creates 27 binary/POM pairs.
+  `2b-plugin-factory-publication-artifact-audit-first.py`: terminal 0, 5,739
+  compiled binary members match their published entries exactly; package ZIP
+  comparison differs only in permitted manifest metadata. Factory, registry,
+  hook and core-loader definitions are present. No ScalaTest/Scalactic runtime
+  dependency is introduced; existing test-scoped POM metadata is retained.
+- `2b-plugin-factory-published-consumers-first.py`: terminal 1. All three
+  Scala 3 platform executions pass actual 0; Scala 2.13 stops during dependency
+  resolution for missing local `distage-core-proxy-bytebuddy_2.13`. No consumer
+  compilation or body is claimed for that failed process.
+- `2b-plugin-factory-proxy-publication-first.py`: terminal 0; Scala 2.13 and
+  2.12 actual 0, explicitly publishing the existing declared JVM dependency
+  via project `distage-core-proxy-bytebuddy`. No dependency graph or source
+  change is needed. `2b-plugin-factory-proxy-publication-artifact-audit-first.py`:
+  terminal 0, two additional binary/POM pairs and eight compiled members match
+  exactly. Together the fresh publication set is 29 pairs/5,747 members.
+- `2b-plugin-factory-published-consumers-second.py`: terminal 1; fresh Scala 3
+  and 2.13 processes actual 0, all six platform executions pass. Scala 2.12
+  fails to compile the new consumer because its failing factory declares
+  `val _` twice in one block. The executed original consumer is restored and
+  hash-verified byte-identical. A separately named third source replaces those
+  discard bindings with the existing `Quirks.Discarder` operation. Production
+  sources and original isolation/memoization/planning oracles are unchanged.
+- `2b-plugin-factory-published-consumers-third.py`: terminal 0; three fresh
+  processes actual 0, all nine platform executions pass. The consumer compiles
+  against published artifacts, with no producer source/class-directory
+  substitution. It verifies two sessions, four test bodies, distinct owner
+  caches and one shared-resource acquisition/release per session. Two selected
+  suites sharing a failing factory each resolve to the original Planning
+  failure, followed by failed execution with no body/resource acquisition and
+  only one factory attempt. Completed outcomes round-trip through the protocol;
+  this consumer's sink discards events. Captured sources, dependency artifacts
+  and outputs remain stable.
+- `2b-plugin-factory-published-consumers-root-audit-third.py`: terminal 0.
+  Direct inspection of actual update reports and logged dependency classpaths
+  verifies nine classpaths, 226 consumer binary entries, seven consumer copies,
+  399 unique artifacts and 1,611 root input hashes. No producer class directory,
+  source shadow, ScalaTest or Scalactic enters a consumer runtime. Each lane
+  uses its three fresh factory publications and Scala 2 JVM its fresh Byte Buddy
+  dependency. Earlier prepared audit variants were not executed and provide
+  no result.
+
+Bounded completion review identifies stale descriptions in
+`doc/md/20261002-base-test-runner.md`: the removed one-argument
+SessionPluginLoader constructor and the superseded virtual loader/config-owner
+route. The old exact constructor example is compiled first and fails actual 1
+with a function-versus-PluginPackageCache type mismatch. Its initial harness
+also exits 1 because it expected a missing-argument diagnostic; the raw failure
+is retained at `2b-plugin-factory-doc-constructor-fail-first/`. After the doc
+correction, the example compiles actual 0 at
+`2b-plugin-factory-doc-constructor-replay-first/`; command JSON files preserve
+the exact compiler argv. Dependency hashes still match the boundary capture.
+Only that documentation file and this ledger differ from the final matrix/
+publication/consumer source freeze. All implementation and test inputs still
+match. No whole-current-checkout equality is claimed after the doc correction.
+
+The new migration document specifies creation-failure retention, reference
+identity, explicit delegate cache binding, compatible cache domains, borrowed
+collaborators and the limits on prebuilt mutable state/Scala object plugins.
+Same-thread reentry rejects; cross-thread/cross-factory recursive resolution
+is prohibited by contract rather than claimed to be detected. Compatible
+factory migrations repair the reproduced opaque and warmed-worker ownership
+failures while preserving the separately captured eager/captured-definition
+memoization controls. Ordinary legacy loader behavior is retained. These
+observations do not prove arbitrary opaque factory conformance.
+
+The owner-approved custom-hook migration is implemented, but fixed 2b.10 stays
+waiting on owner for those non-import edits. Full compatibility inventory,
+production host integration, steps 2c–5 and final-head gates remain open. No
+push or publication to a remote repository occurs.

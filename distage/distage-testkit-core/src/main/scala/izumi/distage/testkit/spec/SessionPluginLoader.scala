@@ -4,9 +4,8 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginPackageCache}
 import izumi.fundamentals.platform.cache.SyncCache
 
-final class SessionPluginLoader(makeLoader: PluginPackageCache => PluginLoader) extends PluginLoader {
+final class SessionPluginLoader(private[distage] val packageCache: PluginPackageCache, makeLoader: PluginPackageCache => PluginLoader) extends PluginLoader {
   private val cache = new SyncCache[PluginConfig, LoadedPlugins]
-  private[distage] val packageCache: PluginPackageCache = new PluginPackageCache.Impl
   private val delegate = makeLoader(packageCache)
 
   override private[distage] def loadOwned(config: PluginConfig, owner: PluginPackageCache): LoadedPlugins = {

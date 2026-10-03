@@ -2,7 +2,7 @@ package izumi.distage.testkit.runner.spec
 
 import distage.{Functoid, TagK}
 import izumi.distage.modules.DefaultModule
-import izumi.distage.plugins.load.PluginLoader
+import izumi.distage.plugins.load.{PluginLoader, PluginLoaderFactory}
 import izumi.distage.plugins.merge.PluginMergeStrategy
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.model.{DistageTest, SuiteId as EngineSuiteId, SuiteMeta, TestConfig, TestEnvironment, TestId as EngineTestId, TestMeta}
@@ -18,7 +18,7 @@ import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import scala.util.control.NonFatal
 
 abstract class DistageSpec[F[_]](implicit val tagMonoIO: TagK[F], val defaultModulesIO: DefaultModule[F])
-  extends TestConfiguration with DistageTestEnv with Assertions with TestSuite {
+  extends TestConfiguration with DistageTestEnv with PluginLoaderFactoryConfiguration with Assertions with TestSuite {
   private final class Registration(val path: Vector[String], val location: SourceLocation, val position: SourceFilePosition, val function: Functoid[F[Any]])
   private var prefix = Vector.empty[String]
   private var registrations = Vector.empty[Registration]
@@ -33,7 +33,8 @@ abstract class DistageSpec[F[_]](implicit val tagMonoIO: TagK[F], val defaultMod
     case NonFatal(cause) => Left(RunnerFailure.fromThrowable(FailurePhase.Planning, cause))
   }
 
-  override protected def makePluginloader(): PluginLoader = provider.defaultPluginLoader
+  override protected def makePluginLoaderFactory(): PluginLoaderFactory = provider.defaultPluginLoaderFactory
+  override protected final def makePluginloader(): PluginLoader = provider.pluginLoader(makePluginLoaderFactory())
 
   override private[distage] def loadEnvironment[G[_]](testConfig: TestConfig, tagK: TagK[G], defaultModule: DefaultModule[G]): TestEnvironment = {
     val roles = loadRoles()

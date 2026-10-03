@@ -134,7 +134,7 @@ object SessionEnvironmentFixtures {
     val original = makeConfig(input.toVector)
     val request = makeConfig(input.toSeq)
     val loads = new AtomicInteger(0)
-    val owner = new SessionPluginLoader(_ => new PluginLoader {
+    val owner = new SessionPluginLoader(new PluginPackageCache.Impl, _ => new PluginLoader {
       override def load(config: PluginConfig): LoadedPlugins = {
         loads.incrementAndGet().discard()
         LoadedPlugins(Nil, config.merges, config.overrides)
@@ -174,7 +174,7 @@ object SessionEnvironmentFixtures {
       mapped =>
         val failure = new IllegalStateException("custom plugin loading policy")
         val calls = new AtomicInteger(0)
-        val owner = new SessionPluginLoader(_ => {
+        val owner = new SessionPluginLoader(new PluginPackageCache.Impl, _ => {
           val loader = new PluginLoader {
             override def load(config: PluginConfig): LoadedPlugins = {
               calls.incrementAndGet().discard()
@@ -208,8 +208,8 @@ object SessionEnvironmentFixtures {
         delegate.load(config)
       }
     }
-    val firstOwner = new SessionPluginLoader(create)
-    val secondOwner = new SessionPluginLoader(create)
+    val firstOwner = new SessionPluginLoader(new PluginPackageCache.Impl, create)
+    val secondOwner = new SessionPluginLoader(new PluginPackageCache.Impl, create)
     val first = Vector.fill(ConcurrentRequests)(Future(firstOwner.load(config))(executionContext))
     val second = Vector.fill(ConcurrentRequests)(Future(secondOwner.load(config))(executionContext))
     implicit val ec: ExecutionContext = executionContext
@@ -242,14 +242,14 @@ object SessionEnvironmentFixtures {
         loader.load(config)
       }
     }
-    val owner = new SessionPluginLoader(create)
+    val owner = new SessionPluginLoader(new PluginPackageCache.Impl, create)
     checks.verify(label + " plugin cache construction is deferred")(requests.isEmpty && provisions.get() == 0)
     val first = owner.load(config)
     val repeated = owner.load(config)
     checks.verify(label + " plugin cache repeats within one owner") {
       (first eq repeated) && requests.size == 1 && first.merges == config.merges && first.overrides == config.overrides
     }
-    val independent = new SessionPluginLoader(create).load(config)
+    val independent = new SessionPluginLoader(new PluginPackageCache.Impl, create).load(config)
     checks.verify(label + " plugin cache loads independently for another owner")((first ne independent) && requests.size == 2)
 
     val uncachedFirst = owner.load(config.cachePackages(false))
@@ -267,7 +267,7 @@ object SessionEnvironmentFixtures {
 
     val failure = new IllegalStateException(label + " cached plugin failure")
     val attempts = new AtomicInteger(0)
-    val failing = new SessionPluginLoader(cache => new PluginLoader {
+    val failing = new SessionPluginLoader(new PluginPackageCache.Impl, cache => new PluginLoader {
       private val loader = makeLoader(cache)
       override def load(config: PluginConfig): LoadedPlugins = {
         if (attempts.getAndIncrement() == 0) throw failure

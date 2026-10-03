@@ -6,7 +6,7 @@ import izumi.distage.config.model.AppConfig
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.load.PluginLoaderDefaultImpl
+import izumi.distage.plugins.load.{PluginLoaderDefaultImpl, PluginPackageCache}
 import izumi.distage.plugins.merge.SimplePluginMergeStrategy
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.model.*
@@ -47,6 +47,7 @@ private[spec] object PluginMemoizationFixtures {
 
   private def check(request: Request): (String, Boolean) = {
     val loader = new SessionPluginLoader(
+      new PluginPackageCache.Impl,
       cache => {
         val delegate = PluginLoaderDefaultImpl.withPackageCache(cache)
         if (request.mapped) delegate.map(loaded => loaded) else delegate

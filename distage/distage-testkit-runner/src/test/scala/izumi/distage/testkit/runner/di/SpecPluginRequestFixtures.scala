@@ -2,7 +2,7 @@ package izumi.distage.testkit.runner.di
 
 import distage.ModuleDef
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl, PluginPackageCache}
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderDefaultImpl, PluginLoaderFactory, PluginPackageCache}
 import izumi.distage.testkit.model.{TestActivationStrategy, TestConfig}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
@@ -15,6 +15,7 @@ private[di] object SpecPluginRequestFixtures {
   private final class Statistics {
     val marker = new Marker
     var requests = Vector.empty[PluginConfig]
+    var owners = Vector.empty[PluginPackageCache]
     var observed = Vector.empty[Marker]
   }
   private final class Suite(stats: Statistics) extends SpecIdentity {
@@ -22,13 +23,16 @@ private[di] object SpecPluginRequestFixtures {
       pluginConfig = PluginConfig.constUnchecked(new ModuleDef { make[Marker].fromValue(stats.marker) }).cachePackages(true),
       activationStrategy = TestActivationStrategy.IgnoreConfig,
     )
-    override protected def makePluginloader(): PluginLoader = {
-      val delegate = new PluginLoaderDefaultImpl().map(value => value)
-      new PluginLoader {
-        override def load(config: PluginConfig): LoadedPlugins = {
-          val request = config.snapshot().copy(debug = true)
-          stats.requests :+= request
-          delegate.load(request)
+    override protected def makePluginLoaderFactory(): PluginLoaderFactory = new PluginLoaderFactory {
+      override def create(packageCache: PluginPackageCache): PluginLoader = {
+        stats.owners :+= packageCache
+        val delegate = PluginLoaderDefaultImpl.withPackageCache(packageCache).map(value => value)
+        new PluginLoader {
+          override def load(config: PluginConfig): LoadedPlugins = {
+            val request = config.snapshot().copy(debug = true)
+            stats.requests :+= request
+            delegate.load(request)
+          }
         }
       }
     }
@@ -55,8 +59,8 @@ private[di] object SpecPluginRequestFixtures {
     verify(owner + " plugin request discovery leaves loading and bodies suspended", catalogue.tests.size == 1 && stats.requests.isEmpty && stats.observed.isEmpty)
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
     val resolved = session.resolve(request).fold(failure => throw new IllegalStateException(failure.message), value => value)
-    val owners = stats.requests.flatMap(_.packageCacheOwner)
-    verify(owner + " app and bootstrap copies reach the custom hook with one owner and original cache flags", stats.requests.size == 2 && owners.size == 2 && (owners.head eq owners(1)) && stats.requests.map(_.cachePackages) == Vector(true, false) && stats.observed.isEmpty)
+    val owners = stats.owners
+    verify(owner + " app and bootstrap copies use one factory owner and original cache flags", stats.requests.size == 2 && owners.size == 1 && stats.requests.forall(_.packageCacheOwner.isEmpty) && stats.requests.map(_.cachePackages) == Vector(true, false) && stats.observed.isEmpty)
     session.plan(resolved).flatMap { result =>
       val planned = result.fold(failure => throw new IllegalStateException(failure.message), value => value)
       verify(owner + " plugin request planning leaves bodies suspended", stats.observed.isEmpty)

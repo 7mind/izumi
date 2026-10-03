@@ -3,13 +3,13 @@ package izumi.distage.testkit.runner.di
 import distage.{DefaultModule2, DIKey, Functoid, ModuleDef, TagK}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader}
+import izumi.distage.plugins.load.{LoadedPlugins, PluginLoader, PluginLoaderFactory, PluginPackageCache}
 import izumi.distage.plugins.merge.PluginMergeStrategy
 import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.model.{TestActivationStrategy, TestConfig}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
-import izumi.distage.testkit.runner.spec.{Spec1, Spec2, SpecIdentity, SpecZIO}
+import izumi.distage.testkit.runner.spec.{PluginLoaderFactoryConfiguration, Spec1, Spec2, SpecIdentity, SpecZIO}
 import izumi.distage.testkit.spec.{DistageTestEnv, TestConfiguration}
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.functional.Identity
@@ -101,10 +101,15 @@ private[di] object SpecFrontendFixtures {
           if (kind == "environment") { hooks.incrementAndGet().discard(); throw original }
           super.makeTestEnv()
         }
-        override protected def makePluginloader(): PluginLoader = {
-          if (kind == "loader") new PluginLoader {
-            override def load(config: PluginConfig): LoadedPlugins = { hooks.incrementAndGet().discard(); throw original }
-          } else super.makePluginloader()
+        override protected def makePluginLoaderFactory(): PluginLoaderFactory = {
+          if (kind == "loader") new PluginLoaderFactory {
+            override def create(packageCache: PluginPackageCache): PluginLoader = {
+              val _ = packageCache
+              new PluginLoader {
+                override def load(config: PluginConfig): LoadedPlugins = { hooks.incrementAndGet().discard(); throw original }
+              }
+            }
+          } else super.makePluginLoaderFactory()
         }
         "body" in { (resource: Resource) => stats.body(resource) }
       }
@@ -153,15 +158,20 @@ private[di] object SpecFrontendFixtures {
     def body(resource: Resource): Unit = { require(resource != null); bodies.incrementAndGet().discard() }
   }
 
-  private trait Configured extends TestConfiguration with DistageTestEnv {
+  private trait Configured extends TestConfiguration with DistageTestEnv with PluginLoaderFactoryConfiguration {
     protected def stats: Statistics
     abstract override protected def config: TestConfig = stats.configuration(super.config)
-    abstract override protected def makePluginloader(): PluginLoader = {
+    abstract override protected def makePluginLoaderFactory(): PluginLoaderFactory = {
       require(stats.hookOrder.lastOption.contains("merge"), "Plugin loader requires previously initialized roles and merge strategy")
       stats.hookOrder :+= "loader"
       stats.loaders.incrementAndGet().discard()
-      val owned = super.makePluginloader()
-      new PluginLoader { override def load(config: PluginConfig): LoadedPlugins = owned.load(config) }
+      val underlying = super.makePluginLoaderFactory()
+      new PluginLoaderFactory {
+        override def create(packageCache: PluginPackageCache): PluginLoader = {
+          val owned = underlying.create(packageCache)
+          new PluginLoader { override def load(config: PluginConfig): LoadedPlugins = owned.load(config) }
+        }
+      }
     }
     abstract override protected def loadRoles(): RolesInfo = { stats.hookOrder :+= "roles"; stats.roles.incrementAndGet().discard(); super.loadRoles() }
     abstract override protected def makeMergeStrategy(): PluginMergeStrategy = { require(stats.hookOrder.lastOption.contains("roles")); stats.hookOrder :+= "merge"; stats.merges.incrementAndGet().discard(); super.makeMergeStrategy() }

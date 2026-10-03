@@ -5,8 +5,8 @@ import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestCon
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
 import izumi.distage.testkit.runner.impl.services.{TestActivationResolver, TestConfigLoader}
-import izumi.distage.testkit.spec.{SessionPluginLoader, SessionTestEnvironment, TestEnvironmentFactory}
-import izumi.distage.plugins.load.PluginLoaderDefaultImpl
+import izumi.distage.testkit.spec.{SessionTestEnvironment, TestEnvironmentFactory}
+import izumi.distage.plugins.load.{PluginLoader, PluginLoaderFactory}
 import izumi.functional.bio.Exit
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.quasi.QuasiIORunner
@@ -28,8 +28,10 @@ final class DistageExecutionProvider(
   configLoader: TestConfigLoader,
   options: DistageRunnerOptions,
 ) extends ExecutionProvider {
-  private[distage] val defaultPluginLoader = new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))
-  private[distage] val environments = new SessionTestEnvironment(new SessionEnvironmentFactory(new TestEnvironmentFactory.Impl, new SessionBootstrapFactory, defaultPluginLoader.packageCache))
+  private val pluginLoaders = new SessionPluginLoaders
+  private[distage] def defaultPluginLoaderFactory: PluginLoaderFactory = pluginLoaders.defaultFactory
+  private[distage] def pluginLoader(factory: PluginLoaderFactory): PluginLoader = pluginLoaders.load(factory)
+  private[distage] val environments = new SessionTestEnvironment(new SessionEnvironmentFactory(new TestEnvironmentFactory.Impl, new SessionBootstrapFactory))
   private type RunnerF[A] = MiniBIOAsync[Throwable, A]
   private val configuration = new SessionTestConfigLoader(configLoader)
   private val engine = new DistageEngine[RunnerF](configuration, options)

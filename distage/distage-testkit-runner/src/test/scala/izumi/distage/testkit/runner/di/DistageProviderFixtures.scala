@@ -72,6 +72,7 @@ object DistageProviderFixtures {
         .flatMap(_ => SpecRegistrationFixtures.run(context, checks.verify))
         .flatMap(_ => SpecBootstrapFixtures.run(context, checks.verify))
         .flatMap(_ => SpecPluginRequestFixtures.run(context, checks.verify))
+        .flatMap(_ => PluginLoaderFactoryFixtures.run(context, checks.verify))
         .flatMap(_ => ProviderFixturePlatform.pluginOwnership(context, checks.verify))
         .map { _ => println("DISTAGE_PROVIDER_CONTRACTS_OK checks=" + checks.count) }
     }
@@ -314,7 +315,7 @@ object DistageProviderFixtures {
             val enabled = overrides.memoization != MemoizationOverride.Disabled
             val effectiveConfig = if (enabled) config else config.copy(memoizationRoots = TestConfig.PriorityAxisDIKeys.empty)
             val roles = RolesInfo(Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty)
-            val environment = provider.environments.load(effectiveConfig, provider.defaultPluginLoader, roles, SimplePluginMergeStrategy, TagK[TestF], defaultModule)
+            val environment = provider.environments.load(effectiveConfig, provider.pluginLoader(provider.defaultPluginLoaderFactory), roles, SimplePluginMergeStrategy, TagK[TestF], defaultModule)
             val body = if (options.missing) Functoid { (_: Missing) => F.unit }
             else Functoid { (value: Resource, pair: Pair) => F.maybeSuspend {
               val _ = bodies.incrementAndGet()

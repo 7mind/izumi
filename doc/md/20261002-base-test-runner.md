@@ -92,10 +92,11 @@ use the same `PluginConfig.snapshot()` policy as the plugin loader.
 
 The production-loader and in-memory-loader fixtures exercise static modules,
 including concurrent requests on JVM and JS. `SessionPluginLoader` takes a loader
-factory and supplies its own `PluginPackageCache`:
+factory and an explicit `PluginPackageCache` supplied by its owner:
 
 ```scala
-new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))
+val packageCache = new PluginPackageCache.Impl
+new SessionPluginLoader(packageCache, cache => PluginLoaderDefaultImpl.withPackageCache(cache))
 ```
 
 The factory must construct its loader with the supplied cache and remain
@@ -202,24 +203,28 @@ factory runs. The library's registration path leaves configuration, plugin
 loading, effects, test bodies and application resources suspended.
 
 Selected resolution evaluates the suite configuration and its environment
-hooks. `makeTestEnv`, `loadRoles`, `makeMergeStrategy`, `makePluginloader`,
+hooks. `makeTestEnv`, `loadRoles`, `makeMergeStrategy`, `makePluginLoaderFactory`,
 `loadEnvironment` and `makeEnv` retain virtual dispatch. The default route
-evaluates roles, merge strategy and loader in that order and then uses the
+evaluates roles, merge strategy and factory in that order, materializes the
+loader through the final `makePluginloader()` method and then uses the
 provider's environment owner. A suite retains its environment success or
 original Planning failure as one lazy snapshot; multiple selected tests do not
 repeat a failed hook. Custom hooks keep their explicit collaborators and
 definitions.
 
-App and bootstrap plugin requests carry the provider's package-cache owner.
-The verified forwarding, mapped and direct synchronous reconstruction routes
-share compatible scanned definitions inside a session and get fresh definitions in another
-session. PluginConfig copy, snapshot and request helpers retain ownership while
-preserving its six-field value shape. Explicit custom package-cache collaborators
-retain their policies. The invocation scope preserves custom dispatch and allows
-a shared built-in loader instance to serve distinct owners. An opaque wrapper
-that reconstructs before forwarding to a hidden delegate, or a hook that hands
-a reconstructed request to a worker thread, still reaches the global cache.
-These reproduced ownership defects and the complete custom-hook audit remain open.
+The provider supplies its package cache when creating a loader, before app and
+bootstrap requests reach any delegate. The verified factory migrations preserve
+session isolation through opaque request reconstruction and warmed worker
+threads, while compatible factories share scanned definitions within a session.
+Factory references identify collaborators; each provider retains one creation
+success or original nonfatal failure per reference. Plugin-load failures retain
+the existing retry policy described above. Explicit incompatible scanner/cache
+policies and prebuilt mutable state remain caller-owned boundaries. See
+[the factory contract and migration](20261003-plugin-loader-factories.md) for
+the required cache binding and its limitations. Eligible custom hooks need
+non-import edits, so the fixed import-only acceptance item remains unmet for
+those hooks; the complete compatibility inventory and final evaluation remain
+open.
 
 The built-in testkit `BootstrapFactory.Impl` keeps its router local to the
 test environment. This also applies when a custom factory delegates to it.
