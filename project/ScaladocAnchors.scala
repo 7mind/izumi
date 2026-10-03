@@ -36,7 +36,7 @@ object ScaladocAnchors {
     val ids = collection.mutable.Map.empty[String, Set[String]]
     def idsOf(page: String): Set[String] = ids.getOrElseUpdate(page, idPattern.findAllMatchIn(read(apiPages(page))).map(_.group(1)).toSet)
 
-    val linkPattern: Regex = ("""href="([^"]*?)""" + Regex.quote(s"/$apiSubdir/") + """([^"#]+)(?:#([^"]+))?"""").r
+    val linkPattern: Regex = ("""href="((?:\.\./)*/?)""" + Regex.quote(s"$apiSubdir/") + """([^"#]+)(?:#([^"]+))?"""").r
     val problems = collection.mutable.ListBuffer.empty[String]
     var rewritten = 0
 
@@ -54,7 +54,7 @@ object ScaladocAnchors {
                 fragment
             }
             if (replacement != fragment) rewritten += 1
-            Regex.quoteReplacement(s"""href="$base/$apiSubdir/$page${replacement.fold("")("#" + _)}"""")
+            Regex.quoteReplacement(s"""href="$base$apiSubdir/$page${replacement.fold("")("#" + _)}"""")
           },
         )
         if (target == source) {

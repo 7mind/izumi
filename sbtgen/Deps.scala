@@ -230,10 +230,10 @@ object Izumi {
   }
 
   private def withJvmRelease(options: Seq[Const]): Seq[Const] = {
-    options.map {
-      case Const.CString(option) if option.startsWith("-release:") => Const.CString(s"-release:$JvmRelease")
-      case option => option
-    }
+    options.filterNot {
+      case Const.CString(option) => option.startsWith("-release:")
+      case _ => false
+    } :+ Const.CString(s"-release:$JvmRelease")
   }
 
   object Targets {

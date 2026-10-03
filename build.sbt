@@ -83,7 +83,6 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -129,11 +128,11 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -158,13 +157,13 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -192,7 +191,8 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -329,7 +329,6 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -375,11 +374,11 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -404,13 +403,13 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -438,7 +437,8 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -576,7 +576,6 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -622,11 +621,11 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -651,13 +650,13 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -685,7 +684,8 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -823,7 +823,6 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -869,11 +868,11 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -898,13 +897,13 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -932,7 +931,8 @@ lazy val `fundamentals-literals` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -1074,7 +1074,6 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1120,11 +1119,11 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1149,13 +1148,13 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -1183,7 +1182,8 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -1330,7 +1330,6 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1376,11 +1375,11 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1405,13 +1404,13 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -1439,7 +1438,8 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -1582,7 +1582,6 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1628,11 +1627,11 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1657,13 +1656,13 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -1691,7 +1690,8 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -1837,7 +1837,6 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -1883,11 +1882,11 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -1912,13 +1911,13 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -1946,7 +1945,8 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -2096,7 +2096,6 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2142,11 +2141,11 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2171,13 +2170,13 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -2205,7 +2204,8 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -2357,7 +2357,6 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2403,11 +2402,11 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2432,13 +2431,13 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -2466,7 +2465,8 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -2620,7 +2620,6 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2666,11 +2665,11 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2695,13 +2694,13 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -2729,7 +2728,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -2873,7 +2873,6 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -2919,11 +2918,11 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -2948,13 +2947,13 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -2982,7 +2981,8 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -3100,7 +3100,6 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3146,11 +3145,11 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3175,13 +3174,13 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -3209,7 +3208,8 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -3353,7 +3353,6 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3399,11 +3398,11 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3428,13 +3427,13 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -3462,7 +3461,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -3609,7 +3609,6 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3655,11 +3654,11 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3684,13 +3683,13 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -3718,7 +3717,8 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -3890,7 +3890,6 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -3936,11 +3935,11 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3965,13 +3964,13 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -3999,7 +3998,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -4141,7 +4141,6 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4187,11 +4186,11 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4216,13 +4215,13 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -4250,7 +4249,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -4420,7 +4420,6 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4466,11 +4465,11 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4495,13 +4494,13 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -4529,7 +4528,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -4687,7 +4687,6 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4733,11 +4732,11 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4762,13 +4761,13 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -4796,7 +4795,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -4913,7 +4913,6 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -4959,11 +4958,11 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -4988,13 +4987,13 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -5022,7 +5021,8 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -5180,7 +5180,6 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -5226,11 +5225,11 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5255,13 +5254,13 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -5289,7 +5288,8 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -5438,7 +5438,6 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -5484,11 +5483,11 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5513,13 +5512,13 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -5547,7 +5546,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -5671,7 +5671,6 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -5717,11 +5716,11 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5746,13 +5745,13 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -5780,7 +5779,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -5928,7 +5928,6 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -5974,11 +5973,11 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -6003,13 +6002,13 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -6037,7 +6036,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -6181,7 +6181,6 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -6227,11 +6226,11 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -6256,13 +6255,13 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -6290,7 +6289,8 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -6418,7 +6418,6 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -6464,11 +6463,11 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -6493,13 +6492,13 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -6527,7 +6526,8 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -6684,7 +6684,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -6730,11 +6729,11 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -6759,13 +6758,13 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -6793,7 +6792,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
@@ -6969,7 +6969,6 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.12.21") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-language:higherKinds",
         "-Xsource:3",
@@ -7015,11 +7014,11 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -7044,13 +7043,13 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
       )
       case (_, "3.9.0") => Seq(
         "-source:3.9",
         "-Xkind-projector:underscores",
         "-Ximport-suggestion-timeout:0",
-        "-release:17",
         "-Yretain-trees",
         "-no-indent",
         "-explain",
@@ -7078,7 +7077,8 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         "-Wconf:msg=`using` clause:silent",
         "-Wconf:msg=The syntax ..function:silent",
         "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent"
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },

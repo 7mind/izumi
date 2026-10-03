@@ -64,6 +64,7 @@ object ParadoxMaterialTheme {
 
   private def indexJson(mappings: Seq[(File, String)]): String = {
     mappings
+      .filter { case (_, path) => path.endsWith(".html") }
       .flatMap(readSections)
       .map {
         section =>

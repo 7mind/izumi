@@ -44,10 +44,12 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
         path
       case LoadablePathReference(path, _) if Files.isDirectory(path) =>
         val target = Files.createTempDirectory(tempPrefix)
-        IzResources.copyTree(path, target)
+        target.toFile.deleteOnExit()
+        IzResources.copyTree(path, target).foreach(_.toFile.deleteOnExit())
         target
       case LoadablePathReference(path, _) =>
         val target = Files.createTempFile(tempPrefix, "-" + path.getFileName.toString)
+        target.toFile.deleteOnExit()
         Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
         target
       case UnloadablePathReference(uri) =>
@@ -75,7 +77,7 @@ final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVa
     }
     pathReference match {
       case Some(LoadablePathReference(jarPath, _)) =>
-        RecursiveCopyOutput(IzResources.copyTree(jarPath, targetDir))
+        RecursiveCopyOutput(IzResources.copyTree(jarPath, targetDir).filter(Files.isRegularFile(_)))
       case _ =>
         RecursiveCopyOutput.empty
     }
@@ -138,7 +140,9 @@ object IzResources {
       source,
       new SimpleFileVisitor[Path]() {
         override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
-          Files.createDirectories(targetDir.resolve(source.relativize(dir).toString))
+          val target = targetDir.resolve(source.relativize(dir).toString)
+          Files.createDirectories(target)
+          if (target != targetDir) targets += target
           FileVisitResult.CONTINUE
         }
 
