@@ -6,7 +6,7 @@ plugin can consume it. The testkit producer remains 3.9.0. Scala 2 producers are
 2.12.21 and 2.13.18. JavaScript IR and Native NIR are present in their respective
 artifacts.
 
-Schema 1 frames are compact JSON objects with `schemaVersion` and `message`.
+Schema 2 frames are compact JSON objects with `schemaVersion` and `message`.
 The caller sends each frame as one line on a dedicated protocol channel.
 Ordinary test output belongs on stdout, separately from that channel. JSON
 escaping keeps embedded line breaks in diagnostic text within one frame.
@@ -24,6 +24,27 @@ It never carries a live closure, locator or effect value.
 Known source locations have a path, zero-based line and optional zero-based
 UTF-16 column. Missing columns and unavailable locations are explicit. The
 application determines how the path resolves against the target's source roots.
+
+Assertion diagnostics retain a relative, absolute or virtual source identity,
+an expression span and the exact compiled expression text when available.
+Offsets, lines and UTF-16 columns are zero-based; ranges have an exclusive end.
+Point positions, unavailable positions and unavailable compiled text remain
+distinct. Source validation reports matching, mismatching, unavailable source,
+unavailable range or a source-provider failure. Each observation retains its
+span, compiled text, recognized kind and evaluated, skipped or rendering-failed
+value. Rendering and provider failures carry their exception class and an explicit
+message value. A null message is unavailable; a nonfatal exception from the
+message accessor records that accessor failure's class without replacing the
+original assertion. Such reporting failures are not converted to empty messages.
+Schema 1 lacks these fields and is rejected explicitly.
+
+The runner uses the assertion failure's cached rendering result. Reporting and
+serialization do not render captured values again. Embedded exception messages
+are captured lazily once and remain stable across repeated conversion. Rendered values obey the
+assertion context's value limit; the diagnostic explicitly counts observations
+omitted by its observation limit. Complete compiled text is retained independently
+of the bounded display message. Channel frame limits still apply to the complete
+serialized payload.
 
 Durations in nanoseconds and event sequence numbers use decimal strings on the
 wire, preserving the complete supported 64-bit integer range. JSON numbers
@@ -43,7 +64,9 @@ without truncation. Quotes, escaped characters and braces inside JSON strings
 do not contribute to container nesting.
 Succeeded and skipped results cannot carry failures. Aggregate success requires
 no run-level failure, no result-level failure and no cancellation.
-Unknown schemas and message kinds are errors.
+Unknown schemas and message kinds are errors. Empty diagnostic source identities,
+negative source indices, reversed ranges and negative omitted-observation counts
+are rejected by both producer and consumer validation.
 
 `ProtocolCodec.validate` checks payload schema without applying the serialized
 frame-size limit. It can validate an in-process catalogue or result without

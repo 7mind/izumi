@@ -8,10 +8,36 @@ object PublishedProtocolConsumer {
     case Left(error) => throw new IllegalArgumentException(error.message)
   }
 
+  def diagnosticFrame: String = {
+    val source = DiagnosticSource(
+      DiagnosticSourceIdentity.Virtual("consumer://source-😀"),
+      DiagnosticSpan.Range(DiagnosticPoint(2, 0, 2), DiagnosticPoint(15, 1, 4)),
+      Some("left &&\nright"),
+    )
+    val diagnostic = AssertionDiagnostic(
+      source,
+      DiagnosticSourceValidation.Mismatch,
+      Vector(
+        DiagnosticObservation(Some("left"), DiagnosticSpan.Point(DiagnosticPoint(2, 0, 2)), DiagnosticObservationKind.BooleanLeaf, ObservedValue.Evaluated("false")),
+        DiagnosticObservation(Some("right"), DiagnosticSpan.Unavailable, DiagnosticObservationKind.BooleanOperator, ObservedValue.NotEvaluated),
+        DiagnosticObservation(None, source.span, DiagnosticObservationKind.Opaque, ObservedValue.RenderingFailed("RendererFailure", DiagnosticErrorMessage.Available("failed\n😀"))),
+      ),
+      2,
+    )
+    ProtocolCodec.encode(
+      ProtocolMessage.Rejected(RunId("diagnostic"), Failure(FailurePhase.Test, "AssertionFailure", "consumer failure", Vector.empty, Vector.empty, Some(diagnostic)))
+    )
+  }
+
   def main(args: Array[String]): Unit = {
-    val golden = "{\"schemaVersion\":1,\"message\":{\"kind\":\"cancel\",\"run\":\"published-consumer\"}}"
+    val golden = "{\"schemaVersion\":2,\"message\":{\"kind\":\"cancel\",\"run\":\"published-consumer\"}}"
     if (roundTrip(golden) != golden || ProtocolCodec.decode(golden) != Right(ProtocolMessage.Cancel(RunId("published-consumer")))) {
       throw new IllegalStateException("Published protocol changed the common wire schema")
+    }
+    if (roundTrip(diagnosticFrame) != diagnosticFrame)
+      throw new IllegalStateException("Published protocol lost structured assertion source, spans, validation or observations")
+    if (!ProtocolCodec.decode(golden.replace("\"schemaVersion\":2", "\"schemaVersion\":1")).left.exists(_.message.contains("Unsupported protocol schema"))) {
+      throw new IllegalStateException("Published protocol must reject the previous diagnostic schema")
     }
     val identity = CatalogueIdentity(BuildId("consumer-build"), BuildTargetId("consumer-target"), CatalogueId("consumer-catalogue"))
     val request = ProtocolMessage.Request(RequestOperation.Execute, RunId("request-one"), RunRequest(
@@ -47,6 +73,6 @@ object PublishedProtocolConsumer {
       throw new IllegalStateException("Published failure-depth boundary must round-trip")
     }
     rejectProducer(ProtocolMessage.Rejected(RunId("excess-depth"), failure.copy(causes = Vector(nested))), "Failure cause depth")
-    println("PUBLISHED_PROTOCOL_CONSUMER_OK schema=1 boundaries=verified")
+    println("PUBLISHED_PROTOCOL_CONSUMER_OK schema=2 boundaries=verified diagnostic=structured")
   }
 }

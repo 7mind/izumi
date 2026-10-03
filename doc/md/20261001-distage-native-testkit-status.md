@@ -7391,3 +7391,286 @@ under `2b-legacy-runtime-finalization-verified-commit-first/`. No push occurs.
 The follow-up ledger commit records this actual implementation SHA and changes
 no code/build input. Final-head CI/publication and all parent evaluations remain
 open; generated build-info metadata is not claimed rebuilt after either commit.
+
+
+### Step 2b: structured assertion transport, in progress — 2026-10-03
+
+Starting source HEAD: `8ffb0c3c556d21295c3f98ba9ef07c3d9f63edfa`, with a clean
+working tree. The preceding status-only turn is no progress; this turn checks
+current sources and takes the next available action. No parent/final item closes.
+
+Source inspection shows RunnerFailure.fromThrowable always constructing
+Failure.assertion=None. The former base fixture checks the assertion class and
+rendered message only; the protocol's schema 1 also lacks full expression spans,
+source-identity kinds and source validation. This is first a source prediction.
+The public RunSession/AnyWordSpec reproduction then establishes the failure.
+
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-fail-first.py`.
+Actual exit 1, unchanged frozen source inputs, failing at the intended structured-
+diagnostic assertion. The public run observes one original AssertionFailure,
+evaluated=1, skipped=0, renders=2, sourceReads=1 and roundTrip=true, while
+structured=false. Its success control does not render, and later message access
+does not repeat rendering. The owned executor terminates before the assertion
+propagates. Exact external source, source manifest, argv, raw output and actual
+completion remain under the command's distinct capture directory.
+
+The candidate caches rendered observation values alongside the existing bounded
+message, source validation and exact renderer-error objects. A runner adapter maps
+that cached result and original diagnostic into the independent protocol model.
+It retains relative/absolute/virtual identity, complete compiled text, range/point/
+unavailable spans, recognized observation kinds, skipped/evaluated/rendering-failed
+values, source validation and an explicit omitted-observation count. Protocol
+schema 2 represents these fields and explicitly rejects schema 1. Offsets, lines
+and UTF-16 columns retain the assertion model's zero-based conventions, with an
+exclusive range end. No captured value is rendered again by conversion or JSON.
+The protocol still has no izumi dependency and retains its explicit frame limit.
+
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-candidate-first.py`.
+Actual exit 0, unchanged candidate input hashes and byte-identical external probe
+source. The same public observation now has structured=true, with unchanged
+short-circuit and cached-rendering counters; its executor terminates. The command
+also runs JVM protocol fixtures (88 checks, schema 2) and plain assertion fixtures
+(86 checks, range mode), both with terminal success. This is bounded candidate
+verification before the permanent portable controls, not a final-head gate.
+
+Permanent public-runner controls cover an actual macro failure and seven source
+validation/identity cases, a failed renderer retaining its exact original error,
+and bounded Unicode values with explicit observation omission. They check nested
+assertion causes, complete outcomes and terminal-event wire round-trips, repeated
+conversion and successful rendering laziness. Regression-origin controls are
+Behavioral-Progression, Blackbox-Group until their final matrix passes. The former
+missing specified check is the assertion-to-public-runner-to-wire boundary rather
+than manually constructed protocol values or rendered message text alone.
+Four additional DI frontend controls use actual Identity, Cats assert1, BIO
+assert2 and environment-backed spec entries; they await their owned engine and
+assertions rather than merely linking effect libraries.
+
+The higher runner's two assertion-adapter dependencies enter Test scope only.
+Generation uses sbtgen/Deps.scala, not hand-edited generated output. Command
+capture `2b-assertion-transport-generator-first/` records the exact JDK21
+`./sbtgen.sc --js --native` invocation and actual exit 0. Only build.sbt changes;
+plugin/properties hashes remain unchanged. The generated build hash is
+`e42afbd24c8818f44fbb3404a5e95379eef13876130ed8c5fa66e4181845e3f9`.
+Pinned scalafmt 3.6.0 runs on the changed Scala paths, followed by restoration of
+unrelated formatter-only changes; original formatting is retained outside this
+request's edits. A failed restoration script is corrected before any verification
+capture is started; git diff --check passes. No executed input is overwritten.
+
+The first complete portable capture freezes 1,604 source/build/test inputs and
+requests Test/testFull for plain/Cats/BIO assertions, protocol, base and higher
+runner on all three platforms and compilers:
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-nine-lane-first-matrix.py`.
+Scala 3 JVM compilation rejects the new fixture's render() call because the
+ValueRenderer override shadows its supplier parameter. Scala 2.13 rejects that
+same supplier as unused. Both actual SBT exits are 1, with unchanged frozen inputs,
+before the permanent boundary checks run. Scala 2.12 remains running at this
+entry; no matrix pass is claimed. The capture's plain-marker regular expression
+also matches the Cats/BIO suffixes, an independent verifier defect to correct in
+a separately named driver. Production sources are not changed to accommodate
+these harness defects. The external failed and passing probe captures remain
+immutable. Source edits wait for the first capture's actual terminal completion.
+
+Read-only preparatory review is requested from the existing requirements reviewer.
+Full session ownership/error fidelity, real transports and common CLI/SBT/IDE
+integration, publication, parent-step and final-head evaluations remain open.
+
+
+The first complete capture is terminal: all three actual SBT exits are 1,
+aggregate exit 1, with all 1,604 frozen inputs unchanged. Scala 2.12 accepts the
+shadowed render() via deprecated Unit argument adaptation and subsequently reports
+that the fixture execution context did not terminate; owned cleanup is not
+claimed for that failed capture. The supplier is renamed only after completion.
+The second JVM smoke, `2b-assertion-transport-candidate-second.py`, is actual exit
+1 with stable inputs: its unchanged external probe, protocol88 and plain86 pass,
+then the permanent fixture rejects a raw-tab/newline message expectation. Exact
+structured matching/mismatch comparisons already pass. The corrected display
+oracle checks expanded tabs and Unicode-aware pointer lines, while retaining
+its separate exact compiled-text DTO check; production rendering is not changed.
+
+The first read-only reviewer identifies a separate converter prediction: an
+embedded rendering/provider Throwable's getMessage can itself throw. It is
+reproduced before the preservation correction. Commands under the scratch root:
+`python3 2b-assertion-accessor-fail-first.py` and
+`python3 2b-assertion-accessor-fail-second.py`, both actual exit 1 with unchanged
+inputs. Both renderer/provider cases retain no assertion and return zero test
+results, while the original assertion's useful-message precondition and wire
+round-trip pass. Run-level failures contain the accessor exception; the owned
+executors terminate. The second independent oracle also observes
+originalClass=false and accessorExplicit=false, ruling out mere failure-text
+preservation as a sufficient correction. The two probe sources remain separate.
+
+The correction adds typed available, unavailable and accessor-failed error
+messages instead of silently substituting an empty string. A further reviewer
+source prediction is also reproduced before its correction. Command:
+`python3 2b-assertion-metadata-fail-first.py`, actual exit 1 with stable inputs.
+For both renderer/provider, repeated public conversion changes the diagnostic
+from message-1 to message-2: messageReads=2 while sourceReads=1 and renders=1.
+Both original structured assertions otherwise reach the public runner and the
+owned executor terminates. This establishes an unstable exception-metadata
+snapshot, distinct from repeated value rendering.
+
+The corrected portable assertion result caches each embedded error message
+lazily on its rendered-value/source-validation occurrence. Null messages and
+nonfatal accessor exceptions are explicit variants; the exact original provider,
+renderer and accessor-error objects remain available in the assertion runtime.
+The converter maps those snapshots to data and does not invoke embedded exception
+accessors. Display-message generation does not force otherwise unused exception
+messages. Six permanent cases cover throwing, absent and stateful message
+accessors for both renderer/provider branches, bringing the public base transport
+scenario count to sixteen. They check original objects, explicit wire metadata,
+one message read, stable repeated conversion and unchanged renderer/source counts.
+
+The root reads the complete first review report and independently hashes all
+24 repository snapshots plus 62 evidence records: 86 sizes/hashes, no mismatch.
+Its report concerns the initial failed candidate and is retained unchanged,
+including its reproduced blocker and unverified metadata prediction. Report SHA
+`2ae99bf87d82a5c89a72fa91c833448e1153d459b52417f76183e3650168c184`;
+manifest SHA `83549fe37154515090a9d9db30f9d20b45e1f0933d87141c27f77de850c10276`;
+inspection SHA `cc27cb3429f10744428126ad97bb6efa11a26ec1850ede779b78c404d324e7c5`.
+Root hash result: `2b-assertion-transport-preparatory-first-root-hash-audit.json`.
+A fresh read-only review evaluates the corrected inputs separately.
+
+Combined JVM command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-candidate-third.py`.
+Actual exit 0 with all 1,604 current/frozen input hashes unchanged. It compiles
+byte-identical copies of transport-first, accessor-second and metadata-first
+external probes into its producer Test/runMain scope. All three pass. The accessor
+cases now report retained=true, results=1, originalClass=true and
+accessorExplicit=true; metadata cases report cached=true, messageReads=1,
+sourceReads=1 and renders=1 with equal before/after diagnostics. All three owned
+probe executors terminate. No external probe source is rewritten to fit the fix.
+
+The same command completes protocol96/schema2, plain86/range, base577 with all
+sixteen retained transport scenarios and bootstrap22, and higher487. The actual
+higher runtime prints the four-effect assertion marker, including Identity,
+Cats assert1, BIO assert2 and environment SpecZIO failures with wire diagnostics.
+Its JVM executor terminates. This is current-source Scala 3/JVM evidence; no
+publication, isolated-loader, all-platform or final-head gate follows from it.
+
+The fresh complete command,
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-nine-lane-second-matrix.py`,
+is launched after the combined JVM command's terminal completion. It fixes only
+the capture's marker parser and freezes the corrected inputs, requesting complete
+Test/testFull execution for all six module families on JVM/JS/Native and all three
+compilers. Its outcome is pending at this entry. Publication, complete session
+ownership/error graphs, front-end hosts and all parent/final evaluations stay open.
+
+The second complete portable capture is now terminal: aggregate and all three
+actual SBT exits are 0. The root's independent command,
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-second-matrix-root-audit-first.py`,
+also exits 0. It hashes every current/frozen source pair (1,604 unchanged
+inputs), verifies all eighteen explicit Test/testFull commands per compiler,
+the six clean Native projects, exact terminal fixture totals and marker counts,
+and JVM/Native higher-runner executor termination plus JS terminal completion.
+Its evidence contains 11,001 named checks across all six module families:
+
+| Compiler | Plain/Cats/BIO, each platform | Protocol, each platform | Base JVM/JS/Native | Higher JVM/JS/Native | JVM bootstrap |
+| --- | --- | --- | --- | --- | --- |
+| 3.9.0 | 86/12/13 | 96 | 577/577/577 | 487/405/405 | 22 |
+| 2.13.18 | 86/12/13 | 96 | 577/577/577 | 487/405/405 | 22 |
+| 2.12.21 | 83/12/13 | 96 | 576/576/576 | 487/405/405 | 22 |
+
+The sixteen-scenario cached assertion transport marker and the four-effect
+Spec assertion marker each appear once per platform in every compiler capture.
+Protocol uses schema 2; its Scala 3 production compiler remains pinned to 3.8.4.
+The Scala 3 commands include strict unused checks on all eighteen projects.
+No rejected callback is observed. This verifies the current uncommitted source
+matrix, not the complete session/error-fidelity gates or a parent/final gate.
+The previous status-only goal turn is a verified wait on the live matrix session.
+
+Only after that capture's actual terminal completion, command
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-publication-first.py`
+publishes plain assertions, protocol and base runner explicitly on all nine
+platform/compiler lanes. Aggregate and all SBT exits are 0 with stable inputs.
+It records packageBin and Compile/Test dependency classpaths. The first artifact
+audit exits 1 because a published/packageBin whole-archive hash differs.
+Direct ZIP-entry comparison identifies only META-INF/MANIFEST.MF, specifically
+the per-task X-Build-Timestamp; all other entries are equal. The separate
+`2b-assertion-transport-publication-artifact-audit-second.py` exits 0, verifies
+that exact metadata distinction, and compares every compiled binary entry
+byte for byte with current producer classes. It freezes and hashes all 27
+published binary/POM pairs (6,159 class/TASTy/JS IR/Native IR entries), checks
+the new diagnostic types and the base/protocol POM dependency boundary.
+The failed auditor is retained unchanged; no production packaging is patched.
+
+Separate copied consumer builds are started by
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-isolated-consumers-first.py`.
+They require successful publication and its artifact audit, and continuously
+check frozen artifact/source applicability. The nine base-consumer lanes,
+twelve protocol lanes and four two-loader String exchanges remain pending
+at this entry. There is no remote publication or push.
+
+The second read-only preparatory report finds no further concrete defect in
+the corrected source/completed JVM smoke. It excludes full matrix, publication,
+classloaders, hosts and parent/final evaluation. The root reads it and runs
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-preparatory-second-root-hash-audit-first.py`:
+exit 0, all 24 repository snapshots and 91 evidence records match sizes/hashes.
+The immutable reviewed ledger versions retain their separate provenance.
+Report SHA `82dd9bfd704a8bd3f520f724a8ac1319764662f7cc7df060724592d6e530318d`;
+manifest SHA `9fe4d5b475aa935aad3674c1e01069076950d3d09392348b8d3e349b41833909`;
+inspection SHA `822b825a629c57929f96e5f00f324d2d4f0c321fe6ba7ef52a0e72f15b4e0b0b`.
+All session ownership/error-graph, host and parent/final gates remain open.
+
+The copied-consumer command is terminal with aggregate exit 0 and seven actual
+SBT exits 0: all nine base-runner platform/compiler lanes and all twelve
+protocol lanes (Scala 3.8.4, 3.9.0, 2.13.18 and 2.12.21) pass. The base consumer
+discovers/executes its original four sync/Future bodies and separately retains
+an actual macro assertion failure with evaluated/skipped counters and complete
+wire diagnostics. Each protocol compiler also completes the structured String
+exchange through two parent-null JVM classloaders. No Scala object is passed
+between those loaders.
+
+Independent command
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-isolated-consumers-root-audit-first.py`
+exits 0. It verifies all terminal logs and current/frozen source/artifact hashes,
+reads the actual SBT update reports rather than assuming logger placeholder
+paths, matches all 21 logged Compile dependency classpaths to those reports,
+and freezes 138 resolved dependency JARs plus 285 consumer binary entries.
+All 14 fixture input copies remain byte-identical. Every consumed producer JAR
+matches the published/current binary audit. Dependencies contain no producer
+class directories; own compiled namespaces contain only the fixture package.
+These separate builds therefore do not substitute producer source or classes.
+
+Final prescribed generation command,
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-generator-idempotence-second.py`,
+exits 0: `bash sbtgen.sc --js --native` under JDK21 leaves all 1,604 checked
+inputs unchanged. Generated build SHA remains
+`e42afbd24c8818f44fbb3404a5e95379eef13876130ed8c5fa66e4181845e3f9`;
+plugins SHA `3d66e16d3eb977416f059d7e2ec2ff87c323636db4ea49b2d5bf043431f73c34`;
+properties SHA `669fae6680792604c3020a33e1d814dfef7b17fedb0ff6a843cc520685db984e`.
+Git diff --check is 0. A fresh read-only review of these completed publication
+and consumer captures is requested before the bounded local source commit.
+No parent step or final-head gate is claimed complete.
+
+The third bounded read-only review is terminal and finds no introduced defect
+or unsupported completion claim that blocks this source checkpoint. Its own
+direct checker, without executing supplied auditors or test/build programs,
+confirms all 1,604 current/frozen input pairs, all 11,001 counts from raw logs,
+27 literal current/frozen published pairs and 6,159 current compiled members,
+timestamp-only package manifest differences, 21 resolved/logged consumer
+classpaths, 138 frozen/current external JARs, 285 fixture binaries and all
+14 copied inputs. It checks the completed generator's current output hashes.
+It explicitly excludes complete parent/final, generic Throwable graph and
+real host/transport gates; the higher assertion effects remain producer evidence.
+
+Root reads that complete report and runs
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-preparatory-third-root-hash-audit-first.py`:
+actual exit 0, all 1,606 repository snapshots and 3,984 evidence records match
+sizes/hashes and their applicable original/frozen bytes. Two immutable reviewed
+ledger versions preserve progress provenance; the latest reviewed version
+includes terminal consumers/generator and hashes to
+`c6447af7a69d83cd17ea38e03959852053937b0a70fa7cbadd18f2cdbfbf4e5a`.
+Third report SHA `35a4fc2ae1f4de8538eb1631b157e579e86978bd3231d9501bcba05ea39f9550`;
+manifest SHA `d61d3c3393f554c2b80d804c0e6535605ebf84279b6ec8f7c73cc457416c9d73`;
+inspection SHA `06ce80b02c88ff1eca2b7e4b9a7bb1e7a2dc7d4f42ba8a4c73669a446933133d`.
+
+The source checkpoint is committed through
+`python3 /srv/nvme/tmp/izumi-impl/2b-assertion-transport-verified-commit-first.py`,
+which requires all terminal successful captures/audits, verifies exact staged
+paths and tested source hashes, and checks the post-commit source identity,
+parent, clean checkout and unchanged tracking ref. The resulting commit SHA and
+actual completion are recorded in the following ledger entry. No push is run.
+All acceptance and owner decisions are unchanged; work continues toward the
+full steps 1a–5 objective, with complete 2b session ownership still open.

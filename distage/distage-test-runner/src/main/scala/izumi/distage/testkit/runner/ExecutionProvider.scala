@@ -1,6 +1,7 @@
 package izumi.distage.testkit.runner
 
 import izumi.distage.testkit.protocol.*
+import izumi.fundamentals.assertions.AssertionFailure
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future, Promise}
@@ -142,7 +143,11 @@ object RunnerFailure {
       else if (depth == ProtocolCodec.MaxFailureDepth && current.getCause != null) message(FailurePhase.Transport, "Exception cause depth exceeds the protocol limit")
       else {
         val causes = Option(current.getCause).map(next => convert(next, depth + 1, current :: ancestors)).toVector
-        Failure(phase, current.getClass.getName, Option(current.getMessage).getOrElse(""), current.getStackTrace.toVector.map(_.toString), causes, None)
+        val assertion = current match {
+          case failure: AssertionFailure => Some(AssertionDiagnosticConverter.convert(failure))
+          case _ => None
+        }
+        Failure(phase, current.getClass.getName, Option(current.getMessage).getOrElse(""), current.getStackTrace.toVector.map(_.toString), causes, assertion)
       }
     }
     convert(cause, 1, Nil)

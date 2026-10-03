@@ -3784,7 +3784,9 @@ lazy val `distage-testkit-coreJS` = `distage-testkit-core`.js
 lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-runner"))
   .dependsOn(
     `distage-testkit-core` % "test->compile;compile->compile",
-    `distage-test-runner` % "test->compile;compile->compile"
+    `distage-test-runner` % "test->compile;compile->compile",
+    `fundamentals-assertions-cats` % "test->compile",
+    `fundamentals-assertions-bio` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(

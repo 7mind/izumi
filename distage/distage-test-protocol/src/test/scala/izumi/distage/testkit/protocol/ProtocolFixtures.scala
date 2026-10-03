@@ -22,11 +22,13 @@ object ProtocolFixtures {
       TestDescriptor(first, "a b c", location, settings),
       TestDescriptor(second, "a b c", SourceLocation.Unavailable, settings),
     ))
-    val diagnostic = AssertionDiagnostic(location, Some("left && right"), Vector(
-      DiagnosticObservation(Some("left"), location, ObservedValue.Evaluated("false\n\"quoted\"\\😀")),
-      DiagnosticObservation(Some("right"), SourceLocation.Unavailable, ObservedValue.NotEvaluated),
-      DiagnosticObservation(None, location, ObservedValue.RenderingFailed("RendererFailure", "renderer threw")),
-    ))
+    val span = DiagnosticSpan.Range(DiagnosticPoint(0, 7, 9), DiagnosticPoint(13, 7, 22))
+    val source = DiagnosticSource(DiagnosticSourceIdentity.Relative("src/Unicode-😀.scala"), span, Some("left && right"))
+    val diagnostic = AssertionDiagnostic(source, DiagnosticSourceValidation.Mismatch, Vector(
+      DiagnosticObservation(Some("left"), span, DiagnosticObservationKind.BooleanLeaf, ObservedValue.Evaluated("false\n\"quoted\"\\😀")),
+      DiagnosticObservation(Some("right"), DiagnosticSpan.Unavailable, DiagnosticObservationKind.Operand, ObservedValue.NotEvaluated),
+      DiagnosticObservation(None, DiagnosticSpan.Point(DiagnosticPoint(0, 7, 9)), DiagnosticObservationKind.Opaque, ObservedValue.RenderingFailed("RendererFailure", DiagnosticErrorMessage.Available("renderer threw"))),
+    ), 2)
     val failure = Failure(FailurePhase.Test, "AssertionFailure", "false\nstdout: {}", Vector("example.WordSpec.in(WordSpec.scala:8)"), Vector.empty, Some(diagnostic))
     val result = TestResult(first, TestStatus.Failed, Some(failure), Long.MaxValue)
     val outcome = RunOutcome(run, Vector(result), Vector(failure.copy(phase = FailurePhase.Finalization)), cancelled = false)
@@ -53,7 +55,7 @@ object ProtocolFixtures {
       val decoded = ProtocolCodec.decode(frame)
       verify(decoded == Right(message), s"Wire round-trip changed $message into $decoded")
     }
-    val golden = "{\"schemaVersion\":1,\"message\":{\"kind\":\"cancel\",\"run\":\"protocol-fixture\"}}"
+    val golden = "{\"schemaVersion\":2,\"message\":{\"kind\":\"cancel\",\"run\":\"protocol-fixture\"}}"
     verify(ProtocolCodec.encode(ProtocolMessage.Cancel(run)) == golden, "All compiler/platform lanes must emit the same golden frame")
     verify(ProtocolCodec.decode(golden) == Right(ProtocolMessage.Cancel(run)), "Golden frame must decode")
     verify(first != second, "Structured paths and variants distinguish equal display names")
@@ -63,7 +65,8 @@ object ProtocolFixtures {
     def reject(frame: String, reason: String): Unit = {
       verify(ProtocolCodec.decode(frame).left.exists(_.message.contains(reason)), s"Expected protocol rejection: $reason")
     }
-    reject(golden.replace("\"schemaVersion\":1", "\"schemaVersion\":2"), "Unsupported protocol schema")
+    reject(golden.replace("\"schemaVersion\":2", "\"schemaVersion\":1"), "Unsupported protocol schema")
+    reject(golden.replace("\"schemaVersion\":2", "\"schemaVersion\":3"), "Unsupported protocol schema")
     reject(golden.replace("\"kind\":\"cancel\"", "\"kind\":\"unknown\""), "Unknown protocol kind")
     reject(golden.replace("protocol-fixture", ""), "Identity must not be empty")
     reject(golden + "\n", "one channel line")
@@ -87,6 +90,34 @@ object ProtocolFixtures {
       }
       verify(rejected, s"Producer must reject an invalid protocol state: $reason")
     }
+    val validations = Vector[DiagnosticSourceValidation](
+      DiagnosticSourceValidation.Matching, DiagnosticSourceValidation.Mismatch, DiagnosticSourceValidation.Unavailable,
+      DiagnosticSourceValidation.RangeUnavailable, DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.Available("missing\n😀")),
+      DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.Unavailable),
+      DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.AccessorFailed("AccessorFailure")),
+    )
+    val identities = Vector[DiagnosticSourceIdentity](source.identity, DiagnosticSourceIdentity.Absolute("/src/Unicode-😀.scala"), DiagnosticSourceIdentity.Virtual("repl://Unicode-😀"))
+    val spans = Vector[DiagnosticSpan](span, DiagnosticSpan.Point(DiagnosticPoint(0, 7, 9)), DiagnosticSpan.Unavailable)
+    identities.zip(spans).foreach { case (identity, position) => validations.foreach { validation =>
+      val changed = diagnostic.copy(source = source.copy(identity = identity, span = position, expression = None), sourceValidation = validation)
+      val message = ProtocolMessage.Rejected(run, failure.copy(assertion = Some(changed)))
+      verify(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "Diagnostic source identity, missing text/span and validation must round-trip")
+    } }
+    Vector[DiagnosticErrorMessage](DiagnosticErrorMessage.Unavailable, DiagnosticErrorMessage.AccessorFailed("AccessorFailure")).foreach { message =>
+      val changed = diagnostic.copy(observations = Vector(diagnostic.observations.head.copy(value = ObservedValue.RenderingFailed("RendererFailure", message))))
+      val rejected = ProtocolMessage.Rejected(run, failure.copy(assertion = Some(changed)))
+      verify(ProtocolCodec.decode(ProtocolCodec.encode(rejected)) == Right(rejected), "Unavailable and failed error-message accessors must remain explicit")
+    }
+    def rejectDiagnostic(changed: AssertionDiagnostic, reason: String)(edit: ACursor => ACursor): Unit = {
+      val message = ProtocolMessage.Rejected(run, failure.copy(assertion = Some(changed)))
+      rejectProducer(message, reason)
+      val frame = corrupt(ProtocolMessage.Rejected(run, failure))(cursor => edit(cursor.downField("message").downField("failure").downField("assertion")))
+      reject(frame, reason)
+    }
+    rejectDiagnostic(diagnostic.copy(source = source.copy(identity = DiagnosticSourceIdentity.Relative(""))), "Diagnostic source identity")(_.downField("source").downField("identity").downField("path").withFocus(_ => Json.fromString("")))
+    rejectDiagnostic(diagnostic.copy(source = source.copy(span = DiagnosticSpan.Point(DiagnosticPoint(-1, 0, 0)))), "Invalid diagnostic source point")(_.downField("source").downField("span").downField("start").downField("offset").withFocus(_ => Json.fromInt(-1)))
+    rejectDiagnostic(diagnostic.copy(source = source.copy(span = DiagnosticSpan.Range(DiagnosticPoint(0, 7, 9), DiagnosticPoint(13, 7, 8)))), "Invalid diagnostic source range")(_.downField("source").downField("span").downField("end").downField("column").withFocus(_ => Json.fromInt(8)))
+    rejectDiagnostic(diagnostic.copy(omittedObservations = -1), "Omitted observation count")(_.downField("omittedObservations").withFocus(_ => Json.fromInt(-1)))
     rejectProducer(ProtocolMessage.Request(RequestOperation.Execute, run, request.copy(selection = Selection.Only(Vector.empty, Vector.empty))), "Explicit selection must not be empty")
     rejectProducer(ProtocolMessage.Event(-1, RunEvent.Started(run)), "sequence must not be negative")
     rejectProducer(ProtocolMessage.Event(0, RunEvent.Finished(run, outcome.copy(run = RunId("other")))), "identities differ")
@@ -115,7 +146,7 @@ object ProtocolFixtures {
         nested = prefix + nested + suffix
         remaining -= 1
       }
-      s"""{"schemaVersion":1,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
+      s"""{"schemaVersion":2,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
     }
     val deepestSupported = ProtocolMessage.Rejected(run, failureAtDepth(depthLimit))
     verify(ProtocolCodec.validate(deepestSupported) == Right(()), "Payload validation must accept its failure nesting boundary")

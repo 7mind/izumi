@@ -949,7 +949,8 @@ object Izumi {
       Artifact(
         name = Projects.distage.testkitRunner,
         libs = Seq(zio_core in Scope.Optional.all, cats_effect in Scope.Test.all),
-        depends = Seq(Projects.distage.testkitCore, Projects.distage.testRunner).map(_ in Scope.Compile.all),
+        depends = Seq(Projects.distage.testkitCore, Projects.distage.testRunner).map(_ in Scope.Compile.all) ++
+          Seq(Projects.fundamentals.assertionsCats, Projects.fundamentals.assertionsBIO).map(_ in Scope.Test.all),
         platforms = Targets.cross,
         settings = assertionFixtureSettings ++ Seq(
           "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.runner.di.DistageProviderFixtures\")".raw,

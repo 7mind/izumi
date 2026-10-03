@@ -9,6 +9,7 @@ object AssertionRenderer {
     val source = diagnostic.source
     val validation = validateSource(source, context.sourceProvider)
     val renderingFailures = Vector.newBuilder[RenderingFailure]
+    val values = Vector.newBuilder[RenderedValue]
     output.append(source.identity.path)
     source.span match {
       case SourceSpan.Range(start, _) => output.append(s":${start.line + 1}:${start.column + 1}")
@@ -53,19 +54,26 @@ object AssertionRenderer {
         }
         output.append(" = ")
         observation.evaluation match {
-          case Evaluation.NotEvaluated => output.append("not evaluated")
+          case Evaluation.NotEvaluated =>
+            values += RenderedValue.NotEvaluated
+            output.append("not evaluated")
           case Evaluation.Evaluated(value) =>
-            try output.append(bounded(value.render(context.valueRenderer), limits.valueCharacters))
+            try {
+              val text = bounded(value.render(context.valueRenderer), limits.valueCharacters)
+              values += RenderedValue.Evaluated(text)
+              output.append(text)
+            }
             catch {
               case NonFatal(cause) =>
                 renderingFailures += RenderingFailure(index, cause)
+                values += RenderedValue.RenderingFailed(cause)
                 output.append(s"<value renderer failed: ${cause.getClass.getName}>")
             }
         }
         output.append("\n")
     }
     if (diagnostic.observations.size > limits.observations) output.append("additional observations omitted\n")
-    RenderedAssertion(output.result(), validation, renderingFailures.result())
+    RenderedAssertion(output.result(), validation, renderingFailures.result(), values.result())
   }
 
   private def validateSource(source: ExpressionSource, provider: SourceProvider): SourceValidation = {

@@ -4,7 +4,7 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
 import io.circe.parser.parse
 
 object ProtocolCodec {
-  final val SchemaVersion = 1
+  final val SchemaVersion = 2
   final val MaxFrameCharacters = 1024 * 1024
   final val MaxJsonDepth = 128
   final val MaxFailureDepth = 32
@@ -164,29 +164,114 @@ object ProtocolCodec {
     "discovery" -> FailurePhase.Discovery, "selection" -> FailurePhase.Selection, "planning" -> FailurePhase.Planning,
     "setup" -> FailurePhase.Setup, "test" -> FailurePhase.Test, "finalization" -> FailurePhase.Finalization, "transport" -> FailurePhase.Transport,
   ))
+  private implicit val diagnosticErrorMessageCodec: Codec[DiagnosticErrorMessage] = product(
+    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
+      case "available" => cursor.get[String]("value").map(DiagnosticErrorMessage.Available.apply)
+      case "unavailable" => Right(DiagnosticErrorMessage.Unavailable)
+      case "accessorFailed" => cursor.get[String]("exceptionClass").map(DiagnosticErrorMessage.AccessorFailed.apply)
+      case other => unknown(cursor, other)
+    } },
+    Encoder.instance {
+      case DiagnosticErrorMessage.Available(value) => tagged("available", "value" -> Json.fromString(value))
+      case DiagnosticErrorMessage.Unavailable => tagged("unavailable")
+      case DiagnosticErrorMessage.AccessorFailed(exceptionClass) => tagged("accessorFailed", "exceptionClass" -> Json.fromString(exceptionClass))
+    },
+  )
   private implicit val valueCodec: Codec[ObservedValue] = product(
     Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
       case "evaluated" => cursor.get[String]("value").map(ObservedValue.Evaluated.apply)
       case "notEvaluated" => Right(ObservedValue.NotEvaluated)
       case "renderingFailed" => for {
         exceptionClass <- cursor.get[String]("exceptionClass")
-        message <- cursor.get[String]("message")
+        message <- cursor.get[DiagnosticErrorMessage]("message")
       } yield ObservedValue.RenderingFailed(exceptionClass, message)
       case other => unknown(cursor, other)
     } },
     Encoder.instance {
       case ObservedValue.Evaluated(value) => tagged("evaluated", "value" -> Json.fromString(value))
       case ObservedValue.NotEvaluated => tagged("notEvaluated")
-      case ObservedValue.RenderingFailed(exceptionClass, message) => tagged("renderingFailed", "exceptionClass" -> Json.fromString(exceptionClass), "message" -> Json.fromString(message))
+      case ObservedValue.RenderingFailed(exceptionClass, message) => tagged("renderingFailed", "exceptionClass" -> Json.fromString(exceptionClass), "message" -> diagnosticErrorMessageCodec(message))
     },
   )
+  private implicit val diagnosticIdentityCodec: Codec[DiagnosticSourceIdentity] = product(
+    Decoder.instance { cursor => for {
+      kind <- cursor.get[String]("kind")
+      path <- cursor.get[String]("path")
+      identity <- if (path.isEmpty) Left(DecodingFailure("Diagnostic source identity must not be empty", cursor.history)) else kind match {
+        case "relative" => Right(DiagnosticSourceIdentity.Relative(path))
+        case "absolute" => Right(DiagnosticSourceIdentity.Absolute(path))
+        case "virtual" => Right(DiagnosticSourceIdentity.Virtual(path))
+        case other => unknown(cursor, other)
+      }
+    } yield identity },
+    Encoder.instance {
+      case DiagnosticSourceIdentity.Relative(path) => tagged("relative", "path" -> Json.fromString(path))
+      case DiagnosticSourceIdentity.Absolute(path) => tagged("absolute", "path" -> Json.fromString(path))
+      case DiagnosticSourceIdentity.Virtual(path) => tagged("virtual", "path" -> Json.fromString(path))
+    },
+  )
+  private implicit val diagnosticPointCodec: Codec[DiagnosticPoint] = product(
+    Decoder.forProduct3("offset", "line", "column")(DiagnosticPoint.apply).emap { point =>
+      if (point.offset >= 0 && point.line >= 0 && point.column >= 0) Right(point) else Left("Invalid diagnostic source point")
+    },
+    Encoder.forProduct3("offset", "line", "column")(point => (point.offset, point.line, point.column)),
+  )
+  private implicit val diagnosticSpanCodec: Codec[DiagnosticSpan] = product(
+    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
+      case "unavailable" => Right(DiagnosticSpan.Unavailable)
+      case "point" => cursor.get[DiagnosticPoint]("point").map(DiagnosticSpan.Point.apply)
+      case "range" => for {
+        start <- cursor.get[DiagnosticPoint]("start")
+        end <- cursor.get[DiagnosticPoint]("end")
+        range <- if (end.offset >= start.offset && (end.line > start.line || (end.line == start.line && end.column >= start.column))) {
+          Right(DiagnosticSpan.Range(start, end))
+        } else Left(DecodingFailure("Invalid diagnostic source range", cursor.history))
+      } yield range
+      case other => unknown(cursor, other)
+    } },
+    Encoder.instance {
+      case DiagnosticSpan.Unavailable => tagged("unavailable")
+      case DiagnosticSpan.Point(point) => tagged("point", "point" -> diagnosticPointCodec(point))
+      case DiagnosticSpan.Range(start, end) => tagged("range", "start" -> diagnosticPointCodec(start), "end" -> diagnosticPointCodec(end))
+    },
+  )
+  private implicit val diagnosticSourceCodec: Codec[DiagnosticSource] = product(
+    Decoder.forProduct3("identity", "span", "expression")(DiagnosticSource.apply),
+    Encoder.forProduct3("identity", "span", "expression")(source => (source.identity, source.span, source.expression)),
+  )
+  private implicit val diagnosticValidationCodec: Codec[DiagnosticSourceValidation] = product(
+    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
+      case "matching" => Right(DiagnosticSourceValidation.Matching)
+      case "mismatch" => Right(DiagnosticSourceValidation.Mismatch)
+      case "unavailable" => Right(DiagnosticSourceValidation.Unavailable)
+      case "rangeUnavailable" => Right(DiagnosticSourceValidation.RangeUnavailable)
+      case "providerFailed" => for {
+        exceptionClass <- cursor.get[String]("exceptionClass")
+        message <- cursor.get[DiagnosticErrorMessage]("message")
+      } yield DiagnosticSourceValidation.ProviderFailed(exceptionClass, message)
+      case other => unknown(cursor, other)
+    } },
+    Encoder.instance {
+      case DiagnosticSourceValidation.Matching => tagged("matching")
+      case DiagnosticSourceValidation.Mismatch => tagged("mismatch")
+      case DiagnosticSourceValidation.Unavailable => tagged("unavailable")
+      case DiagnosticSourceValidation.RangeUnavailable => tagged("rangeUnavailable")
+      case DiagnosticSourceValidation.ProviderFailed(exceptionClass, message) => tagged("providerFailed", "exceptionClass" -> Json.fromString(exceptionClass), "message" -> diagnosticErrorMessageCodec(message))
+    },
+  )
+  private implicit val diagnosticKindCodec: Codec[DiagnosticObservationKind] = enumeration(Vector(
+    "booleanLeaf" -> DiagnosticObservationKind.BooleanLeaf, "booleanOperator" -> DiagnosticObservationKind.BooleanOperator,
+    "comparison" -> DiagnosticObservationKind.Comparison, "operand" -> DiagnosticObservationKind.Operand, "opaque" -> DiagnosticObservationKind.Opaque,
+  ))
   private implicit val observationCodec: Codec[DiagnosticObservation] = product(
-    Decoder.forProduct3("expression", "location", "value")(DiagnosticObservation.apply),
-    Encoder.forProduct3("expression", "location", "value")(value => (value.expression, value.location, value.value)),
+    Decoder.forProduct4("expression", "span", "kind", "value")(DiagnosticObservation.apply),
+    Encoder.forProduct4("expression", "span", "kind", "value")(value => (value.expression, value.span, value.kind, value.value)),
   )
   private implicit val diagnosticCodec: Codec[AssertionDiagnostic] = product(
-    Decoder.forProduct3("location", "expression", "observations")(AssertionDiagnostic.apply),
-    Encoder.forProduct3("location", "expression", "observations")(value => (value.location, value.expression, value.observations)),
+    Decoder.forProduct4("source", "sourceValidation", "observations", "omittedObservations")(AssertionDiagnostic.apply).emap { diagnostic =>
+      if (diagnostic.omittedObservations >= 0) Right(diagnostic) else Left("Omitted observation count must not be negative")
+    },
+    Encoder.forProduct4("source", "sourceValidation", "observations", "omittedObservations")(value => (value.source, value.sourceValidation, value.observations, value.omittedObservations)),
   )
   private def failureDecoder(depth: Int): Decoder[Failure] = Decoder.instance { cursor =>
     if (depth > MaxFailureDepth) Left(DecodingFailure("Failure cause depth exceeds its limit", cursor.history))

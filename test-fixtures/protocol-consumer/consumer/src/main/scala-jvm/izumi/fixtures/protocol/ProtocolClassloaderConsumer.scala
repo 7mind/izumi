@@ -8,7 +8,7 @@ object ProtocolClassloaderConsumer {
     val urls = classpath.map(path => new File(path).toURI.toURL)
     val first = new URLClassLoader(urls, null)
     val second = new URLClassLoader(urls, null)
-    val golden = "{\"schemaVersion\":1,\"message\":{\"kind\":\"cancel\",\"run\":\"classloader-consumer\"}}"
+    val golden = "{\"schemaVersion\":2,\"message\":{\"kind\":\"cancel\",\"run\":\"classloader-consumer\"}}"
     def exchange(loader: ClassLoader, frame: String): String = {
       val moduleClass = loader.loadClass("izumi.fixtures.protocol.PublishedProtocolConsumer$")
       if (moduleClass.getClassLoader ne loader) throw new IllegalStateException("Protocol consumer escaped its isolated classloader")
@@ -19,7 +19,11 @@ object ProtocolClassloaderConsumer {
       val fromFirst = exchange(first, golden)
       val fromSecond = exchange(second, fromFirst)
       if (fromFirst != golden || fromSecond != golden) throw new IllegalStateException("Protocol exchange requires an unchanged string frame")
-      println("PROTOCOL_CLASSLOADER_CONSUMER_OK isolated=2 exchange=String")
+      val moduleClass = first.loadClass("izumi.fixtures.protocol.PublishedProtocolConsumer$")
+      val module = moduleClass.getField("MODULE$").get(null)
+      val diagnostic = moduleClass.getMethod("diagnosticFrame").invoke(module).asInstanceOf[String]
+      if (exchange(second, exchange(first, diagnostic)) != diagnostic) throw new IllegalStateException("Isolated classloaders lost the structured diagnostic frame")
+      println("PROTOCOL_CLASSLOADER_CONSUMER_OK isolated=2 exchange=String diagnostic=structured")
     } finally {
       first.close()
       second.close()

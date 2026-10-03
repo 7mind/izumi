@@ -1,5 +1,7 @@
 package izumi.fundamentals.assertions
 
+import scala.util.control.NonFatal
+
 sealed trait SourceRoot
 object SourceRoot {
   case object Unspecified extends SourceRoot
@@ -151,8 +153,32 @@ object SourceValidation {
   case object Mismatch extends SourceValidation
   case object Unavailable extends SourceValidation
   case object RangeUnavailable extends SourceValidation
-  final case class ProviderFailure(cause: Throwable) extends SourceValidation
+  final case class ProviderFailure(cause: Throwable) extends SourceValidation {
+    lazy val message: RenderedErrorMessage = RenderedErrorMessage.capture(cause)
+  }
 }
 
 final case class RenderingFailure(observationIndex: Int, cause: Throwable)
-final case class RenderedAssertion(text: String, sourceValidation: SourceValidation, renderingFailures: Vector[RenderingFailure])
+
+sealed trait RenderedErrorMessage
+object RenderedErrorMessage {
+  final case class Available(value: String) extends RenderedErrorMessage
+  case object Unavailable extends RenderedErrorMessage
+  final case class AccessorFailed(cause: Throwable) extends RenderedErrorMessage
+
+  private[assertions] def capture(cause: Throwable): RenderedErrorMessage = {
+    try Option(cause.getMessage).map(Available.apply).getOrElse(Unavailable)
+    catch { case NonFatal(error) => AccessorFailed(error) }
+  }
+}
+
+sealed trait RenderedValue
+object RenderedValue {
+  final case class Evaluated(text: String) extends RenderedValue
+  case object NotEvaluated extends RenderedValue
+  final case class RenderingFailed(cause: Throwable) extends RenderedValue {
+    lazy val message: RenderedErrorMessage = RenderedErrorMessage.capture(cause)
+  }
+}
+
+final case class RenderedAssertion(text: String, sourceValidation: SourceValidation, renderingFailures: Vector[RenderingFailure], values: Vector[RenderedValue])

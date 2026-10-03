@@ -14,6 +14,8 @@ import izumi.distage.testkit.spec.{DistageTestEnv, TestConfiguration}
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.assertions.bio.BIOAssertionSuspension.*
+import izumi.fundamentals.assertions.cats.CatsAssertionSuspension.*
 import izumi.logstage.api.routing.StaticLogRouter
 import izumi.logstage.distage.LogIO2Module
 import zio.ZIO
@@ -32,8 +34,8 @@ private[di] object SpecFrontendFixtures {
     val session = new RunSession(identity, factories(stats), context, sink)
     val initialRouter = StaticLogRouter.instance.get()
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
-    verify("all four spec entry points discover their structured tests", catalogue.suites.size == 4 && catalogue.tests.size == 14)
-    verify("spec discovery suspends configuration, hooks, effect construction and bodies", stats.configurations.get() == 0 && stats.environments.get() == 0 && stats.loaders.get() == 0 && stats.effectsBuilt == 0 && stats.bodies.get() == 0 && stats.acquired.get() == 0 && events.isEmpty)
+    verify("all four spec entry points discover their structured tests", catalogue.suites.size == 4 && catalogue.tests.size == 18)
+    verify("spec discovery suspends configuration, hooks, effect construction and bodies", stats.configurations.get() == 0 && stats.environments.get() == 0 && stats.loaders.get() == 0 && stats.effectsBuilt == 0 && stats.bodies.get() == 0 && stats.assertions.get() == 0 && stats.acquired.get() == 0 && events.isEmpty)
     verify("nested registration restores the outer structured path", catalogue.tests.exists(_.id.path == Vector("outer", "should", "inner", "can", "nested")) && catalogue.tests.exists(_.id.path == Vector("outer", "should", "after inner")) && catalogue.tests.exists(_.id.path == Vector("root")))
     verify("spec registration captures source locations", catalogue.tests.forall(_.location.isInstanceOf[SourceLocation.Known]))
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
@@ -41,15 +43,21 @@ private[di] object SpecFrontendFixtures {
     verify("selected resolution invokes each suite configuration and environment hook once", stats.configurations.get() == 4 && stats.environments.get() == 4 && stats.loaders.get() == 4 && stats.roles.get() == 4 && stats.merges.get() == 4)
     verify("selected resolution preserves roles, merge and loader hook order", stats.hookOrder == Vector.fill(4)(Vector("roles", "merge", "loader")).flatten)
     verify("selected resolution retains logical identities and effective settings", resolved.tests.map(_.id) == catalogue.tests.map(_.id) && resolved.tests.forall(_.settings.memoization))
-    verify("selected resolution suspends bodies and application resources", stats.effectsBuilt == 0 && stats.bodies.get() == 0 && stats.acquired.get() == 0 && stats.released.get() == 0)
+    verify("selected resolution suspends bodies and application resources", stats.effectsBuilt == 0 && stats.bodies.get() == 0 && stats.assertions.get() == 0 && stats.acquired.get() == 0 && stats.released.get() == 0)
     session.plan(resolved).flatMap { planned =>
       verify("spec planning preserves the global router and leaves application resources untouched", (StaticLogRouter.instance.get() eq initialRouter) && stats.acquired.get() == 0 && stats.bodies.get() == 0 && stats.effectsBuilt == 0)
       session.execute(RunId("spec-frontends"), planned.fold(failure => throw new IllegalStateException(failure.message), value => value)).map { outcome =>
         println("DISTAGE_SPEC_FRONTENDS results=" + outcome.results.size + " acquired=" + stats.acquired.get() + " released=" + stats.released.get() + " built=" + stats.effectsBuilt + " bodies=" + stats.bodies.get())
-        verify("spec execution reports every selected identity exactly once", outcome.results.map(_.id).toSet == catalogue.tests.map(_.id).toSet && outcome.results.size == 14)
+        verify("spec execution reports every selected identity exactly once", outcome.results.map(_.id).toSet == catalogue.tests.map(_.id).toSet && outcome.results.size == 18)
         verify("plain, unary, bifunctor and environment bodies execute under DI", stats.bodies.get() == 12 && outcome.results.count(_.status == TestStatus.Succeeded) == 12)
         verify("effect construction is deferred to selected execution", stats.built.get() == 2 && stats.catsBuilt.get() == 3 && stats.zioBuilt.get() == 4)
         verify("typed bifunctor errors remain test failures", outcome.results.count(result => result.status == TestStatus.Failed && result.failure.exists(failure => failure.phase == FailurePhase.Test && failure.exceptionClass.contains("TypedError"))) == 1)
+        def diagnostics(failure: Failure): Vector[AssertionDiagnostic] = failure.assertion.toVector ++ failure.causes.flatMap(diagnostics)
+        val assertions = outcome.results.filter(_.id.path.last == "assertion")
+        verify("Identity, Cats, BIO and environment assertions retain structured failures", assertions.size == 4 && stats.assertions.get() == 4 && assertions.forall(result => result.status == TestStatus.Failed && result.failure.toVector.flatMap(diagnostics).size == 1))
+        verify("all assertion effects retain observations and source metadata", assertions.flatMap(_.failure).flatMap(diagnostics).forall(diagnostic => diagnostic.source.identity.path.endsWith("SpecFrontendFixtures.scala") && diagnostic.source.span != DiagnosticSpan.Unavailable && diagnostic.sourceValidation == DiagnosticSourceValidation.Unavailable && diagnostic.observations.exists(_.value == ObservedValue.Evaluated("false")) && diagnostic.omittedObservations == 0))
+        verify("all spec assertion results and events preserve their wire diagnostics", ProtocolCodec.decode(ProtocolCodec.encode(ProtocolMessage.Completed(outcome))) == Right(ProtocolMessage.Completed(outcome)) && events.forall(event => ProtocolCodec.decode(ProtocolCodec.encode(event)) == Right(event)))
+        println("DISTAGE_SPEC_ASSERTION_TRANSPORT effects=Identity,Cats,BIO,environment assertions=4 wire=verified")
         verify("skip retains its test identity without evaluating its argument", outcome.results.count(_.status == TestStatus.Cancelled) == 1 && stats.skipped.get() == 0)
         verify("compatible spec environments share and release one resource per effect", stats.acquired.get() == 3 && stats.released.get() == 3 && outcome.failures.isEmpty)
         verify("spec completion follows resource release", events.last.event == RunEvent.Finished(outcome.run, outcome) && !outcome.successful)
@@ -125,6 +133,7 @@ private[di] object SpecFrontendFixtures {
     val zioBuilt = new AtomicInteger(0)
     def effectsBuilt: Int = built.get() + catsBuilt.get() + zioBuilt.get()
     val bodies = new AtomicInteger(0)
+    val assertions = new AtomicInteger(0)
     val skipped = new AtomicInteger(0)
     val acquired = new AtomicInteger(0)
     val released = new AtomicInteger(0)
@@ -168,6 +177,7 @@ private[di] object SpecFrontendFixtures {
       "dependency" in { (resource: Resource) => stats.body(resource) }
       "functoid" in Functoid { (resource: Resource) => stats.body(resource) }
       "skip" skip { stats.skipped.incrementAndGet().discard() }
+      "assertion" in { assert(stats.assertions.incrementAndGet() < 0) }
     }
   }
 
@@ -177,6 +187,7 @@ private[di] object SpecFrontendFixtures {
       "after inner" in { (resource: Resource) => stats.catsBuilt.incrementAndGet().discard(); IO(stats.body(resource)) }
     }
     "root" in { stats.catsBuilt.incrementAndGet().discard(); IO(stats.bodies.incrementAndGet().discard()) }
+    "assertion" in { assert1[IO](stats.assertions.incrementAndGet() < 0) }
   }
 
   private final class BifunctorSuite(override protected val stats: Statistics)(implicit defaults: DefaultModule2[zio.IO]) extends Spec2[zio.IO] with Configured {
@@ -185,6 +196,7 @@ private[di] object SpecFrontendFixtures {
       "effect" in { stats.built.incrementAndGet().discard(); ZIO.succeed(stats.bodies.incrementAndGet().discard()) }
       "dependency" in { (resource: Resource) => ZIO.succeed(stats.body(resource)) }
       "typed error" in { stats.built.incrementAndGet().discard(); ZIO.fail("controlled typed test failure") }
+      "assertion" in { assert2[zio.IO](stats.assertions.incrementAndGet() < 0) }
     }
   }
 
@@ -195,6 +207,7 @@ private[di] object SpecFrontendFixtures {
       "parameter and environment" in { (resource: Resource) => stats.zioBuilt.incrementAndGet().discard(); ZIO.serviceWith[Resource] { environment => require(resource eq environment); stats.body(resource) } }
       "empty environment" in { stats.zioBuilt.incrementAndGet().discard(); ZIO.succeed(stats.bodies.incrementAndGet().discard()) }
       "functoid environment" in Functoid { (_: Resource) => stats.zioBuilt.incrementAndGet().discard(); ZIO.serviceWith[Resource](stats.body) }
+      "assertion" in { assert2[zio.IO](stats.assertions.incrementAndGet() < 0) }
     }
   }
 }

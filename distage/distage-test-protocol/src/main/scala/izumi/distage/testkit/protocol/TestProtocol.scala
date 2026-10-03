@@ -50,15 +50,58 @@ object FailurePhase {
   case object Transport extends FailurePhase
 }
 
+sealed trait DiagnosticErrorMessage
+object DiagnosticErrorMessage {
+  final case class Available(value: String) extends DiagnosticErrorMessage
+  case object Unavailable extends DiagnosticErrorMessage
+  final case class AccessorFailed(exceptionClass: String) extends DiagnosticErrorMessage
+}
+
 sealed trait ObservedValue
 object ObservedValue {
   final case class Evaluated(value: String) extends ObservedValue
   case object NotEvaluated extends ObservedValue
-  final case class RenderingFailed(exceptionClass: String, message: String) extends ObservedValue
+  final case class RenderingFailed(exceptionClass: String, message: DiagnosticErrorMessage) extends ObservedValue
 }
 
-final case class DiagnosticObservation(expression: Option[String], location: SourceLocation, value: ObservedValue)
-final case class AssertionDiagnostic(location: SourceLocation, expression: Option[String], observations: Vector[DiagnosticObservation])
+sealed trait DiagnosticSourceIdentity { def path: String }
+object DiagnosticSourceIdentity {
+  final case class Relative(path: String) extends DiagnosticSourceIdentity
+  final case class Absolute(path: String) extends DiagnosticSourceIdentity
+  final case class Virtual(path: String) extends DiagnosticSourceIdentity
+}
+
+final case class DiagnosticPoint(offset: Int, line: Int, column: Int)
+
+sealed trait DiagnosticSpan
+object DiagnosticSpan {
+  final case class Range(start: DiagnosticPoint, end: DiagnosticPoint) extends DiagnosticSpan
+  final case class Point(point: DiagnosticPoint) extends DiagnosticSpan
+  case object Unavailable extends DiagnosticSpan
+}
+
+final case class DiagnosticSource(identity: DiagnosticSourceIdentity, span: DiagnosticSpan, expression: Option[String])
+
+sealed trait DiagnosticSourceValidation
+object DiagnosticSourceValidation {
+  case object Matching extends DiagnosticSourceValidation
+  case object Mismatch extends DiagnosticSourceValidation
+  case object Unavailable extends DiagnosticSourceValidation
+  case object RangeUnavailable extends DiagnosticSourceValidation
+  final case class ProviderFailed(exceptionClass: String, message: DiagnosticErrorMessage) extends DiagnosticSourceValidation
+}
+
+sealed trait DiagnosticObservationKind
+object DiagnosticObservationKind {
+  case object BooleanLeaf extends DiagnosticObservationKind
+  case object BooleanOperator extends DiagnosticObservationKind
+  case object Comparison extends DiagnosticObservationKind
+  case object Operand extends DiagnosticObservationKind
+  case object Opaque extends DiagnosticObservationKind
+}
+
+final case class DiagnosticObservation(expression: Option[String], span: DiagnosticSpan, kind: DiagnosticObservationKind, value: ObservedValue)
+final case class AssertionDiagnostic(source: DiagnosticSource, sourceValidation: DiagnosticSourceValidation, observations: Vector[DiagnosticObservation], omittedObservations: Int)
 final case class Failure(
   phase: FailurePhase,
   exceptionClass: String,

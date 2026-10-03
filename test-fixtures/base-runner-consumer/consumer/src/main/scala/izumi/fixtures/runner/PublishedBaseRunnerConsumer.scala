@@ -43,9 +43,33 @@ object PublishedBaseRunnerConsumer {
       throw new IllegalStateException("Published registration macro must discover four bodies without executing them")
     }
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
-    session.execute(RunId("published-consumer"), request).map { outcome =>
+    session.execute(RunId("published-consumer"), request).flatMap { outcome =>
       if (!outcome.successful || outcome.results.size != 4 || bodies.get() != 4) throw new IllegalStateException("Published runner did not complete all plain and async bodies")
-      println("PUBLISHED_BASE_RUNNER_CONSUMER_OK bodies=4 positions=known context=constructor+override")
+      val evaluated = new AtomicInteger(0)
+      val skipped = new AtomicInteger(0)
+      final class FailingSuite extends AnyWordSpec {
+        "published assertion" in {
+          def left: Boolean = { val _ = evaluated.incrementAndGet(); false }
+          def right: Boolean = { val _ = skipped.incrementAndGet(); true }
+          assert(left && right)
+        }
+      }
+      val failing = new RunSession(identity, Vector(() => new FailingSuite), ec, sink)
+      failing.execute(RunId("published-assertion"), request).map { failed =>
+        def diagnostics(failure: Failure): Vector[AssertionDiagnostic] = failure.assertion.toVector ++ failure.causes.flatMap(diagnostics)
+        val diagnostic = failed.results.flatMap(_.failure).flatMap(diagnostics)
+        if (failed.successful || failed.results.size != 1 || failed.results.head.status != TestStatus.Failed || diagnostic.size != 1) {
+          throw new IllegalStateException("Published runner lost its structured assertion failure")
+        }
+        val assertion = diagnostic.head
+        if (!assertion.source.identity.path.endsWith("PublishedBaseRunnerConsumer.scala") || assertion.source.span == DiagnosticSpan.Unavailable || assertion.sourceValidation != DiagnosticSourceValidation.Unavailable ||
+          assertion.observations.count(_.value == ObservedValue.NotEvaluated) != 1 || assertion.omittedObservations != 0 || evaluated.get() != 1 || skipped.get() != 0) {
+          throw new IllegalStateException("Published runner lost assertion metadata or changed short-circuit evaluation")
+        }
+        val completed = ProtocolMessage.Completed(failed)
+        if (ProtocolCodec.decode(ProtocolCodec.encode(completed)) != Right(completed)) throw new IllegalStateException("Published assertion diagnostic failed its complete wire round-trip")
+        println("PUBLISHED_BASE_RUNNER_CONSUMER_OK bodies=4 positions=known context=constructor+override diagnostic=structured")
+      }
     }
   }
 }
