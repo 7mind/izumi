@@ -7085,6 +7085,14 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     Test / packageDoc / publishArtifact := false,
     sbtPlugin := true,
     sbtPluginPublishLegacyMavenStyle := false,
+    crossScalaVersions := Seq(appConfiguration.value.provider.scalaProvider.version, "2.12.21"),
+    scalaVersion := crossScalaVersions.value.head,
+    pluginCrossBuild / sbtVersion := {
+                scalaBinaryVersion.value match {
+                  case "2.12" => "1.9.0"
+                  case _ => sbtVersion.value
+                }
+              },
     withBuildInfo("izumi.sbt.deps", "Izumi"),
     SettingKey[Boolean]("ide-skip-project") := true
   )

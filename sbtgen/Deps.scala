@@ -521,9 +521,19 @@ object Izumi {
       final val id = ArtifactId("sbt-plugins")
       final val basePath = Seq("sbt-plugins")
 
+      final val sbt1PluginTarget = "1.9.0"
+
       final val settings = Seq(
         "sbtPlugin" := true,
         "sbtPluginPublishLegacyMavenStyle" := false,
+        SettingDef.RawSettingDef(s"""crossScalaVersions := Seq(appConfiguration.value.provider.scalaProvider.version, "${scala212.value}")"""),
+        SettingDef.RawSettingDef("""scalaVersion := crossScalaVersions.value.head"""),
+        SettingDef.RawSettingDef(s"""pluginCrossBuild / sbtVersion := {
+            scalaBinaryVersion.value match {
+              case "2.12" => "$sbt1PluginTarget"
+              case _ => sbtVersion.value
+            }
+          }"""),
       )
 
       final lazy val izumi_deps = ArtifactId("sbt-izumi-deps")
