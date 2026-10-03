@@ -16,6 +16,8 @@ private[spec] object SessionEnvironmentFixturePlatform {
   private final val Threads = 4
   private final val Timeout = 30.seconds
 
+  def runnerCompletionChecks(): Vector[(String, Boolean)] = RunnerCompletionFixtures.checks()
+
   def scannedOwners(): Vector[(String, Boolean)] = {
     val config = PluginConfig(Seq("izumi.distage.testkit.spec.sessionplugins"), Nil, cachePackages = true, debug = false, Nil, Nil)
     val firstOwner = new SessionPluginLoader(cache => PluginLoaderDefaultImpl.withPackageCache(cache))

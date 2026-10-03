@@ -466,27 +466,48 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
     }
 
     // Parallel2
+    private sealed trait ParallelChildControl {
+      def request: MiniBIOAsync[Nothing, Unit]
+      def completion: MiniBIOAsync[Nothing, Unit]
+    }
+
+    private final case class ParallelChild[E, A](result: Future[Exit[E, A]], interrupt: InterruptAction[MiniBIOAsync]) extends ParallelChildControl {
+      override def request: MiniBIOAsync[Nothing, Unit] = interrupt.interrupt
+      override def completion: MiniBIOAsync[Nothing, Unit] = AsyncResult {
+        (ec, cb) => result.onComplete {
+          case Success(_) => cb(Exit.Success(()))
+          case Failure(cause) => cb(Exit.Termination.forThrowable(cause))
+        }(using ec)
+      }
+    }
+
+    private final case class ParallelPair[E, A, B](first: ParallelChild[E, A], second: ParallelChild[E, B])
+    private final case class ParallelWorkers[E](children: List[ParallelChild[E, Unit]], firstFailure: AtomicReference[Option[Exit.Failure[E]]])
+
+    private def startChild[E, A](effect: MiniBIOAsync[E, A], ec: ExecutionContext): ParallelChild[E, A] = {
+      val (result, interrupt) = effect.runOnECInterruptible(ec)
+      ParallelChild(result, interrupt)
+    }
+
+    private def stopChildren(children: List[ParallelChildControl]): MiniBIOAsync[Nothing, Unit] = {
+      // Signal every child before waiting: one finalizer may depend on another.
+      flatMap(traverse_(children)(_.request))(_ => traverse_(children)(_.completion))
+    }
+
     override def zipWithPar[E, A, B, C](fa: MiniBIOAsync[E, A], fb: MiniBIOAsync[E, B])(f: (A, B) => C): MiniBIOAsync[E, C] = {
-      suspendSafe {
-        val interruptsRef = new AtomicReference[List[InterruptAction[MiniBIOAsync]]](Nil)
-
-        val cleanup = suspendSafe {
-          val interrupts = interruptsRef.get()
-          interrupts.foldLeft(unit: MiniBIOAsync[Nothing, Unit]) {
-            (acc, interrupt) => flatMap(acc)(_ => interrupt.interrupt)
-          }
+      bracketCase[E, ParallelPair[E, A, B], C](
+        AsyncResult[Nothing, ParallelPair[E, A, B]] {
+          (ec, cb) => cb(Exit.Success(ParallelPair(startChild(fa, ec), startChild(fb, ec))))
         }
-
-        guarantee(
-          f = AsyncResult[E, C] {
+      )((children, _) => stopChildren(List(children.first, children.second))) {
+        children =>
+           AsyncResult[E, C] {
             (ec, cb) =>
-              val (futureA, interruptA) = fa.runOnECInterruptible(ec)
-              val (futureB, interruptB) = fb.runOnECInterruptible(ec)
-              interruptsRef.set(List(interruptA, interruptB))
+              
               val combined: Future[(Exit[E, A], Exit[E, B])] =
-                futureA.flatMap {
+                children.first.result.flatMap {
                   exitA =>
-                    futureB.map(exitB => (exitA, exitB))(using ec)
+                    children.second.result.map(exitB => (exitA, exitB))(using ec)
                 }(using ec)
               combined.onComplete {
                 case Success((Exit.Success(a), Exit.Success(b))) =>
@@ -498,9 +519,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
                 case Failure(t) =>
                   cb(Exit.Termination.forThrowable(t))
               }(using ec)
-                        },
-          cleanup = cleanup,
-        )
+                        }
       }
     }
 
@@ -548,61 +567,55 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
       } else if (realParallelism <= 1) {
         traverse_(l)(f)
       } else {
-        suspendSafe {
-          val interruptsRef = new AtomicReference[List[InterruptAction[MiniBIOAsync]]](Nil)
+        bracketCase[E, ParallelWorkers[E], Unit](
+          AsyncResult[Nothing, ParallelWorkers[E]] {
+            (ec0, cb) =>
+              implicit val ec: ExecutionContext = ec0
 
-          val cleanup = suspendSafe {
-            val interrupts = interruptsRef.get()
-            interrupts.foldLeft(unit: MiniBIOAsync[Nothing, Unit]) {
-              (acc, interrupt) => flatMap(acc)(_ => interrupt.interrupt)
-            }
-          }
+              import java.util.concurrent.ConcurrentLinkedQueue
+              import scala.jdk.CollectionConverters.*
 
-          guarantee(
-            f = AsyncResult[E, Unit] {
-              (ec0, cb) =>
-                implicit val ec: ExecutionContext = ec0
+              val queue = new ConcurrentLinkedQueue[A](l.asJavaCollection)
+              // NB: parTraverse* must implement short-circuiting - even for an uninterruptible effect,
+              // - by analogy with traverse, but this capability is not used in distage-testkit because
+              // all tests are sandboxed
+              val earlyFailure = new AtomicReference[Option[Exit.Failure[E]]](None)
 
-                import java.util.concurrent.ConcurrentLinkedQueue
-                import scala.jdk.CollectionConverters.*
-
-                val queue = new ConcurrentLinkedQueue[A](l.asJavaCollection)
-                // NB: parTraverse* must implement short-circuiting - even for an uninterruptible effect,
-                // - by analogy with traverse, but this capability is not used in distage-testkit because
-                // all tests are sandboxed
-                val earlyFailure = new AtomicReference[Option[Exit.Failure[E]]](None)
-
-                val worker: MiniBIOAsync[E, Unit] = {
-                  guaranteeOnFailure[E, Unit](
-                    f = {
-                      def go(): MiniBIOAsync[E, Unit] = suspendSafe {
-                        if (earlyFailure.get().isDefined) {
-                          unit
-                        } else {
-                          queue.poll() match {
-                            case null => unit
-                            case a => flatMap(f(a))(_ => go())
-                          }
+              val worker: MiniBIOAsync[E, Unit] = {
+                guaranteeOnFailure[E, Unit](
+                  f = {
+                    def go(): MiniBIOAsync[E, Unit] = suspendSafe {
+                      if (earlyFailure.get().isDefined) {
+                        unit
+                      } else {
+                        queue.poll() match {
+                          case null => unit
+                          case a => flatMap(f(a))(_ => go())
                         }
                       }
-                      go()
-                    },
-                    cleanupOnFailure = {
-                      failure =>
-                        sync(earlyFailure.compareAndSet(None, Some(failure)).discard())
-                    },
-                  )
-                }
+                    }
+                    go()
+                  },
+                  cleanupOnFailure = {
+                    failure =>
+                      sync(earlyFailure.compareAndSet(None, Some(failure)).discard())
+                  },
+                )
+              }
 
-                val workerHandles = List.fill(realParallelism)(worker.runOnECInterruptible(ec))
-                interruptsRef.set(workerHandles.map(_._2))
-                val workerFutures = workerHandles.map(_._1)
-
+              val children = List.fill(realParallelism)(startChild(worker, ec))
+              cb(Exit.Success(ParallelWorkers(children, earlyFailure)))
+          }
+        )((workers, _) => stopChildren(workers.children)) {
+          workers =>
+            AsyncResult[E, Unit] {
+              (ec0, cb) =>
+                implicit val ec: ExecutionContext = ec0
                 Future
-                  .sequence(workerFutures)
+                  .sequence(workers.children.map(_.result))
                   .onComplete {
                     case Success(exits) =>
-                      val mbFailure = earlyFailure.get().orElse(exits.collectFirst(Function.unlift(_.asFailure)))
+                      val mbFailure = workers.firstFailure.get().orElse(exits.collectFirst(Function.unlift(_.asFailure)))
                       mbFailure match {
                         case Some(failure) => cb(failure)
                         case None => cb(Exit.Success(()))
@@ -610,9 +623,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
                     case Failure(t) =>
                       cb(Exit.Termination(t, Trace.ThrowableTrace(t)))
                   }(using ec)
-            },
-            cleanup = cleanup,
-          )
+            }
         }
       }
     }

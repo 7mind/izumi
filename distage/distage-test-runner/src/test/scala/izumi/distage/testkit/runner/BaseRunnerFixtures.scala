@@ -163,7 +163,7 @@ object BaseRunnerFixtures {
         val selectedId = catalogue(invalid).tests.head.id
         verify(invalid.resolve(RunRequest(identity, Selection.Only(Vector.empty, Vector(selectedId)), inherited)).isLeft, "Provider resolution must not reintroduce an unselected registered test")
         ProviderBoundaryFixtures.run(identity, verify)
-      }.flatMap(_ => registrationOwnership(ec, verify)).map { _ =>
+      }.flatMap(_ => registrationOwnership(ec, verify)).flatMap(_ => CancellationFixtures.run(ec, verify)).map { _ =>
         println(s"BASE_RUNNER_FIXTURES_OK checks=${checks.get()} sessions=isolated finalization=awaited")
       }
     }

@@ -8,6 +8,8 @@ private[spec] object SessionEnvironmentFixturePlatform {
   private final val Threads = 4
   private final val Timeout = 30.seconds
 
+  def runnerCompletionChecks(): Vector[(String, Boolean)] = RunnerCompletionFixtures.checks()
+
   def scannedOwners(): Vector[(String, Boolean)] = Vector.empty
 
   def concurrent(check: ExecutionContext => Future[Unit]): Unit = {

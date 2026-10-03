@@ -37,6 +37,9 @@ object SessionEnvironmentFixtures {
     PreparedExecutionFixtures.checks().foreach {
       case (label, condition) => checks.verify(label)(condition)
     }
+    SessionEnvironmentFixturePlatform.runnerCompletionChecks().foreach {
+      case (label, condition) => checks.verify(label)(condition)
+    }
     SessionEnvironmentFixturePlatform.scannedOwners().foreach {
       case (label, condition) => checks.verify(label)(condition)
     }

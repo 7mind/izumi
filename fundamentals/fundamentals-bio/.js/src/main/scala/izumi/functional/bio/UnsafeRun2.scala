@@ -3,7 +3,7 @@ package izumi.functional.bio
 import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.InterruptAction
 import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
-import zio.{Executor, Fiber, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
+import zio.{Executor, Fiber, FiberId, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -95,29 +95,12 @@ object UnsafeRun2 {
     override def unsafeRunAsyncInterruptible[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): InterruptAction[ZIO[R, +_, +_]] = {
       val interrupted = new AtomicBoolean(true)
 
-      val cancelerEffect = Unsafe.unsafe {
+      Unsafe.unsafe {
         implicit u =>
-          runtime.unsafe
-            .run {
-              ZIO
-                .acquireReleaseExitWith(ZIO.descriptor)(
-                  (descriptor, exit: zio.Exit[E, A]) =>
-                    zioSucceed {
-                      exit match {
-                        case zio.Exit.Failure(cause) if !cause.interruptors.forall(_ == descriptor.id) =>
-                          ()
-                        case _ =>
-                          callback(ZIOExit.toExit(exit)(interrupted.get()))
-                      }
-                    }
-                )(_ => ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))
-                .interruptible
-                .forkDaemon
-                .map(_.interrupt.unit)
-            }.getOrThrowFiberFailure()
+          val fiber = runtime.unsafe.fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))
+          fiber.unsafe.addObserver(exit => callback(ZIOExit.toExit(exit)(interrupted.get())))
+          InterruptAction(fiber.interruptAs(FiberId.None).void)
       }
-
-      InterruptAction(cancelerEffect)
     }
 
     override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => ZIO[R, E, A]): (Future[Exit[E, A]], InterruptAction[ZIO[R, +_, +_]]) = {

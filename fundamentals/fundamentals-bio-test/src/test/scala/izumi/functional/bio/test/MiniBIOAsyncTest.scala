@@ -14,6 +14,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
   import MiniBIOAsync.WeakAsyncForMiniBIOAsync
 
   private final val InterruptionTimeout = 2.seconds
+  private final val CompletionObservation = 250.millis
 
   "MiniBIOAsync" should {
 
@@ -124,6 +125,14 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
 
     "preserve an independent body failure through interruption during release" in {
       checkReleaseFailure(bodyFails = true)
+    }
+
+    "join both zip children when interrupted during held finalization" in {
+      checkParallelFinalizers((left, right) => F.zipWithPar(left, right)((_, _) => ()))
+    }
+
+    "join all traversal workers when interrupted during held finalization" in {
+      checkParallelFinalizers((left, right) => F.parTraverseN_(2)(List(left, right))(identity))
     }
 
     "preserve an independent finalizer failure through a pending interruption" in {
@@ -494,6 +503,58 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
         }
       }
       assert(released.get() == 1)
+    }
+  }
+
+  private def checkParallelFinalizers(
+    combine: (MiniBIOAsync[Throwable, Unit], MiniBIOAsync[Throwable, Unit]) => MiniBIOAsync[Throwable, Unit]
+  ) = {
+    final class Child {
+      val entered = Promise[Unit]()
+      val bodyGate = Promise[Unit]()
+      val releaseEntered = Promise[Unit]()
+      val releaseGate = Promise[Unit]()
+      val ended = Promise[Unit]()
+      val released = new AtomicInteger(0)
+      val effect = F.guarantee(
+        F.bracketCase[Throwable, Unit, Unit](F.unit) { (_, _) =>
+          F.orTerminate(F.flatMap(F.sync { releaseEntered.success(()); () }) { _ =>
+            F.flatMap(F.fromFuture(_ => releaseGate.future))(_ => F.sync { released.incrementAndGet(); () })
+          })
+        } { _ =>
+          F.flatMap(F.sync { entered.success(()); () })(_ => F.fromFuture(_ => bodyGate.future))
+        },
+        F.sync { ended.success(()); () },
+      )
+    }
+    val left = new Child
+    val right = new Child
+    val children = Vector(left, right)
+    val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
+    val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(combine(left.effect, right.effect))
+    val result = for {
+      _ <- withTimeout(Future.sequence(children.map(_.entered.future)), InterruptionTimeout)
+      _ = left.bodyGate.success(())
+      _ <- withTimeout(left.releaseEntered.future, InterruptionTimeout)
+      _ <- interrupt.interrupt.runOnEC(executionContext)
+      _ <- withTimeout(right.releaseEntered.future, InterruptionTimeout)
+      _ <- runWithExit(F.sleep(CompletionObservation))
+      _ = assert(!future.isCompleted, "Parallel cancellation must await held child finalizers")
+      _ = assert(children.forall(_.released.get() == 0))
+      _ <- interrupt.interrupt.runOnEC(executionContext)
+      _ = left.releaseGate.success(())
+      _ <- withTimeout(left.ended.future, InterruptionTimeout)
+      _ = assert(!future.isCompleted, "Parallel cancellation must await the remaining child")
+      _ = right.releaseGate.success(())
+      exit <- withTimeout(future, InterruptionTimeout)
+    } yield {
+      assertInterrupted(exit)
+      assert(children.forall(_.released.get() == 1))
+    }
+    result.transformWith { observed =>
+      children.foreach { child => val _ = (child.bodyGate.trySuccess(()), child.releaseGate.trySuccess(())) }
+      withTimeout(Future.sequence(children.map(_.ended.future)).flatMap(_ => future), InterruptionTimeout)
+        .transformWith(_ => Future.fromTry(observed))
     }
   }
 

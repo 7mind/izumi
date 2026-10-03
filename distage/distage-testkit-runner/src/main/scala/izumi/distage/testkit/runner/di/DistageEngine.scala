@@ -1,9 +1,9 @@
 package izumi.distage.testkit.runner.di
 
 import distage.{Locator, LocatorDef, LocatorRef, TagK}
-import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.testkit.runner.api.{TestFinalizationReporter, TestReporter}
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, RunnerToF, TestPlanner, TestTreeBuilder}
-import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging, TestStatusConverter, TimedActionF}
+import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging, TestResourceLifecycle, TestStatusConverter, TimedActionF}
 import izumi.distage.testkit.runner.TestCancelled
 import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 import izumi.fundamentals.platform.functional.Identity
@@ -18,7 +18,7 @@ private[distage] final class DistageEngine[F[_]: TagK](
   configLoader: TestConfigLoader,
   options: DistageRunnerOptions,
 )(implicit F: QuasiIO[F], FA: QuasiAsync[F]) {
-  def runner(reporter: TestReporter): DistageTestRunner[F] = {
+  def runner(reporter: TestReporter, finalization: TestFinalizationReporter): DistageTestRunner[F] = {
     val logging = new TestkitLogging {
       override def enableDebugOutput: Boolean = options.debugOutput
     }
@@ -28,6 +28,7 @@ private[distage] final class DistageEngine[F[_]: TagK](
       make[QuasiIO[F]].fromValue(F)
       make[QuasiAsync[F]].fromValue(FA)
       make[TestReporter].fromValue(reporter)
+      make[TestFinalizationReporter].fromValue(finalization)
       make[TestkitLogging].fromValue(logging)
       make[TestStatusConverter].fromValue(converter)
     }
@@ -47,6 +48,7 @@ private[distage] final class DistageEngine[F[_]: TagK](
       planner,
       converter,
       new TimedActionF.TimedActionFImpl[F],
+      new TestResourceLifecycle[F](finalization),
       new RunnerToF.AsyncImpl[F](F, FA),
       new ParTraverseExt.ParTraverseExtImpl[F],
     )

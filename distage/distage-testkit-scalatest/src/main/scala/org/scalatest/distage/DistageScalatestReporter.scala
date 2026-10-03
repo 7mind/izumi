@@ -202,6 +202,8 @@ class DistageScalatestReporter(
         reportCancellation(s.cause.testTiming, s"cancelled: ${s.throwableCause.getMessage}", s.trace)
       case s: TestStatus.Failed =>
         reportFailure(s.cause.testTiming, s.throwableCause, s.trace)
+      case s: TestStatus.Interrupted =>
+        reportFailure(s.failure.cause.testTiming, s.failure.throwableCause, s.failure.trace)
       case s: TestStatus.Succeed =>
         reportSucceeded(s.result.testTiming)
     }

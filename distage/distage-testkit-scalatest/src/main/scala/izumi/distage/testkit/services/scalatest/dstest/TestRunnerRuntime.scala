@@ -13,7 +13,8 @@ import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Promise}
+import scala.util.{Failure, Success}
 
 trait TestRunnerRuntime {
   def runTests[F0[_]](
@@ -83,14 +84,41 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
       // because `runtimeLifecycle.release(alloc)` will shutdown the testEC
       val globalEC = IzPlatform.platformGlobalExecutionContext
 
+      val shutdownLock = new Object
+      var completed = false
+      var cancellation = Option.empty[Promise[Unit]]
+
       def doShutdown(): Unit = {
-        // don't wait for effect interruption to finish before shutting down testEC
-        // even though morally we probably should, waiting won't work for uninterruptible effects
-        interrupt.apply()
-        runtimeLifecycle.release(alloc)
+        val requested = shutdownLock.synchronized {
+          if (completed || cancellation.nonEmpty) None
+          else {
+            val completion = Promise[Unit]()
+            cancellation = Some(completion)
+            Some(completion)
+          }
+        }
+        requested.foreach { completion =>
+          completion.future.onComplete {
+            case Failure(cause) =>
+              asyncSuitesHandle.completeOuterSuite(Some(cause))
+              asyncSuitesHandle.completeAllSuitesIfGlobal()
+            case Success(_) => ()
+          }(using globalEC)
+          try { val _ = completion.completeWith(interrupt.apply()) }
+          catch { case cause: Throwable => val _ = completion.failure(cause) }
+        }
       }
 
-      future.onComplete(_ => doShutdown())(using globalEC)
+      future.onComplete { _ =>
+        val pending = shutdownLock.synchronized {
+          completed = true
+          cancellation.map(_.future)
+        }
+        pending match {
+          case Some(stopping) => stopping.onComplete(_ => runtimeLifecycle.release(alloc))(using globalEC)
+          case None => runtimeLifecycle.release(alloc)
+        }
+      }(using globalEC)
 
       val asyncResult = AsyncResult[List[EnvResult]](
         resultCallback = cb => future.onComplete(res => cb(res.toEither))(using globalEC),

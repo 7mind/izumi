@@ -76,6 +76,10 @@ object TestStatus {
     override def order: Int = 6200
   }
 
+  final case class Interrupted(failure: Failed) extends Finished {
+    override def order: Int = failure.order
+  }
+
   final case class Succeed(result: IndividualTestResult.TestSuccess) extends Finished {
     override def order: Int = 6300
   }

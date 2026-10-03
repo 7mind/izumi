@@ -5,7 +5,7 @@ import izumi.distage.framework.services.PlanCircularDependencyCheck
 import izumi.distage.model.plan.Plan
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.impl.services.{TestStatusConverter, TestkitLogging, TimedActionF}
+import izumi.distage.testkit.runner.impl.services.{TestResourceLifecycle, TestStatusConverter, TestkitLogging, TimedActionF}
 import izumi.functional.bio.Exit
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
@@ -26,6 +26,7 @@ object IndividualTestRunner {
     logging: TestkitLogging,
     statusConverter: TestStatusConverter,
     timed: TimedActionF[F],
+    resources: TestResourceLifecycle[F],
     check: PlanCircularDependencyCheck,
     testkitLogger: IzLogger @Id("distage-testkit"),
   )(implicit F: QuasiIO[F]
@@ -57,7 +58,7 @@ object IndividualTestRunner {
         testRunResult <- F.uninterruptibleExcept {
           restore =>
             timed
-              .timedLifecycle(Injector.inherit(mainSharedLocator).produceDetailedCustomF[F](plan))
+              .timedLifecycle(resources.produce(Injector.inherit(mainSharedLocator), plan))
               .use {
                 maybeLocator =>
                   maybeLocator.foldEither(
@@ -89,7 +90,7 @@ object IndividualTestRunner {
                                           val result =
                                             IndividualTestResult
                                               .ExecutionFailure(meta, successfulPlanningTime, successfulProvTime, interruptedExecTime, exception, trace)
-                                          reporter.testStatus(suiteId, depth, meta, statusConverter.failExecution(result))
+                                          reporter.testStatus(suiteId, depth, meta, statusConverter.interruptExecution(result))
                                         }
                                     }
                                 }

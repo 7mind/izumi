@@ -1,10 +1,13 @@
 package izumi.distage.testkit.runner.di
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.scalajs.js.timers.setTimeout
+import scala.concurrent.duration.*
+import scala.scalajs.js.timers.{clearTimeout, setTimeout}
 import scala.util.{Failure, Success}
 
 private[di] object ProviderFixturePlatform {
+  private final val CompletionTimeout = 30.seconds
+
   def pluginOwnership(context: ExecutionContext, verify: (String, Boolean) => Unit): Future[Unit] = {
     val _ = (context, verify)
     Future.successful(())
@@ -25,9 +28,13 @@ private[di] object ProviderFixturePlatform {
       override def execute(command: Runnable): Unit = { val _ = setTimeout(0)(command.run()) }
       override def reportFailure(cause: Throwable): Unit = throw cause
     }
-    check(context).onComplete {
-      case Success(_) => println("DISTAGE_PROVIDER_JS_COMPLETED")
-      case Failure(cause) => throw cause
+    val timeout = setTimeout(CompletionTimeout) {
+      throw new AssertionError("Distage provider JS fixture did not complete")
+    }
+    try check(context).onComplete {
+      case Success(_) => clearTimeout(timeout); println("DISTAGE_PROVIDER_JS_COMPLETED")
+      case Failure(cause) => clearTimeout(timeout); throw cause
     }(context)
+    catch { case cause: Throwable => clearTimeout(timeout); throw cause }
   }
 }

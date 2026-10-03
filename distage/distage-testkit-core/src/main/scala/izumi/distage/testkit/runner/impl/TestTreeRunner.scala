@@ -4,7 +4,7 @@ import distage.{Injector, Locator, TagK}
 import izumi.distage.testkit.model.*
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.runner.api.TestReporter
-import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestStatusConverter, TimedActionF}
+import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestResourceLifecycle, TestStatusConverter, TimedActionF}
 import izumi.functional.quasi.QuasiIO
 import izumi.functional.quasi.QuasiIO.syntax.*
 
@@ -24,6 +24,7 @@ object TestTreeRunner {
     reporter: TestReporter,
     statusConverter: TestStatusConverter,
     timed: TimedActionF[F],
+    resources: TestResourceLifecycle[F],
     runner: IndividualTestRunner[F],
     parTraverseExt: ParTraverseExt[F],
   )(implicit F: QuasiIO[F]
@@ -36,7 +37,7 @@ object TestTreeRunner {
       levelParallelism: Parallelism,
       tree: TestTree[F],
     ): F[List[GroupResult]] = {
-      timed.timedLifecycle(Injector.inherit(parent).produceDetailedCustomF[F](tree.levelPlan)).use {
+      timed.timedLifecycle(resources.produce(Injector.inherit(parent), tree.levelPlan)).use {
         maybeLocator =>
           maybeLocator.foldEither(
             {

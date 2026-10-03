@@ -5,6 +5,8 @@ import scala.scalajs.js.timers.setTimeout
 import scala.util.{Failure, Success}
 
 private[spec] object SessionEnvironmentFixturePlatform {
+  def runnerCompletionChecks(): Vector[(String, Boolean)] = Vector.empty
+
   def scannedOwners(): Vector[(String, Boolean)] = Vector.empty
 
   def concurrent(check: ExecutionContext => Future[Unit]): Unit = {

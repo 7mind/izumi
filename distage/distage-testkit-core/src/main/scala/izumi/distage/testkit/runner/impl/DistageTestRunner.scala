@@ -35,6 +35,7 @@ class DistageTestRunner[F[_]](
   planner: TestPlanner,
   statusConverter: TestStatusConverter,
   timed: TimedActionF[F],
+  resources: TestResourceLifecycle[F],
   runnerToF: RunnerToF[F],
   // Only test planning and running parallel envs use runner effect's parallelism capabilities.
   // Parallel suites & tests use parallelism capabilities of their own effect type.
@@ -124,7 +125,7 @@ class DistageTestRunner[F[_]](
 
     val allEnvTests = testsTree.allTests.map(_.test)
 
-    timed.timedLifecycle(runtimeInjector.produceDetailedCustomF[F](runtimePlan)).use {
+    timed.timedLifecycle(resources.produce(runtimeInjector, runtimePlan)).use {
       maybeRtLocator =>
         maybeRtLocator.foldEither(
           left = (runtimeInstantiationFailure, runtimeInstantiationTiming) =>

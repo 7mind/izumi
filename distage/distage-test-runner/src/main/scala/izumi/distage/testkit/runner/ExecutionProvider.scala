@@ -2,10 +2,10 @@ package izumi.distage.testkit.runner
 
 import izumi.distage.testkit.protocol.*
 
-import java.util.concurrent.atomic.AtomicBoolean
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.reflect.ClassTag
+import scala.util.control.NonFatal
 
 final case class ProviderId(value: String) extends AnyVal
 
@@ -31,10 +31,66 @@ trait EventSink {
   def accept(event: ProtocolMessage.Event): Unit
 }
 
+trait CancellationRegistration {
+  def close(): Future[Unit]
+}
+
 final class Cancellation {
-  private val requested = new AtomicBoolean(false)
-  def request(): Unit = requested.set(true)
-  def isRequested: Boolean = requested.get()
+  private var requested = false
+  private var registrations = Vector.empty[Registration]
+
+  def request(): Unit = {
+    val active = synchronized {
+      if (requested) Vector.empty
+      else {
+        requested = true
+        val active = registrations
+        registrations = Vector.empty
+        active
+      }
+    }
+    active.foreach(_.request())
+  }
+
+  def isRequested: Boolean = synchronized(requested)
+
+  def onRequest(action: () => Future[Unit]): CancellationRegistration = {
+    val registration = new Registration(action)
+    val invoke = synchronized {
+      if (requested) true
+      else { registrations :+= registration; false }
+    }
+    if (invoke) registration.request()
+    registration
+  }
+
+  private def remove(registration: Registration): Unit = synchronized {
+    registrations = registrations.filterNot(_ eq registration)
+  }
+
+  private final class Registration(action: () => Future[Unit]) extends CancellationRegistration {
+    private var requested = false
+    private var closed = false
+    private val completion = Promise[Unit]()
+
+    def request(): Unit = {
+      val invoke = synchronized {
+        if (requested || closed) false
+        else { requested = true; true }
+      }
+      if (invoke) {
+        val result = try action() catch { case NonFatal(cause) => Future.failed(cause) }
+        completion.completeWith(result)
+        ()
+      }
+    }
+
+    override def close(): Future[Unit] = {
+      val active = synchronized { closed = true; requested }
+      remove(this)
+      if (active) completion.future else Future.unit
+    }
+  }
 }
 
 sealed trait ProviderEvent

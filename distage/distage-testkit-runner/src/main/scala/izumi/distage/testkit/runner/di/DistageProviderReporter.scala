@@ -3,16 +3,17 @@ package izumi.distage.testkit.runner.di
 import izumi.distage.testkit.model.{FullMeta, IndividualTestResult, ScopeId, SuiteMeta, TestStatus as EngineStatus}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.{ProviderEvent, ProviderOutcome, RunExecutionContext, RunnerFailure}
-import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.testkit.runner.api.{TestFinalizationReporter, TestReporter}
 
 import scala.util.control.NonFatal
 
-private[distage] final class DistageProviderReporter(val tests: Vector[TestDescriptor]) extends TestReporter {
+private[distage] final class DistageProviderReporter(val tests: Vector[TestDescriptor]) extends TestReporter with TestFinalizationReporter {
   private var context = Option.empty[RunExecutionContext]
   private var results = Map.empty[TestId, TestResult]
   private var attempted = Set.empty[TestId]
   private var running = Set.empty[TestId]
   private var reportingFailures = Vector.empty[Throwable]
+  private var finalizationFailures = Vector.empty[Failure]
 
   def begin(value: RunExecutionContext): Unit = synchronized {
     require(context.isEmpty, "Distage reporting has already started")
@@ -20,17 +21,24 @@ private[distage] final class DistageProviderReporter(val tests: Vector[TestDescr
   }
 
   def outcome(failures: Vector[Failure], cancelled: Boolean): ProviderOutcome = synchronized {
-    ProviderOutcome(tests.flatMap(test => results.get(test.id)), failures ++ reportingFailures.map(RunnerFailure.fromThrowable(FailurePhase.Transport, _)), cancelled)
+    val retained = failures ++ RunnerFailure.unreported(failures, finalizationFailures)
+    ProviderOutcome(tests.flatMap(test => results.get(test.id)), retained ++ reportingFailures.map(RunnerFailure.fromThrowable(FailurePhase.Transport, _)), cancelled)
   }
 
-  def executionFailed(cause: Throwable, cancelled: Boolean): ProviderOutcome = synchronized {
-    outcome(Vector(RunnerFailure.fromThrowable(FailurePhase.Finalization, cause)), cancelled)
+  override def failure(cause: Throwable): Unit = synchronized {
+    require(context.nonEmpty, "Engine finalized resources before provider reporting started")
+    finalizationFailures :+= RunnerFailure.fromThrowable(FailurePhase.Finalization, cause)
   }
 
   def cancelled(): ProviderOutcome = synchronized {
+    require(results.isEmpty, "Engine reported a repeated test completion")
+    cancelRemaining(Vector.empty)
+  }
+
+  def cancelRemaining(failures: Vector[Failure]): ProviderOutcome = synchronized {
     val reporting = active
-    tests.foreach(test => complete(TestResult(test.id, TestStatus.Cancelled, None, 0L), reporting))
-    outcome(Vector.empty, cancelled = true)
+    tests.filterNot(test => results.contains(test.id)).foreach(test => complete(TestResult(test.id, TestStatus.Cancelled, None, 0L), reporting))
+    outcome(failures, cancelled = true)
   }
 
   override def beginScope(id: ScopeId): Unit = ()
@@ -87,6 +95,10 @@ private[distage] final class DistageProviderReporter(val tests: Vector[TestDescr
     status match {
       case value: EngineStatus.Succeed => TestResult(id, TestStatus.Succeeded, None, math.max(0L, value.result.testTiming.duration.toNanos))
       case value: EngineStatus.Failed => failed(individualPhase(value.cause), value.throwableCause, value.cause.testTiming.duration.toNanos)
+      case value: EngineStatus.Interrupted =>
+        val failure = value.failure
+        if (active.cancellation.isRequested) TestResult(id, TestStatus.Cancelled, Some(RunnerFailure.fromThrowable(individualPhase(failure.cause), failure.throwableCause)), math.max(0L, failure.cause.testTiming.duration.toNanos))
+        else convert(id, failure)
       case value: EngineStatus.Cancelled => TestResult(id, TestStatus.Cancelled, Some(RunnerFailure.fromThrowable(individualPhase(value.cause), value.throwableCause)), math.max(0L, value.cause.testTiming.duration.toNanos))
       case value: EngineStatus.FailedInitialPlanning => failed(FailurePhase.Planning, value.throwableCause, value.timing.duration.toNanos)
       case value: EngineStatus.FailedRuntimePlanning => failed(FailurePhase.Planning, value.failure.failure.toThrowable, value.failure.timing.duration.toNanos)

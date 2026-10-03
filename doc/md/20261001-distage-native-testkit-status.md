@@ -6447,7 +6447,14 @@ Local checkpoint command:
 Its completion capture records the actual commit/date and post-commit source
 identity. Build-info metadata is not claimed rebuilt after that commit.
 
-### Active higher-runner cancellation reproduction — 2026-10-03
+The local serial-link checkpoint is
+`69f89c7e79d2dba22df05a421931bf286ebde559` (2026-10-03). The command returns actual
+0 and observes a clean tree immediately after commit, with all 1,592 snapshotted
+tracked file hashes unchanged. Its source manifest hashes to
+`5850f9d100ee00dec42483cdd51886738bad9247bb5355acdec89c30d24dbdd3`. This later
+ledger provenance addition is outside that post-commit clean-tree observation.
+
+### Active higher-runner cancellation probes — 2026-10-03
 
 Before any cancellation correction, a new separate published JVM Scala 3.9
 consumer compiles and invokes only public `Spec1[IO]`/`RunSession` APIs. It waits
@@ -6457,6 +6464,15 @@ fixture cleanup. The execution future does not complete and the resource
 remains acquired. Cleanup releases the blocked body, after which the engine
 returns its test as `Succeeded` with the run cancellation flag set. The fixture
 executor terminates; the intended cancellation assertion then fails.
+
+Correction: this initial consumer uses `IO.fromFuture`, whose wait is
+uncancelable in the pinned Cats Effect 3.7.1 implementation. Its timeout does
+not establish failure to interrupt a cancelable body. The measurements and
+cleanup outcome above remain observations, but that cancellation inference is
+withdrawn. The pinned primary source is
+[Async.scala](https://github.com/typelevel/cats-effect/blob/v3.7.1/kernel/shared/src/main/scala/cats/effect/kernel/Async.scala);
+the exact source, HTTP headers and provenance are frozen in
+`/srv/nvme/tmp/izumi-impl/2b-cats-cancellation-semantics-pinned-first/`.
 
 Command: `python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-repro-first.py`,
 actual exit 1. Exact argv, source hashes, log and completion live in the matching
@@ -6472,5 +6488,677 @@ that observation before the Native scheduling edit, and the consumed higher
 runner is byte-identical to the checkpoint's frozen JVM artifact and all 55
 current compiled binary members. Other dependencies are frozen as consumed;
 their entire closure is not claimed byte-identical to current compiled outputs.
-The reproduction and audit drivers are preserved unchanged. Active cancellation
+The probe and audit drivers are preserved unchanged. Active cancellation
 remains open under O.18; no parent or final gate closes.
+
+The first producer fixture and two runtime bridge probes also used that
+uncancelable wait. Their timeouts likewise do not establish an interruption
+defect. Preserved captures are `2b-active-cancellation-producer-fail-first/`,
+`2b-active-cancellation-producer-candidate-second/`, and
+`2b-bridge-cancellation-probe-third/` / `fourth/` under the same scratch root.
+The fourth bridge probe actually observes the underlying interrupt action being
+invoked before its timeout. The first bridge attempt fails during SBT setting
+parsing, the second during compilation because the core fixture lacks the Cats
+IO runtime dependency; neither executes the probe. The first producer candidate
+also fails compilation because its changed `cancelled` signature disagrees with
+an existing fixture; that candidate is not a successful runtime check.
+
+Before the corrected reproduction, all seven unverified production deltas are
+frozen in `2b-cancellation-candidate-preserved-before-corrected-repro/`, then
+restored byte-for-byte to HEAD `69f89c7e79d2dba22df05a421931bf286ebde559`.
+The new producer fixture uses `IO.fromFutureCancelable` with an explicit
+cancellation action. Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-producer-cancelable-fail-first.py`.
+Compilation succeeds; runtime exits 1 for the expected assertion:
+`cats active cancellation failRelease=false did not interrupt the active body within 10 seconds`.
+Cleanup opens the body and release gates before the fixture returns its failure.
+The frozen inputs and command/log/completion are in the matching directory.
+This establishes a cancelable-body failure on the original production sources.
+
+After that failure is captured, the exact saved production candidate is restored.
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-producer-cancelable-candidate-first.py`.
+Compilation succeeds. The Cats case without a release failure passes active
+interruption, waiting for the held finalizer, exactly one acquisition/release,
+selected terminal identities/statuses and one Finished after cleanup. Marker:
+`DISTAGE_SPEC_CANCELLATION kind=cats failRelease=false results=3 failures=0 acquired=1 released=1`.
+The Cats failing-finalizer case also interrupts and waits for release, but runtime
+exits 1 at `preserves actual finalizer failures`: the original
+`IllegalStateException: active cancellation finalizer failure` is printed to
+stderr and is absent from the required reported failure payload. The driver's
+`reproduced=false` recognizes only the earlier timeout assertion; it does not
+mean this command passes. Its ten frozen input hashes remain unchanged through
+completion. The ZIO cases are not reached, and this fixture forces sequential
+execution, so it establishes no parallel cancellation completion guarantee.
+The production correction remains uncommitted and unverified; error retention,
+parallel cleanup, other compiler/platform lanes and parent/final gates remain
+open.
+
+### Active cancellation: DI finalization observation candidate — 2026-10-03
+
+The separately named diagnostic command
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-producer-cancelable-candidate-outcome-first.py`
+compiles and exits 1 for the same finalization-retention assertion. Its full
+Cats failing-release RunOutcome contains no run-level failures and only an
+InterruptedException in the active result, so the original release error is
+absent from that DTO. This adds one fixture println to the prior candidate;
+production sources are unchanged. Pinned Cats Effect 3.7.1
+[IOFiber.scala](https://github.com/typelevel/cats-effect/blob/v3.7.1/core/shared/src/main/scala/cats/effect/IOFiber.scala)
+reports a cancellation-finalizer error through its current execution context,
+then completes cancellation successfully. Joining the existing execution and
+interrupt Futures cannot recover an error discarded before those Futures return.
+
+An unverified core TestResourceLifecycle candidate uses the existing
+PlanInterpreter.FinalizerFilter to wrap each original deferred DI finalizer,
+observe its traced failure and rethrow it. Runtime, memoization-level and
+individual-test resources use that boundary. The explicit observer comes from
+the parent runner graph; no per-environment captured binding changes merge
+equality. The higher session reporter retains each occurrence; the legacy
+module's observer preserves propagation. The existing TestReporter API does not
+change. This covers DI resource finalizers, not arbitrary body-owned Cats
+finalizers already suppressed inside a user effect.
+
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-producer-finalization-observer-first.py`.
+Compilation and the full higher JVM Scala 3.9 fixture exit 0, with 472 contract
+checks and owned fixture executor termination. Each of Cats/ZIO with successful
+or failing release reports three selected results and acquired=1/released=1.
+The successful-release cases have zero run-level failures; the failing-release
+cases have exactly one Finalization failure with the original message. Held
+release, repeated cancellation, terminal identities/statuses, single completion
+events and Finished-after-cleanup checks pass. Eighteen frozen source/build
+input hashes remain unchanged through completion. The driver's inherited
+`reproduced=true` predicate also matches successful check labels; actual exit 0
+and the four exact terminal markers establish success, not that flag. The
+executed driver/capture is preserved unchanged. Scala 2 compatibility, parallel
+environment draining, other platform lanes and legacy regressions remain open;
+no candidate code is committed and no parent/final gate closes.
+
+The Scala 2.12 compile command
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-scala212-compile-first.py`
+compiles core production/tests and higher production, then exits 1 at the two
+new fixture blocks with `_ is already defined as value _`. The legacy compile
+suffix is not reached. Each pair of gate-opening calls now has one tuple
+discard; a successful Scala 2.12 rerun is still required.
+
+The read-only preparatory reviewer identifies the trace conversion's permission
+to replace a suppression-disabled Throwable. Report:
+`2b-active-cancellation-preparatory-readonly-review-first/PREPARATORY-REVIEW.md`,
+SHA256 `1dafd2793fd6c43e32939fd1c0cf318304796e4f306b77525c0cec5405844b7e`;
+schema-1 reviewed manifest SHA256
+`682326c16f382100289b2d365ea3517486df0d0b964d29a81625b62faad31fc3`.
+It describes its own earlier source/capture boundary, not later passing
+observer executions. Its other open controls include parallel environments,
+failure multiplicity/ownership and callback registration races.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-finalization-original-cause-fail-first.py`
+compiles but its first runtime oracle incorrectly expects a finalizer failure
+to be a typed Exit.Error; QuasiIO's ZIO bracket promotes release failure to a
+defect. Its suppression-enabled control therefore exits 1 before the intended
+counterexample. No production correction is justified by that invalid oracle.
+The corrected fixture observes ZIO's own Exit/Cause as data before unsafe-run
+conversion. Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-finalization-original-cause-exit-fail-first.py`.
+Compilation succeeds; the suppression-enabled control preserves the exact
+original in observer and effect Cause. With suppression disabled, both contain
+FiberFailure instead, and the command exits 1 for the expected
+`observes the original throwable` assertion. Release executes once in each
+case. Exact inputs, logs and actual outcomes are frozen separately.
+
+Only after that failure, TestResourceLifecycle observes and rethrows the
+supplied cause instead of the trace conversion's possibly replaced Throwable.
+`python3 /srv/nvme/tmp/izumi-impl/2b-finalization-original-cause-exit-candidate-first.py`
+compiles and exits 0: both suppression modes preserve exact original references,
+all four sequential Cats/ZIO cancellation cases still pass, and the complete
+higher JVM fixture prints 478 checks plus owned fixture executor termination.
+Its nineteen frozen input hashes remain unchanged through completion. This is
+still a candidate, with all other compiler/platform, parallel, publication and
+parent/final evaluations open.
+
+The broadened command
+`python3 /srv/nvme/tmp/izumi-impl/2b-cancellation-observer-nine-lane-first-matrix.py`
+freezes the checkout inputs, excluding this ledger, before running the matrix.
+Its Scala 3.9.0 producer JVM/JS/Native base, core and higher `Test/testFull`
+commands all pass. Base fixtures report 444 checks on each platform, including
+eight new direct cancellation-registration checks. Core fixtures report
+128/103/103 and higher fixtures 478/396/396 for JVM/JS/Native respectively.
+All three platforms execute the four sequential Cats/ZIO cancellation controls
+and both original-ZIO-Throwable controls successfully. The registration marker
+confirms late invocation, awaiting entered actions, ordinary failure retention
+and owner isolation; it does not establish close/request contention or the
+excluded-NonFatal callback exception policy.
+
+The same Scala 3 lane compiles legacy JVM/JS tests, then runs
+`distage-testkit-scalatestJVM/Test/testOnly izumi.distage.testkit.distagesuite.interruption.InterruptionTest*`.
+Four of five legacy interruption tests pass. The MiniBIO all-effects case fails
+at `InterruptionTest.scala:81`: `allTestsInterrupted.get() was false`.
+The lane's actual exit is 1 and `changedSources` is empty. The driver stops
+there; Scala 2.13 and 2.12 are not executed. This is a failed matrix, not a
+verified cancellation checkpoint. A comparison with the committed production
+baseline is required before classifying the legacy failure as a regression.
+No candidate code is committed and no parent/final evaluation closes.
+
+The separately completed read-only registration/observer review is
+`2b-cancellation-observer-registration-readonly-review-first/PREPARATORY-REVIEW.md`,
+SHA256 `db672e6781e0d852597f8840378ce9f1f2455af0d3f018eb1b631ee5c16ef99f`.
+Its schema-1 manifest SHA256 is
+`de5a692850f88d16532e720c87512ac045fdb76732471a6daebae68c28083fd3`.
+The reviewer audits 93 frozen input comparisons and the latest completed
+19-input JVM candidate, but explicitly excludes the then-running matrix.
+Its remaining controls include parallel environment joining, multiple and
+all-scope release failures, registration contention and fixture signal-wait
+liveness. Later matrix results above are separate root observations.
+
+Root subsequently rehashes all 1,596 frozen matrix inputs against the current
+checkout and observes zero differences; the ledger is the explicit exclusion.
+The committed-baseline comparison is launched with
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-interruption-head-baseline-first.py`.
+It creates its own detached worktree at `69f89c7e7`, freezes its tracked sources,
+and requests Scala 3 legacy JVM/JS compilation followed by the same five-test
+JVM selector. The command is running; no baseline outcome is yet established.
+
+The baseline command subsequently completes with actual exit 1, unchanged
+tracked sources and five frozen XML reports. Both legacy compiler commands
+succeed. Four interruption tests pass; the MiniBIO all-effects class fails
+at the identical `allTestsInterrupted.get() was false` assertion on line81.
+This establishes that the observed failure exists at committed HEAD without
+the active cancellation/observer changes. It does not establish the failure's
+root cause or satisfy the remaining legacy interruption requirement.
+
+### Parallel cancellation: current producer reproduction — 2026-10-03
+
+The new higher fixture starts distinct Cats and ZIO prepared environments with
+environment parallelism Fixed(2), then requests cancellation after both active
+bodies enter. Both memoized resource finalizers enter a held asynchronous
+release barrier. The first capture command,
+`python3 /srv/nvme/tmp/izumi-impl/2b-parallel-environment-cancellation-fail-first.py`,
+exits1 during SBT setting parsing because a hyphenated project identifier is
+unquoted; no runtime reproduction executes. The separately named second driver
+uses LocalProject in those settings and compiles successfully. Its actual exit
+is1 for `parallel cancellation joins both held environment finalizers`.
+Marker: `DISTAGE_PARALLEL_CANCELLATION_HELD completed=true released=Vector(0, 0)
+finished=true`. Thus both run completion and Finished precede resource release
+on the current production candidate. Frozen sources remain unchanged through
+the command. Cleanup opens both release/body gates; the capture also prints
+late RejectedExecutionExceptions from fixture timer callbacks. The updated
+fixture cancels and awaits timer losers; this correction requires its own rerun
+and does not weaken the cancellation oracle.
+
+Two direct MiniBIO controls now exercise zip/traversal through UnsafeRun2 and
+hold an already-entered child finalizer before cancellation. They require the
+second child's finalizer to enter before opening the first release gate, then
+require parent completion to await both child releases. The first direct-test
+driver, `2b-minibio-parallel-finalization-fail-first.py`, exits1 at compilation:
+the fixture lacks extension syntax for `.orTerminate`. The fixture switches to
+the existing F.orTerminate method before the second direct-test command. No
+MiniBIO production correction exists at this point.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-minibio-parallel-finalization-fail-second.py`
+then compiles and runs35 MiniBIO tests:33 pass and the two new zip/traversal
+controls fail for `future.isCompleted was true` at the exact held-finalizer
+assertion. Sources remain unchanged through actual exit1. These are valid
+direct reproductions alongside the higher parallel producer reproduction.
+
+Only after those failures, the MiniBIO candidate gives each parallel child an
+owned completion handle, acquires those handles under the existing bracket
+mask, then signals every child before awaiting each completion in release.
+The pair and worker paths use the same completion policy; awaiting complete
+child exits covers their finalizers rather than merely delivering an interrupt
+request. The mask prevents cancellation from releasing the parent before its
+child handles are published. Compilation/runtime evaluation is in progress in
+`2b-parallel-finalization-candidate-first.py`; no successful outcome is yet
+established and the candidate remains uncommitted.
+
+The candidate command subsequently exits0 with all frozen sources unchanged.
+MiniBIO reports35 passing tests, including both prior held-finalizer failures.
+The full higher JVM fixture reports484 checks and executor termination.
+Parallel marker: `completed=false released=Vector(0, 0) finished=false` while
+held; terminal marker: six results, acquisitions Vector(1,1), releases
+Vector(1,1). Opening only the Cats release leaves execution pending until the
+ZIO release opens. All four sequential cancellation cases and both exact
+original-ZIO-Throwable controls still pass. No RejectedExecutionException is
+present in this candidate log. These are Scala3/JVM candidate observations,
+not all-platform, published-consumer or final-head acceptance.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-parallel-finalization-jvm-three-compiler-first.py`
+freezes the sources and completes all three compiler processes, retaining each
+actual failure rather than stopping at the first legacy failure. Scala3.9 and
+2.13.18 both pass35 MiniBIO tests and484 higher checks, including the parallel
+release barrier, then compile legacy tests and fail the same single legacy
+MiniBIO interruption case (four other cases pass). Scala2.12.21 passes35 MiniBIO
+tests, then rejects the new mixed-effect factory Vector's inferred higher-kinded
+least upper bound during higher fixture compilation. The Vector now has an
+explicit `() => TestSuite` method type argument. No successful2.12 higher or
+legacy rerun is yet claimed. All three completed processes report unchanged
+frozen sources; the overall driver exits1.
+
+The next public core-bridge probe runs a real incoming Identity Lifecycle through
+RunnerToF, interrupts its body, and holds its synchronous finalizer. Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-identity-bridge-finalization-fail-first.py`.
+It compiles and exits1 for `RunnerToF cancellation must join the held incoming
+Identity finalizer`. Marker: completed=true/acquired1/released0. The unconditional
+cleanup opens both gates, observes the incoming completion, verifies the parent
+Exit.Interruption and exactly one release, drains tracked callbacks and closes
+the owned executor; `IDENTITY_BRIDGE_CLEANUP released=1 callbacksDrained=true`
+is printed. All frozen checkout sources remain unchanged. This reproduces the
+remaining bridge lifetime defect independently of the legacy adapter.
+
+Only after that failure, RunnerToF's finalizer signals the incoming runtime,
+then awaits its original computation Future's completion even if cancellation
+made the primary wait fail. Awaiting completion observes errors as completed
+exits; the existing primary failure and DI finalization observer retain their
+respective reporting policies. Its separately named candidate probe is running;
+no passing result is yet established. The legacy executor shutdown correction
+is separate and has not been implemented.
+
+The first bridge candidate exits1 during compilation: its recovery branch
+returns F[Unit] while the awaited computation has generic F[A]. Mapping the
+awaited completion to Unit before recovery corrects the type; the separately
+named second candidate is launched with the unchanged held-finalizer probe and
+the five legacy interruption tests as a suffix. No runtime postcondition follows
+from the first candidate's compile failure.
+
+The completed MiniBIO preparatory read-only review is
+`2b-minibio-parallel-joining-preparatory-readonly-review-completed-candidate/PREPARATORY-REVIEW.md`,
+SHA256 `a45d5d74ac0243c5128917464acfb2f35e19d5bb9582c2228ee0058d2a2aad8a`;
+schema-1 manifest SHA256
+`4d296e619be1c368174f8a4962df190457b72c31dc443ee3dc3d3c1e0b744c79`.
+It directly inspects the first completed35/484 candidate,17 selected frozen
+source comparisons and five frozen baseline XML hashes. It excludes the broader
+then-running compiler matrix and later bridge work. Startup contention,
+partial rejected dispatch, cleanup diagnostic failures, existing Parallel2
+failure short-circuit paths and all-platform/publication proof remain open.
+Normal child completion draining is distinct from independent error collection;
+the original generic bracket failure precedence is unchanged.
+
+The second bridge candidate compiles. Its unchanged probe observes
+completed=false/acquired1/released0 while held, then releases once, preserves
+Exit.Interruption and drains/closes its tracked executor. The subsequent legacy
+selector still fails the MiniBIO all-effects case (four of five pass); its raw
+log contains RejectedExecutionExceptions from the shutting-down/terminated
+legacy runner executor. The command's actual exit is1, with unchanged sources;
+the passing bridge subcommand does not make the full command pass.
+
+The legacy runtime candidate now separates requesting cancellation from
+releasing its allocated runtime. An owned local cancellation Promise is
+registered before invoking the interruption action; repeated shutdown requests
+do not launch another action. The completion callback releases the allocation
+only after the original execution Future and any claimed interruption action
+both finish. Cancellation-action failure reports through the existing outer
+suite error channel. Normal completed runs need no interruption action. This
+keeps the executor available to cancellation continuations and releases once,
+instead of racing immediate shutdown with those continuations. The unchanged
+bridge probe, higher fixture and five legacy interruption cases are running in
+`2b-legacy-runtime-finalization-candidate-first.py`; no passing result is yet
+established.
+
+The legacy runtime candidate command then completes with actual exit0 and all
+frozen sources unchanged. The Identity probe remains held until release, keeps
+semantic interruption and drains its owned callbacks. The full higher fixture
+passes484 checks and terminates its executor. All five legacy interruption
+tests pass (previously four passed); this includes the MiniBIO all-effects class.
+No RejectedExecutionException is present in the successful capture. This is a
+Scala3/JVM candidate evaluation, not an all-compiler/platform checkpoint.
+
+The Identity bridge control is now retained in core fixtures for JVM and
+Native, using the same real incoming Identity Lifecycle and a tracked owned
+single-thread executor. The JS platform has no blocking-thread Identity control;
+its asynchronous effect completion remains exercised by higher Cats/ZIO cases.
+No success is inferred for the new permanent fixture before it runs.
+
+The joined-cancellation matrix is launched with
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-joined-nine-lane-first-matrix.py`.
+It freezes all tracked and untracked checkout sources except this ledger before
+starting separate Scala 3.9.0, 2.13.18 and 2.12.21 processes. Each process requests
+base/core/higher `Test/testFull` on JVM, JS and Native; direct MiniBIO async tests
+on all three platforms; legacy JVM/JS compilation and the five JVM interruption
+cases. Changed Native modules are cleaned before linking. Scala 3 applies
+`-Wunused:all` to the changed production/test module families. Exact commands,
+logs and per-compiler completion/source comparisons are retained in the new
+capture directory. A compiler failure is retained while later compilers still
+run; any source mutation aborts the driver. No successful matrix result is
+inferred from launch. This remains an uncommitted candidate with all parent and
+final evaluations open.
+
+The first joined-cancellation matrix subsequently completes with actual exits
+1/1/1 and no frozen-source changes. Scala 3 JVM runs the new permanent bridge
+control successfully: held=true, one acquisition/release, semantic interruption
+and drained callbacks; core reports 132 checks and higher reports 484. Its JS
+core fixture compilation then rejects delegate.runBlocking, absent from the JS
+QuasiIORunner API. Scala 2.13 and 2.12 stop earlier at the new fixture's
+runToF inference for Identity. These are fixture compilation failures, with no
+successful complete matrix or later Native/legacy result claimed. Inspection
+of the JVM/Native Identity instances confirms their abstract blocking method
+returns its argument directly. The fixture implements that same behavior
+without the override keyword, allowing its otherwise unreachable JS helper to
+compile, and supplies explicit runToF[Identity, Unit] parameters. Production
+cancellation code is unchanged by these two fixture corrections.
+
+The separately named corrected driver
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-joined-nine-lane-second-matrix.py`
+is running against a fresh 1,597-input snapshot. Root compares those inputs
+with the current checkout and observes zero differences. The first snapshot
+differs only in RunnerCompletionFixtures, matching the two recorded corrections.
+The corrected Scala 3 process has passed JVM core 132/higher 484 and JS core
+103 checks; later tasks and compiler processes are not yet completed.
+
+The new bounded bridge/legacy read-only review identifies source predictions
+requiring further controls: a failing interruption action can skip RunnerToF's
+subsequent completion wait; legacy AsyncResult callbacks can precede allocated
+runtime release and cancellation-error notification; allocation-release errors
+are reported by the global execution-context callback. Existing five-test
+success does not measure those orderings or allocation-release multiplicity.
+These are unverified boundaries, not newly reproduced runtime failures, and no
+production correction is justified by them alone. Parent/final gates remain
+open; the preparatory review report is still in progress.
+
+The corrected Scala 3 process subsequently completes with actual exit 1 and
+unchanged sources. Its base/core/higher JVM/JS/Native fixture commands pass;
+core reports 132/103/107 and higher 484/402/402. Both JVM and Native permanent
+Identity bridge controls preserve the held-finalizer, exactly-once release,
+interruption and callback-draining postconditions. Direct MiniBIO JVM tests
+pass all 35 cases. Direct JS MiniBIO runs 33 cases: 31 pass and the two new
+parallel-finalization cases fail with ScalaTest SerialExecutionContext's
+`Queue is empty while future is not completed` exception. Their new timed
+observation uses MiniBIO sleep; the suite currently inherits ScalaTest's serial
+execution context. The existing separate sleep suite supplies another context.
+This is a captured fixture execution failure, not evidence that the held-child
+production postcondition fails on JS. The later direct Native and legacy suffix
+do not execute on Scala 3. Scala 2.13/2.12 processes are still running; no full
+corrected matrix success is claimed, and no source changes are made while those
+processes run.
+
+The second joined-cancellation matrix then completes with actual exits 1/1/1
+and zero source changes in all three processes. Scala 2.13 and 2.12 also pass
+core 132/103/107 and higher 484/402/402, including both permanent Identity bridge
+controls, then pass 35 direct JVM MiniBIO cases and fail the same two of 33 JS
+cases for SerialExecutionContext's empty queue. The explicit mixed-effect
+factory Vector annotation is therefore compiled and exercised on Scala 2.12.
+No direct Native MiniBIO or legacy suffix is claimed from these failed lanes.
+
+After all compiler processes finish, the JS-only MiniBIO fixture supplies its
+own asynchronous ExecutionContext through Scala.js timer dispatch, in place of
+ScalaTest's default serial dispatcher. Timer-backed effects can then yield to
+the JS event loop. The held-child observation interval, interruption controls,
+release gates and outcome assertions remain intact. The documented override
+seam is described in [ScalaTest's asynchronous testing guide](https://www.scalatest.org/user_guide/async_testing).
+This is a fixture correction following the captured execution failures; its
+runtime postcondition still requires a new passing capture.
+
+The bounded bridge/legacy preparatory review completes in
+`2b-runner-completion-lifetime-preparatory-readonly-review-first/PREPARATORY-REVIEW.md`,
+SHA256 `43aab3cd438fa695acfaa3cceaf840e8372d3e5595c56ea56dbc6c247318978a`;
+schema-1 manifest SHA256
+`85af62945181468c2984bb583f427fe5bdcdf35ef4d45df578c67fe635a67046`.
+Root independently rehashes its 18 repository and 64 evidence records: 82
+records, zero mismatches, recorded in
+`2b-runner-completion-lifetime-preparatory-review-root-audit-first.json`.
+Its inspection SHA256 is
+`488fc069d77a5e49159e0592c2ddf761eb054d9085d174ea202828afd3cad9e7`.
+The review uses the first matrix's frozen boundary, the byte-identical external
+before/after Identity probes and the completed legacy-runtime candidate. Later
+corrected fixtures and the second matrix are outside that review boundary.
+Failed-interrupt joining, legacy callback/release-error ordering, measured
+allocation-release races and unconditional negative-fixture cleanup remain
+open. No step or parent/final gate closes.
+
+### Joined-cancellation result audit and corrected claims — 2026-10-03
+
+The third matrix's three compiler commands all return actual 0 with unchanged
+sources. Direct MiniBIO tests pass 35/33/35 on JVM/JS/Native; all five legacy
+interruption cases pass on each compiler. This verifies the asynchronous JS
+MiniBIO fixture correction and the legacy interruption regression controls.
+It does not establish that every higher fixture completed.
+
+The first root result auditor,
+`2b-active-cancellation-joined-third-result-audit-first.py`, exits 1 because the
+higher terminal-marker array is [484,402], not the required [484,402,402]. The
+missing marker belongs to JS. The separately named second auditor retains that
+failure while collecting every lane and freezing the 24 selected XML reports:
+324 cases with zero failures/errors/skips, 7,746 completed named fixture checks,
+1,597 unchanged source inputs. It exits 1 for the missing JS higher marker on
+each compiler and one rejected Native callback on each compiler. Its structured
+completion distinguishes the observed counters from expected-but-absent ones.
+
+Earlier notes in this section and root updates claiming higher 484/402/402 or
+all nine higher lanes passed are withdrawn. Those claims inferred JS completion
+from its process exit; inspection shows the JS main stops during sequential
+ZIO cancellation after `interrupts without releasing the body gate`. It prints
+neither the higher terminal marker nor DISTAGE_PROVIDER_JS_COMPLETED. The
+second matrix has the same missing JS completion boundary. Successful base,
+core, direct MiniBIO and legacy controls retain their separate evidence.
+
+The Native rejection stack identifies the parallel fixture's unconditional
+post-completion bodyGate.trySuccess, submitting a callback to a closed ZIO
+executor. After capturing that failure, the fixture completes its owned body
+promises while both resource finalizers remain held and runtimes remain alive.
+It retains the two held-release and partial-release assertions. The JS provider
+fixture now owns a 30-second completion watchdog, cleared when its Future
+settles, so a pending Future cannot produce a silent successful process exit.
+Both fixture corrections require new evaluation. No JS production correction
+is inferred from the absence of its terminal marker.
+
+The review's failed-interrupt bridge prediction is separately reproduced by
+`python3 /srv/nvme/tmp/izumi-impl/2b-failed-interrupt-bridge-fail-first.py`.
+It compiles and runs both a failed interruption Future and a synchronous throw
+after signaling the real incoming Identity thread. Both markers show
+completed=true/acquired1/released0/requests1 while release is held. Cleanup
+opens the gates, verifies semantic interruption and exactly one release, drains
+callbacks and closes each owned executor. The process exits 1 for the intended
+incoming-finalization requirement, with unchanged frozen checkout inputs.
+
+Only after those two failures, RunnerToF nests a guarantee around the suspended
+interruption action: the incoming completion wait is now its cleanup and runs
+whether interruption succeeds, fails asynchronously or throws synchronously.
+The existing primary failure and DI finalization error policies are unchanged.
+Core retains all three modes as permanent JVM/Native controls, including
+exactly one incoming interruption request. No passing candidate outcome is
+claimed before the unchanged external probe reruns. All parent/final gates
+remain open and the candidate is uncommitted.
+
+`2b-failed-interrupt-bridge-candidate-first.py` then compiles and passes the
+unchanged external two-mode probe: both held markers now show completed=false,
+with one incoming interruption and one eventual release, semantic interruption
+and drained callbacks. The permanent JVM core fixture also passes all three
+modes and reports 143 checks. Its JS higher suffix fails explicitly at the
+30-second watchdog, so the command's actual exit is 1, with unchanged sources.
+The watchdog corrects observation of the incomplete JS fixture; it does not
+correct the production completion path.
+
+The focused read-only follow-up directly observes missing JS terminal markers
+in all three completed third-matrix logs. It predicts a cause in JS UnsafeRun2:
+its interruptible runner suppresses callbacks for externally interrupted exits,
+while the execution Promise is completed only by that callback. The interrupt
+action separately waits fiber termination. JVM/Native use unconditional fiber
+observers. Report: `2b-js-zio-cancellation-completion-readonly-followup-first/FOLLOWUP-REVIEW.md`,
+SHA256 `04bc1d444536147a00c290bce2dc905eb73398d6e076a25bfbab30625870a5e8`;
+schema-1 manifest SHA256
+`6b7433505d6032f9aa908c3fa22544e10002d819ad89ac16b8e34de1fc134c21`.
+This remains a source prediction until direct adapter execution confirms it.
+
+Two permanent public UnsafeRun2 controls now distinguish cancellation-action
+completion, finalizer count and execution completion for both Future and
+callback APIs. They are added before any JS UnsafeRun2 correction. The first
+direct command,
+`python3 /srv/nvme/tmp/izumi-impl/2b-js-zio-interrupted-completion-fail-first.py`,
+is running the Scala 3 JS suite. No valid failure or success is inferred before
+its actual outcome is inspected.
+
+The direct JS command compiles and exits 1 for both intended completion
+assertions. Its existing normal-execution case passes. Each new case records
+stopCompleted=true/finalizers1/executionCompleted=false. Thus the public
+interrupt action settles after finalization while neither its execution Future
+nor its execution callback is delivered. Frozen inputs remain unchanged through
+the command. This directly confirms the callback-suppression hypothesis;
+no missing callback is inferred solely from the higher watchdog.
+
+Only after that failure, the JS ZIO interruptible runner uses the same
+unconditional fiber observer and interruption action as JVM/Native. The observer
+delivers the actual converted Exit after finalization on every terminal path;
+the Future adapter retains its existing callback-backed Promise. This corrects
+both public callback and Future APIs instead of weakening RunnerToF's completion
+wait. The original completion controls and the complete JS higher fixture are
+requested in a separately captured candidate command. No successful runtime
+outcome is inferred before that process completes.
+
+The JS candidate then completes with actual exit 0 and unchanged frozen inputs.
+Both direct interruption APIs now deliver executionCompleted=true after one
+finalizer; all three UnsafeRunTest cases pass. The full JS higher main executes
+all four Cats/ZIO cancellation cases, both held parallel finalizers and both
+original-ZIO-Throwable modes, prints 402 checks and DISTAGE_PROVIDER_JS_COMPLETED.
+This establishes actual JS terminal completion at the previously missing
+boundary. It is a Scala 3 JS candidate result, not full matrix acceptance.
+
+The corrected comprehensive command is now launched:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-joined-nine-lane-fourth-matrix.py`.
+It freezes current sources, retains the prior compiler/platform commands and
+adds direct UnsafeRunTest alongside MiniBIOAsyncTest on each platform. Its
+per-lane validation requires the exact base/core/higher/test totals, JS terminal
+completion, all six public ZIO interrupted-completion markers and absence of
+rejected callbacks. Actual SBT exit codes are retained separately from these
+validation failures; the driver cannot call a lane verified merely because
+its process exits zero. No outcome is inferred from launch. The candidate
+remains uncommitted and all parent/final gates remain open.
+
+### Joined-cancellation fourth capture and Scala 2 fixture correction — 2026-10-03
+
+The fourth matrix is terminal: actual SBT exits 0/1/1 on Scala 3.9.0/2.13.18/
+2.12.21, with 1,597 source inputs unchanged. All three compiler commands complete
+base 444/444/444, bootstrap 22, core 143/103/118 and higher 484/402/402, including
+one JS terminal marker each. Scala 3 also completes direct MiniBIO/UnsafeRun
+38/36/38 and five legacy interruption cases. Both Scala 2 commands then fail
+compilation at UnsafeRunTest.scala:12:28: the nested Started case class generates
+an unchecked outer-reference warning, treated as fatal. No Scala 2 direct test
+completion is claimed for this capture.
+
+The first fourth-result auditor stops at an incorrect expectation for the
+printed interruption-mode labels; no result summary or XML acceptance is
+claimed from that attempt. A separately named second auditor uses the labels
+observed in the log. Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-joined-fourth-result-audit-second.py`.
+It independently verifies 9,018 completed named fixture checks, zero rejected
+callbacks on all three compilers, unchanged source inputs, and freezes the
+eleven selected Scala 3 XML reports: 117 cases, zero failures/errors/skips.
+Its actual exit is 1, retaining both Scala 2 command failures and missing direct
+test totals. Historical Scala 2 XMLs are not substituted for missing execution.
+
+After those compiler failures, Started becomes a plain private final holder
+class with required val fields and explicit construction. Neither its equality
+nor pattern matching is used; removing generated case-class equality avoids the
+unchecked type test without suppressing warnings or weakening either completion
+assertion. The source diff check passes. The unchanged matrix command sequence
+is rerun as
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-joined-nine-lane-fifth-matrix.py`.
+Its new source freeze includes the fixture correction. No outcome is inferred
+from launch. A bounded read-only reviewer is auditing the frozen candidate;
+all step and final-head gates remain open and no commit is made yet.
+
+### Joined-cancellation verified nine-lane candidate — 2026-10-03
+
+The fifth matrix completes with actual SBT exits 0/0/0. All 1,597 frozen source
+inputs remain unchanged and every compiler has an empty validationFailures list.
+Each completes base 444/444/444, bootstrap 22, core 143/103/118, higher
+484/402/402 and direct MiniBIO/UnsafeRun 38/36/38 plus five legacy interruption
+cases. Every compiler has one JS higher terminal marker, six successful public
+ZIO interrupted-completion markers, both JVM/Native instances of each of the
+three Identity interruption-action modes, and zero rejected callbacks.
+
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-joined-fifth-result-audit-first.py`.
+The independent root audit exits 0, rehashes all frozen source inputs, checks
+the raw completion markers and freezes 33 selected XML reports: 351 cases with
+zero failures/errors/skips. It verifies 9,018 completed named fixture checks.
+The Scala 2 holder-class correction now passes compilation and execution on all
+six affected compiler/platform lanes, with the interruption assertions intact.
+
+This is bounded lifetime evidence: foreign Identity release remains held across
+successful, asynchronously failing and synchronously throwing stop actions;
+MiniBIO joins both held parallel children; higher cancellation preserves prior
+results and waits for held Cats/ZIO memoized-resource releases before Finished;
+the JS ZIO callback/Future APIs settle after interruption and finalization.
+It does not establish foreign interruption-action error fidelity, partial child
+startup failure, all independent finalizer-error occurrences, legacy result-
+callback/allocation-release ordering or complete session cache ownership.
+
+The shared runtime changes also require broader regression execution, launched
+as
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-full-bio-legacy-regression-first.py`.
+It requests complete BIO suites on JVM/JS/Native and complete legacy-adapter
+suites on JVM/JS for each compiler. Exact child commands, actual SBT exits and
+fresh XML reports are retained separately; no outcome is inferred from launch.
+The read-only reviewer may now inspect the completed fifth capture, while
+parent/final-head gates and publication remain open.
+
+The first broader driver uses SBT 2's incremental Test/test, so it cannot prove
+complete-suite execution. Its first two actual SBT commands return 0 but print
+BIO totals 77/10/2 and 77/16/2 rather than the full suite sets, and omit the six
+public completion controls. The driver correctly retains validation failures;
+its command is not accepted as full regression evidence. Its XML-success oracle
+also incorrectly subtracts only XML skipped elements: legacy runtime reports
+nineteen deliberate cancellations, while those XML testcases contain no skipped
+element and the suite skipped attribute is zero. For example the frozen
+MyDisabledTestFZioUIO report contains the named disabled testcase without a
+status child. Such unmarked XML cases are not promoted to successful executions.
+
+A separately captured second driver requests Test/testFull for every project,
+records runtime succeeded/failed/cancelled/ignored/pending counters, and compares
+fresh XML case counts with the sum of runtime status counters. The legacy XML's
+absent cancellation representation remains disclosed; the capture does not
+claim legacy XML status fidelity. Runtime cancellations remain nineteen per
+legacy platform, with zero expected BIO cancellations. The first driver remains
+owned and running until its actual terminal outcome; no concurrent root SBT
+process or replacement is launched merely because it is still running.
+
+### Bounded cancellation checkpoint: full regression and review — 2026-10-03
+
+The first broader driver is terminal: all three SBT commands return 0, all
+sources remain unchanged, and its aggregate exit is 1 for the retained
+incremental-execution and XML-oracle validation failures. No full-suite claim
+is made from that capture. Only after it exits, root runs
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-full-bio-legacy-regression-second.py`.
+Every requested Test/testFull command completes, with actual compiler exits
+0/0/0, unchanged frozen sources and no validation failures.
+
+| Compiler | BIO JVM/JS/Native succeeded | Legacy JVM/JS succeeded | Legacy deliberate cancellations JVM/JS |
+| --- | --- | --- | --- |
+| 3.9.0 | 438/100/109 | 345/137 | 19/19 |
+| 2.13.18 | 439/101/110 | 345/137 | 19/19 |
+| 2.12.21 | 439/101/110 | 345/137 | 19/19 |
+
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-full-bio-legacy-second-result-audit-first.py`.
+The independent root audit exits 0, rehashes all 1,597 current/frozen source
+inputs, verifies the exact full-task commands and raw runtime status counters,
+and rehashes/reparses all 606 fresh frozen reports. Total: 3,393 successful
+executions, 114 deliberate legacy cancellations and 3,507 XML testcase elements;
+zero runtime failures/ignored/pending cases, zero XML failures/errors, all
+eighteen direct ZIO interrupted-completion markers, zero rejected callbacks.
+Legacy XML cancellation status remains unrepresented and is not inferred from
+its unmarked cases. The earlier targeted 351-case capture has no cancellations.
+
+The bounded read-only report finds no newly introduced material regression
+blocking a local lifetime/DI-finalizer checkpoint. Root reads its complete
+report and independently verifies all 30 repository/frozen-document and 72
+evidence records: 102 hashes/sizes, zero mismatches, actual audit exit 0.
+Report:
+`2b-active-cancellation-joined-fifth-preparatory-readonly-review-first/PREPARATORY-REVIEW.md`,
+SHA256 `2bd9178124dea883a8647b3f38175e68a247f36ffb677be2fa5821c9e5671112`.
+Schema-1 manifest SHA256:
+`897c068ea3af47b23dca7156786fddac493dd66f2a412e97c5384e2eda0e67c7`.
+Inspection SHA256:
+`bac41b2b614f7a6fe7992c98022359633d3e9571f30144052a53656a8145d48f`.
+Root audit command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-joined-fifth-preparatory-root-hash-audit-first.py`.
+The reviewer independently inspects the fifth raw logs and all selected XMLs.
+It excludes the subsequent full regression, which root separately verifies
+above, and preserves an immutable copy of its reviewed ledger version.
+
+The local source commit containing this entry checkpoints only reproduced
+active-cancellation lifetime corrections, DI-finalizer observation, the JS ZIO
+execution-completion correction and their retained behavioral controls. It
+preserves the original whole-plan scope. Foreign stop-action error fidelity,
+partial startup/rejecting execution contexts, public parallel failure routes,
+legacy result-callback/allocation-release ordering, adverse fixture cleanup,
+complete session caches/bootstrap ownership, publication and all parent/final
+evaluation points remain open. This entry establishes no complete 2b.11/O.18
+or broader step gate. The source diff check passes; no push is authorized.
