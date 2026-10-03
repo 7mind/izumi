@@ -7379,3 +7379,15 @@ corrections, five retained regression fixture files, and this ledger entry.
 The source diff check passes. The planned local commit preserves all unresolved
 parent/final gates above; no push is authorized. Generated build-info metadata
 is not claimed rebuilt after the forthcoming local commits.
+
+The bounded source checkpoint commits locally as
+`c22bcf260a21e8bef1e562e14de71637da8f7369` (2026-10-03), with predecessor
+`ee9b7660091e08dc1a11dd5862a7ead874c4cfdf`. Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-runtime-finalization-verified-commit-first.py`.
+Actual exit 0: all 1,602 tested source hashes remain unchanged, all eight committed
+path contents equal their staged/tested bytes, and the working tree is clean
+after commit. Exact preflight, commit message/output and completion are retained
+under `2b-legacy-runtime-finalization-verified-commit-first/`. No push occurs.
+The follow-up ledger commit records this actual implementation SHA and changes
+no code/build input. Final-head CI/publication and all parent evaluations remain
+open; generated build-info metadata is not claimed rebuilt after either commit.
