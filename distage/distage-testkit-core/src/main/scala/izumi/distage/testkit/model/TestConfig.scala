@@ -58,7 +58,9 @@ import scala.language.implicitConversions
   *                           Other options, Tests with different other options will run in distinct memoization environments:
   * @param configBaseName     Search for config in HOCON resource files with names `\$configBaseName.conf`,
   *                           `\$configBaseName-reference.conf`, `\$configBaseName-reference-dev.conf`
-  *                           (see [[izumi.distage.framework.services.ConfigLoader]]
+  *                           on JVM, or the corresponding `.json` resources on Scala Native.
+  *                           On Scala.js, provide configuration through [[configOverrides]].
+  *                           (see [[izumi.distage.framework.services.ConfigLoader]])
   * @param configOverrides    Overriding definitions on top of main loaded config, default `None`
   * @param bootstrapFactory   [[BootstrapFactory]], controls config loading & initial modules
   * @param planningOptions       [[PlanningOptions]], debug options for [[distage.Planner]]

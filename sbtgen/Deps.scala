@@ -931,9 +931,11 @@ object Izumi {
         name = Projects.distage.testkitCore,
         libs = Seq.empty,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
         settings = assertionFixtureSettings ++ Seq(
           "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.spec.SessionEnvironmentFixtures\")".raw,
+          "mainClass" in (SettingScope.Test, Platform.Native) := "Some(\"izumi.distage.testkit.spec.NativeTestkitFixtures\")".raw,
+          "nativeConfig" in (SettingScope.Test, Platform.Native) := """nativeConfig.value.withEmbedResources(true)""".raw,
         ),
       ),
       Artifact(

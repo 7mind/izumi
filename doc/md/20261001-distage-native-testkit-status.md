@@ -5956,3 +5956,175 @@ and graceful Native signal completion are not established. JVM repeated-request
 baseline failures are retained rather than reported as passing controls.
 No parent 1a/O.18/2b/2e item or final-head CI/publication evaluation becomes done
 at this source checkpoint. The Native testkit core/runner port proceeds next.
+
+The framework checkpoint commits locally as
+`3d00b1e81009fddf4886fbbb12b2a844ddcde0f3` (2026-10-03).
+Root verifies its working tree is clean and all 1,059 tested source/build/doc
+inputs still match the fourth freeze after commit. Capture:
+`/srv/nvme/tmp/izumi-impl/1a-part2-distage-framework-verified-commit.json`.
+This is source applicability evidence; generated build-info metadata is not
+claimed to have been rebuilt after that commit.
+
+### 1a part 2 — Native testkit core port, in progress (2026-10-03)
+
+Scope: 1a.1–3/6–8, bounded O.26/O.27 audit and supporting L3/L6 evidence.
+The Native core uses the audited JVM bootstrap policy with Native JSON
+ConfigSourceReader injection, the JVM asynchronous RunnerToF implementation,
+and JS's explicit unavailable runtime plugin discovery policy. Its session
+fixture retains the JVM-owned executor/await/termination boundary and excludes
+only runtime scanning checks, which Native's plugin loader cannot perform.
+Original-copy hashes and exact Native bootstrap substitutions are recorded in
+`1a-part2-distage-testkit-core-native-source-provenance.json` under
+`/srv/nvme/tmp/izumi-impl/`.
+
+New Native engine fixtures reimplement 0b checks using current production
+TestkitRunnerModule, SessionTestEnvironment, TestEnvironmentFactory and typed
+configuration bindings. One case reads UTF-8 bundled JSON. Four tests in two
+suites, with unlimited suite/test parallelism, share one memoized Lifecycle and
+meet at a four-party timed barrier; this observes simultaneous body entry rather
+than inferring concurrency from thread names. Resource acquisition/release are
+counted per invocation; all test IDs, returned successful results, and scope
+begin/end are checked. The parallel case also verifies a partial JSON override
+with a reference fallback. No new ambient mutable fixture owner is introduced.
+Its resource counts do not establish termination of the engine's default
+Identity runtime executors; the separately owned session-fixture executor is
+awaited and verified terminated.
+
+`python3 1a-part2-distage-testkit-core-native-generator-initial.py` captures the
+prescribed `direnv exec ROOT sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`
+argv and exits 0. build.sbt changes from the prior framework candidate to
+`8b8e379a2c4f27dee0acbb8d58a48ff1200f22f57e0692fd0a9c70dbadaa03d6`;
+plugins.sbt and build.properties retain their preceding hashes. No generated
+file is edited by hand.
+
+The first matrix freezes all inputs before running. Its Scala 3 Native Test
+compile exits 1 with E007 at NativeTestkitFixtures:116: the fixture passes
+DefaultModule.apply's Module result where SessionTestEnvironment.load requires
+the named DefaultModule[Identity] value. Root reads that precise diagnostic;
+no runtime defect is established. The fixture is corrected to obtain the
+implicit DefaultModule value. First driver, commands, logs, completion and
+source freeze remain under `1a-part2-distage-testkit-core-native-*-first*`.
+A separately named second matrix captures the corrected input.
+
+The second producer completes the Scala 3 and 2.13 Native/JVM/JS clean/testFull/
+publishLocal lanes, all actual 0. Each records Native 103 session contract checks
+plus five successful engine bodies, JVM 128 and JS 103 session contract checks;
+Native's four parallel bodies meet the barrier with acquired=1/released=1.
+The owned Native session executor terminates. Scala 3 Compile/Test additionally
+uses strict -Wunused:all. The Scala 3 full nineteen-module Native publisher exits
+0. Scala 2.13 publication and Scala 2.12 lanes remain in progress here.
+
+The separate published fixture/consumer first Scala 3 build and target child
+exit 0; no timeout, child reaped. PlanCheckMaterializer expands against a
+separately compiled fixture with explicit bundled JSON; its runtime check and
+ScalaReleaseMaterializer check pass. The consumer uses published core coordinates
+without production source shadowing and reruns the typed configuration/four-body
+memoized resource controls. Its full nineteen-module consumed Native closure is
+compared against current compiled sets and literal bytes before building.
+Evidence is `1a-part2-distage-testkit-core-native-published-engine-first/`.
+All-compiler producer/consumer completion, frozen artifact audits, final
+generator/read-only review and the local core commit remain pending.
+
+All nine second producer lanes and all three nineteen-module Native publishers
+finish with actual exit 0. Across the three compilers there are 1,002 successful
+session contract checks and fifteen Native engine bodies. The separate contract
+identity audit verifies the 103-case Native/JS label multisets are identical and
+are contained in each JVM 128-case multiset. All four concurrent-request markers
+occur on every platform/compiler. Owned Native/JVM fixture executors terminate;
+JS completion is captured. The core artifact auditor exits 0: nine JAR/POM pairs,
+3,771 exact compiled binaries including 1,330 NIR and 574 JS IR, eighteen fresh
+Compile/Test classpaths; no test fixtures or JSON test resource is published.
+Evidence is `second-artifact-audit/` and `second-contract-identity-audit/` under
+the `1a-part2-distage-testkit-core-native-` prefix.
+
+All three first separate published engine builds and children exit 0, no timeout,
+children reaped; PlanCheck and compiler checks pass. These retain their consumed
+inputs as evidence of those executions. Final prescribed generation exits 0,
+idempotent for all three tracked outputs. Capture: `generator-final.*` under the
+same core prefix.
+
+The complete closure diagnostic needs reconciliation before it can be called
+current. Its first audit exits 1 because the copied assertion still expects 54
+pairs, while this new nineteen-module graph produces 57. The separately named
+second-final diagnostic enumerates all 57 pairs and exits 0, but explicitly
+reports one differing Scala 3 fundamentals-bio NIR entry,
+`zio/_izumicompat_/__ZIORaceCompat.nir`. Thus that diagnostic's process exit is
+not a passing equality postcondition. All other class/TASTy/NIR entry sets and
+bytes agree. Published member SHA256 is
+`b4f8d804b8af4c4b0baf628f7be7be2cbfe0e5369527677753438428ad864174`;
+current captured member SHA256 is
+`72fe9ff5524382fb95d4fc1f85a52b874b087d142c21c1a7d2e8dbce354e1ef3`.
+The first consumer's preflight checked exact then-current bytes, and its
+fundamentals-bio JAR hash still matches the current published JAR. This establishes
+a later discrepancy, without identifying its cause. The same kind of IR delivery
+discrepancy was retained in the preceding extension checkpoint. No source or
+dependency correction is inferred from it.
+
+Both complete diagnostic directories and the differing compiled member are
+preserved. The new `publication-reconcile.py` driver republishes only differing
+modules and compares every current pair afterward. A fresh strict reconciled
+closure audit and separately rebuilt reconciled consumers will establish the
+final bounded publication postcondition. The read-only reviewer begins the
+semantic/source audit while those captures run; final review/commit remain pending.
+
+The reconciliation driver finishes with actual exit 0. Only Scala 3
+fundamentals-bioNative is republished; the two Scala 2 comparisons need no SBT
+publication process. Every compiler then compares all nineteen current pairs
+and finds exact entry sets and bytes. The new strict reconciled closure auditor
+exits 0 for 57 JAR/POM pairs, 32,965 binaries and 21,310 NIR with no differences.
+Its frozen metadata is
+`1a-part2-distage-testkit-core-native-complete-publication-reconciled-audit/summary.json`.
+
+All three fresh reconciled fixture/consumer builds and Native children finish
+with actual exit 0, no timeout, all reaped. Their PlanCheck/compiler checks and
+all required configuration/four-body/memoized-resource markers pass. Root's
+separate public capture auditor exits 0, verifies 628 fixture/dependency/compiled-
+fixture input hashes, and compares every consumed JAR binary entry's literal
+bytes and every POM against the frozen reconciled producer closure: all 57 pairs,
+32,965 members, zero differences. First consumers and the two earlier diagnostic
+audits remain historical captures, not substituted for the reconciled proof.
+Root verifies all 1,114 tested source/build/doc input hashes still agree after
+publication, consumer execution and generation. Final read-only review and local
+verified core commit remain pending. Parent and final acceptance gates remain open.
+
+### Verified Native testkit core source checkpoint — 2026-10-03
+
+The final bounded read-only report finds no concrete residual semantic defect or
+overstated checkpoint claim. Root reads the full report and independently verifies
+all 1,118 repository and 1,957 evidence hash records: 3,075 checked, zero
+mismatches, actual exit 0. Reviewed ledger SHA256:
+`882b3d9c6a8322261d109e3f4253c544888afb51eaa5317b2e6f4e8bbde0b9f5`.
+This provenance addition follows that review and is not text it reviewed.
+Report `1a-part2-distage-testkit-core-native-final-readonly-review/FINAL-REVIEW.md`
+SHA256: `546a0226bc910f53ea26d3e6b60086805a9ab69bfa864fc8a770c8b76d4cdf17`.
+Its `final-reviewed-input-manifest.json` SHA256:
+`90635c7a9fac009454c82d26b13f314288a7d654d5ffaa8163a7b0786c78c1c1`.
+Root's separately retained audit is
+`1a-part2-distage-testkit-core-native-final-root-hash-audit.py` and its JSON result.
+
+The local commit containing this entry checkpoints the Native core adapters,
+Native engine fixtures, generated target and public capability documentation.
+All command paths below are relative to `/srv/nvme/tmp/izumi-impl/`; their drivers
+and commands.json captures retain exact child argv and observed exit codes.
+
+| Command capture | Observed result |
+| --- | --- |
+| `python3 1a-part2-distage-testkit-core-native-second-matrix.py` | Nine clean producer lanes and three nineteen-module Native closure publishers, all actual 0; 1,002 session contract checks and fifteen Native engine bodies. |
+| `python3 1a-part2-distage-testkit-core-native-second-artifact-audit.py` | Actual 0; nine core JAR/POM pairs, 3,771 exact compiled binaries, 1,330 NIR, 574 JS IR and eighteen fresh classpaths. |
+| `python3 1a-part2-distage-testkit-core-native-second-contract-identity-audit.py` | Actual 0; Native=JS 103-label multisets, each contained in JVM128, on all three compilers. |
+| `python3 1a-part2-distage-testkit-core-native-publication-reconcile.py` | Actual 0; only Scala 3 BIO requires republication; all nineteen current pairs per compiler compare exactly afterward. |
+| `python3 1a-part2-distage-testkit-core-native-complete-publication-reconciled-audit.py` | Actual 0; 57 frozen Native JAR/POM pairs, 32,965 exact compiled binaries and 21,310 NIR, no differences. |
+| `python3 1a-part2-distage-testkit-core-native-published-engine-reconciled.py` | Three separate published consumer builds and Native children actual 0, no timeout, all reaped; configuration, parallel memoized resource, PlanCheck and compiler checks pass. |
+| `python3 1a-part2-distage-testkit-core-native-reconciled-public-capture-audit.py` | Actual 0; 628 input hashes and literal consumed/producer member and POM equality for all 57 pairs, 32,965 binary members. |
+| `python3 1a-part2-distage-testkit-core-native-generator-final.py` | Actual 0; prescribed --js --native generation idempotent for all three tracked outputs. |
+| `python3 1a-part2-distage-testkit-core-native-final-root-hash-audit.py` | Actual 0; all 3,075 final reviewer input hashes agree. |
+
+The reviewer independently checks contract label multiplicities and all 57
+consumed pairs against frozen reconciled producer bytes. It does not substitute
+mutable publication paths or process exit codes for equality checks. The first
+fixture type error, inherited 54-pair audit failure and later one-member NIR
+discrepancy remain preserved with their observed failures and unestablished
+source cause. Engine checks use Identity; they do not establish every runtime
+executor's termination or effect-specific cancellation. No parent 1a/O.18/
+O.26/O.27 item or final-head evaluation becomes done at this checkpoint.
+The higher Native testkit runner port proceeds next.

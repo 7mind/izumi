@@ -2,6 +2,14 @@
 
 @@toc { depth=2 }
 
+`distage-testkit-core` also builds on Scala Native. Its default bootstrap loads
+JSON references named `<configBaseName>.json`, `<configBaseName>-reference.json`
+and `<configBaseName>-reference-dev.json`; `configOverrides` take precedence.
+Enable Scala Native resource embedding to bundle these files. Provide plugins
+explicitly through `PluginConfig.const` or compile-time plugin loading: runtime
+classpath scanning is unavailable. The legacy ScalaTest adapter remains on JVM
+and JS.
+
 ### Quick Start
 
 `distage-testkit` simplifies pragmatic purely-functional program testing providing `Spec*`
