@@ -1,7 +1,9 @@
+import org.jsoup.Jsoup
 import sbt._
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import scala.jdk.CollectionConverters.*
 import scala.util.matching.Regex
 
 /**
@@ -28,7 +30,6 @@ import scala.util.matching.Regex
 object ScaladocAnchors {
   final case class Resolved(mappings: Seq[(File, String)])
 
-  private val idPattern: Regex = """\sid="([^"]+)"""".r
   private val hashedIdSuffix: Regex = """-[0-9a-f]+""".r
 
   def resolve(mappings: Seq[(File, String)], apiSubdir: String, output: File, log: Logger): Resolved = {
@@ -36,7 +37,7 @@ object ScaladocAnchors {
     val apiPrefix = s"$apiSubdir/"
     val apiPages: Map[String, File] = mappings.collect { case (file, path) if path.startsWith(apiPrefix) => path.stripPrefix(apiPrefix) -> file }.toMap
     val ids = collection.mutable.Map.empty[String, Set[String]]
-    def idsOf(page: String): Set[String] = ids.getOrElseUpdate(page, idPattern.findAllMatchIn(read(apiPages(page))).map(_.group(1)).toSet)
+    def idsOf(page: String): Set[String] = ids.getOrElseUpdate(page, Jsoup.parse(apiPages(page), "UTF-8").select("[id]").asScala.map(_.id()).toSet)
 
     val linkPattern: Regex = ("""href="((?:https://izumi\.7mind\.io)?(?:\./|(?:\.\./)*)/?)""" + Regex.quote(s"$apiSubdir/") + """([^"#]+)(?:#([^"]+))?"""").r
     val problems = collection.mutable.ListBuffer.empty[String]

@@ -90,20 +90,15 @@ object ParadoxMaterialTheme {
       if (anchor == null) location else location + "#" + anchor.attr("name")
     }
 
-    def processElements(section: Section, elements: List[Element]): Seq[Section] = {
-      elements match {
-        case header :: tail if headerTags(header.tagName) =>
-          Vector(section) ++ processElements(Section(headerLocation(header), header.text, ""), tail)
-        case element :: tail =>
-          val text = if (section.text.isEmpty) element.text else section.text + "\n" + element.text
-          processElements(section.copy(text = text.trim), tail)
-        case Nil =>
-          Vector(section)
-      }
-    }
-
     val searchable = doc.select("body .md-content__searchable").asScala.toList.flatMap(_.children().asScala.toList)
-    processElements(Section(location, docTitle, ""), searchable)
+    val (sections, last) = searchable.foldLeft((Vector.empty[Section], Section(location, docTitle, ""))) {
+      case ((done, current), header) if headerTags(header.tagName) =>
+        (done :+ current, Section(headerLocation(header), header.text, ""))
+      case ((done, current), element) =>
+        val text = if (current.text.isEmpty) element.text else current.text + "\n" + element.text
+        (done, current.copy(text = text.trim))
+    }
+    sections :+ last
   }
 
   private def jsonString(value: String): String = {
