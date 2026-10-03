@@ -39,7 +39,7 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
   }
 
   def materialize(resPath: String, tempPrefix: String): Option[Path] = {
-    getPath(resPath).map {
+    getPath(resPath).collect {
       case LoadablePathReference(path, _) if path.getFileSystem == FileSystems.getDefault =>
         path
       case LoadablePathReference(path, _) if Files.isDirectory(path) =>
@@ -51,8 +51,6 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
         Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
         IzResources.shareExtracted(target)
         target
-      case UnloadablePathReference(uri) =>
-        throw new IllegalStateException(s"Resource `$resPath` exists at $uri but its filesystem cannot be opened")
     }
   }
 

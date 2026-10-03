@@ -53,8 +53,10 @@ class IzResourcesTest extends AnyWordSpec {
       assert(Files.isDirectory(path))
       val entries = Using.resource(Files.list(path))(_.iterator().asScala.map(_.getFileName.toString).toList)
       assert(entries.contains("companionClass.class"))
-      assert(Files.getPosixFilePermissions(path).contains(PosixFilePermission.OTHERS_READ))
-      assert(Files.getPosixFilePermissions(path).contains(PosixFilePermission.OTHERS_EXECUTE))
+      if (FileSystems.getDefault.supportedFileAttributeViews().contains("posix")) {
+        val permissions = Files.getPosixFilePermissions(path)
+        assert(permissions.contains(PosixFilePermission.OTHERS_READ) && permissions.contains(PosixFilePermission.OTHERS_EXECUTE))
+      }
     }
 
     "return None for a missing resource" in {

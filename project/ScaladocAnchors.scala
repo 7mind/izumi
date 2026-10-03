@@ -2,7 +2,6 @@ import org.jsoup.Jsoup
 import sbt._
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.Files
 import scala.jdk.CollectionConverters.*
 import scala.util.matching.Regex
 
@@ -45,7 +44,7 @@ object ScaladocAnchors {
 
     val resolved = mappings.map {
       case (file, path) if path.endsWith(".html") && !path.startsWith(apiPrefix) =>
-        val source = read(file)
+        val source = IO.read(file, StandardCharsets.UTF_8)
         val target = linkPattern.replaceAllIn(
           source,
           m => {
@@ -99,6 +98,4 @@ object ScaladocAnchors {
       }
     }
   }
-
-  private def read(file: File): String = new String(Files.readAllBytes(file.toPath), StandardCharsets.UTF_8)
 }
