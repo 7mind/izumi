@@ -4,7 +4,8 @@ import izumi.sbtgen.model.*
 object Izumi {
 
   def main(args: Array[String]): Unit = {
-    Entrypoint.main(izumi, settings, Seq("-o", ".") ++ args.toSeq)
+    val nativeLinkSettings = if (args.contains("--native")) Projects.root.nativeLinkSettings else Seq.empty
+    Entrypoint.main(izumi.copy(rootSettings = izumi.rootSettings ++ nativeLinkSettings), settings, Seq("-o", ".") ++ args.toSeq)
   }
 
   object V {
@@ -305,6 +306,13 @@ object Izumi {
       final val topLevelSettings = Seq()
 
       final val sharedAggSettings = outOfSource
+
+      // Embedded resources close JAR filesystems shared by concurrent links (scala-native#2024).
+      private final val MaxConcurrentNativeLinks = 1
+      final val nativeLinkSettings = Seq(
+        "concurrentRestrictions" in SettingScope.Raw("Global") +=
+          s"Tags.limit(scala.scalanative.sbtplugin.ScalaNativePlugin.autoImport.NativeTags.Link, $MaxConcurrentNativeLinks)".raw
+      )
 
       private final val javacOptions = Seq(
         "javacOptions" in SettingScope.Build ++= Seq(

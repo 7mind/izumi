@@ -16,7 +16,7 @@ head. The spike reports are design evidence, not implementation verification.
 | --- | --- | --- |
 | L1 | in progress | Part-1 verification below; full gate remains outstanding. |
 | L2 | in progress | Part-1 verification below; full gate remains outstanding. |
-| L3 | in progress | Part-1 verification below; full gate remains outstanding. |
+| L3 | in progress | Part-1 and full Native CI checkpoint verification below; parent-step and final evaluation remain outstanding. |
 | L4 | not started | No evaluation point passed yet. |
 | L5 | not started | No evaluation point passed yet. |
 | L6 | in progress | Part-1 verification below; full gate remains outstanding. |
@@ -29,7 +29,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 1a.6 | in progress | No evaluation point passed yet. |
 | 1a.7 | in progress | No evaluation point passed yet. |
 | 1a.8 | in progress | Bounded core checkpoint 732228776 verifies the Native 0b DI/configuration and four-body parallel memoized Lifecycle checks on all three compilers below; parent-step evaluation remains outstanding. |
-| 1a.9 | in progress | No evaluation point passed yet. |
+| 1a.9 | in progress | All three full Native-only CI lanes pass with the serial-link policy below; parent-step and final evaluation remain outstanding. |
 | 1a.10 | in progress | No evaluation point passed yet. |
 | 1a.11 | in progress | Bounded logstage checkpoint below passes all nine producer lanes and Native published shutdown/drain controls; final-head evaluation remains outstanding. |
 | 1b.1 | in progress | Plain-core Native build, execution, and publication checkpoint below; final recheck outstanding. |
@@ -6285,3 +6285,192 @@ cause unestablished. The separately owned fixture executors terminate; the
 resource counts and process exits do not enumerate every engine/runtime executor.
 This checkpoint closes no parent 1a/O.18/O.26/O.27/2e item or final-head evaluation.
 Full Native CI-equivalent lanes proceed next from the committed source checkpoint.
+
+The higher runner checkpoint commits locally as
+`bc444f7e6aabc5aa0059c6f56a1e154c2568b88b` (2026-10-03).
+Root verifies a clean working tree and all 1,174 tested source/build/doc hashes
+after commit; capture `1a-part2-distage-testkit-runner-native-verified-commit.json`.
+Generated build-info metadata is not claimed rebuilt after that commit.
+
+### Full Native CI-equivalent lanes, bounded checkpoint — 2026-10-03
+
+`python3 /srv/nvme/tmp/izumi-impl/1a-part2-native-ci-full-first.py` creates a new
+detached worktree at the higher checkpoint and requests the exact Native-only
+CI :gen/:test actions on JDK21 with Scala 3/2.13/2.12, sequentially. It uses the
+loaded dev shell (`--without-nix`) and a fresh worktree-only SBT local cache
+directory per compiler, so persistent test history cannot suppress unchanged
+suites. The existing, explicitly recorded empty Docker CLI view is reused for
+Native's legacy bulk cleanup; it hashes to
+`9ab506e2e003dfbe02324ae5393875f13aa127a0dbc52c655677227743b087b5`
+and other Docker operations fail. Native tests need no Docker; host containers
+are not exposed to that cleanup. No repository production/test source is patched
+for the lane. Before-generation tracked inputs and exact argv/cache/wrapper
+provenance are frozen in `1a-part2-native-ci-full-first/`.
+
+The Scala 3 command fails during aggregate Native linking. Two JVM thread dumps
+each show 32 outstanding Native link task stacks; GC statistics record old
+generation occupancy above 99.9%, hundreds of full collections, and prolonged
+full-GC time. Eventually Native code generation worker threads report
+`OutOfMemoryError: Java heap space`. The separately frozen
+`scala-3/oom-before-termination.log` contains 28 such messages and hashes to
+`bc0efe3043d06f15024515127a7646cb54853b8bddc6e1a37bf3bf46f7b71f25`.
+Root verifies the task JVM's PID, executable arguments, worktree cwd and 6 GiB
+heap setting, records them in `owned-jvm-termination-request.json`, and sends
+SIGTERM only to that JVM. Its shell exits 143 and mudyla/the driver return actual
+1; this is an explicitly stopped failed run, not a naturally completed failed
+test suite. Scala 2 lanes do not start. Full executed-suite counts and engine
+markers remain unverified. This is a bounded source-head L3/1a.9 check; final
+evaluation after all implementation remains open.
+
+The first candidate adds one global Native-link concurrency restriction,
+with a named limit of two, when the generator receives `--native`. It uses the
+pinned plugin's public `NativeTags.Link`, which the plugin applies to Native
+link tasks. This controls simultaneously retained Native IR graphs within the
+existing 6 GiB CI heap. It does not change test parallelism or heap capacity.
+Pinned primary source and source-JAR captures live in
+`native-build-policy-sources-first/`; the
+[Native 0.5.12 plugin source](https://github.com/scala-native/scala-native/blob/v0.5.12/sbt-scala-native/src/main/scala/scala/scalanative/sbtplugin/ScalaNativePlugin.scala)
+documents the restriction, and its implementation tags the cached link task.
+This is a repository resource-policy correction; no upstream memory-leak
+diagnosis is established. Generation across Native/non-Native flags and full
+clean Native CI reruns follow below.
+
+The first candidate's six Native/non-Native generation modes pass, followed by
+prescribed root generation (`1a-part2-native-link-limit-generator-second.py`,
+actual 0). The initially executed generator driver fails before generation
+because it repeats the entry point's `-o` option; the second driver generates in
+its separate output cwd instead. Both scripts and the failure log are retained.
+Native modes contain exactly one restriction, non-Native modes none, and only
+Native modes load the Native plugin. The candidate changes the generator input
+and one generated root setting; plugin and properties outputs remain unchanged.
+
+`1a-part2-native-ci-limited-first.py` requests fresh exact Native-only CI actions
+in a second detached worktree at `bc444f7e6`, copying only the candidate generator
+input. Scala 3 succeeds in 244.4 seconds, with 98 XML reports containing 795
+cases, no XML failures/errors, and all six required protocol/base/core/higher
+engine markers exactly once. The reports are frozen before the next compiler.
+Scala 2.13 fails naturally with actual 1 during Native linking for
+`distage-coreNative` and `distage-testkit-runnerNative`: both report
+`java.nio.file.ClosedFileSystemException` while reading JAR members through
+`VirtualDirectory`. No heap-exhaustion message appears in that lane. Scala 2.12
+does not start. The limit of two is therefore not a verified complete correction.
+
+Pinned tools/util/NIR source JARs and GitHub issue search/comments are captured in
+`native-closed-filesystem-investigation-first/`. Native 0.5.12's
+`ResourceEmbedder` opens its own `Scope`; `VirtualDirectory.jar` reuses the
+JVM-registered ZIP filesystem on `FileSystemAlreadyExistsException`, while both
+scopes acquire that filesystem for closure. This permits an embedding operation
+to close a filesystem another link still reads. The plugin's shared outer scope
+does not protect against the embedding operation's independent scope.
+The failure class and serial-link mitigation are reported in
+[scala-native#2024](https://github.com/scala-native/scala-native/issues/2024) and
+[scala-native#4101](https://github.com/scala-native/scala-native/issues/4101).
+Those issues' historical shared-scope fix does not establish that the embedding
+path in the pinned version is corrected.
+
+Before changing the limit, a deterministic public API reproduction opens one
+JAR in two Native 0.5.12 scopes, reads successfully through each, closes the
+inner scope, then fails reading through the outer scope with
+`ClosedFileSystemException`. Command:
+`python3 /srv/nvme/tmp/izumi-impl/native-closed-filesystem-scope-repro-first.py`,
+actual 1, `reproduced=true`. Exact argv, fixture source, util binary, checksums,
+log and completion are retained. It reproduces independent-scope ownership
+failure without any izumi code; it does not independently reproduce aggregate
+link task scheduling.
+
+The next candidate uses a named limit of one Native link. It retains the pinned
+dependency and removes simultaneous link operations that expose the scope
+defect. The dependency's cross-scope ownership defect remains; the build policy
+is an explicit mitigation, not an upstream correction. Generator-mode checks
+pass in `1a-part2-native-link-limit-generator-serial-first.py` (actual 0): all
+six JVM/JS/Native flag combinations generate successfully, only Native modes
+emit one limit of one, and the non-Native outputs match the earlier controls.
+The prescribed root `--js --native` generation also succeeds; its build hash is
+`fd85dc13a5d0597a0ac46696321110e846e0749b8db6377551e6fbc0a58d9fdd`.
+Plugin and properties outputs remain unchanged. Full Native CI verification
+completes in the separately captured `1a-part2-native-ci-serial-first/` worktree.
+
+Command: `python3 /srv/nvme/tmp/izumi-impl/1a-part2-native-ci-serial-first.py`,
+actual 0. It requests the same exact Native-only JDK21 :gen/:test actions,
+sequentially on Scala 3/2.13/2.12, in a fresh detached worktree at `bc444f7e6`,
+copying only the serial generator input. Each compiler has a fresh SBT local
+cache directory. The source-head manifest, copied input, exact argv and generated
+hashes are captured before and after the commands; each lane freezes its own
+reports before the next compiler starts.
+
+| Scala axis | Actual exit | XML reports | XML cases | mudyla wall seconds |
+| --- | --- | --- | --- | --- |
+| 3 | 0 | 98 | 795 | 327.4 |
+| 2.13 | 0 | 96 | 758 | 309.1 |
+| 2.12 | 0 | 96 | 758 | 304.3 |
+
+The 290 frozen reports contain 2,311 testcase elements, with zero XML failures,
+errors or skips. Every lane also emits exactly once each required marker:
+protocol 64, base runner 436, Native DI/configuration, four parallel memoized
+Lifecycle bodies with one acquisition/release, core session environments 103,
+and higher provider 350. Assertion, Cats and BIO portable mains run as part of
+the same aggregate task. No heap-exhaustion or ClosedFileSystemException message
+appears in these successful logs. Their Native-only generated build hash is
+`89dbf652021dd583d70ce883d22500877d8cab483df60a72f2b585ff296bc585`, matching the
+separate Native-only generation control.
+
+Independent result command:
+`python3 /srv/nvme/tmp/izumi-impl/1a-part2-native-ci-serial-result-audit-first.py`,
+actual 0. It rehashes and parses every frozen XML report, checks testcase elements
+against declared counts, checks raw command outcomes and marker counts, and
+verifies all 1,588 unchanged/copied tracked inputs against both checkout and root.
+The four exclusions are the lane-specific generated build/plugin/properties
+outputs and the evolving status ledger; generated files are verified separately
+against their respective completed generation captures. Current root generator
+inputs and prescribed combined JS/Native outputs also match. Evidence and checks
+are recorded in the new audit directory. This is a bounded source-head Native
+CI correction and checkpoint; whole 1a/L3 and all final-head evaluations remain
+open. Read-only review and the local checkpoint commit follow.
+
+The read-only reviewer reports no concrete defect or overclaim in the completed
+bounded checkpoint. Final report:
+`1a-part2-native-link-limit-final-readonly-review/FINAL-REVIEW.md`, SHA-256
+`013ab4085e9d535f9e38ab11603f6ccf4fe2fbed4cded45521653246e532da79`.
+Its schema-1 input manifest hashes to
+`3c577461c57f1d3baea2878aeed3335375552c706a7fb9a43f9e3a262dd1ed78`.
+Root independently rehashes all 1,592 repository and 1,943 evidence inputs:
+3,535 records, zero mismatches. The reviewed ledger hashes to
+`afe57eb93d80b37c2d3ac40ec2e2367c34763c8b237c81e6529f6cb0f179b629` before this
+provenance addition. The earlier preparatory review is retained separately;
+root verified its 227 input hashes before the later ledger update. Review limits
+retain the captured source head, JDK21/Native-only lanes, per-lane local disk
+cache policy, isolated empty Docker view, upstream ownership defect and open
+parent/final evaluations. No reviewer reruns a build or mutates existing evidence.
+
+Local checkpoint command:
+`python3 /srv/nvme/tmp/izumi-impl/1a-part2-native-link-serial-verified-commit-first.py`.
+Its completion capture records the actual commit/date and post-commit source
+identity. Build-info metadata is not claimed rebuilt after that commit.
+
+### Active higher-runner cancellation reproduction — 2026-10-03
+
+Before any cancellation correction, a new separate published JVM Scala 3.9
+consumer compiles and invokes only public `Spec1[IO]`/`RunSession` APIs. It waits
+until an IO body has entered with one acquired memoized resource, calls
+`RunSession.cancel()`, and observes a ten-second interval before explicit
+fixture cleanup. The execution future does not complete and the resource
+remains acquired. Cleanup releases the blocked body, after which the engine
+returns its test as `Succeeded` with the run cancellation flag set. The fixture
+executor terminates; the intended cancellation assertion then fails.
+
+Command: `python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-repro-first.py`,
+actual exit 1. Exact argv, source hashes, log and completion live in the matching
+directory. Marker: `ACTIVE_CANCELLATION_REPRO observedCompleted=false acquired=1
+released=0`. Failure: `RunSession.cancel did not terminate the active IO body
+within 10 seconds`. No production cancellation source has changed.
+
+The capture audit initially mistakes SBT's generated consumer classpath JAR for
+a dependency requiring a published POM and exits 1. Its separately named second
+driver excludes this build's generated outputs and exits 0, freezing all 98
+consumed dependency JAR/POM files. All 1,174 checkpoint source hashes agree at
+that observation before the Native scheduling edit, and the consumed higher
+runner is byte-identical to the checkpoint's frozen JVM artifact and all 55
+current compiled binary members. Other dependencies are frozen as consumed;
+their entire closure is not claimed byte-identical to current compiled outputs.
+The reproduction and audit drivers are preserved unchanged. Active cancellation
+remains open under O.18; no parent or final gate closes.
