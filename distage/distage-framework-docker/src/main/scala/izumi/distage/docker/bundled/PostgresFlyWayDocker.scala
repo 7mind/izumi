@@ -21,11 +21,7 @@ object PostgresFlyWayDocker extends ContainerDef {
     schema: String = "public",
   )
   object Cfg {
-    lazy val defaultMigrationsResource: String = {
-      IzResources(classOf[Cfg])
-        .materialize("sql", "flyway-sql")
-        .fold(throw new IllegalStateException("No `sql` resource directory on the classpath: pass an explicit `flyWaySqlPath`"))(_.toString)
-    }
+    lazy val defaultMigrationsResource: String = IzResources(classOf[Cfg]).materialize("sql", "flyway-sql").fold("")(_.toString)
     lazy val default: Cfg = Cfg()
   }
 
