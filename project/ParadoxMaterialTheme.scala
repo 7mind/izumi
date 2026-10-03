@@ -3,9 +3,10 @@ import java.net.{URI, URLEncoder}
 import com.lightbend.paradox.sbt.ParadoxPlugin.autoImport.paradoxMarkdownToHtml
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
 import sbt.Keys._
 import sbt._
+
+import scala.jdk.CollectionConverters.*
 
 /**
   * Inlined replacement for the `sbt-paradox-material-theme` sbt plugin.
@@ -100,19 +101,8 @@ object ParadoxMaterialTheme {
       }
     }
 
-    val searchable = elements(doc.select("body .md-content__searchable")).flatMap(e => elements(e.children()))
+    val searchable = doc.select("body .md-content__searchable").asScala.toList.flatMap(_.children().asScala.toList)
     processElements(Section(location, docTitle, ""), searchable)
-  }
-
-  // avoids `JavaConverters`/`jdk.CollectionConverters`, which are spelled differently across the
-  // Scala versions the metabuild may be compiled with
-  private def elements(elements: Elements): List[Element] = {
-    val builder = List.newBuilder[Element]
-    val iterator = elements.iterator()
-    while (iterator.hasNext) {
-      builder += iterator.next()
-    }
-    builder.result()
   }
 
   private def jsonString(value: String): String = {

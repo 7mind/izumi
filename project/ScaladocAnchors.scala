@@ -18,6 +18,7 @@ import scala.util.matching.Regex
   * rewrites every `href` into the API subdirectory of the site mappings as follows:
   *   - a fragment equal to an id on the target page is kept as it is (that includes an explicit `name-hash`);
   *   - a fragment matching exactly one `name-<hex>` id is replaced by that id;
+  *   - a link without a fragment is only checked to point at an existing page;
   *   - a missing page, an unknown member, or a name shared by several overloads fails the build with a
   *     message naming the link; overloads must be pinned with the explicit `name-hash` form.
   *
@@ -35,7 +36,7 @@ object ScaladocAnchors {
     val ids = collection.mutable.Map.empty[String, Set[String]]
     def idsOf(page: String): Set[String] = ids.getOrElseUpdate(page, idPattern.findAllMatchIn(read(apiPages(page))).map(_.group(1)).toSet)
 
-    val linkPattern: Regex = ("""href="([^"]*?)""" + Regex.quote(s"/$apiSubdir/") + """([^"#]+)#([^"]+)"""").r
+    val linkPattern: Regex = ("""href="([^"]*?)""" + Regex.quote(s"/$apiSubdir/") + """([^"#]+)(?:#([^"]+))?"""").r
     val problems = collection.mutable.ListBuffer.empty[String]
     var rewritten = 0
 
@@ -45,15 +46,15 @@ object ScaladocAnchors {
         val target = linkPattern.replaceAllIn(
           source,
           m => {
-            val (base, page, fragment) = (m.group(1), m.group(2), m.group(3))
+            val (base, page, fragment) = (m.group(1), m.group(2), Option(m.group(3)))
             val replacement = resolveFragment(page, fragment, apiPages.contains(page), idsOf) match {
               case Right(id) => id
               case Left(problem) =>
-                problems += s"$path -> $apiSubdir/$page#$fragment: $problem"
+                problems += s"$path -> $apiSubdir/$page${fragment.fold("")("#" + _)}: $problem"
                 fragment
             }
             if (replacement != fragment) rewritten += 1
-            Regex.quoteReplacement(s"""href="$base/$apiSubdir/$page#$replacement"""")
+            Regex.quoteReplacement(s"""href="$base/$apiSubdir/$page${replacement.fold("")("#" + _)}"""")
           },
         )
         if (target == source) {
@@ -73,20 +74,25 @@ object ScaladocAnchors {
     Resolved(resolved)
   }
 
-  private def resolveFragment(page: String, fragment: String, pageExists: Boolean, idsOf: String => Set[String]): Either[String, String] = {
+  private def resolveFragment(page: String, fragment: Option[String], pageExists: Boolean, idsOf: String => Set[String]): Either[String, Option[String]] = {
     if (!pageExists) {
       Left("no such API page")
     } else {
-      val ids = idsOf(page)
-      if (ids.contains(fragment)) {
-        Right(fragment)
-      } else {
-        val candidates = ids.filter(id => id.startsWith(s"$fragment-") && id.drop(fragment.length + 1).forall(c => c.isDigit || ('a' to 'f').contains(c)))
-        candidates.toList match {
-          case Nil => Left("no such member")
-          case single :: Nil => Right(single)
-          case several => Left(s"ambiguous, ${several.size} overloads: use one of ${several.sorted.mkString(", ")}")
-        }
+      fragment match {
+        case None =>
+          Right(None)
+        case Some(member) =>
+          val ids = idsOf(page)
+          if (ids.contains(member)) {
+            Right(Some(member))
+          } else {
+            val candidates = ids.filter(id => id.startsWith(s"$member-") && id.drop(member.length + 1).forall(c => c.isDigit || ('a' to 'f').contains(c)))
+            candidates.toList match {
+              case Nil => Left("no such member")
+              case single :: Nil => Right(Some(single))
+              case several => Left(s"ambiguous, ${several.size} overloads: use one of ${several.sorted.mkString(", ")}")
+            }
+          }
       }
     }
   }

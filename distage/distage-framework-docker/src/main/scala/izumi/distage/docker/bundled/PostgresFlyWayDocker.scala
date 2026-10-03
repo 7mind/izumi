@@ -6,7 +6,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
 import izumi.fundamentals.platform.resources.IzResourcesDirty
 
-import java.nio.file.Files
+import java.nio.file.{Files, Paths}
 
 /**
   * Example postgres docker with flyway. It's sufficient to apply simple migrations on start.
@@ -28,7 +28,7 @@ object PostgresFlyWayDocker extends ContainerDef {
         url =>
           url.getProtocol match {
             case "file" =>
-              url.getPath
+              Paths.get(url.toURI).toString
             case _ =>
               val extracted = Files.createTempDirectory("flyway-sql")
               IzResourcesDirty(classOf[Cfg]).copyFromClasspath("sql", extracted)
