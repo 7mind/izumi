@@ -7162,3 +7162,15 @@ legacy result-callback/allocation-release ordering, adverse fixture cleanup,
 complete session caches/bootstrap ownership, publication and all parent/final
 evaluation points remain open. This entry establishes no complete 2b.11/O.18
 or broader step gate. The source diff check passes; no push is authorized.
+
+The bounded source checkpoint commits locally as
+`2cef0dd0fd1cc05b5987e67601fe49abc594603b` (2026-10-03), with predecessor
+`69f89c7e79d2dba22df05a421931bf286ebde559`. Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-active-cancellation-verified-commit-first.py`.
+Actual exit 0: all 1,597 tested source hashes remain unchanged, all 33 committed
+path contents equal their staged/tested bytes, the working tree is clean after
+commit and no push occurs. Exact preflight, commit message/output and completion
+are retained under `2b-active-cancellation-verified-commit-first/`.
+The follow-up ledger commit records this actual implementation hash and changes
+no code or build input. Final-head CI/publication gates remain open; generated
+build-info metadata is not claimed rebuilt after either commit.
