@@ -7691,3 +7691,44 @@ commit. Remaining work includes current-code replay/correction of custom loader
 ownership, complete compatibility/bootstrap audits, generic failure fidelity,
 application/CLI, SBT, real transports, coverage, IDE, migration and all final
 evaluation points. The full goal remains active and its acceptance is unchanged.
+
+### Current custom-loader ownership replay and design assessment — 2026-10-03
+
+Items 2b.8/O.18 remain in progress at
+`e6be4d19dd437193811c98d355038a28b3d99e8c`. No implementation correction
+is applied in this checkpoint.
+
+`python3 /srv/nvme/tmp/izumi-impl/2b-plugin-loader-residual-current-classpath-first.py`
+returns 0 and captures the current Scala 3.9 higher-runner Test classpath,
+with all 1,604 non-ledger repository inputs unchanged. The first replay driver,
+`2b-plugin-loader-residual-current-replay-first.py`, returns 1 because its
+standalone compiler command omitted the required `-Yretain-trees`; that
+compiler-precondition failure is not evidence of the ownership defect.
+
+The corrected immutable driver,
+`python3 /srv/nvme/tmp/izumi-impl/2b-plugin-loader-residual-current-replay-second.py`,
+returns 0 after recognizing both expected failures. Each byte-identical
+opaque-reconstruction and pre-existing-worker-handoff probe compiles with exit
+0, then runs with exit 1. Both print
+`seen=Vector(1, 2) sharedState=true successful=Vector(true, true)` and fail the
+fresh-session isolation requirement. Both owned executors terminate; the
+handoff executor also terminates. These are current producer-classpath
+reproductions, not published-only consumers. All 1,604 source inputs and 5,096
+dependency files remain unchanged. Aggregate driver success means reproduced
+failure, not successful session isolation.
+
+The read-only design report is
+`/srv/nvme/tmp/izumi-impl/2b-plugin-loader-owner-boundary-readonly-design-first/DESIGN-REVIEW.md`.
+Root reads it and verifies its SHA-256
+`ab5b1f395011f78643e1623349ce0bc49ff85cbf4244655c1c548eb5c65fcdd6` and manifest
+SHA-256 `e07ec7ae784fe7c99d47fabb92a0644868e4c65dd6ad0c046b4b0404795a5c0d`
+using `sha256sum`. The report proposes replayable construction descriptions
+materialized after every custom loader returns, before environment merging.
+This remains a hypothesis: eager transformations can discard provenance,
+deferred construction can change exception timing, and explicit prebuilt or
+Scala-object definitions need observable ownership controls. A prototype must
+preserve same-session resource sharing, concurrent shared-loader isolation,
+uncached requests, custom dispatch and explicit cache policies. The review
+runs no builds or probes and closes no parent/final gate. Native and assertion
+checkpoint evidence above remains applicable; runner hosts and final
+evaluations remain open.
