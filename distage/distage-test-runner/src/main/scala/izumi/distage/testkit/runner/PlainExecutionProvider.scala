@@ -34,6 +34,7 @@ final class PlainExecutionProvider(executionContext: ExecutionContext) extends E
     }
     Future.successful(new ExecutionPlan {
       override val tests: Vector[TestDescriptor] = selected
+      override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
       override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
         implicit val ec: ExecutionContext = executionContext
         Future.sequence(bodies.map(runOne(_, context))).map(results => ProviderOutcome(results, Vector.empty, context.cancellation.isRequested))

@@ -63,13 +63,13 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
 | 2c.2 | not started | No evaluation point passed yet. |
-| 2c.3 | not started | No evaluation point passed yet. |
-| 2c.4 | not started | No evaluation point passed yet. |
+| 2c.3 | in progress | Prepared-plan activation inspection passes in nine producer lanes; published protocol consumers preserve synthetic axis payloads. Actual published activation semantics and full application/final evaluation remain open. |
+| 2c.4 | in progress | Shared/nested/per-test resource scope inspection and execution pass in nine producer lanes and published consumers; full application/final evaluation remains open. |
 | 2c.5 | not started | No evaluation point passed yet. |
 | 2c.6 | not started | No evaluation point passed yet. |
-| 2c.7 | not started | No evaluation point passed yet. |
+| 2c.7 | in progress | Effective axis override/filter precedence passes in nine producer lanes. Published higher consumers verify memoization overrides and nested sharing; actual published axis precedence and full application/final evaluation remain open. |
 | 2c.8 | not started | No evaluation point passed yet. |
-| 2c.9 | not started | No evaluation point passed yet. |
+| 2c.9 | in progress | Schema-4 resolved/planned output: 159 protocol checks per producer lane, 30 published consumer platform executions and four isolated String exchanges pass. Application channel/CLI and final evaluation remain open. |
 | 2d.1 | not started | No evaluation point passed yet. |
 | 2d.2 | not started | No evaluation point passed yet. |
 | 2d.3 | not started | No evaluation point passed yet. |
@@ -8209,3 +8209,400 @@ The owner-approved custom-hook migration is implemented, but fixed 2b.10 stays
 waiting on owner for those non-import edits. Full compatibility inventory,
 production host integration, steps 2c–5 and final-head gates remain open. No
 push or publication to a remote repository occurs.
+
+The verified factory checkpoint's actual local commit is
+`35490b39c993c2c1da3ee6186cdb24199cd76509`. Root reads the complete bounded
+completion review at
+`/srv/nvme/tmp/izumi-impl/2b-plugin-factory-completion-readonly-review-first/COMPLETION-REVIEW.md`
+and verifies report SHA-256
+`4efa4c24fa812a515c3bbee9c843a1099df13eecf52a0d88a6c82ba9fffdd340`,
+schema-1 manifest SHA-256
+`815b5740852bc046cd3dea484c23b7f7edd0df42499dfaa0e5ea32afc219275c`
+and inspection SHA-256
+`846ec187380663b26f579b9b04b573c1c2ddccc4f4e8cbf04ef1dacd3f4bc2eb`.
+Root directly compares all 30 repository manifest entries with the committed
+Git blobs and reviewer-owned copies; all hashes match. The review finds no
+remaining introduced defect or bounded overclaim at this commit. It retains
+the document delta, test-scope POM-checker correction and resolved preparatory
+proof gaps. Subsequent 2c changes are excluded from that verdict. No parent or
+final acceptance item becomes done from this bounded review.
+
+### 2c prepared-plan inspection: implementation and first JVM pilot — 2026-10-03
+
+This separate uncommitted slice adds immutable resolved/planned responses to
+protocol schema 4, explicit dependency-operation and nested scope descriptions,
+per-test Planning failures and required provider inspection. The higher provider
+projects actual prepared runtime/memoization/test graphs and failures, while
+plain providers describe individual leaves with no DI operations. Scope paths
+identify boundaries within one plan; persistent test IDs remain unchanged.
+No provider values, closures, locators or effect values are serialized, and no
+instance hash/toString is used to render an operation. Dependency-key rendering
+still uses the existing DIKey text. The engine's planning/grouping/execution
+code is unchanged. Session aggregation validates inspection against selected
+IDs and reindexes independent provider roots without joining their scopes.
+
+Success checks for this substep are: portable wire round-trips and malformed
+scope/selection rejection; actual plan activation after overrides; resource
+allocation in one shared scope or one scope per test when disabled; unchanged
+within-test sharing; inspection without application resource/body acquisition;
+and execution of that same prepared plan. Application channel/CLI dispatch and
+steps 2d–5 remain subsequent work.
+
+Executed `python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-jvm-pilot-first.py`:
+terminal/actual SBT 1. Protocol compiles and runs 152 checks with schema 4.
+Base test compilation then fails because JVM BootstrapFinalizingSuite lacks
+the new required ExecutionPlan.inspection member. The reproduction is the
+captured compiler error; no base/higher runtime pass is claimed. A hidden-source
+inventory identifies that additional implementation, which is explicitly
+migrated with individual test scopes. No production default/fallback is added.
+All 1,614 non-ledger first-pilot inputs stay hash-identical during execution.
+
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-jvm-pilot-second.py` is now
+running a fresh JDK 21/Scala 3 JVM protocol/base/higher pilot with strict unused
+checks and the migrated bootstrap fixture. Its terminal result remains pending.
+The capture stores exact argv/cwd, source copies, hashes and raw logs. This
+checkpoint does not claim complete 2c behavior, publication, CLI/channel
+integration, full platform coverage or final-head gates.
+
+The second JVM pilot subsequently ends terminal/actual 0: protocol 152 with
+schema 4, base 671 (plus bootstrap 29), higher 563, all validators pass and all
+1,614 non-ledger inputs remain stable. Twenty new higher assertions compare
+resolved/serialized plan settings, actual resource-allocation scopes, no-acquire
+inspection and execution of the same plan for the five successful activation/
+memoization cases. Original execution/acquisition/release/within-test-sharing
+oracles remain unchanged.
+
+Portable nested/mixed-provider and conflicting-binding controls are added in
+SpecPlanFixtures, and a fresh third JVM pilot starts with their source frozen:
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-jvm-pilot-third.py`.
+Its result is pending. The read-only reviewer is auditing this separate bounded
+inspection slice against current sources and the completed first/second pilots;
+no preparatory review establishes an unexecuted runtime result.
+
+
+### 2c inspection: fail-first key correction and additional JVM controls — 2026-10-03
+
+The third JVM pilot ends terminal/actual 1 at higher fixture compilation:
+`configuration` was shadowed by an overridden nullary `config`, and two typed
+wildcard lambdas lacked parentheses. The separately corrected fourth pilot
+compiles and passes both nested/mixed modes (18 named assertions) but ends
+terminal/actual 1 at the conflicting-binding fixture's full-descriptor comparison.
+The targeted diagnostic capture
+`2c-plan-inspection-resolution-diagnostic-first/` ends actual/driver 1 with the
+same oracle: selected IDs are equal; discovery axes are empty; resolution adds
+mode:test, repo:prod, scene:managed and world:real. Configuration count is one,
+body count zero. The identity oracle is corrected to compare logical IDs;
+effective settings are deliberately resolved later. The original captures and
+oracles are retained rather than overwritten.
+
+The preparatory review predicts that rendered DIKey text conflates distinct
+set-element keys with equal hashes. The first public reproduction
+`2c-plan-key-collision-fail-first/` compiles actual 1 because Scala 3 rejects
+`FailurePhase + String`; it establishes no runtime result. The separately
+corrected `2c-plan-key-collision-fail-second/` compiles actual 0 and executes
+actual 1 for the expected reason:
+`successful=false bodies=0 failures=Planning:Duplicate plan dependency keys`.
+Two distinct Service instances have identity equality and equal hash 17. Their
+public set-valued module, RunSession and body oracle are otherwise valid. The
+capture wrapper exits 0 only because it verifies this expected runtime failure;
+it is not a successful test execution. The executor closes, and frozen producer
+classes, dependencies and the probe source remain stable.
+
+The correction assigns numeric DependencyKeyIds using actual DIKey equality
+and separates display labels from identity. Session aggregation remaps both
+key tables and all dependency edges across independent provider roots. The
+original renderer also invokes a bound implementation's hash through DIKey
+text: the earlier absolute no-instance-hash wording was too broad for that
+candidate. The corrected set-element label renderer avoids that hash and does
+not render the bound instance; basic named keys retain IdContract representation.
+Equal labels remain valid. The permanent collision fixture verifies two
+UseInstance keys with distinct IDs and equal labels, a schema-4 round-trip and
+execution with both set values.
+
+The preparatory validator gap is addressed by a declared key table and an
+operation domain limited to each scope or its ancestors. Producer and direct
+malformed-JSON fixtures reject undeclared keys and descendant-only references;
+declared import operations remain valid. These are public validation controls,
+not evidence of an engine-generated dangling dependency.
+
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-jvm-pilot-fifth.py`
+ends driver/actual 0 under fresh JDK21/Scala3 with strict unused checks:
+protocol 159/schema 4, base 671 plus bootstrap 29, higher 590, all validation
+markers pass and all frozen inputs remain unchanged. The higher total includes
+20 activation-plan assertions and 27 nested/mixed/conflict/collision assertions.
+The captured public fail-second source is then replayed byte-identically by
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-key-collision-replay-first.py`:
+compile/runtime/driver 0, `successful=true bodies=1 failures=`, executor closed,
+all frozen dependencies/source stable. This is a producer-class public API probe,
+not a published-only consumer result.
+
+Root reads the complete preparatory report at
+`/srv/nvme/tmp/izumi-impl/2c-plan-inspection-preparatory-readonly-review-first/PREPARATORY-REVIEW.md`
+and verifies SHA-256
+`bfcc13b32eee42508be051a59fbbbe3c865c66b8ac2732e4fa70e69ba5f52562`;
+INPUT-MANIFEST.json SHA-256
+`49bce4496296d4bad7eed8d560838c68f6a744cbe5ab1b8e569c885be0609b41`;
+inspection.json SHA-256
+`8ca610c0b8391a7f0879bf49590903027cfcdf3db327746e610fb77bb0610cdd`.
+All 38 repository and 88 evidence copies match their recorded hashes/sizes.
+The reviewed string-key candidate is historical; the later numeric correction
+has no reviewer verdict yet. Root's first hash command used the nonexistent
+name manifest.json and returned 1; the corrected exact manifest name hashes
+successfully. The withdrawn Pair field-type warning establishes no defect.
+
+Schema-4 protocol documentation and both external consumer/classloader golden
+inputs are now migrated. Consumer source adds resolved/planned nested frames,
+equal labels, planning failures and malformed references/scopes, but these new
+external consumer executions remain pending. Required provider inspection
+boundary tests now reject incomplete selected-ID coverage, declared dependencies
+without operations and discarded explicit activation settings. A fresh sixth
+JVM pilot has these new sources frozen and is pending:
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-jvm-pilot-sixth.py`.
+No complete application dispatcher/channel/CLI, all-platform publication,
+individual-replan failure control, parent or final acceptance gate is claimed.
+
+The sixth JVM pilot ends terminal/actual 0: protocol 159/schema4, base 678,
+bootstrap 29 and higher 590. The seven added boundary assertions reject two
+malformed inspections at plan and execute, verify terminal wire payloads, and
+reject a provider that drops an explicit activation override. Frozen inputs stay
+stable. No additional production correction is needed for these controls.
+
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-nine-lane-first.py`
+ends driver/actual 1 during Scala3 JS higher tests. Scala3 JVM protocol/base/core/
+higher pass (159/678/143/590); JS protocol/base/core pass (159/678/103). The
+new nested assertion then fails; Native and Scala2 are not executed by this
+fail-fast attempt. Its source freeze remains unchanged. Missing later markers
+are consequences of the stopped process, not independent observed defects.
+
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-js-nested-diagnostic-first.py`
+ends driver/actual 1 with the original condition unchanged and scope membership
+in the failure message. FirstResource has two Memoization scopes under separate
+Runtime roots, each containing one suite. SecondResource has one deeper scope
+under the first suite's root. The JVM fixture previously observed one shared
+FirstResource scope across both configurations. The mapper follows the actual
+engine roots; the original portable fixture's intended merged boundary is not
+established on JS. No guessed engine correction or relaxed oracle is applied.
+A temporary TestPlanner diagnostic compares actual unequal merge criteria and
+prints their differing key labels; its separate fresh JS capture is pending at
+`2c-plan-inspection-js-nested-diagnostic-second/`. This instrumentation is not
+intended production behavior and will be removed after the captured diagnosis.
+
+The second JS diagnostic ends actual/driver 1. Its actual two-environment
+criteria report runtime=false, bootstrapModule=false and bootstrapPlan=false;
+the differing bootstrap-operation key is AppShutdownInitiator. The default
+empty value is a stateless SAM constructed by the bootstrap factory. The
+fixture now explicitly binds one no-op within a shared, locally owned bootstrap
+module, while retaining all original nested-sharing assertions. This separate
+`2c-plan-inspection-js-nested-bootstrap-control-first/` control still ends
+actual/driver 1 at the same nested oracle: the first diagnosed difference is not
+the complete cause. No success is attributed to it.
+
+`2c-plan-inspection-js-nested-runtime-diagnostic-first/` then ends actual/driver
+1 with the same fixture unchanged. Bootstrap module and bootstrap plan equality
+are now true; runtime predecessor equality is true; runtime node differences
+are exactly PlanningOptions and the named distage-testkit IzLogger provider
+operations. TestRuntimeModule constructs their noncapturing provider closures
+separately for each environment. The observed actual operations differ on JS;
+relying on JVM stateless-lambda reuse does not establish portable plan equality.
+This is an engine-input construction defect, not a mapper defect. The earlier
+no-engine-change statement applies only to the earlier candidate.
+
+The bounded correction retains one declarative TestRuntimeModule per typed
+EnvExecutionParams invocation of planTestEnvs. That local lazy value is passed
+by-name into prepareGroupPlans and first evaluated inside its original Try,
+within the existing suspended planning effect. It adds no global cache and
+shares no provisioned runtime/resource instance across runs. Existing plan-
+equality grouping, memoization-tree construction and execution algorithms stay
+unchanged. Both temporary engine diagnostics are removed. The nested fixture
+and body/resource/scope oracles remain byte-identical to the explicit-bootstrap
+control. Fresh JS replay is pending at
+`2c-plan-inspection-js-nested-runtime-replay-first/`. Construction-failure phase
+and broader portable regressions still require verification; no passing result
+is inferred from this change.
+
+The JS runtime replay ends terminal/actual 0: higher 467, JS-completed marker,
+all inputs stable. It uses the nested fixture byte-identical to the failed
+explicit-bootstrap control; only the production TestPlanner correction changes.
+All original scope/resource/body oracles now pass. This establishes the causal
+control for retaining runtime provider identities within the typed planning
+invocation. It does not claim that arbitrary default bootstrap configurations
+merge on JS.
+
+A five-assertion public base-provider aggregation fixture now supplies two
+independent nonempty key tables with overlapping sparse local IDs (7 and 13),
+equal labels, local root 9 and ancestor dependency edges. It checks unique
+aggregate key/root identities, correct edge ownership, portable round-trip and
+execution/events for both selected tests. This addresses the review's keyOffset
+proof gap without interpreting two label strings as equal engine identities.
+Fresh `2c-plan-inspection-nine-lane-second/` is running against these sources,
+including strict Scala3 unused checks for protocol/base/core/higher on every
+platform. Expected base counts are 683 (3.9/2.13) and 682 (2.12); higher stays
+590 JVM and 467 JS/Native. Results remain pending.
+
+Root reads the entire second preparatory review at
+`/srv/nvme/tmp/izumi-impl/2c-plan-inspection-preparatory-readonly-review-second/PREPARATORY-REVIEW.md`
+and verifies report SHA-256
+`28d59065347c07d2b8e505170a44608a7f65ee891487c9b9e7cdb784914835cb`,
+schema-1 manifest SHA-256
+`e2a226f35306400da6a2803c3d020800893084d1cf383091196b2ce3c1179859`
+and inspection SHA-256
+`a2cf9815e4cc3e465776c9c28369fb931a823ccbd64534b152ae2e3f942434e7`.
+All 27 repository and 113 evidence preserved copies match recorded hashes/sizes.
+The report finds no remaining concrete defect in the corrected numeric mapping
+or reference validation, while excluding the later runtime-module correction
+and new aggregation fixture. Its preserved temporary TestPlanner diagnostic is
+historical evidence, not the current production source. Publication, individual
+replanning, the full application and all parent/final gates remain open.
+
+The second nine-lane producer matrix ends terminal/actual 0 in all three fresh
+JDK21 SBT processes. Protocol/base/core/higher Test/testFull execute 36 tasks
+across 3.9.0/2.13.18/2.12.21 × JVM/JS/Native, with four Native clean tasks per
+compiler and strict unused flags for all Scala3 project/platform variants.
+Protocol is 159/schema4 on every platform; base is 683 each on 3.9/2.13 and
+682 each on 2.12; core is 143/103/118 and higher is 590/467/467 for each
+compiler. All exact marker validators pass, including collision, resource
+finalization, generic Throwable, assertion transport, factory ownership and
+Native DI/configuration/four-test memoized resource controls. Every frozen
+non-ledger input matches at each process exit. These are named fixture assertion
+counts, not XML cases or full CI. Commands and raw/completion records are at
+`/srv/nvme/tmp/izumi-impl/2c-plan-inspection-nine-lane-second/`.
+
+A separate public individual-replanning probe uses a PlanningHook to alter the
+module only after shared parent keys are removed. The first source drops Bad;
+compile 0/runtime 1 at its one-good/one-failed oracle. Actual planning legitimately
+represents the missing root as an Import, so the observed inspection has two
+successful leaves and no Planning failures. This was an invalid fixture premise,
+not a mapper defect. The failed wrapper does not reach its end-of-run input
+manifest/completion checks. A separate post-failure audit compares its preserved
+initial source/dependency copies with current Scala3 JVM files (5,207 dependency
+files match): `2c-individual-replan-failed-probe-audit-first/`. It does not
+retroactively turn that runtime failure into success.
+
+The separately named second source introduces a conflicting Bad binding at
+that late hook instead. `python3 /srv/nvme/tmp/izumi-impl/2c-individual-replan-probe-second.py`
+ends compile/runtime/driver 0, with six hook calls/two late calls, one good leaf
+and one bad Planning/InjectorFailed record before acquisition. Its original
+resource/body/phase/wire oracles pass: selected2, successfulLeaves1,
+planningFailures1, bodies1, acquired1, released1; Finished observes release and
+the executor closes. All captured dependencies/source remain stable. This
+producer-class JVM probe establishes the actual later replan path; it is not a
+published-only or all-platform execution claim.
+
+A prepared higher external consumer source now combines the 27 portable
+nested/mixed/initial-failure/collision checks with five individual-replan checks
+and validates streamed event frames in its nested and individual-replan cases.
+The initial-conflict and collision cases discard their event callbacks. It retains both successful and failed
+selected IDs, performs no application acquisition during inspection and executes
+the same prepared plan with no new hook calls. Earlier unexecuted consumer
+source variants remain separate; no runtime result is claimed for them.
+The four changed modules (protocol/base/core/higher) are now being published
+locally across all nine producer lanes:
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-publication-first.py`,
+followed on success by `2c-plan-inspection-publication-artifact-audit-first.py`.
+Actual publication/artifact results are pending. Remote publication/push does
+not occur. Full application/CLI/channel and final gates remain open.
+
+
+Local publication ends terminal/actual 0 in three fresh JDK21 SBT processes
+with all 1,617 frozen non-ledger source inputs stable. Artifact audit ends 0:
+36 explicit current binary/POM pairs and 10,368 class/TASTy/JS-IR/Native-NIR
+entries match the producer packages and classes. Package manifests may differ
+only in the normalized per-task build timestamp. Current PlanInspection,
+DependencyKeyId, RunSession, PlannedRun, TestPlanner and DistagePlanInspection
+members are present; every non-test POM dependency excludes ScalaTest/Scalactic.
+The unchanged prior assertion artifacts still match their recorded hashes and
+are retained as dependencies for the isolated base-consumer closure.
+
+Independent copied builds are now running, each with published dependencies
+and separate generated outputs:
+`python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-isolated-consumers-first.py`
+(base9/protocol12 platform executions and four parentless String exchanges),
+and `python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-published-consumers-third.py`
+(higher9, 32 checks including both initial and individual planning failures).
+Their root audits run only after terminal success. These external execution and
+classpath/artifact-closure results remain pending. Prepared first/second higher
+source variants were not executed; the actual third variant binds its shared
+bootstrap collaborator explicitly and adds individual replanning. No
+producer/source shadow or full consumer-closure claim is made before the audits.
+
+### 2c inspection: external completion and root evidence check — 2026-10-03
+
+Both copied-consumer drivers end terminal/actual 0. The isolated base/protocol
+capture executes base on 3.9.0/2.13.18/2.12.21 × JVM/JS/Native (nine), and
+protocol on 3.8.4/3.9.0/2.13.18/2.12.21 × JVM/JS/Native (twelve), plus four
+parent-null classloader String exchanges. Schema-4 resolved/planned nested
+payloads, identical display labels, Planning failures, malformed references and
+scopes, prior-schema rejection and existing assertion/Throwable payloads pass.
+The higher third consumer executes all nine lanes with its 32 checks: nested
+sharing and Disabled scopes, mixed plain/DI, initial and individual Planning
+failures, distinct colliding keys, no application resource acquisition during
+inspection, execution of the same prepared plan, and finalization. Its nested
+and individual-replan event sinks validate emitted frames; initial-failure and
+collision event sinks discard callbacks. No all-scenario event-frame claim is
+made. The scratch individual-replan control is now exercised in the published
+portable consumer; it has not yet been installed as a permanent root fixture.
+
+Exact successful commands (the named captures preserve their individual SBT
+arguments, stdout/stderr and terminal statuses):
+
+```text
+python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-isolated-consumers-first.py
+python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-isolated-consumers-root-audit-first.py
+python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-published-consumers-third.py
+python3 /srv/nvme/tmp/izumi-impl/2c-plan-inspection-published-consumers-root-audit-third.py
+```
+
+The isolated root audit checks 1,617 frozen non-ledger inputs, 14 copied source/
+build files, 21 actual classpath sets, 434 consumer class/TASTy/IR/NIR entries
+and 138 unique dependency artifacts. The higher audit checks the same 1,617
+inputs, seven copied source/build files, nine classpath sets, 859 consumer
+binary entries and 399 unique artifacts. Each logged classpath equals its
+actual non-evicted compile update report; none resolves under the producer
+root. Compiled consumer namespaces contain only fixture code. Base/protocol
+exclude DI dependencies above their layers; both audits exclude ScalaTest and
+Scalactic. Every higher lane resolves the four newly published modules with
+hashes matching the fresh publication capture. Artifact totals are unique
+within each audit, not a disjoint sum across the two closures.
+
+Root separately reads both aggregate completions and all ten raw logs, validates
+terminal EXIT 0 and exact marker counts, checks all frozen current source and
+artifact hashes, compares all 30 logged/update classpath sets, and checks all
+1,293 preserved consumer binary hashes/namespaces. This read-only Python check
+ends 0 (tool chunk c32b85). Audit SHA-256 values:
+
+```text
+2c-plan-inspection-isolated-consumers-root-audit-first/audit.json
+95c68c48aa5d86c4f326c399b758151f71fdaa8f191a7bc3020374ad79dea28b
+2c-plan-inspection-published-consumers-root-audit-third/audit.json
+1d999307320ea4d9b64933002f0fdff4bad405d29952f7bf24d1dd78e562147f
+```
+
+All capture paths are under `/srv/nvme/tmp/izumi-impl/`. These checks establish
+this bounded inspection slice, not completion of 2c, O.19, the full application,
+CLI/framing, SBT/IDE/portable host integration, migration or final whole-HEAD
+acceptance. The required completion review and local slice commit remain
+pending here. No remote publication or push occurs.
+
+The required bounded read-only completion review finds no blocking introduced
+code defect. Root reads its full final report and verifies SHA-256 values:
+
+```text
+/srv/nvme/tmp/izumi-impl/2c-plan-inspection-completion-readonly-review-first/FINAL-REVIEW.md
+33ec8d67b532c80a9066627689e5a1531ef709cef6049b72ed313e089082bd0f
+INPUT-MANIFEST.json (schema 1)
+20d084651ae295f03ec0f34194ed9b6bb2f9c5d3a75a53734b9fa3a746760e84
+inspection.json
+c77845030c0817902df7672ced619312db66f98ea2c447c8bef8e627044fc328
+```
+
+All 27 repository and 2,127 evidence preserved records match their recorded
+hashes and sizes. The initial and corrected final ledger are separate records;
+the 26 latest relevant repository paths match the current checkout before this
+review-result append (root command exit 0, chunk 82c552). Reviewer independently
+checks the 36 artifact pairs/10,368 members, raw producer and consumer logs,
+actual dependency classpaths and preserved consumer namespaces. It identifies
+and resolves the event-sink and published-axis wording findings. Its constructor
+recovery conclusion follows from code evaluation placement, not a runtime
+constructor-failure oracle. Its scope excludes the next application draft,
+complete 2c and all parent/final gates. A local verified inspection-slice commit
+follows; its resulting hash will be recorded after creation. No push occurs.

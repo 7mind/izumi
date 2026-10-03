@@ -4,7 +4,7 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
 import io.circe.parser.parse
 
 object ProtocolCodec {
-  final val SchemaVersion = 3
+  final val SchemaVersion = 4
   final val MaxFrameCharacters = 1024 * 1024
   final val MaxJsonDepth = 128
   final val MaxFailureDepth = 32
@@ -159,6 +159,59 @@ object ProtocolCodec {
   private implicit val catalogueCodec: Codec[Catalogue] = product(
     Decoder.forProduct3("identity", "suites", "tests")(Catalogue.apply),
     Encoder.forProduct3("identity", "suites", "tests")(value => (value.identity, value.suites, value.tests)),
+  )
+  private implicit val resolvedSelectionCodec: Codec[ResolvedSelection] = product(
+    Decoder.forProduct2("request", "tests")(ResolvedSelection.apply).emap { selection =>
+      val tests = selection.tests
+      if (tests.isEmpty || tests.map(_.id).distinct.size != tests.size) Left("Resolved selection must contain distinct tests")
+      else if (tests.exists(_.id.target != selection.request.identity.target)) Left("Resolved test target differs from the request")
+      else if (tests.exists(test => selection.request.selection match {
+        case Selection.All => false
+        case Selection.Only(suites, ids) => !suites.contains(test.id.suite) && !ids.contains(test.id)
+      })) Left("Resolved selection contains an unselected test")
+      else if (tests.exists(test => test.settings.axes.map(_.axis).distinct.size != test.settings.axes.size)) Left("Duplicate effective activation axes")
+      else if (tests.exists(test => !(selection.request.overrides.axes ++ selection.request.overrides.axisFilters).forall(test.settings.axes.contains))) Left("Effective activation differs from the requested choices")
+      else if (tests.exists(test => selection.request.overrides.memoization match {
+        case MemoizationOverride.Inherit => false
+        case MemoizationOverride.Enabled => !test.settings.memoization
+        case MemoizationOverride.Disabled => test.settings.memoization
+      })) Left("Effective memoization differs from the request")
+      else Right(selection)
+    },
+    Encoder.forProduct2("request", "tests")(value => (value.request, value.tests)),
+  )
+  private implicit val dependencyKeyIdCodec: Codec[DependencyKeyId] = product(
+    Decoder.decodeInt.emap(value => if (value >= 0) Right(DependencyKeyId(value)) else Left("Invalid plan key identity")),
+    Encoder.encodeInt.contramap(_.value),
+  )
+  private implicit val dependencyKeyCodec: Codec[DependencyKey] = product(
+    Decoder.forProduct2("id", "displayName")(DependencyKey.apply),
+    Encoder.forProduct2("id", "displayName")(value => (value.id, value.displayName)),
+  )
+  private implicit val planScopeIdCodec: Codec[PlanScopeId] = product(
+    Decoder.decodeVector[Int].emap { path =>
+      if (path.isEmpty || path.exists(_ < 0)) Left("Invalid plan scope path") else Right(PlanScopeId(path))
+    },
+    Encoder.encodeVector[Int].contramap(_.path),
+  )
+  private implicit val planOperationCodec: Codec[PlanOperation] = enumeration(Vector(
+    "import" -> PlanOperation.Import, "locatorReference" -> PlanOperation.LocatorReference,
+    "createSet" -> PlanOperation.CreateSet, "callProvider" -> PlanOperation.CallProvider,
+    "useInstance" -> PlanOperation.UseInstance, "referenceKey" -> PlanOperation.ReferenceKey,
+    "createSubcontext" -> PlanOperation.CreateSubcontext, "executeEffect" -> PlanOperation.ExecuteEffect,
+    "allocateResource" -> PlanOperation.AllocateResource, "makeProxy" -> PlanOperation.MakeProxy,
+    "initProxy" -> PlanOperation.InitProxy,
+  ))
+  private implicit val planScopeKindCodec: Codec[PlanScopeKind] = enumeration(Vector(
+    "runtime" -> PlanScopeKind.Runtime, "memoization" -> PlanScopeKind.Memoization, "test" -> PlanScopeKind.Test,
+  ))
+  private implicit val planStepCodec: Codec[PlanStep] = product(
+    Decoder.forProduct3("key", "operation", "dependencies")(PlanStep.apply),
+    Encoder.forProduct3("key", "operation", "dependencies")(value => (value.key, value.operation, value.dependencies)),
+  )
+  private implicit val planScopeCodec: Codec[PlanScope] = product(
+    Decoder.forProduct4("id", "kind", "tests", "steps")(PlanScope.apply),
+    Encoder.forProduct4("id", "kind", "tests", "steps")(value => (value.id, value.kind, value.tests, value.steps)),
   )
   private implicit val phaseCodec: Codec[FailurePhase] = enumeration(Vector(
     "discovery" -> FailurePhase.Discovery, "selection" -> FailurePhase.Selection, "planning" -> FailurePhase.Planning,
@@ -358,6 +411,20 @@ object ProtocolCodec {
   private implicit val operationCodec: Codec[RequestOperation] = enumeration(Vector(
     "resolve" -> RequestOperation.Resolve, "plan" -> RequestOperation.Plan, "execute" -> RequestOperation.Execute,
   ))
+  private implicit val planFailureCodec: Codec[PlanFailure] = product(
+    Decoder.forProduct2("tests", "failure")(PlanFailure.apply),
+    Encoder.forProduct2("tests", "failure")(value => (value.tests, value.failure)),
+  )
+  private implicit val planInspectionCodec: Codec[PlanInspection] = product(
+    Decoder.forProduct3("keys", "scopes", "failures")(PlanInspection.apply),
+    Encoder.forProduct3("keys", "scopes", "failures")(value => (value.keys, value.scopes, value.failures)),
+  )
+  private implicit val plannedSelectionCodec: Codec[PlannedSelection] = product(
+    Decoder.forProduct2("selection", "inspection")(PlannedSelection.apply).emap { plan =>
+      plan.inspection.validate(plan.selection.tests.map(_.id)).map(_ => plan)
+    },
+    Encoder.forProduct2("selection", "inspection")(value => (value.selection, value.inspection)),
+  )
   private implicit val messageCodec: Codec[ProtocolMessage] = product(
     Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
       case "discover" => for {
@@ -375,6 +442,14 @@ object ProtocolCodec {
         run <- cursor.get[RunId]("run")
         catalogue <- cursor.get[Catalogue]("catalogue")
       } yield ProtocolMessage.Discovered(run, catalogue)
+      case "resolved" => for {
+        run <- cursor.get[RunId]("run")
+        selection <- cursor.get[ResolvedSelection]("selection")
+      } yield ProtocolMessage.Resolved(run, selection)
+      case "planned" => for {
+        run <- cursor.get[RunId]("run")
+        plan <- cursor.get[PlannedSelection]("plan")
+      } yield ProtocolMessage.Planned(run, plan)
       case "event" => for {
         sequence <- cursor.get[Long]("sequence")
         event <- cursor.get[RunEvent]("event")
@@ -392,6 +467,8 @@ object ProtocolCodec {
       case ProtocolMessage.Request(operation, run, request) => tagged("request", "operation" -> operationCodec(operation), "run" -> runIdCodec(run), "request" -> requestCodec(request))
       case ProtocolMessage.Cancel(run) => tagged("cancel", "run" -> runIdCodec(run))
       case ProtocolMessage.Discovered(run, catalogue) => tagged("discovered", "run" -> runIdCodec(run), "catalogue" -> catalogueCodec(catalogue))
+      case ProtocolMessage.Resolved(run, selection) => tagged("resolved", "run" -> runIdCodec(run), "selection" -> resolvedSelectionCodec(selection))
+      case ProtocolMessage.Planned(run, plan) => tagged("planned", "run" -> runIdCodec(run), "plan" -> plannedSelectionCodec(plan))
       case ProtocolMessage.Event(sequence, event) => tagged("event", "sequence" -> exactLongCodec(sequence), "event" -> eventCodec(event))
       case ProtocolMessage.Completed(outcome) => tagged("completed", "outcome" -> outcomeCodec(outcome))
       case ProtocolMessage.Rejected(run, failure) => tagged("rejected", "run" -> runIdCodec(run), "failure" -> failureCodec(failure))

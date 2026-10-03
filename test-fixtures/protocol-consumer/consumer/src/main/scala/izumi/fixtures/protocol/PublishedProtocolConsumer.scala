@@ -36,8 +36,32 @@ object PublishedProtocolConsumer {
     ProtocolCodec.encode(ProtocolMessage.Rejected(RunId("throwable"), failure))
   }
 
+  def plannedMessage: ProtocolMessage.Planned = {
+    val identity = CatalogueIdentity(BuildId("inspection-build"), BuildTargetId("inspection-target"), CatalogueId("inspection-catalogue"))
+    val axis = AxisChoice(AxisId("mode"), AxisValue("test"))
+    val tests = Vector("first", "second", "planning failure").map { name =>
+      TestDescriptor(TestId(identity.target, SuiteId("InspectionSuite"), Vector("nested", name), Some("variant")), name, SourceLocation.Known("src/InspectionSuite.scala", 12, Some(4)), EffectiveSettings(Vector(axis), memoization = true))
+    }
+    val request = RunRequest(identity, Selection.Only(Vector.empty, tests.map(_.id)), RunOverrides(Vector(axis), Vector(axis), MemoizationOverride.Enabled))
+    val resource = DependencyKeyId(0)
+    val pair = DependencyKeyId(1)
+    val successful = tests.take(2).map(_.id)
+    val scopes = Vector(
+      PlanScope(PlanScopeId(Vector(0)), PlanScopeKind.Runtime, successful, Vector.empty),
+      PlanScope(PlanScopeId(Vector(0, 0)), PlanScopeKind.Memoization, successful, Vector(PlanStep(resource, PlanOperation.AllocateResource, Vector.empty))),
+    ) ++ successful.zipWithIndex.map { case (id, index) =>
+      PlanScope(PlanScopeId(Vector(0, 0, index)), PlanScopeKind.Test, Vector(id), Vector(PlanStep(resource, PlanOperation.Import, Vector.empty), PlanStep(pair, PlanOperation.CallProvider, Vector(resource))))
+    }
+    val failure = Failure(FailurePhase.Planning, "PlanningExtensionFailure", "planning failed", Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)
+    val inspection = PlanInspection(Vector(DependencyKey(resource, "same label"), DependencyKey(pair, "same label")), scopes, Vector(PlanFailure(Vector(tests.last.id), failure)))
+    ProtocolMessage.Planned(RunId("inspection"), PlannedSelection(ResolvedSelection(request, tests), inspection))
+  }
+
+  def plannedFrame: String = ProtocolCodec.encode(plannedMessage)
+  def resolvedFrame: String = ProtocolCodec.encode(ProtocolMessage.Resolved(plannedMessage.run, plannedMessage.plan.selection))
+
   def main(args: Array[String]): Unit = {
-    val golden = "{\"schemaVersion\":3,\"message\":{\"kind\":\"cancel\",\"run\":\"published-consumer\"}}"
+    val golden = "{\"schemaVersion\":4,\"message\":{\"kind\":\"cancel\",\"run\":\"published-consumer\"}}"
     if (roundTrip(golden) != golden || ProtocolCodec.decode(golden) != Right(ProtocolMessage.Cancel(RunId("published-consumer")))) {
       throw new IllegalStateException("Published protocol changed the common wire schema")
     }
@@ -45,9 +69,14 @@ object PublishedProtocolConsumer {
       throw new IllegalStateException("Published protocol lost structured assertion source, spans, validation or observations")
     if (roundTrip(throwableFrame) != throwableFrame)
       throw new IllegalStateException("Published protocol lost separate suppressed edges or explicit capture errors")
-    if (!ProtocolCodec.decode(golden.replace("\"schemaVersion\":3", "\"schemaVersion\":2")).left.exists(_.message.contains("Unsupported protocol schema"))) {
-      throw new IllegalStateException("Published protocol must reject the previous failure schema")
+    if (!ProtocolCodec.decode(golden.replace("\"schemaVersion\":4", "\"schemaVersion\":3")).left.exists(_.message.contains("Unsupported protocol schema"))) {
+      throw new IllegalStateException("Published protocol must reject the previous schema")
     }
+    if (roundTrip(resolvedFrame) != resolvedFrame || ProtocolCodec.decode(plannedFrame) != Right(plannedMessage) || roundTrip(plannedFrame) != plannedFrame)
+      throw new IllegalStateException("Published protocol lost effective selections, nested scopes, distinct key identities or Planning failures")
+    val dangling = plannedFrame.replace("\"dependencies\":[0]", "\"dependencies\":[99]")
+    if (dangling == plannedFrame || !ProtocolCodec.decode(dangling).left.exists(_.message.contains("Unknown plan dependency key")))
+      throw new IllegalStateException("Published decoder must reject undeclared dependency references")
     val identity = CatalogueIdentity(BuildId("consumer-build"), BuildTargetId("consumer-target"), CatalogueId("consumer-catalogue"))
     val request = ProtocolMessage.Request(RequestOperation.Execute, RunId("request-one"), RunRequest(
       identity,
@@ -71,6 +100,8 @@ object PublishedProtocolConsumer {
       if (!rejected) throw new IllegalStateException(s"Published producer must reject: $reason")
     }
     rejectProducer(ProtocolMessage.Completed(skippedWithFailure), "Skipped test must not carry a failure")
+    val planned = plannedMessage
+    rejectProducer(planned.copy(plan = planned.plan.copy(inspection = planned.plan.inspection.copy(scopes = planned.plan.inspection.scopes.tail))), "parent is missing")
     var nested = failure
     var depth = 1
     while (depth < 32) {
@@ -82,6 +113,6 @@ object PublishedProtocolConsumer {
       throw new IllegalStateException("Published failure-depth boundary must round-trip")
     }
     rejectProducer(ProtocolMessage.Rejected(RunId("excess-depth"), failure.copy(causes = Vector(nested))), "Failure graph depth")
-    println("PUBLISHED_PROTOCOL_CONSUMER_OK schema=3 boundaries=verified diagnostic=structured throwable=structured")
+    println("PUBLISHED_PROTOCOL_CONSUMER_OK schema=4 boundaries=verified diagnostic=structured throwable=structured inspection=nested")
   }
 }

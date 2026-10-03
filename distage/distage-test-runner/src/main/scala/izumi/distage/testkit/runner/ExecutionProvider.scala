@@ -23,6 +23,7 @@ trait ExecutionProvider {
 
 trait ExecutionPlan {
   val tests: Vector[TestDescriptor]
+  val inspection: PlanInspection
   def execute(context: RunExecutionContext): Future[ProviderOutcome]
 }
 

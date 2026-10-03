@@ -24,6 +24,15 @@ stale catalogues, duplicate registrations and unsupported plain-suite axes
 reject before provisioning. Plans belong to the session that produced them.
 The approved per-provider test snapshot determines execution/report ownership.
 
+`ResolvedRun.description` retains the request and effective selected descriptors.
+`PlannedRun.description` adds the validated inspection returned by each provider.
+An `ExecutionPlan` must supply `inspection`; plain providers use individual
+test leaves with no DI operations. The session validates each provider against
+its selected IDs and remaps dependency keys and scope roots for the combined
+description. It preserves separate provider sharing boundaries. The portable
+descriptions can be encoded as `Resolved` and `Planned` protocol responses;
+the executable plans remain bound to their session.
+
 An `ExecutionProvider` resolves and plans its registrations. Its execution plan
 reports test starts/completions and phase failures through `ProviderEvent`.
 Providers cannot emit session lifecycle events or supply a different run ID.

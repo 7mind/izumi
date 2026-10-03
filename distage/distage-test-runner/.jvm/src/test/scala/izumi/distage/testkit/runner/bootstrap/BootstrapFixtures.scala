@@ -179,6 +179,7 @@ final class BootstrapFinalizingSuite extends TestSuite {
       override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
       override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
         override val tests: Vector[TestDescriptor] = selected
+        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
         override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
           val result = TestResult(descriptor.id, TestStatus.Succeeded, None, 0L)
           context.emit(ProviderEvent.TestStarted(descriptor.id))

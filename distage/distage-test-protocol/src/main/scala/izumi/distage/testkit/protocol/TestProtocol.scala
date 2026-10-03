@@ -159,6 +159,8 @@ object ProtocolMessage {
   final case class Request(operation: RequestOperation, run: RunId, request: RunRequest) extends ProtocolMessage
   final case class Cancel(run: RunId) extends ProtocolMessage
   final case class Discovered(run: RunId, catalogue: Catalogue) extends ProtocolMessage
+  final case class Resolved(run: RunId, selection: ResolvedSelection) extends ProtocolMessage
+  final case class Planned(run: RunId, plan: PlannedSelection) extends ProtocolMessage
   final case class Event(sequence: Long, event: RunEvent) extends ProtocolMessage
   final case class Completed(outcome: RunOutcome) extends ProtocolMessage
   final case class Rejected(run: RunId, failure: Failure) extends ProtocolMessage

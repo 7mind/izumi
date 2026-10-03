@@ -133,6 +133,8 @@ class TestPlanner(
     )
 
     val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
+    // Retain provider identity across equivalent environments; construction stays inside prepareGroupPlans' Try.
+    lazy val runtimeModule: Module = new TestRuntimeModule[TestF](envExec)
 
     for {
       memoizationEnvs <- parTraverseExt.configuredParTraverse(Parallelism.Unlimited)(testsByEnv) {
@@ -147,7 +149,7 @@ class TestPlanner(
             val logConfig = logConfigLoader.loadLoggingConfig(config)
             val router = new RouterFactory.RouterFactoryConsoleSinkImpl().createRouter(logConfig, logBuffer)
 
-            prepareGroupPlans[TestF](envExec, config, env, tests.asInstanceOf[Seq[DistageTest[TestF]]], router, runtimeGcRoots)(using effectType, defaultModule).left.map(
+            prepareGroupPlans[TestF](envExec, config, env, tests.asInstanceOf[Seq[DistageTest[TestF]]], router, runtimeGcRoots, runtimeModule)(using effectType, defaultModule).left.map(
               failure => (tests, failure)
             )
           }
@@ -197,6 +199,7 @@ class TestPlanner(
     tests: Seq[DistageTest[TestF]],
     router: LogRouter,
     runtimeGcRoots: Set[DIKey],
+    runtimeModule: => Module,
   ): Either[PlanningFailure, PackedEnv[TestF]] = {
     Try {
       val lateLogger = IzLogger(router)
@@ -207,11 +210,11 @@ class TestPlanner(
       val moduleProvider =
         env.bootstrapFactory.makeModuleProvider[TestF](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
 
-      prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider, runtimeGcRoots).left.map(errors => PlanningFailure.DIErrors(errors))
+      prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider, runtimeGcRoots, runtimeModule).left.map(errors => PlanningFailure.DIErrors(errors))
     }.toEither.left.map(e => PlanningFailure.Exception(e)).flatMap(identity)
   }
 
-  private def prepareTestEnv[F[_]: TagK: DefaultModule](
+  private def prepareTestEnv[F[_]: DefaultModule](
     envExecutionParams: EnvExecutionParams,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
@@ -219,6 +222,7 @@ class TestPlanner(
     fullActivation: Activation,
     moduleProvider: ModuleProvider,
     runtimeGcRoots: Set[DIKey],
+    runtimeModule: Module,
   ): Either[NEList[DIError], PackedEnv[F]] = {
     val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
     val appModule = {
@@ -253,7 +257,7 @@ class TestPlanner(
       // runtime plan with `runtimeGcRoots`
       runtimePlan <- envInjector.plan(
         PlannerInput(
-          appModule ++ new TestRuntimeModule[F](envExecutionParams),
+          appModule ++ runtimeModule,
           runtimeGcRoots,
           fullActivation,
         )

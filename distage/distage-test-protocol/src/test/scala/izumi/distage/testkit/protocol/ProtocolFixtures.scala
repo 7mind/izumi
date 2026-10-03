@@ -37,6 +37,8 @@ object ProtocolFixtures {
     val messages = Vector[ProtocolMessage](
       ProtocolMessage.Discover(run, identity.build, target),
       ProtocolMessage.Discovered(run, catalogue),
+      ProtocolMessage.Resolved(run, ResolvedSelection(request, catalogue.tests)),
+      ProtocolMessage.Planned(run, PlannedSelection(ResolvedSelection(request, catalogue.tests), PlanInspection.individualTests(catalogue.tests.map(_.id)))),
       ProtocolMessage.Request(RequestOperation.Resolve, run, request),
       ProtocolMessage.Request(RequestOperation.Plan, run, request.copy(selection = Selection.All, overrides = overrides.copy(memoization = MemoizationOverride.Disabled))),
       ProtocolMessage.Request(RequestOperation.Execute, run, request.copy(overrides = overrides.copy(memoization = MemoizationOverride.Enabled))),
@@ -55,7 +57,7 @@ object ProtocolFixtures {
       val decoded = ProtocolCodec.decode(frame)
       verify(decoded == Right(message), s"Wire round-trip changed $message into $decoded")
     }
-    val golden = "{\"schemaVersion\":3,\"message\":{\"kind\":\"cancel\",\"run\":\"protocol-fixture\"}}"
+    val golden = "{\"schemaVersion\":4,\"message\":{\"kind\":\"cancel\",\"run\":\"protocol-fixture\"}}"
     verify(ProtocolCodec.encode(ProtocolMessage.Cancel(run)) == golden, "All compiler/platform lanes must emit the same golden frame")
     verify(ProtocolCodec.decode(golden) == Right(ProtocolMessage.Cancel(run)), "Golden frame must decode")
     verify(first != second, "Structured paths and variants distinguish equal display names")
@@ -65,8 +67,8 @@ object ProtocolFixtures {
     def reject(frame: String, reason: String): Unit = {
       verify(ProtocolCodec.decode(frame).left.exists(_.message.contains(reason)), s"Expected protocol rejection: $reason")
     }
-    reject(golden.replace("\"schemaVersion\":3", "\"schemaVersion\":2"), "Unsupported protocol schema")
-    reject(golden.replace("\"schemaVersion\":3", "\"schemaVersion\":4"), "Unsupported protocol schema")
+    reject(golden.replace("\"schemaVersion\":4", "\"schemaVersion\":3"), "Unsupported protocol schema")
+    reject(golden.replace("\"schemaVersion\":4", "\"schemaVersion\":5"), "Unsupported protocol schema")
     reject(golden.replace("\"kind\":\"cancel\"", "\"kind\":\"unknown\""), "Unknown protocol kind")
     reject(golden.replace("protocol-fixture", ""), "Identity must not be empty")
     reject(golden + "\n", "one channel line")
@@ -90,6 +92,7 @@ object ProtocolFixtures {
       }
       verify(rejected, s"Producer must reject an invalid protocol state: $reason")
     }
+    PlanInspectionFixtures.run(run, request, catalogue.tests, failure.copy(phase = FailurePhase.Planning), verify, rejectProducer)
     val captureFields = Vector(FailureCaptureField.Message, FailureCaptureField.Cause, FailureCaptureField.Stack)
     captureFields.foreach { field =>
       val error = FailureCaptureError(field, "AccessorFailure")
@@ -177,7 +180,7 @@ object ProtocolFixtures {
         nested = prefix + nested + suffix
         remaining -= 1
       }
-      s"""{"schemaVersion":3,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
+      s"""{"schemaVersion":4,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
     }
     val deepestSupported = ProtocolMessage.Rejected(run, failureAtDepth(depthLimit))
     verify(ProtocolCodec.validate(deepestSupported) == Right(()), "Payload validation must accept its failure nesting boundary")

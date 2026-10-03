@@ -8,7 +8,7 @@ object ProtocolClassloaderConsumer {
     val urls = classpath.map(path => new File(path).toURI.toURL)
     val first = new URLClassLoader(urls, null)
     val second = new URLClassLoader(urls, null)
-    val golden = "{\"schemaVersion\":3,\"message\":{\"kind\":\"cancel\",\"run\":\"classloader-consumer\"}}"
+    val golden = "{\"schemaVersion\":4,\"message\":{\"kind\":\"cancel\",\"run\":\"classloader-consumer\"}}"
     def exchange(loader: ClassLoader, frame: String): String = {
       val moduleClass = loader.loadClass("izumi.fixtures.protocol.PublishedProtocolConsumer$")
       if (moduleClass.getClassLoader ne loader) throw new IllegalStateException("Protocol consumer escaped its isolated classloader")
@@ -25,7 +25,11 @@ object ProtocolClassloaderConsumer {
       if (exchange(second, exchange(first, diagnostic)) != diagnostic) throw new IllegalStateException("Isolated classloaders lost the structured diagnostic frame")
       val throwable = moduleClass.getMethod("throwableFrame").invoke(module).asInstanceOf[String]
       if (exchange(second, exchange(first, throwable)) != throwable) throw new IllegalStateException("Isolated classloaders lost captured Throwable relations")
-      println("PROTOCOL_CLASSLOADER_CONSUMER_OK isolated=2 exchange=String diagnostic=structured throwable=structured")
+      Vector("resolvedFrame", "plannedFrame").foreach { method =>
+        val frame = moduleClass.getMethod(method).invoke(module).asInstanceOf[String]
+        if (exchange(second, exchange(first, frame)) != frame) throw new IllegalStateException("Isolated classloaders lost plan inspection: " + method)
+      }
+      println("PROTOCOL_CLASSLOADER_CONSUMER_OK isolated=2 exchange=String diagnostic=structured throwable=structured inspection=nested")
     } finally {
       first.close()
       second.close()

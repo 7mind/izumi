@@ -87,7 +87,25 @@ private[di] object SpecActivationFixtures {
           verify(request.name + " resolves effective activation before filtering", resolution.exists(value => value.tests.size == 2 && value.tests.forall(test => test.settings.axes.contains(AxisChoice(AxisId(Mode.name), AxisValue(expected))) && test.settings.memoization == (request.overrides.memoization != MemoizationOverride.Disabled))))
         case None => verify(request.name + " rejects its explicit selection before provisioning", resolution.left.toOption.exists(failure => failure.phase == FailurePhase.Selection && failure.message.nonEmpty))
       }
-      session.execute(RunId(request.name), runRequest).map { outcome =>
+      val execution = resolution match {
+        case Left(_) => session.execute(RunId(request.name), runRequest)
+        case Right(resolved) => session.plan(resolved).flatMap {
+          case Left(failure) => Future.failed(new IllegalStateException(failure.message))
+          case Right(planned) =>
+            val description = planned.description
+            verify(request.name + " plan output retains resolved activation and logical identities", description.selection == resolved.description && description.selection.tests.map(_.id) == catalogue.tests.map(_.id))
+            val allocations = description.inspection.scopes.filter(_.steps.exists(step => description.inspection.keys.exists(key => key.id == step.key && key.displayName == DIKey[Resource].toString) && step.operation == PlanOperation.AllocateResource))
+            val sharedScope = if (request.overrides.memoization == MemoizationOverride.Disabled) {
+              allocations.size == 2 && allocations.forall(scope => scope.kind == PlanScopeKind.Test && scope.tests.size == 1)
+            } else allocations.size == 1 && allocations.head.kind == PlanScopeKind.Memoization && allocations.head.tests.toSet == catalogue.tests.map(_.id).toSet
+            verify(request.name + " plan output describes actual resource sharing boundaries", sharedScope)
+            verify(request.name + " plan inspection provisions no application resources or bodies", acquired.get() == 0 && released.get() == 0 && bodies.get() == 0 && shared.get() == 0)
+            val frame = ProtocolMessage.Planned(RunId(request.name), description)
+            verify(request.name + " plan output round-trips through the protocol", ProtocolCodec.decode(ProtocolCodec.encode(frame)) == Right(frame))
+            session.execute(RunId(request.name), planned)
+        }
+      }
+      execution.map { outcome =>
         val expectedBodies = if (request.expected.isDefined) 2 else 0
         verify(request.name + " executes its resolved choice with its intended lifetime", acquired.get() == request.resources && released.get() == request.resources && bodies.get() == expectedBodies && shared.get() == expectedBodies && wrongChoice.get() == 0)
         verify(request.name + " execution agrees with resolution or explains rejection", if (request.expected.isDefined) outcome.successful && outcome.results.map(_.id) == catalogue.tests.map(_.id) else !outcome.successful && outcome.results.isEmpty && outcome.failures.size == 1 && outcome.failures.head.phase == FailurePhase.Selection)

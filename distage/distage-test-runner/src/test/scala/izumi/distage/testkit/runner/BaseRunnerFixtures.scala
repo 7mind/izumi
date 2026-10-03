@@ -113,6 +113,7 @@ object BaseRunnerFixtures {
         override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
         override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
           override val tests: Vector[TestDescriptor] = selected
+          override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
           override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
             acquired.incrementAndGet()
             val results = tests.map { test =>
@@ -150,6 +151,7 @@ object BaseRunnerFixtures {
           override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
           override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
             override val tests: Vector[TestDescriptor] = selected
+            override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
             override def execute(context: RunExecutionContext): Future[ProviderOutcome] = Future.successful(ProviderOutcome(Vector.empty, Vector.empty, cancelled = false))
           })
         }
@@ -164,7 +166,7 @@ object BaseRunnerFixtures {
         val selectedId = catalogue(invalid).tests.head.id
         verify(invalid.resolve(RunRequest(identity, Selection.Only(Vector.empty, Vector(selectedId)), inherited)).isLeft, "Provider resolution must not reintroduce an unselected registered test")
         ProviderBoundaryFixtures.run(identity, verify)
-      }.flatMap(_ => registrationOwnership(ec, verify)).flatMap(_ => CancellationFixtures.run(ec, verify)).flatMap(_ => AssertionTransportFixtures.run(ec, verify)).flatMap(_ => ThrowableCaptureFixtures.run(ec, verify)).map { _ =>
+      }.flatMap(_ => PlanAggregationFixtures.run(identity, ec, verify)).flatMap(_ => registrationOwnership(ec, verify)).flatMap(_ => CancellationFixtures.run(ec, verify)).flatMap(_ => AssertionTransportFixtures.run(ec, verify)).flatMap(_ => ThrowableCaptureFixtures.run(ec, verify)).map { _ =>
         println(s"BASE_RUNNER_FIXTURES_OK checks=${checks.get()} sessions=isolated finalization=awaited")
       }
     }

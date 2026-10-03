@@ -13,13 +13,17 @@ final class ResolvedRun private[runner] (
   val tests: Vector[TestDescriptor],
   private[runner] val providers: Vector[ResolvedProvider],
   private[runner] val owner: RunSession,
-)
+) {
+  val description: ResolvedSelection = ResolvedSelection(request, tests)
+}
 
 final class PlannedRun private[runner] (
-  val tests: Vector[TestDescriptor],
+  val description: PlannedSelection,
   private[runner] val plans: Vector[PlannedProvider],
   private[runner] val owner: RunSession,
-)
+) {
+  val tests: Vector[TestDescriptor] = description.selection.tests
+}
 
 final class RunSession(
   identity: CatalogueIdentity,
@@ -100,7 +104,11 @@ final class RunSession(
         }.flatMap { groups =>
           val resolved = groups.flatMap(_.tests)
           if (resolved.isEmpty) Left(RunnerFailure.message(FailurePhase.Selection, "Selection matched no tests"))
-          else Right(new ResolvedRun(request, resolved, groups, this))
+          else {
+            val result = new ResolvedRun(request, resolved, groups, this)
+            ProtocolCodec.validate(ProtocolMessage.Resolved(RunId("resolution"), result.description))
+              .left.map(error => RunnerFailure.message(FailurePhase.Selection, error.message)).map(_ => result)
+          }
         }
       }
     }
@@ -121,13 +129,35 @@ final class RunSession(
           planned.map { value =>
             if (value.tests.map(_.id).toSet != group.tests.map(_.id).toSet || value.tests.map(_.id).distinct.size != value.tests.size) {
               Left(RunnerFailure.message(FailurePhase.Planning, "Execution plan changed selected test identities"))
-            } else Right(PlannedProvider(value, group.tests))
+            } else value.inspection.validate(group.tests.map(_.id))
+              .left.map(error => RunnerFailure.message(FailurePhase.Planning, error)).map(_ => PlannedProvider(value, group.tests))
           }.recover { case NonFatal(cause) => Left(RunnerFailure.fromThrowable(FailurePhase.Planning, cause)) }
         }
         Future.sequence(plans).map { results =>
           results.collectFirst { case Left(failure) => failure } match {
             case Some(failure) => Left(failure)
-            case None => Right(new PlannedRun(resolved.tests, results.collect { case Right(value) => value }, this))
+            case None =>
+              val providers = results.collect { case Right(value) => value }
+              var rootOffset = 0
+              var keyOffset = 0
+              val inspections = providers.map { provider =>
+                val local = provider.plan.inspection
+                val roots = local.scopes.filter(_.id.path.size == 1).map(_.id.path.head).zipWithIndex.map { case (root, index) => root -> (index + rootOffset) }.toMap
+                val keys = local.keys.zipWithIndex.map { case (key, index) => key.id -> DependencyKeyId(index + keyOffset) }.toMap
+                rootOffset += roots.size
+                keyOffset += keys.size
+                val scopes = local.scopes.map { scope =>
+                  scope.copy(
+                    id = PlanScopeId(scope.id.path.updated(0, roots(scope.id.path.head))),
+                    steps = scope.steps.map(step => step.copy(key = keys(step.key), dependencies = step.dependencies.map(keys))),
+                  )
+                }
+                PlanInspection(local.keys.map(key => key.copy(id = keys(key.id))), scopes, local.failures)
+              }
+              val inspection = PlanInspection(inspections.flatMap(_.keys), inspections.flatMap(_.scopes), inspections.flatMap(_.failures))
+              val description = PlannedSelection(resolved.description, inspection)
+              ProtocolCodec.validate(ProtocolMessage.Planned(RunId("planning"), description))
+                .left.map(error => RunnerFailure.message(FailurePhase.Planning, error.message)).map(_ => new PlannedRun(description, providers, this))
           }
         }
     }

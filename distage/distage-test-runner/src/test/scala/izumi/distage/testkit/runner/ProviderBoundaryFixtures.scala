@@ -2,6 +2,7 @@ package izumi.distage.testkit.runner
 
 import izumi.distage.testkit.protocol.*
 
+import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -24,6 +25,7 @@ object ProviderBoundaryFixtures {
       override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
       override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
         override val tests: Vector[TestDescriptor] = selected
+        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
         override def execute(context: RunExecutionContext): Future[ProviderOutcome] = body(selected, context)
       })
     }
@@ -147,6 +149,49 @@ object ProviderBoundaryFixtures {
           verify(returned.failures.count(_ == failure) == 2 && returnedSink.events.count(_.event == RunEvent.PhaseFailed(returned.run, failure)) == 2, "Returned-only failure occurrences must each reach the sink")
           checkWire(returned, returnedSink)
         }
+      }
+    }.flatMap { _ =>
+      val resource = DependencyKeyId(0)
+      val missingOperation = DependencyKeyId(1)
+      val malformed = Vector(
+        PlanInspection(Vector.empty, Vector.empty, Vector.empty) -> "cover the selected tests",
+        PlanInspection(
+          Vector(DependencyKey(resource, "resource"), DependencyKey(missingOperation, "missing operation")),
+          Vector(PlanScope(PlanScopeId(Vector(0)), PlanScopeKind.Test, Vector(descriptor.id), Vector(PlanStep(resource, PlanOperation.CallProvider, Vector(missingOperation))))),
+          Vector.empty,
+        ) -> "no operation in its scope or ancestor",
+      )
+      malformed.foldLeft(Future.successful(())) { case (previous, (inspection, reason)) =>
+        previous.flatMap { _ =>
+          val executions = new AtomicInteger(0)
+          val invalid = new ExecutionProvider {
+            override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
+            override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
+              override val tests: Vector[TestDescriptor] = selected
+              override val inspection: PlanInspection = invalidInspection
+              override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
+                val _ = executions.incrementAndGet()
+                Future.successful(ProviderOutcome(Vector(success), Vector.empty, cancelled = false))
+              }
+            })
+            private val invalidInspection = inspection
+          }
+          val sink = new Sink
+          val plannedSession = session(Vector(contribution(descriptor.id.suite, Vector(descriptor), invalid)), sink)
+          val resolved = plannedSession.resolve(request).fold(failure => throw new IllegalStateException(failure.message), value => value)
+          plannedSession.plan(resolved).flatMap { planned =>
+            verify(planned.left.exists(failure => failure.phase == FailurePhase.Planning && failure.message.contains(reason)) && executions.get() == 0 && sink.events.isEmpty, "Invalid provider inspection must reject before execution or events: " + reason)
+            session(Vector(contribution(descriptor.id.suite, Vector(descriptor), invalid)), sink).execute(RunId("invalid-inspection"), request).map { outcome =>
+              verify(!outcome.successful && outcome.failures.exists(failure => failure.phase == FailurePhase.Planning && failure.message.contains(reason)) && executions.get() == 0, "Execution must retain the provider inspection rejection: " + reason)
+              checkWire(outcome, sink)
+            }
+          }
+        }
+      }.map { _ =>
+        val invalidSettings = provider((_, _) => throw new IllegalStateException("Invalid resolved settings must prevent execution"))
+        val requestedAxis = AxisChoice(AxisId("mode"), AxisValue("test"))
+        val invalid = session(Vector(contribution(descriptor.id.suite, Vector(descriptor), invalidSettings)), new Sink)
+        verify(invalid.resolve(request.copy(overrides = overrides.copy(axes = Vector(requestedAxis)))).left.exists(failure => failure.phase == FailurePhase.Selection && failure.message.contains("activation differs")), "Provider resolution must preserve explicit effective activation overrides")
       }
     }
   }

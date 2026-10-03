@@ -6,7 +6,7 @@ plugin can consume it. The testkit producer remains 3.9.0. Scala 2 producers are
 2.12.21 and 2.13.18. JavaScript IR and Native NIR are present in their respective
 artifacts.
 
-Schema 3 frames are compact JSON objects with `schemaVersion` and `message`.
+Schema 4 frames are compact JSON objects with `schemaVersion` and `message`.
 The caller sends each frame as one line on a dedicated protocol channel.
 Ordinary test output belongs on stdout, separately from that channel. JSON
 escaping keeps embedded line breaks in diagnostic text within one frame.
@@ -21,6 +21,17 @@ revalidation. The schema also carries suite settings, run overrides, structured
 failure phases, causes, suppressed exceptions, field capture errors, assertion
 observations, results and correlated events.
 It never carries a live closure, locator or effect value.
+
+Resolved responses retain the request and selected descriptors with their final
+activation and memoization settings. Planned responses add a dependency-key
+table, flat scope paths describing runtime, memoization and individual-test
+boundaries, classified DI operations, dependency edges and per-test Planning
+failures. Key IDs and scope paths identify entries within that plan; they are
+not persistent test identities. Display labels may coincide for distinct keys.
+Every referenced key is declared, and dependency operations belong to the same
+scope or an ancestor. Successful test leaves and planning failures cover the
+selected tests exactly once. Independent providers retain separate roots.
+See [prepared-plan inspection](20261003-test-plan-inspection.md).
 
 Known source locations have a path, zero-based line and optional zero-based
 UTF-16 column. Missing columns and unavailable locations are explicit. The
@@ -37,7 +48,7 @@ value. Rendering and provider failures carry their exception class and an explic
 message value. A null message is unavailable; a nonfatal exception from the
 message accessor records that accessor failure's class without replacing the
 original assertion. Such reporting failures are not converted to empty messages.
-Schemas 1 and 2 are rejected explicitly.
+Schemas 1, 2 and 3 are rejected explicitly.
 
 Generic failures retain their original phase and exception class. A nonfatal
 exception from getMessage, getCause or getStackTrace makes that field unavailable

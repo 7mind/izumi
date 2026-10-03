@@ -118,6 +118,7 @@ final class DistageExecutionProvider(
     effectRunner.runFuture(runner.plan(selected)).map { prepared =>
       new ExecutionPlan {
         override val tests: Vector[TestDescriptor] = reporter.tests
+        override val inspection: PlanInspection = DistagePlanInspection(prepared.planned.out, tests)
         private val started = new AtomicBoolean(false)
 
         override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
