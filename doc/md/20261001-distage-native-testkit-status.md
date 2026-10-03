@@ -7732,3 +7732,87 @@ uncached requests, custom dispatch and explicit cache policies. The review
 runs no builds or probes and closes no parent/final gate. Native and assertion
 checkpoint evidence above remains applicable; runner hosts and final
 evaluations remain open.
+
+### Ownership prototype falsification and generic failure captures — 2026-10-03
+
+The previous goal turn made progress by recording the current ownership
+reproductions and the enforceable-boundary design assessment. This turn tests
+two isolated representations without changing repository implementation inputs.
+Items 2b.8/O.18, O.1 and 2b.10 remain open at
+`674d749f04b0d20b9c341e4b1f6a41935dbb4d1e`.
+
+Commands run under `/srv/nvme/tmp/izumi-impl/`:
+
+- `python3 2b-plugin-sequence-prototype-first.py baseline`: terminal 0;
+  constructor handling passes and both known ownership probes fail. Its last
+  memoization runtime uses an incorrect main-class package and exits 1 with
+  ClassNotFoundException; that last result is a harness precondition failure.
+- `python3 2b-plugin-sequence-prototype-second.py baseline`: terminal 0;
+  corrected main-class package. The custom load catches an uncached plugin
+  constructor exception (`caughtInsideLoad=true resultSuccessful=true`). Both
+  original opaque/handoff probes compile 0 and run 1, with state counts 1/2.
+  The unchanged same-session memoization probe passes with two loaders, two
+  bodies, one actual acquisition/release and one shared resource.
+- `python3 2b-plugin-sequence-prototype-second.py prototype`: terminal 0 means
+  expected outcomes were recognized. Five overlaid candidate sources compile
+  with strict unused checks and Werror. Both byte-identical isolation probes
+  and unchanged memoization control now run 0. The unchanged constructor
+  control runs 1 (`caughtInsideLoad=false resultSuccessful=false`), because
+  deferred materialization moves construction outside the custom load hook.
+  This prototype is rejected for that observed regression.
+- `python3 2b-plugin-sequence-prototype-third.py prototype`: terminal 0;
+  all nine actual compile/runtime commands return 0. This eager candidate
+  caches constructor descriptions globally, constructs package results in the
+  loader call, and adopts returned package definitions at the universal owner
+  wrapper. Both original isolation probes show counts 1/1 and distinct state;
+  the constructor-catch and same-session resource controls pass.
+- `python3 2b-plugin-sequence-prototype-fourth.py baseline` and
+  `python3 2b-plugin-sequence-prototype-fourth.py prototype`: both terminal 0
+  mean the expected contrasting outcomes were recognized. A new eager
+  transformation control copies loaded plugins with PluginBase.from inside an
+  opaque reconstructing loader. On production code it runs 0 with one
+  acquisition/release and shared resource. On the eager prototype it runs 1
+  with two acquisitions/releases and distinct resources, failing the original
+  same-session memoization requirement. The other four controls retain their
+  preceding outcomes. The eager prototype therefore also remains unintegrated.
+
+All executed drivers and copied probe sources are retained unchanged. Each
+capture freezes repository/prototype/probe inputs and verifies stable inputs
+and 5,096 current dependency files. These use Scala 3/JVM class overlays,
+not complete builds or published-only consumers. Both owned probe executors,
+the handoff executor, and memoization executors terminate in applicable logs.
+No broader compiler/platform or concurrent-overlap claim follows.
+
+Root reads the complete bounded read-only prototype review and verifies report
+SHA-256 `f392de0ee8ab9b9e48950809d33b3af7d7853848662e59bd1e922b4983fcc6fd`
+and manifest SHA-256
+`c0f2c1304b75529240203455b77c122e9839a2a1a92c18ab7a7b27c98e91d375`
+using `sha256sum`. The review checks selected source/log copies from the third
+capture without running programs. Its additional predictions concern changed
+legacy cached-construction policy, discarded constructions on owner-cache hits,
+mappers retaining references to discarded definitions, and distinct explicit
+cache policies being collapsed. Those predictions are not runtime observations
+in this report. The fourth capture independently establishes the eager
+transformation memoization regression; it is outside the review's input scope.
+
+A scoped owner question is pending: whether existing eager custom-loader hooks
+must retain imports-only compatibility or may migrate to an explicit owned
+factory contract. The fixed acceptance and owner decisions are unchanged;
+neither prototype is approved by an absent response. Independent reporting
+work continues, and no parent step or goal is marked blocked or complete.
+
+Independent generic failure-capture reproduction command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-generic-failure-capture-first.py`.
+Terminal aggregate 0 recognizes one passing control and five expected failures.
+The unchanged current producer classpath compiles the public-API probe with
+exit 0. Ordinary exception/cause capture runs 0 and round-trips. Message, cause
+and stack accessor modes run 1: fromThrowable throws the accessor's
+IllegalStateException instead of returning the original Test-phase failure.
+Suppressed mode runs 1: the original root round-trips, but its suppressed
+exception is absent. Stateful-depth mode runs 1: the cause accessor is read
+twice at the protocol depth limit and the resulting record fails codec
+round-trip. Exact argv, source hash, raw markers and dependency provenance are
+captured in `2b-generic-failure-capture-first/`; the source and 5,096 dependency
+files remain unchanged. These are fail-first Scala 3/JVM capture/codec checks,
+not full RunSession, all-platform, publication or host evidence. No reporting
+correction is applied yet; broader error-graph fidelity remains open.
