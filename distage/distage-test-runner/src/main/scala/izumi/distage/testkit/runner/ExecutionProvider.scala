@@ -140,14 +140,17 @@ object RunnerFailure {
   def fromThrowable(phase: FailurePhase, cause: Throwable): Failure = {
     def convert(current: Throwable, depth: Int, ancestors: List[Throwable]): Failure = {
       if (ancestors.exists(_ eq current)) message(FailurePhase.Transport, "Exception cause cycle cannot be represented")
-      else if (depth == ProtocolCodec.MaxFailureDepth && current.getCause != null) message(FailurePhase.Transport, "Exception cause depth exceeds the protocol limit")
       else {
-        val causes = Option(current.getCause).map(next => convert(next, depth + 1, current :: ancestors)).toVector
-        val assertion = current match {
-          case failure: AssertionFailure => Some(AssertionDiagnosticConverter.convert(failure))
-          case _ => None
+        val nextCause = current.getCause
+        if (depth == ProtocolCodec.MaxFailureDepth && nextCause != null) message(FailurePhase.Transport, "Exception cause depth exceeds the protocol limit")
+        else {
+          val causes = Option(nextCause).map(next => convert(next, depth + 1, current :: ancestors)).toVector
+          val assertion = current match {
+            case failure: AssertionFailure => Some(AssertionDiagnosticConverter.convert(failure))
+            case _ => None
+          }
+          Failure(phase, current.getClass.getName, Option(current.getMessage).getOrElse(""), current.getStackTrace.toVector.map(_.toString), causes, assertion)
         }
-        Failure(phase, current.getClass.getName, Option(current.getMessage).getOrElse(""), current.getStackTrace.toVector.map(_.toString), causes, assertion)
       }
     }
     convert(cause, 1, Nil)

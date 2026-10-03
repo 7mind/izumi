@@ -7816,3 +7816,68 @@ captured in `2b-generic-failure-capture-first/`; the source and 5,096 dependency
 files remain unchanged. These are fail-first Scala 3/JVM capture/codec checks,
 not full RunSession, all-platform, publication or host evidence. No reporting
 correction is applied yet; broader error-graph fidelity remains open.
+
+### Cause snapshot correction: verified runner checkpoint — 2026-10-03
+
+This bounded reporting correction contributes to 2b.11/O.18. Those items,
+2b.8/2b.10, the parent steps and all final evaluation points remain open. The
+implementation checkpoint is this entry's commit, with subject
+`Snapshot Throwable causes once; verify nine runner lanes`. Its verification
+starts at `24ec33b23471b01fd97d13756bf262602fa255ed` with the three recorded
+implementation/test changes; every non-ledger input remains identical through
+the matrix. No build, generator, dependency or loader implementation changes.
+
+The hypothesis was that a stateful getCause at root-inclusive depth 32 could
+return null to the depth check, then a child to traversal, creating an invalid
+depth-33 record. A permanent portable fixture and its base-entry wiring were
+added first. Command
+`python3 /srv/nvme/tmp/izumi-impl/2b-cause-snapshot-fail-first.py`
+finishes with harness 0 and actual SBT 1, after successful compilation, at the
+expected assertion: `Exception cause access must be snapshotted once at the
+protocol depth boundary hasCause=false`. The captured command is JDK 21 SBT
+batch `++3.9.0; distage-test-runnerJVM/Test/testFull`. This is the intended
+failure, rather than a setup or import failure.
+
+RunnerFailure now reads each non-cycle exception's cause into one local value
+and uses it for both decisions. The fixture exercises first-read null and
+first-read non-null boundary cases, verifies one accessor invocation, retained
+leaf or explicit existing truncation behavior, and full protocol round-trip.
+Its six checks add no resource or child-task ownership. Cycle/depth policy and
+public signatures remain unchanged.
+
+Command `python3 /srv/nvme/tmp/izumi-impl/2b-cause-snapshot-nine-lane-first.py`
+finishes 0. For each of 3.9.0, 2.13.18 and 2.12.21, a fresh JDK 21 SBT batch
+process runs the base and higher runner Test/testFull tasks on JVM, JS and
+Native, after cleaning both Native projects. All three actual process exits
+are 0. Scala 3 additionally enables Compile/Test -Wunused:all on all six
+projects with the project's fatal-warning policy. Base counts are 583 on each
+3.9/2.13 platform and 582 on each 2.12 platform; higher counts are 487 on JVM
+and 405 on JS/Native for each compiler. Each lane retains the 16-case assertion
+transport and four-effect higher assertion markers. JVM/Native executor
+termination, JS completion and the 22-check JVM bootstrap marker are verified.
+The driver freezes and verifies all 1,605 tracked/untracked non-ledger inputs.
+Exact argv, source copies, per-compiler raw logs and completion records are in
+the named capture directory. Root separately compares current sources to that
+manifest and reads the raw completion/count/cleanup markers.
+
+Command
+`python3 /srv/nvme/tmp/izumi-impl/2b-generic-failure-capture-after-snapshot-first.py`
+finishes 0 after the matrix. It recompiles the byte-identical original public
+probe against the current Scala 3 JVM producer classes: ordinary and
+stateful-depth now run 0. Stateful depth records `captured=true original=true
+roundTrip=true detail=true causeReads=1`. Message, cause and stack accessors
+still run 1 because conversion throws; suppressed mode still runs 1 because
+detail is absent. Aggregate 0 recognizes these four remaining expected
+failures and does not claim they were corrected. Source and copied dependency
+hashes remain unchanged; commands/logs/manifest are retained. This replay is a
+capture/codec check, not a RunSession, published-consumer or real-host check.
+
+Root reads the complete preparatory read-only source review and verifies report
+SHA-256 `ca190456b4caad7dac2a224c82f1560947386038faf07f2a5208b9a0dc47259f`
+and manifest SHA-256
+`2693e10f097470576b64c097c4a20ed9b3bc53928881b8dcbbdc7fd806ab8fd1`.
+It identifies no introduced source defect and explicitly excludes the then-live
+matrix outcomes. Generic accessor/suppressed fidelity, truncated-node metadata,
+complete custom-hook isolation, host integration and final evaluations remain
+outstanding. Native CI and assertion checkpoint evidence above retains its
+original scope; this bounded matrix does not repeat full CI or publication.

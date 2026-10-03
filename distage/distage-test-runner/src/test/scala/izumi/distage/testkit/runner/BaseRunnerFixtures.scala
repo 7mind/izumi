@@ -32,6 +32,7 @@ object BaseRunnerFixtures {
       checks.incrementAndGet()
       if (!condition) throw new IllegalStateException(message)
     }
+    CauseSnapshotFixtures.run(verify)
     val identity = CatalogueIdentity(BuildId("base-build"), BuildTargetId("base-target"), CatalogueId("base-catalogue"))
     val inherited = RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit)
     val instances = new AtomicInteger(0)
