@@ -1102,6 +1102,15 @@ the steps above follow them.
 These choices belong to the project owner. The plan proceeds under the stated
 assumptions; a different answer changes the listed steps.
 
+- **Custom plugin-loader hooks.** On 2026-10-03 the owner authorizes migration
+  of custom hooks to an explicit session-aware factory API. Proceed under that
+  choice while preserving ordinary loader behavior, environment merging and
+  same-session memoization. The status ledger records the incompatible opaque
+  reconstruction/handoff reproductions and rejected provenance prototypes.
+  This decision authorizes the factory implementation; it does not mark the
+  fixed import-only acceptance item 2b.10 done or silently waive it for hooks
+  requiring additional edits. That item remains open for those migrations.
+
 - **Legacy correction for #2361.** Assumed: the new runner and plugin address the
   failure class. A correction to the released ScalaTest-based runner is separate
   maintenance tracked by the issue, not a step of this plan; scheduling it adds a

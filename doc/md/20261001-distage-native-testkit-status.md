@@ -59,7 +59,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.7 | in progress | Resource-free plain registration and raw DI/four-spec discovery pass nine lanes below; final evaluation outstanding. |
 | 2b.8 | in progress | Atomic plain and higher registration pass nine JVM/JS/Native lanes below, alongside delegating bootstrap and forwarding/direct synchronous cached custom-plugin controls. Opaque/handoff reconstruction ownership defects, complete custom-hook audit and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain and distage path/suite/test IDs reject in all nine JVM/JS/Native lanes below; final evaluation outstanding. |
-| 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
+| 2b.10 | waiting on owner | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below. The approved factory migration requires non-import edits to eligible custom hooks; the fixed item remains unmet for those hooks. Complete inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
 | 2c.2 | not started | No evaluation point passed yet. |
@@ -7881,3 +7881,141 @@ matrix outcomes. Generic accessor/suppressed fidelity, truncated-node metadata,
 complete custom-hook isolation, host integration and final evaluations remain
 outstanding. Native CI and assertion checkpoint evidence above retains its
 original scope; this bounded matrix does not repeat full CI or publication.
+
+The bounded correction's actual local commit is
+`f75eb64fdf4326d536d581ed6bd5ec4edba8d297`. The completed read-only audit is
+`/srv/nvme/tmp/izumi-impl/2b-cause-snapshot-completion-readonly-review-first/COMPLETION-REVIEW.md`.
+Root reads it in full and verifies report SHA-256
+`2536cf3f6c4187b07e566d6f34db65bb74ae4505039dd6c28c2c683bbe8ca334`
+and schema-1 manifest SHA-256
+`71629633e9aba0ad496dd33febbf8b4c02ca09caff65a223f74d93b29d8276f9`.
+It reads all three completed raw logs, source identities and all 5,096 external
+dependency comparisons. It finds no concrete introduced defect or overclaim.
+Its 9,135 named fixture checks include 54 boundary checks; this count denotes
+assertions in the fixture mains, not independent tests or a full CI gate.
+
+### Structured Throwable capture: verified reporting checkpoint — 2026-10-03
+
+This correction contributes to 2b.11/O.12/O.18; their final evaluation points,
+the parent steps and all final lanes remain open. Verification starts at
+`f75eb64fdf4326d536d581ed6bd5ec4edba8d297` with the recorded reporting diff.
+The local implementation commit has subject `Preserve Throwable capture errors
+and suppressed failures; verify published consumers`. No generator, dependency
+or loader implementation changes belong to this checkpoint.
+
+The original public probe already established that message/cause/stack getters
+can throw out of RunnerFailure.fromThrowable and that suppression was absent.
+A permanent portable fixture was added before the correction. Command
+`python3 /srv/nvme/tmp/izumi-impl/2b-throwable-capture-fail-first.py` completes
+with harness 0 and actual JDK 21 SBT 1 after compilation, failing exactly at
+`message throwable conversion must preserve the original failure;
+accessorFailure=Some(java.lang.IllegalStateException)`. The captured batch task
+is `++3.9.0; distage-test-runnerJVM/Test/testFull`.
+
+Failure now carries separate ordered suppressed failures and typed field/class
+capture errors. RunnerFailure snapshots each cause, catches NonFatal failures
+of message/cause/stack access, retains the original class/phase and available
+fields, and traverses cause and suppression with a shared ancestor/depth policy.
+The DTO has eight required constructor fields and wire schema 3; schema 2 is
+deliberately rejected. The codec requires both new fields, rejects duplicate
+capture fields and contradictory available values, and applies root-inclusive
+depth 32 to both relations. JVM SDK projection retains actual suppressed
+failures and explicit ProjectedCaptureError values; native Throwable's single
+cause means extra protocol causes retain the pre-existing suppressed projection.
+
+Executed development captures, all retained unchanged under
+`/srv/nvme/tmp/izumi-impl/`:
+
+- `2b-throwable-capture-jvm-pilot-first.py`: actual SBT 1 after compilation.
+  A new negative test incorrectly expected the missing field name in the
+  rejection. The fresh `2b-failure-required-field-debug-first` public codec
+  probe compiles/runs 0 and prints `Missing required field` for each missing
+  required field. Correcting only that assertion yields pilot-second 0:
+  protocol 116, base 663 and higher 487 on Scala 3/JVM at that intermediate diff.
+- `2b-throwable-capture-nine-lane-first.py`: aggregate/actual SBT 1 in the
+  first compiler. JVM protocol/base/higher/bootstrap pass, JS protocol passes,
+  then JS base fails an oracle expecting only Message capture failure. The
+  diagnostic capture `2b-throwable-capture-js-capture-diagnostic-first.py`
+  retains harness 0/actual SBT 1 and shows Message plus Stack failures. Scala.js
+  stack extraction reads getMessage. The final fixture and consumer independently
+  call a fresh sample's getStackTrace to determine whether stack is available;
+  neither derives its expected errors from RunnerFailure's output.
+- `2b-bootstrap-throwable-projection-fail-first`: a public Framework/SDK probe
+  compiles 0; both suppression and capture-error modes run 1, with terminal=true,
+  retained=false and executorTerminated=true. It precedes the projection fix.
+  The byte-identical `...-replay-first` source then compiles 0 and both modes
+  run 0 with retained=true; dependency hashes and cleanup remain verified.
+
+Command `python3 /srv/nvme/tmp/izumi-impl/2b-throwable-capture-nine-lane-second.py`
+completes 0. Three fresh JDK 21 SBT batch processes use 3.9.0, 2.13.18 and
+2.12.21; each runs protocol/base/higher Test/testFull on JVM/JS/Native after
+cleaning all three Native projects. All three actual exits are 0. The Scala 3
+protocol remains pinned to 3.8.4; Scala 3 Compile/Test strict unused checks
+apply to all nine projects. Protocol has 116 checks per platform/compiler;
+base has 671 per 3.9/2.13 platform and 670 per 2.12 platform; higher retains
+487 JVM and 405 JS/Native checks for each compiler. JVM bootstrap has 29 checks
+per compiler. Each applicable marker verifies five Throwable samples, mixed
+graph boundaries, the prior cause snapshot and assertion transport, four effect
+front ends and executor termination/JS completion. These are fixture assertions,
+not counts of independent test cases. The final Throwable fixture has 88 checks,
+including ordered suppression, nested causes, actual RunSession terminal events,
+mixed cycles, depths 32/33 and codec round-trips. All 1,606 tracked/untracked
+non-ledger source/build/test/doc inputs remain unchanged through verification.
+
+Command `python3 /srv/nvme/tmp/izumi-impl/2b-throwable-capture-publication-first.py`
+completes 0; all three actual JDK 21 compiler processes finish 0 and their
+source comparisons are empty. It publishes assertions/protocol/base runner on
+all three platforms and compiler baselines. Command
+`python3 /srv/nvme/tmp/izumi-impl/2b-throwable-capture-publication-artifact-audit-first.py`
+finishes 0: 27 JAR/POM pairs and 6,310 .class/.tasty/.sjsir/.nir entries match
+producer packages/outputs. Artifacts and POMs are frozen, the protocol includes
+FailureCaptureError, the lower-layer dependency bounds hold, and no
+ScalaTest/Scalactic dependency is resolved.
+
+Command `python3 /srv/nvme/tmp/izumi-impl/2b-throwable-capture-isolated-consumers-first.py`
+finishes 0: all seven fresh SBT processes finish 0, giving nine base-consumer
+and twelve protocol-consumer JVM/JS/Native executions. All expected markers
+occur exactly once per platform, and each of four protocol compiler processes
+completes two parent-null classloader String exchanges. Throwable detail,
+assertion detail and boundary rejection are retained. The root audit command
+`python3 /srv/nvme/tmp/izumi-impl/2b-throwable-capture-isolated-consumers-root-audit-first.py`
+finishes 0: 21 actual resolved classpaths contain only published dependency JARs
+and no root producer classes/source shadows, higher Izumi layers, ScalaTest or
+Scalactic. It verifies 1,606 root inputs, 14 exact consumer source/build copies,
+414 consumer binary entries and 138 unique dependency artifacts. The classpaths,
+resolved update reports, binaries and publication inputs are frozen and hashed.
+
+Command `python3 /srv/nvme/tmp/izumi-impl/2b-generic-failure-capture-structured-replay-first.py`
+finishes harness 0 against current Scala 3/JVM producer classes. The byte-identical
+original public probe compiles 0; ordinary/message/cause/stack/stateful-depth run
+0, with the original class/phase and codec round-trip retained. Suppressed mode
+still runs 1 because its old recursive oracle searches causes only. A separately
+archived variant adds exactly the suppressed relation to that search; it compiles
+0 and all six modes run 0. This is an explicit oracle migration, not a claim
+that the unchanged suppression probe passes. All current dependency/source
+hashes remain stable. SDK and this probe are producer-class checks; the isolated
+consumers above separately establish published-only behavior.
+
+Residual capture limits are explicit: fatal accessor errors are not converted;
+cycle/truncation markers do not retain repeated/truncated node metadata; accessor
+error metadata is field/class only; alias identity and unlimited graph breadth
+are not represented. This checkpoint establishes neither full Throwable graph
+fidelity, real SBT host integration, full Native CI at this diff, nor final gates.
+
+The owner replied `Allow custom-loader hooks to migrate to a factory API` on
+2026-10-03. The plan records this new choice; the pending question above is now
+resolved. Proceed with the explicit owned factory boundary while preserving
+O.1 planning/merging/memoization/effects. The fixed 2b.10 imports-only criterion
+remains waiting on owner for eligible hooks requiring factory/construction edits;
+it is not waived by passing the ordinary import-only fixture. No factory code
+is present in this reporting checkpoint and no rejected prototype is integrated.
+Root reads the complete bounded design report and verifies its SHA-256
+`639e4d65a29643156379bb6ef3bfde28084b6f2f0860efb80a40696cfb792b20`
+and schema-1 manifest SHA-256
+`bb44088f82c9fb7aad6a335e4ad9d92555221622425cbd396ce2dc0892b95094`
+under `2b-plugin-loader-factory-readonly-design-first/`. It supports pre-load
+cache binding, stable loader identity per provider/factory reference, retained
+hook order and ordinary legacy policy. Shared mutable delegates/Scala objects/
+captured values and incompatible classloader/cache domains remain explicit caller
+preconditions and conformance limits. Factory creation-failure policy must be
+specified and tested in the following implementation, not inferred from this review.

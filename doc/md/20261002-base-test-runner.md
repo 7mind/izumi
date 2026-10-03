@@ -61,7 +61,11 @@ original interruption and restoring its flag. Callback errors disable that
 handler, survive in later group projections as transport failures, and propagate
 after cleanup. Cancellation observed during executor shutdown also survives in
 the group outcome. `Runner.done` waits for active tasks and makes the runner
-spent. Projected host exceptions retain the protocol failure's cause tree.
+spent. Projected host exceptions retain the protocol failure's causes, ordered
+suppressed children and explicit field-capture diagnostics. The host Throwable
+API has one primary cause; additional protocol causes retain the bootstrap's
+existing projection as suppressed siblings. The projected exception also retains
+its complete Failure record.
 
 The independent JVM framework consumer compares actual body records with JUnit
 test identities under SBT 1 and 2. The status ledger records the exact scope and

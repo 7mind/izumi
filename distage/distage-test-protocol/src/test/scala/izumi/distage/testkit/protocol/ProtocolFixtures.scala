@@ -29,7 +29,7 @@ object ProtocolFixtures {
       DiagnosticObservation(Some("right"), DiagnosticSpan.Unavailable, DiagnosticObservationKind.Operand, ObservedValue.NotEvaluated),
       DiagnosticObservation(None, DiagnosticSpan.Point(DiagnosticPoint(0, 7, 9)), DiagnosticObservationKind.Opaque, ObservedValue.RenderingFailed("RendererFailure", DiagnosticErrorMessage.Available("renderer threw"))),
     ), 2)
-    val failure = Failure(FailurePhase.Test, "AssertionFailure", "false\nstdout: {}", Vector("example.WordSpec.in(WordSpec.scala:8)"), Vector.empty, Some(diagnostic))
+    val failure = Failure(FailurePhase.Test, "AssertionFailure", "false\nstdout: {}", Vector("example.WordSpec.in(WordSpec.scala:8)"), Vector.empty, Some(diagnostic), Vector.empty, Vector.empty)
     val result = TestResult(first, TestStatus.Failed, Some(failure), Long.MaxValue)
     val outcome = RunOutcome(run, Vector(result), Vector(failure.copy(phase = FailurePhase.Finalization)), cancelled = false)
     val overrides = RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit)
@@ -55,7 +55,7 @@ object ProtocolFixtures {
       val decoded = ProtocolCodec.decode(frame)
       verify(decoded == Right(message), s"Wire round-trip changed $message into $decoded")
     }
-    val golden = "{\"schemaVersion\":2,\"message\":{\"kind\":\"cancel\",\"run\":\"protocol-fixture\"}}"
+    val golden = "{\"schemaVersion\":3,\"message\":{\"kind\":\"cancel\",\"run\":\"protocol-fixture\"}}"
     verify(ProtocolCodec.encode(ProtocolMessage.Cancel(run)) == golden, "All compiler/platform lanes must emit the same golden frame")
     verify(ProtocolCodec.decode(golden) == Right(ProtocolMessage.Cancel(run)), "Golden frame must decode")
     verify(first != second, "Structured paths and variants distinguish equal display names")
@@ -65,8 +65,8 @@ object ProtocolFixtures {
     def reject(frame: String, reason: String): Unit = {
       verify(ProtocolCodec.decode(frame).left.exists(_.message.contains(reason)), s"Expected protocol rejection: $reason")
     }
-    reject(golden.replace("\"schemaVersion\":2", "\"schemaVersion\":1"), "Unsupported protocol schema")
-    reject(golden.replace("\"schemaVersion\":2", "\"schemaVersion\":3"), "Unsupported protocol schema")
+    reject(golden.replace("\"schemaVersion\":3", "\"schemaVersion\":2"), "Unsupported protocol schema")
+    reject(golden.replace("\"schemaVersion\":3", "\"schemaVersion\":4"), "Unsupported protocol schema")
     reject(golden.replace("\"kind\":\"cancel\"", "\"kind\":\"unknown\""), "Unknown protocol kind")
     reject(golden.replace("protocol-fixture", ""), "Identity must not be empty")
     reject(golden + "\n", "one channel line")
@@ -90,6 +90,35 @@ object ProtocolFixtures {
       }
       verify(rejected, s"Producer must reject an invalid protocol state: $reason")
     }
+    val captureFields = Vector(FailureCaptureField.Message, FailureCaptureField.Cause, FailureCaptureField.Stack)
+    captureFields.foreach { field =>
+      val error = FailureCaptureError(field, "AccessorFailure")
+      val captured = failure.copy(message = "", stack = Vector.empty, captureErrors = Vector(error))
+      val message = ProtocolMessage.Rejected(run, captured)
+      verify(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "Explicit field capture errors must round-trip")
+      val conflicting = field match {
+        case FailureCaptureField.Message => captured.copy(message = "available")
+        case FailureCaptureField.Cause => captured.copy(causes = Vector(failure))
+        case FailureCaptureField.Stack => captured.copy(stack = Vector("available"))
+      }
+      rejectProducer(ProtocolMessage.Rejected(run, conflicting), "Failed capture fields must be unavailable")
+      val value = field match {
+        case FailureCaptureField.Message => "message" -> Json.fromString("available")
+        case FailureCaptureField.Cause => "causes" -> Json.arr(parse(ProtocolCodec.encode(ProtocolMessage.Rejected(run, failure))).toOption.get.hcursor.downField("message").downField("failure").focus.get)
+        case FailureCaptureField.Stack => "stack" -> Json.arr(Json.fromString("available"))
+      }
+      reject(corrupt(message)(_.downField("message").downField("failure").downField(value._1).withFocus(_ => value._2)), "Failed capture fields must be unavailable")
+    }
+    val captured = failure.copy(message = "", captureErrors = Vector(FailureCaptureError(FailureCaptureField.Message, "AccessorFailure")))
+    val captureMessage = ProtocolMessage.Rejected(run, captured)
+    rejectProducer(ProtocolMessage.Rejected(run, captured.copy(captureErrors = captured.captureErrors ++ captured.captureErrors)), "Duplicate failure capture fields")
+    reject(corrupt(captureMessage)(_.downField("message").downField("failure").downField("captureErrors").withFocus(value => Json.fromValues(value.asArray.get ++ value.asArray.get))), "Duplicate failure capture fields")
+    rejectProducer(ProtocolMessage.Rejected(run, captured.copy(captureErrors = Vector(FailureCaptureError(FailureCaptureField.Message, "")))), "Failure capture exception class")
+    reject(corrupt(captureMessage)(_.downField("message").downField("failure").downField("captureErrors").downArray.downField("exceptionClass").withFocus(_ => Json.fromString(""))), "Failure capture exception class")
+    reject(corrupt(captureMessage)(_.downField("message").downField("failure").downField("captureErrors").downArray.downField("field").withFocus(_ => Json.fromString("unknown"))), "Unknown protocol value")
+    val failureFrame = ProtocolCodec.encode(ProtocolMessage.Rejected(run, failure))
+    reject(failureFrame.replace("\"suppressed\":[]", "\"unrelated\":[]"), "Missing required field")
+    reject(failureFrame.replace("\"captureErrors\":[]", "\"unrelated\":[]"), "Missing required field")
     val validations = Vector[DiagnosticSourceValidation](
       DiagnosticSourceValidation.Matching, DiagnosticSourceValidation.Mismatch, DiagnosticSourceValidation.Unavailable,
       DiagnosticSourceValidation.RangeUnavailable, DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.Available("missing\n😀")),
@@ -137,26 +166,35 @@ object ProtocolFixtures {
       }
       nested
     }
-    def failureFrameAtDepth(depth: Int): String = {
-      val prefix = "{\"phase\":\"test\",\"exceptionClass\":\"Failure\",\"message\":\"failure\",\"stack\":[],\"causes\":["
-      val suffix = "],\"assertion\":null}"
+    def failureFrameAtDepth(depth: Int, suppressed: Boolean): String = {
+      val relation = if (suppressed) "suppressed" else "causes"
+      val emptyRelation = if (suppressed) "causes" else "suppressed"
+      val prefix = "{\"phase\":\"test\",\"exceptionClass\":\"Failure\",\"message\":\"failure\",\"stack\":[],\"" + relation + "\":["
+      val suffix = "],\"assertion\":null,\"" + emptyRelation + "\":[],\"captureErrors\":[]}"
       var nested = prefix + suffix
       var remaining = depth - 1
       while (remaining > 0) {
         nested = prefix + nested + suffix
         remaining -= 1
       }
-      s"""{"schemaVersion":2,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
+      s"""{"schemaVersion":3,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
     }
     val deepestSupported = ProtocolMessage.Rejected(run, failureAtDepth(depthLimit))
     verify(ProtocolCodec.validate(deepestSupported) == Right(()), "Payload validation must accept its failure nesting boundary")
-    verify(ProtocolCodec.validate(ProtocolMessage.Rejected(run, failureAtDepth(depthLimit + 1))).left.exists(_.message.contains("Failure cause depth")), "Payload validation must reject excess failure depth")
+    verify(ProtocolCodec.validate(ProtocolMessage.Rejected(run, failureAtDepth(depthLimit + 1))).left.exists(_.message.contains("Failure graph depth")), "Payload validation must reject excess failure depth")
     verify(ProtocolCodec.decode(ProtocolCodec.encode(deepestSupported)) == Right(deepestSupported), "Failure nesting boundary must round-trip")
-    reject(failureFrameAtDepth(depthLimit + 1), "Failure cause depth")
-    rejectProducer(ProtocolMessage.Rejected(run, failureAtDepth(depthLimit + 1)), "Failure cause depth")
-    reject(failureFrameAtDepth(512), "JSON nesting")
-    rejectProducer(ProtocolMessage.Rejected(run, failureAtDepth(512)), "Failure cause depth")
+    reject(failureFrameAtDepth(depthLimit + 1, suppressed = false), "Failure graph depth")
+    rejectProducer(ProtocolMessage.Rejected(run, failureAtDepth(depthLimit + 1)), "Failure graph depth")
+    reject(failureFrameAtDepth(512, suppressed = false), "JSON nesting")
+    rejectProducer(ProtocolMessage.Rejected(run, failureAtDepth(512)), "Failure graph depth")
     verify(ProtocolCodec.MaxFailureDepth == depthLimit, "Published failure nesting policy must match its boundary fixtures")
+    val suppressedBoundary = (1 until depthLimit).foldLeft(failure)((nested, _) => failure.copy(suppressed = Vector(nested)))
+    val suppressedMessage = ProtocolMessage.Rejected(run, suppressedBoundary)
+    verify(ProtocolCodec.decode(ProtocolCodec.encode(suppressedMessage)) == Right(suppressedMessage), "Suppressed failure depth boundary must round-trip")
+    val suppressedExcess = ProtocolMessage.Rejected(run, failure.copy(suppressed = Vector(suppressedBoundary)))
+    verify(ProtocolCodec.validate(suppressedExcess).left.exists(_.message.contains("Failure graph depth")), "Payload validation must bound suppressed edges")
+    rejectProducer(suppressedExcess, "Failure graph depth")
+    reject(failureFrameAtDepth(depthLimit + 1, suppressed = true), "Failure graph depth")
     val jsonDepthLimit = 128
     def extraNestingFrame(depth: Int): String = {
       val extra = ("[" * (depth - 1)) + "0" + ("]" * (depth - 1))

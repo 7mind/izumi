@@ -4,7 +4,7 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
 import io.circe.parser.parse
 
 object ProtocolCodec {
-  final val SchemaVersion = 2
+  final val SchemaVersion = 3
   final val MaxFrameCharacters = 1024 * 1024
   final val MaxJsonDepth = 128
   final val MaxFailureDepth = 32
@@ -273,29 +273,42 @@ object ProtocolCodec {
     },
     Encoder.forProduct4("source", "sourceValidation", "observations", "omittedObservations")(value => (value.source, value.sourceValidation, value.observations, value.omittedObservations)),
   )
+  private implicit val captureFieldCodec: Codec[FailureCaptureField] = enumeration(Vector(
+    "message" -> FailureCaptureField.Message, "cause" -> FailureCaptureField.Cause, "stack" -> FailureCaptureField.Stack,
+  ))
+  private implicit val captureErrorCodec: Codec[FailureCaptureError] = product(
+    Decoder.forProduct2("field", "exceptionClass")(FailureCaptureError.apply).emap { error =>
+      if (error.exceptionClass.nonEmpty) Right(error) else Left("Failure capture exception class must not be empty")
+    },
+    Encoder.forProduct2("field", "exceptionClass")(error => (error.field, error.exceptionClass)),
+  )
   private def failureDecoder(depth: Int): Decoder[Failure] = Decoder.instance { cursor =>
-    if (depth > MaxFailureDepth) Left(DecodingFailure("Failure cause depth exceeds its limit", cursor.history))
+    if (depth > MaxFailureDepth) Left(DecodingFailure("Failure graph depth exceeds its limit", cursor.history))
     else for {
       phase <- cursor.get[FailurePhase]("phase")
       exceptionClass <- cursor.get[String]("exceptionClass")
       message <- cursor.get[String]("message")
       stack <- cursor.get[Vector[String]]("stack")
-      causeJson <- cursor.get[Vector[Json]]("causes")
-      causes <- causeJson.foldLeft[Decoder.Result[Vector[Failure]]](Right(Vector.empty)) { (previous, json) =>
-        for {
-          values <- previous
-          cause <- failureDecoder(depth + 1).decodeJson(json)
-        } yield values :+ cause
-      }
+      causes <- cursor.get[Vector[Failure]]("causes")(Decoder.decodeVector(failureDecoder(depth + 1)))
       assertion <- cursor.get[Option[AssertionDiagnostic]]("assertion")
-    } yield Failure(phase, exceptionClass, message, stack, causes, assertion)
+      suppressed <- cursor.get[Vector[Failure]]("suppressed")(Decoder.decodeVector(failureDecoder(depth + 1)))
+      captureErrors <- cursor.get[Vector[FailureCaptureError]]("captureErrors")
+      _ <- if (captureErrors.map(_.field).distinct.size == captureErrors.size) Right(()) else Left(DecodingFailure("Duplicate failure capture fields", cursor.history))
+      _ <- if (captureErrors.forall { error => error.field match {
+        case FailureCaptureField.Message => message.isEmpty
+        case FailureCaptureField.Cause => causes.isEmpty
+        case FailureCaptureField.Stack => stack.isEmpty
+      } }) Right(()) else Left(DecodingFailure("Failed capture fields must be unavailable", cursor.history))
+    } yield Failure(phase, exceptionClass, message, stack, causes, assertion, suppressed, captureErrors)
   }
   private def failureEncoder(depth: Int): Encoder[Failure] = Encoder.instance { value =>
-    require(depth <= MaxFailureDepth, "Failure cause depth exceeds its limit")
+    require(depth <= MaxFailureDepth, "Failure graph depth exceeds its limit")
     Json.obj(
       "phase" -> phaseCodec(value.phase), "exceptionClass" -> Json.fromString(value.exceptionClass), "message" -> Json.fromString(value.message),
       "stack" -> Encoder.encodeVector[String].apply(value.stack), "causes" -> Json.fromValues(value.causes.map(failureEncoder(depth + 1).apply)),
       "assertion" -> Encoder.encodeOption[AssertionDiagnostic].apply(value.assertion),
+      "suppressed" -> Json.fromValues(value.suppressed.map(failureEncoder(depth + 1).apply)),
+      "captureErrors" -> Encoder.encodeVector[FailureCaptureError].apply(value.captureErrors),
     )
   }
   private implicit val failureCodec: Codec[Failure] = product(failureDecoder(1), failureEncoder(1))

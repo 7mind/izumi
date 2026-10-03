@@ -73,6 +73,18 @@ object BootstrapFixtures {
     verify(failureHandler.events.size == 1 && failureHandler.events.head.status() == Status.Failure, "Assertion failure must remain a host failure")
     def retainsAssertion(cause: Throwable): Boolean = cause.getMessage.contains("Assertion failed") || Option(cause.getCause).exists(retainsAssertion) || cause.getSuppressed.exists(retainsAssertion)
     verify(retainsAssertion(failureHandler.events.head.throwable().get()), "Host failure must preserve assertion diagnostics in its exception tree")
+    val captured = runner.tasks(Array(definition(classOf[BootstrapThrowableSuite].getName)))
+    val captureHandler = new RecordingHandler
+    execute(captured.head, captureHandler)
+    verify(captureHandler.events.size == 4 && captureHandler.events.forall(event => event.status() == Status.Failure && event.throwable().isDefined && event.selector().isInstanceOf[TestSelector]), "Captured Throwables must retain all four host body failures")
+    def captureEvent(name: String): Throwable = captureHandler.events.find(_.selector().asInstanceOf[TestSelector].testName() == name).get.throwable().get()
+    Vector("Message", "Cause", "Stack").foreach { field =>
+      verify(captureEvent(field.toLowerCase + " accessor").getSuppressed.exists(error => error.getMessage.contains(field) && error.getMessage.contains("java.lang.IllegalStateException")), "Host exceptions must expose explicit " + field + " capture errors")
+    }
+    val suppressed = captureEvent("suppressed exception")
+    verify(suppressed.getSuppressed.map(_.getMessage).toVector == Vector("Test: java.lang.IllegalStateException: suppressed one", "Test: java.lang.IllegalArgumentException: suppressed two"), "Host exceptions must preserve ordered suppressed children")
+    verify(suppressed.getSuppressed.head.getCause.getMessage.contains("suppressed cause"), "Host suppressed children must retain their nested causes")
+    verify(suppressed.getCause.getMessage.contains("ordinary cause"), "Host causal edges must remain separate from suppressed children")
     val teardown = runner.tasks(Array(definition(classOf[BootstrapFinalizingSuite].getName)))
     val teardownHandler = new RecordingHandler
     execute(teardown.head, teardownHandler)
@@ -145,6 +157,18 @@ final class BootstrapAsyncSuite extends AsyncWordSpec {
 
 final class BootstrapFailingSuite extends AnyWordSpec {
   "assertion" should { "fail" in assert(false) }
+}
+
+final class BootstrapThrowableSuite extends AnyWordSpec {
+  "message accessor" in { throw new RuntimeException("original") { override def getMessage: String = throw new IllegalStateException("message accessor") } }
+  "cause accessor" in { throw new RuntimeException("original") { override def getCause: Throwable = throw new IllegalStateException("cause accessor") } }
+  "stack accessor" in { throw new RuntimeException("original") { override def getStackTrace: Array[StackTraceElement] = throw new IllegalStateException("stack accessor") } }
+  "suppressed exception" in {
+    val original = new RuntimeException("original", new IllegalArgumentException("ordinary cause"))
+    original.addSuppressed(new IllegalStateException("suppressed one", new UnsupportedOperationException("suppressed cause")))
+    original.addSuppressed(new IllegalArgumentException("suppressed two"))
+    throw original
+  }
 }
 
 final class BootstrapFinalizingSuite extends TestSuite {

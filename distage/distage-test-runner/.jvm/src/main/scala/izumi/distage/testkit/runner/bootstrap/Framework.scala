@@ -258,7 +258,12 @@ private[bootstrap] final class SuiteProjection(val definition: TaskDef) {
 private[bootstrap] final class ProjectedFailure(val failure: Failure)
   extends RuntimeException(s"${failure.phase}: ${failure.exceptionClass}: ${failure.message}", failure.causes.headOption.map(new ProjectedFailure(_)).orNull) {
   failure.causes.drop(1).foreach(cause => addSuppressed(new ProjectedFailure(cause)))
+  failure.suppressed.foreach(cause => addSuppressed(new ProjectedFailure(cause)))
+  failure.captureErrors.foreach(error => addSuppressed(new ProjectedCaptureError(error)))
 }
+
+private[bootstrap] final class ProjectedCaptureError(val error: FailureCaptureError)
+  extends RuntimeException(s"Cannot capture failure field ${error.field}: ${error.exceptionClass}")
 
 private[bootstrap] final class SuiteLoadingFailure(name: String, cause: LinkageError) extends RuntimeException(s"Cannot load suite $name", cause)
 

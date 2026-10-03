@@ -25,19 +25,28 @@ object PublishedProtocolConsumer {
       2,
     )
     ProtocolCodec.encode(
-      ProtocolMessage.Rejected(RunId("diagnostic"), Failure(FailurePhase.Test, "AssertionFailure", "consumer failure", Vector.empty, Vector.empty, Some(diagnostic)))
+      ProtocolMessage.Rejected(RunId("diagnostic"), Failure(FailurePhase.Test, "AssertionFailure", "consumer failure", Vector.empty, Vector.empty, Some(diagnostic), Vector.empty, Vector.empty))
     )
   }
 
+  def throwableFrame: String = {
+    val cause = Failure(FailurePhase.Test, "OriginalCause", "cause", Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)
+    val suppressed = Failure(FailurePhase.Test, "Suppressed", "suppressed", Vector.empty, Vector(cause), None, Vector.empty, Vector.empty)
+    val failure = Failure(FailurePhase.Test, "OriginalFailure", "", Vector.empty, Vector(cause), None, Vector(suppressed), Vector(FailureCaptureError(FailureCaptureField.Message, "AccessorFailure")))
+    ProtocolCodec.encode(ProtocolMessage.Rejected(RunId("throwable"), failure))
+  }
+
   def main(args: Array[String]): Unit = {
-    val golden = "{\"schemaVersion\":2,\"message\":{\"kind\":\"cancel\",\"run\":\"published-consumer\"}}"
+    val golden = "{\"schemaVersion\":3,\"message\":{\"kind\":\"cancel\",\"run\":\"published-consumer\"}}"
     if (roundTrip(golden) != golden || ProtocolCodec.decode(golden) != Right(ProtocolMessage.Cancel(RunId("published-consumer")))) {
       throw new IllegalStateException("Published protocol changed the common wire schema")
     }
     if (roundTrip(diagnosticFrame) != diagnosticFrame)
       throw new IllegalStateException("Published protocol lost structured assertion source, spans, validation or observations")
-    if (!ProtocolCodec.decode(golden.replace("\"schemaVersion\":2", "\"schemaVersion\":1")).left.exists(_.message.contains("Unsupported protocol schema"))) {
-      throw new IllegalStateException("Published protocol must reject the previous diagnostic schema")
+    if (roundTrip(throwableFrame) != throwableFrame)
+      throw new IllegalStateException("Published protocol lost separate suppressed edges or explicit capture errors")
+    if (!ProtocolCodec.decode(golden.replace("\"schemaVersion\":3", "\"schemaVersion\":2")).left.exists(_.message.contains("Unsupported protocol schema"))) {
+      throw new IllegalStateException("Published protocol must reject the previous failure schema")
     }
     val identity = CatalogueIdentity(BuildId("consumer-build"), BuildTargetId("consumer-target"), CatalogueId("consumer-catalogue"))
     val request = ProtocolMessage.Request(RequestOperation.Execute, RunId("request-one"), RunRequest(
@@ -48,7 +57,7 @@ object PublishedProtocolConsumer {
     if (ProtocolCodec.decode(ProtocolCodec.encode(request)) != Right(request)) {
       throw new IllegalStateException("Published protocol lost selection identity or effective settings")
     }
-    val failure = Failure(FailurePhase.Test, "AssertionFailure", "consumer failure", Vector.empty, Vector.empty, None)
+    val failure = Failure(FailurePhase.Test, "AssertionFailure", "consumer failure", Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)
     val id = TestId(identity.target, SuiteId("ConsumerSuite"), Vector("failure"), None)
     val skippedWithFailure = RunOutcome(RunId("invalid-skip"), Vector(TestResult(id, TestStatus.Skipped, Some(failure), Long.MaxValue)), Vector.empty, cancelled = false)
     if (skippedWithFailure.successful) throw new IllegalStateException("Published aggregate treats a failure as success")
@@ -72,7 +81,7 @@ object PublishedProtocolConsumer {
     if (ProtocolCodec.MaxFailureDepth != 32 || ProtocolCodec.decode(ProtocolCodec.encode(deepestSupported)) != Right(deepestSupported)) {
       throw new IllegalStateException("Published failure-depth boundary must round-trip")
     }
-    rejectProducer(ProtocolMessage.Rejected(RunId("excess-depth"), failure.copy(causes = Vector(nested))), "Failure cause depth")
-    println("PUBLISHED_PROTOCOL_CONSUMER_OK schema=2 boundaries=verified diagnostic=structured")
+    rejectProducer(ProtocolMessage.Rejected(RunId("excess-depth"), failure.copy(causes = Vector(nested))), "Failure graph depth")
+    println("PUBLISHED_PROTOCOL_CONSUMER_OK schema=3 boundaries=verified diagnostic=structured throwable=structured")
   }
 }

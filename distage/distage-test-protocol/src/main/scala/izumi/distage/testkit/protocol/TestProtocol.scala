@@ -102,6 +102,15 @@ object DiagnosticObservationKind {
 
 final case class DiagnosticObservation(expression: Option[String], span: DiagnosticSpan, kind: DiagnosticObservationKind, value: ObservedValue)
 final case class AssertionDiagnostic(source: DiagnosticSource, sourceValidation: DiagnosticSourceValidation, observations: Vector[DiagnosticObservation], omittedObservations: Int)
+
+sealed trait FailureCaptureField
+object FailureCaptureField {
+  case object Message extends FailureCaptureField
+  case object Cause extends FailureCaptureField
+  case object Stack extends FailureCaptureField
+}
+final case class FailureCaptureError(field: FailureCaptureField, exceptionClass: String)
+
 final case class Failure(
   phase: FailurePhase,
   exceptionClass: String,
@@ -109,6 +118,8 @@ final case class Failure(
   stack: Vector[String],
   causes: Vector[Failure],
   assertion: Option[AssertionDiagnostic],
+  suppressed: Vector[Failure],
+  captureErrors: Vector[FailureCaptureError],
 )
 
 sealed trait TestStatus

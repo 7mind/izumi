@@ -126,7 +126,7 @@ final class RegistrationContext(val target: BuildTargetId, val executionContext:
 final class TestCancelled(message: String) extends RuntimeException(message)
 
 object RunnerFailure {
-  def message(phase: FailurePhase, message: String): Failure = Failure(phase, "TestApplicationError", message, Vector.empty, Vector.empty, None)
+  def message(phase: FailurePhase, message: String): Failure = Failure(phase, "TestApplicationError", message, Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)
 
   private[runner] def unreported(reported: Vector[Failure], returned: Vector[Failure]): Vector[Failure] = {
     var remaining = reported
@@ -139,17 +139,26 @@ object RunnerFailure {
 
   def fromThrowable(phase: FailurePhase, cause: Throwable): Failure = {
     def convert(current: Throwable, depth: Int, ancestors: List[Throwable]): Failure = {
-      if (ancestors.exists(_ eq current)) message(FailurePhase.Transport, "Exception cause cycle cannot be represented")
+      if (ancestors.exists(_ eq current)) message(FailurePhase.Transport, "Exception failure graph cycle cannot be represented")
       else {
-        val nextCause = current.getCause
-        if (depth == ProtocolCodec.MaxFailureDepth && nextCause != null) message(FailurePhase.Transport, "Exception cause depth exceeds the protocol limit")
+        var captureErrors = Vector.empty[FailureCaptureError]
+        def read[A](field: FailureCaptureField, unavailable: A)(access: => A): A = {
+          try access
+          catch { case NonFatal(error) => captureErrors :+= FailureCaptureError(field, error.getClass.getName); unavailable }
+        }
+        val nextCause = read(FailureCaptureField.Cause, Option.empty[Throwable])(Option(current.getCause))
+        val nextSuppressed = current.getSuppressed.toVector
+        if (depth == ProtocolCodec.MaxFailureDepth && (nextCause.nonEmpty || nextSuppressed.nonEmpty)) message(FailurePhase.Transport, "Exception failure graph depth exceeds the protocol limit")
         else {
-          val causes = Option(nextCause).map(next => convert(next, depth + 1, current :: ancestors)).toVector
+          val causes = nextCause.map(next => convert(next, depth + 1, current :: ancestors)).toVector
+          val suppressed = nextSuppressed.map(next => convert(next, depth + 1, current :: ancestors))
           val assertion = current match {
             case failure: AssertionFailure => Some(AssertionDiagnosticConverter.convert(failure))
             case _ => None
           }
-          Failure(phase, current.getClass.getName, Option(current.getMessage).getOrElse(""), current.getStackTrace.toVector.map(_.toString), causes, assertion)
+          val capturedMessage = read(FailureCaptureField.Message, "")(Option(current.getMessage).getOrElse(""))
+          val stack = read(FailureCaptureField.Stack, Vector.empty[String])(current.getStackTrace.toVector.map(_.toString))
+          Failure(phase, current.getClass.getName, capturedMessage, stack, causes, assertion, suppressed, captureErrors)
         }
       }
     }
