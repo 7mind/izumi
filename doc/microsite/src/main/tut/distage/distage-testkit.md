@@ -2,7 +2,8 @@
 
 @@toc { depth=2 }
 
-`distage-testkit-core` also builds on Scala Native. Its default bootstrap loads
+`distage-testkit-core` and the replacement `distage-testkit-runner` also build on
+Scala Native. Their default bootstrap loads
 JSON references named `<configBaseName>.json`, `<configBaseName>-reference.json`
 and `<configBaseName>-reference-dev.json`; `configOverrides` take precedence.
 Enable Scala Native resource embedding to bundle these files. Provide plugins

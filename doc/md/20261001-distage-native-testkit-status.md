@@ -28,7 +28,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 1a.5 | in progress | Released 23.1.0.14 artifacts and bounded Native BIO build/runtime/publication now verified below; higher Native graph and final evaluation remain outstanding. |
 | 1a.6 | in progress | No evaluation point passed yet. |
 | 1a.7 | in progress | No evaluation point passed yet. |
-| 1a.8 | in progress | No evaluation point passed yet. |
+| 1a.8 | in progress | Bounded core checkpoint 732228776 verifies the Native 0b DI/configuration and four-body parallel memoized Lifecycle checks on all three compilers below; parent-step evaluation remains outstanding. |
 | 1a.9 | in progress | No evaluation point passed yet. |
 | 1a.10 | in progress | No evaluation point passed yet. |
 | 1a.11 | in progress | Bounded logstage checkpoint below passes all nine producer lanes and Native published shutdown/drain controls; final-head evaluation remains outstanding. |
@@ -55,10 +55,10 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.3 | in progress | Five fundamentals test projects run all 42 lanes; 51 actual publishLocal requests create no artifacts below; final evaluation outstanding. |
 | 2b.4 | in progress | All 42 moved lanes preserve the original 3,219 JUnit cases below; step-2b evaluation remains outstanding. |
 | 2b.5 | in progress | Plain WordSpec sync/Future bodies pass nine producer and nine published-consumer lanes below; final evaluation outstanding. |
-| 2b.6 | in progress | Owned higher provider and all four spec entry points pass six JVM/JS lanes below; common host integration and final evaluation remain outstanding. |
-| 2b.7 | in progress | Resource-free plain registration passes nine lanes and raw DI/four-spec discovery passes six below; final evaluation outstanding. |
-| 2b.8 | in progress | Atomic plain registration passes nine JVM/JS/Native lanes and higher registration passes six JVM/JS lanes below, alongside delegating bootstrap and forwarding/direct synchronous cached custom-plugin controls. Opaque/handoff reconstruction ownership defects, complete custom-hook audit, higher Native and final evaluation outstanding. |
-| 2b.9 | in progress | Duplicate plain IDs reject in all nine lanes and distage path/suite/test IDs reject in six JVM/JS lanes below; higher Native and final evaluation outstanding. |
+| 2b.6 | in progress | Owned higher provider and all four spec entry points now pass nine JVM/JS/Native producer lanes below; common host integration and final evaluation remain outstanding. |
+| 2b.7 | in progress | Resource-free plain registration and raw DI/four-spec discovery pass nine lanes below; final evaluation outstanding. |
+| 2b.8 | in progress | Atomic plain and higher registration pass nine JVM/JS/Native lanes below, alongside delegating bootstrap and forwarding/direct synchronous cached custom-plugin controls. Opaque/handoff reconstruction ownership defects, complete custom-hook audit and final evaluation outstanding. |
+| 2b.9 | in progress | Duplicate plain and distage path/suite/test IDs reject in all nine JVM/JS/Native lanes below; final evaluation outstanding. |
 | 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below; complete compatibility inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | not started | No evaluation point passed yet. |
@@ -6128,3 +6128,160 @@ source cause. Engine checks use Identity; they do not establish every runtime
 executor's termination or effect-specific cancellation. No parent 1a/O.18/
 O.26/O.27 item or final-head evaluation becomes done at this checkpoint.
 The higher Native testkit runner port proceeds next.
+
+The core checkpoint commits locally as
+`73222877677daa3f636684081492fe8a64d5753c` (2026-10-03).
+Root verifies the clean working tree and all 1,114 tested source/build/doc hashes
+after commit; capture `1a-part2-distage-testkit-core-native-verified-commit.json`.
+Generated build-info metadata is not claimed rebuilt after this commit.
+
+### 1a part 2 — Native higher testkit runner port, in progress (2026-10-03)
+
+Scope: the existing JS module's Native target under 1a.1–3/6–7, bounded reused
+adapter audit under O.26/O.27 and supporting 2e/L3/L6 evidence. The protocol and
+base runner already have Native targets; this slice enables the higher
+`distage-testkit-runner` target. Its Native SessionBootstrapFactory is byte-identical
+to JVM and delegates shared bootstrap/config loading to the verified Native core.
+The fixture copies the JVM-owned executor and concurrent registration start gate,
+with JS's JSON activation configuration and runtime-scanning exclusion.
+Original-copy hashes/substitutions are retained in
+`1a-part2-distage-testkit-runner-native-source-provenance.json` under
+`/srv/nvme/tmp/izumi-impl/`.
+
+The first matrix will freeze the full twenty-three-module Native closure and
+run all nine higher runner lanes, plus fresh Native protocol/base-runner tests
+on each compiler. The Scala 3 protocol stays on its pinned 3.8.4 compiler; the
+higher runner and other Scala 3 libraries stay on 3.9.0. Existing shared fixtures
+exercise Identity, Cats Effect and ZIO front ends, interruption and lifecycle
+reporting; their actual outcomes and contract identities remain to be checked.
+No runtime executor termination or final target integration claim follows from
+adding this target.
+
+The required dependency metadata recheck obtains HTTP 200 for both Native Scala 3
+interop-cats and interop-tracer metadata, with release/latest 23.1.0.14, matching
+the project's pinned released version. XMLs, hashes, exact URLs and timestamp are
+retained in `1a-part2-distage-testkit-runner-native-step-boundary-metadata/`.
+The web open tool cannot access those XMLs; the direct HTTP captures establish
+the observed metadata. No dependency version is changed.
+
+The prescribed initial --js --native generator exits 0. build.sbt becomes
+`7ae9abfe3e466881cdd4c4f33d46200a9ab004c53954a90168f6d7d66ec5207a`;
+plugins.sbt and build.properties retain their prior hashes. Capture:
+`1a-part2-distage-testkit-runner-native-generator-initial.*`.
+The first Scala 3 producer and full twenty-three-module Native closure publisher
+finish with actual exit 0. Fresh Native protocol/base controls pass 64/436 checks.
+Higher Native/JVM/JS fixtures pass 350/432/350 contract checks, with 14 selected
+front-end results, twelve successful bodies, three resource acquisitions/releases
+and six repeated interruption cases on every platform. These are main-based
+contract checks, not a ScalaTest XML case count. Scala 2 producer/publication,
+artifact and identity audits, published consumers and final review remain pending.
+
+All nine first higher producer lanes and all three twenty-three-module Native
+publishers complete with actual exit 0. Own artifact audit exits 0: nine JAR/POM
+pairs, 783 exact compiled binaries including 312 NIR and 102 JS IR, eighteen
+fresh Compile/Test classpaths and no production ScalaTest dependency or test
+fixture leakage. It records 3,396 higher contract checks, 192 fresh Native protocol
+checks and 1,308 fresh Native base-runner checks. The separate identity audit
+exits 0: Native=JS 350-label multisets on every compiler, each contained in JVM432.
+Evidence is `first-artifact-audit/` and `first-contract-identity-audit/` under
+the higher runner prefix.
+
+The complete first Native closure auditor exits 1 for its byte-equality
+postcondition. It freezes all 69 pairs, 35,851 binaries and 23,166 NIR, with three
+different Scala 3 members: BIO's
+`izumi/fundamentals/platform/files/FileLockMutex.nir` and logstage-core's
+`logstage/UnsafeLogIO2.nir` / `logstage/UnsafeLogIO3.nir`. All entry sets and other
+member bytes agree. Frozen published pairs, differing current members and exact
+hashes are retained in
+`1a-part2-distage-testkit-runner-native-complete-publication-first-audit/summary.json`.
+This audit is a failing delivery comparison, not a successful closure. Its source
+cause remains unestablished; no code or dependency correction is inferred.
+The separate reconciliation driver republishes only those two Scala 3 modules
+and compares every current pair afterward. Consumers have not run yet and will
+require the new strict reconciled closure first.
+
+Reconciliation finishes with actual exit 0. Scala 3 BIO and logstage-core are the
+only republished modules; the two Scala 2 lanes run comparisons without an SBT
+publication process. All twenty-three current pairs per compiler agree exactly.
+The new strict reconciled closure audit exits 0: 69 frozen JAR/POM pairs,
+35,851 binaries, 23,166 NIR, zero differences. Scala 3 protocol bytes are checked
+against their 3.8.4 compiled output, with the other Scala 3 modules against 3.9.0.
+Evidence: `1a-part2-distage-testkit-runner-native-complete-publication-reconciled-audit/`.
+The separate public fixture/consumer begins only after that equality barrier.
+
+The first Scala 3 public build and Native child exit 0, no timeout, child reaped.
+Its separately compiled public fixture registers SpecIdentity, Spec1[IO],
+Spec2[zio.IO] and SpecZIO through RunSession. Discovery leaves configuration,
+resources and bodies suspended; resolution/planning evaluate four suite
+configurations once. Execution injects bundled UTF-8 typed JSON into all eight
+bodies and acquires/releases three intended memoized scopes (the two ZIO suites
+share their compatible environment). It verifies exact selected terminal IDs,
+start/completion event sets, contiguous ordinals and one Finished after all
+releases, plus termination of its separately owned fixture executor. PlanCheck
+expansion/runtime recheck and ScalaRelease pass. The consumer declares the
+published higher runner and pinned released Cats Effect/ZIO coordinates; it
+shadows no production sources and uses no producer classes. Its preflight checks
+all twenty-three current consumed producer pairs exactly before building.
+Capture: `1a-part2-distage-testkit-runner-native-published-spec-first/3.9.0/`.
+
+Final prescribed generation exits 0, idempotent for all three tracked outputs;
+`generator-final.*` retains exact argv/log/hash results under the higher runner
+prefix. Root verifies all 1,174 tested source/build/doc hashes still agree.
+Scala 2 consumers, public capture audit, final read-only review and local higher
+runner commit remain pending. Parent and final acceptance gates remain open.
+
+All three separate public builds and Native children finish with actual exit 0,
+no timeout, all reaped. Each executes the eight public front-end bodies with
+four configuration evaluations and three resource acquisitions/releases; each
+checks its own executor termination, PlanCheck and compiler identity. The
+independent public capture audit exits 0, verifies 788 source/dependency/compiled-
+fixture hashes, and compares literal consumed binary and POM bytes against the
+frozen reconciled producer closure: all 69 pairs, 35,851 members, zero differences.
+Capture: `1a-part2-distage-testkit-runner-native-first-public-capture-audit/summary.json`.
+Root verifies all 1,174 tested source/build/doc hashes after those executions
+and generation; `git diff --check` passes. Final bounded read-only review and
+local verified higher runner commit remain pending. The measurements do not
+establish termination of every engine/runtime executor, active cancellation,
+Native assertion-failure fidelity, full custom-loader ownership or the common
+host/transport integrations. Parent and final gates remain open.
+
+### Verified Native higher testkit runner source checkpoint — 2026-10-03
+
+The final bounded read-only report finds no concrete residual defect or overstated
+checkpoint claim. Root reads the entire report and independently verifies all
+1,178 repository and 2,348 evidence hash records: 3,526 checked, zero mismatches,
+actual exit 0. Reviewed ledger SHA256:
+`c37a3da374ed6c1e0639fadc557d8e80f75af4d821bb305e0cd4cd923ba59fbb`.
+This provenance addition follows that review and is not text it reviewed.
+Report `1a-part2-distage-testkit-runner-native-final-readonly-review/FINAL-REVIEW.md`
+SHA256: `55ff198cd475fc7a36d8e691f4f58e449b90982f7f3bc44be1b3602bde7e90d9`.
+Its `final-reviewed-input-manifest.json` SHA256:
+`71c35c10284ccaceb3f789e0068d0904e80834fcf71e2168d72acf914f611b19`.
+Root audit: `1a-part2-distage-testkit-runner-native-final-root-hash-audit.py`
+and the separately retained JSON result.
+
+The local commit containing this entry checkpoints the Native higher runner
+adapter/fixture, generated target and public capability documentation. All command
+paths below are relative to `/srv/nvme/tmp/izumi-impl/`; named drivers and
+commands.json captures preserve exact child argv and observed outcomes.
+
+| Command capture | Observed result |
+| --- | --- |
+| `python3 1a-part2-distage-testkit-runner-native-first-matrix.py` | Nine clean higher producer lanes and three twenty-three-module Native publishers, all actual 0; 3,396 higher contract checks, 192 Native protocol checks and 1,308 Native base checks. |
+| `python3 1a-part2-distage-testkit-runner-native-first-artifact-audit.py` | Actual 0; nine own JAR/POM pairs, 783 exact compiled binaries, 312 NIR, 102 JS IR and eighteen fresh classpaths. |
+| `python3 1a-part2-distage-testkit-runner-native-first-contract-identity-audit.py` | Actual 0; Native=JS 350-label multisets, each contained in JVM432, on all three compilers. |
+| `python3 1a-part2-distage-testkit-runner-native-publication-reconcile.py` | Actual 0; only Scala 3 BIO/logstage require republication; all twenty-three current pairs per compiler compare exactly afterward. |
+| `python3 1a-part2-distage-testkit-runner-native-complete-publication-reconciled-audit.py` | Actual 0; 69 frozen Native pairs, 35,851 exact compiled binaries and 23,166 NIR, no differences. |
+| `python3 1a-part2-distage-testkit-runner-native-published-spec-first.py` | Three separate published builds and Native children actual 0, no timeout, all reaped; all four public front ends, typed JSON, measured resource/event checks, PlanCheck and compiler checks pass. |
+| `python3 1a-part2-distage-testkit-runner-native-first-public-capture-audit.py` | Actual 0; 788 input hashes and literal consumed/producer binary/POM equality for all 69 pairs, 35,851 members. |
+| `python3 1a-part2-distage-testkit-runner-native-generator-final.py` | Actual 0; prescribed --js --native generation idempotent for all three tracked outputs. |
+| `python3 1a-part2-distage-testkit-runner-native-final-root-hash-audit.py` | Actual 0; all 3,526 final reviewer input hashes agree. |
+
+The reviewer independently reads every own/reconciled frozen JAR and POM,
+extracts all contract label multiplicities, verifies all public input references,
+and compares literal consumed member/POM bytes. The first failed complete audit
+and three differing NIR members remain historical evidence with their source
+cause unestablished. The separately owned fixture executors terminate; the
+resource counts and process exits do not enumerate every engine/runtime executor.
+This checkpoint closes no parent 1a/O.18/O.26/O.27/2e item or final-head evaluation.
+Full Native CI-equivalent lanes proceed next from the committed source checkpoint.
