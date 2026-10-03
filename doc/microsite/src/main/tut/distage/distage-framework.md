@@ -267,6 +267,10 @@ the actual checking and can be invoked at runtime or in macro. It can also be in
 `distage-extension-config` library allows parsing case classes and sealed traits from `typesafe-config` configuration
 files.
 
+On Scala.js and Scala Native, it uses Circe decoders and JSON configuration objects.
+Automatic derivation uses `circe-generic` on Scala 2 and Scala 3, and respects custom decoders.
+These platforms support unquoted dot-separated paths; quoted HOCON paths and derived configuration schemas are unavailable.
+
 To use it, add the `distage-extension-config` library:
 
 @@dependency[sbt] { group="io.7mind.izumi"

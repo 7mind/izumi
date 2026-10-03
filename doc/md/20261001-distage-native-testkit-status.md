@@ -5099,3 +5099,149 @@ key and fails; after reading the actual manifest keys, the corrected checker
 verifies both input groups with exit 0. Neither harness failure is presented
 as a product failure. This bounded checkpoint is ready for a local commit;
 complete-step and final-head gates remain open.
+
+## Step 1a part 2: Native configuration extension (2026-10-03)
+
+The core/API checkpoint is committed as
+`fde7bc046c881f18ed9affb605f5f86805d2fdce`; root observes that exact HEAD
+and a clean working tree before this slice. Native configuration follows the
+owner's JS Circe JSON default. Ten JS main/test platform sources are reused,
+with Native derivation comments and the Native quoted-path diagnostic;
+provenance is `1a-part2-distage-config-native-source-provenance.json` under
+`/srv/nvme/tmp/izumi-impl/`. The first copy also includes three ignored SBT
+stream files; root observes and removes only those newly copied artifacts
+before freezing sources, retaining their original copy manifest and hashes.
+
+The Native config model retains String file-source paths as the existing JS
+model does. Circe core/generic are Native Compile dependencies; parser and
+scala-java-time are Native Test dependencies. No HOCON library is added.
+Public documentation states JSON, custom/automatic decoders, unquoted paths
+and unavailable derived schemas. Three Native boundary cases supplement the
+shared config suite: lazy defaults only for absent paths, domain errors for
+missing/quoted paths, and explicit-over-fallback nested JSON precedence.
+Candidate separate published consumers derive sealed/nested config types with
+custom decoders and provision them through DI on all three compilers.
+
+Verification is pending. Items 1a.2, 1a.3, 1a.6, 1a.7 and 1a.10 remain in
+progress; no complete-step or final-head evaluation point is closed.
+
+The prescribed generator exits 0; its command/log/completion are
+`1a-part2-distage-config-native-generator-first.*`. build.sbt is now
+`bd3511e36e5cda9ed49699dcc04cd8cf8f0072015958d831f33c19b3ef5eb1f0`;
+the other two generated file hashes remain unchanged. The first matrix freezes
+only the actual source/resource trees and five build inputs, not platform
+`target/` directories. Scala 3 and 2.13 producer processes exit 0: each Native
+lane executes 16 successful cases and each JS lane 13; JVM executes 29 and 30
+respectively, including its platform-specific metadata/optional-dependency
+suites. No cancellations occur. Scala 2.12 is still running.
+
+The first separate Scala 3 published fixture exits 1 at compilation because
+it calls Injector.produce with a ModuleDef alone, while the public overload
+requires explicit roots (or a PlannerInput/Plan). Root reads the single E134
+overload-mismatch diagnostic before giving the fixture Roots.Everything.
+The first build/source/argv/log/completion remain frozen in
+`1a-part2-distage-config-native-published-consumer-first/`; the original
+template is `1a-part2-distage-config-native-published-probe-first.scala`.
+No production change is made for this fixture error. A separate final
+consumer driver runs all three compilers and freezes their consumed JAR/POM
+bytes after each successful process. Its producer-completion barriers avoid
+reading a compiler's publications while that producer writes them.
+
+All three producer processes and the three corrected published consumer
+processes complete with actual exits 0. The nine producer lanes execute 175
+successful cases: 48 Native, 88 JVM and 39 JS, with no cancellation. Root's
+first artifact-audit predicate mistakenly expects the extra Scala 2.13 JVM
+case on Scala 2.12 as well. Root reads the actual summaries and the 2.13-only
+OptionalDependencyTest213 source, preserves the original auditor, and checks
+JVM counts as 29/30/29. The corrected audit exits 0: nine JAR/POM pairs,
+1,983 current binary entries, 417 Native IR entries, 354 JS IR entries,
+and 18 fresh Compile/Test classpaths. Every JS case is present on Native,
+which adds only its three named JSON boundary cases per compiler. Production
+Native dependencies contain Circe core/generic, without HOCON, circe-derivation,
+Test-only parser, ScalaTest or test fixture entries.
+
+The corrected consumers execute automatic sealed/nested derivation, the custom
+decoder, DI provisioning, missing defaults, invalid-value rejection and JSON
+fallback merging, each with its compiler-version macro check. Their first full
+closure auditor nevertheless rejects a previously published Scala 3 core IR
+entry whose bytes differ from the newly compiled output. Their complete JAR/POM
+inputs were already frozen per compiler, before any reconciliation. Root's
+complete before audit finds 36 consumed producer pairs: all entry sets match,
+while ten prerequisite pairs differ in 140 Native IR entries, with no class or
+TASTy differences. Eight are Scala 3 core/API and foundation pairs; both Scala
+2 BIO pairs differ in one IR entry each. The producer log shows prerequisite
+recompilation; it does not establish the cause of those IR byte differences.
+No source-change cause is inferred. The before summaries and differing current
+compiled bytes are retained under
+`1a-part2-distage-config-native-consumed-closure-before-*` and each consumer's
+`compiled-before-reconciliation/`; all consumed dependencies remain under
+`consumed-dependencies/` with their manifests. Those ten current prerequisites
+will be republished with recorded commands, followed by separate consumers.
+
+The ten-pair prerequisite reconciliation completes with actual exit 0 on each
+compiler. Root directly compares all ten republished JAR binary entry sets and
+bytes with current compiled outputs and finds equality. Separate reconciled
+consumers then execute all three public programs with exits 0 and the expected
+marker. Their complete audit exits 0: three fresh JAR-only classpaths, 36
+consumed producer JAR/POM pairs, 24,056 current binary entries including 15,531
+Native IR entries, and 216 frozen consumed JAR/POM references. All required
+own production dependencies are in the closure; no ScalaTest, test helper,
+ByteBuddy, Cats Effect, ZIO core, zio-interop-cats, Managed/Streams, HOCON,
+circe-derivation or Test-only parser appears on those consumers' classpaths.
+Required izumi-reflect, zio-stacktracer and zio-interop-tracer auxiliaries remain
+present. Circe's required Cats core/kernel dependencies remain present; no
+Cats-free claim is made.
+Producer and reconciliation completion paths/hashes are checked before each
+compiler's consumer build. The first consumers' older inputs remain frozen.
+
+The final prescribed generator exits 0 with identical before/after/current
+hashes for all three generated files, recorded in
+`1a-part2-distage-config-native-generator-final.*`. Root directly verifies all
+75 source/build input pairs against the first producer freeze, then verifies
+and freezes all 19 final test report files under
+`1a-part2-distage-config-final-report-freeze/manifest.json`. All 175 producer
+cases and three final published programs succeed. These are bounded
+configuration checks on JDK 21, not full CI/JDK or final-head gates.
+
+Final commands, all with observed exit 0, run from the checkout unless a
+captured consumer command names its separate build directory. Script/log
+paths below are under `/srv/nvme/tmp/izumi-impl/`.
+
+| Command | Final captured evidence |
+| --- | --- |
+| `python3 1a-part2-distage-config-native-first-matrix.py` | `1a-part2-distage-config-native-first-snapshot/manifest.json`, `1a-part2-distage-config-native-scala{3,213,212}-first.*` |
+| `python3 1a-part2-distage-config-native-first-artifact-audit.py` | `1a-part2-distage-config-native-artifact-summary.json` |
+| `python3 1a-part2-distage-config-native-prerequisite-publication-reconcile.py` | `1a-part2-distage-config-native-prerequisite-publication-scala{3,213,212}.*` |
+| `python3 1a-part2-distage-config-native-published-consumer-reconciled.py` | `1a-part2-distage-config-native-published-consumer-reconciled/{3.9.0,2.13.18,2.12.21}/` source/dependency manifests, commands, logs and completions |
+| `python3 1a-part2-distage-config-native-published-consumer-reconciled-audit.py` | `1a-part2-distage-config-native-published-consumer-reconciled/audit-summary.json` |
+| `direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'` | `1a-part2-distage-config-native-generator-final.*`, idempotent hashes |
+
+The candidate/source freeze is predecessor
+`fde7bc046c881f18ed9affb605f5f86805d2fdce` plus this slice's working-tree
+changes. The reviewer reports no concrete source defect after reading all
+eleven Native files, shared reader/module wiring, dependency targets and docs.
+Final evidence review and the local checkpoint commit are pending. The fixed
+parent/step/final acceptance statuses remain in progress.
+
+The final read-only review finds no residual concrete defect. It identifies
+one ledger wording discrepancy, now corrected: `zio-interop-cats` is absent,
+while the distinct `zio-interop-tracer` auxiliary remains present. The complete
+report is
+`1a-part2-distage-config-native-final-readonly-review/FINAL-REVIEW.md`, SHA256
+`6e58e8c35c7867075a6ec126caf91ef8dabfeb5fe2678e9d8a09233556906c28`.
+Its reviewed manifest `final-input-manifest.json` has SHA256
+`b5e6485785fdb10ed8db3d552cdf618867e7449d7c32e38248aca2e885f7e99c`.
+Root reads the complete report and verifies all 146 input/evidence records,
+including the current/frozen source pairs, before appending this provenance.
+The reviewed ledger hash is
+`63a8551132a8cb9e5fd30b0907e190ca4da714d83840f8b5d03a6340722b5de2`;
+only this review-provenance record follows it. The reviewer directly checks
+current files without rerunning supplied auditors, builds or programs, and
+writes only in its new scratch review directory. A reviewer platform-key
+assumption (`js` versus `sjs1`) initially fails its checker; the schema
+correction passes without product changes. Root's first manifest checker
+expects the previous review's input-key names and fails; after reading this
+manifest's schema, it verifies all 81 repository and 65 evidence records with
+exit 0. These are checker failures, not product failures. This bounded
+configuration checkpoint is ready for a local commit; full parent and final
+gates remain open.

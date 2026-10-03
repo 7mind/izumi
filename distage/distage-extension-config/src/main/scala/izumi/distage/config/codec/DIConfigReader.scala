@@ -50,7 +50,7 @@ import scala.util.Try
   *   }
   * }}}
   *
-  * @note on Scala.js DIConfigReader uses [[io.circe.Decoder]] instances to decode JSON configs, not HOCON as on JVM
+  * @note on Scala.js and Scala Native DIConfigReader uses [[io.circe.Decoder]] instances to decode JSON configs, not HOCON as on JVM
   */
 trait DIConfigReader[A] extends AbstractDIConfigReader[A] with DIConfigReaderPlatformSpecific[A] { self =>
   protected def decodeConfigValue(configValue: DistageConfigValueImpl): Try[A]

@@ -872,13 +872,17 @@ object Izumi {
         ) ++ Seq(
           circe_core in Scope.Compile.js,
           circe_generic in Scope.Compile.js,
+          circe_core in Scope.Compile.native,
+          circe_generic in Scope.Compile.native,
         ) ++ Seq(
           circe_parser in Scope.Test.js,
           scala_java_time in Scope.Test.js,
+          circe_parser in Scope.Test.native,
+          scala_java_time in Scope.Test.native,
         ) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
         settings = Seq.empty,
       ),
       Artifact(
