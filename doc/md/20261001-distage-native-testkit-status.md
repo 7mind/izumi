@@ -7674,3 +7674,20 @@ parent, clean checkout and unchanged tracking ref. The resulting commit SHA and
 actual completion are recorded in the following ledger entry. No push is run.
 All acceptance and owner decisions are unchanged; work continues toward the
 full steps 1a–5 objective, with complete 2b session ownership still open.
+
+Verified assertion transport source checkpoint:
+`980946193247a8c0d6d0193a4487413d7000d8af` (2026-10-03), predecessor
+`8ffb0c3c556d21295c3f98ba9ef07c3d9f63edfa`. The verified-commit command returns
+actual exit 0, source hashes unchanged, clean status and unchanged tracking ref.
+Its exact staged seventeen-path patch SHA is
+`dc3debb2afd65bb734b410a095be22d0f21ca053cf0fa2bf875da6d67cbee24c`;
+argv, source/check hashes, commit log and actual completion are retained in
+`2b-assertion-transport-verified-commit-first/`. The implementation and generated
+inputs/outputs are committed together. No push occurs.
+
+This goal turn makes progress through the completed portable matrix, local
+publication, separate consumers, independent read-only review and verified source
+commit. Remaining work includes current-code replay/correction of custom loader
+ownership, complete compatibility/bootstrap audits, generic failure fidelity,
+application/CLI, SBT, real transports, coverage, IDE, migration and all final
+evaluation points. The full goal remains active and its acceptance is unchanged.
