@@ -69,7 +69,7 @@ object PostgresDocker extends ContainerDef {
 
 To use this container, a module that declares this component is required:
 
-Use @scaladoc[`make`](izumi.distage.docker.ContainerDef#make-fffff5df) for binding in a `ModuleDef`:
+Use @scaladoc[`make`](izumi.distage.docker.ContainerDef#make) for binding in a `ModuleDef`:
 
 ```scala mdoc:to-string
 import distage.ModuleDef

@@ -928,12 +928,6 @@ object Izumi {
           "mdocIn" := """baseDirectory.value / "src/main/tut"""".raw,
           "sourceDirectory" in SettingScope.Raw("(Compile / paradox)") := "mdocOut.value".raw,
           "mdocExtraArguments" ++= Seq(" --no-link-hygiene"),
-          "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
-            """{
-            (SitePlugin.autoImport.makeSite / mappings)
-              .dependsOn(mdoc.toTask(" "))
-              .value
-          }""".raw,
           "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
           // `sbt-paradox-material-theme` inlined, see `project/ParadoxMaterialTheme.scala`
           SettingDef.RawSettingDef("paradoxTheme := Some(ParadoxMaterialTheme.artifact)"),
@@ -944,6 +938,21 @@ object Izumi {
             conv.toVirtualFile(file.toPath) -> path
           }"""),
           SettingDef.RawSettingDef("addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName)"),
+          // Resolves `#member` fragments of API links to the ids scaladoc generated, see
+          // `project/ScaladocAnchors.scala`. Must follow `addMappingsToSiteDir` above: that one
+          // appends the API pages with `++=`, and the resolver needs them in the previous value.
+          "mappings" in SettingScope.Raw("SitePlugin.autoImport.makeSite") :=
+            """Def.uncached {
+            val conv = fileConverter.value
+            val siteMappings = (SitePlugin.autoImport.makeSite / mappings)
+              .dependsOn(mdoc.toTask(" "))
+              .value
+              .map { case (ref, path) => conv.toPath(ref).toFile -> path }
+            ScaladocAnchors
+              .resolve(siteMappings, (ScalaUnidoc / siteSubdirName).value, target.value / "scaladoc-anchors", streams.value.log)
+              .mappings
+              .map { case (file, path) => conv.toVirtualFile(file.toPath) -> path }
+          }""".raw,
           SettingDef.RawSettingDef(
             "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
           ),

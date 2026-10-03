@@ -6845,11 +6845,6 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     mdocExtraArguments ++= Seq(
       " --no-link-hygiene"
     ),
-    SitePlugin.autoImport.makeSite / mappings := {
-                (SitePlugin.autoImport.makeSite / mappings)
-                  .dependsOn(mdoc.toTask(" "))
-                  .value
-              },
     (Compile / paradox) / version := version.value,
     paradoxTheme := Some(ParadoxMaterialTheme.artifact),
     Compile / paradoxProperties ++= ParadoxMaterialTheme.properties,
@@ -6859,6 +6854,17 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                 conv.toVirtualFile(file.toPath) -> path
               },
     addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
+    SitePlugin.autoImport.makeSite / mappings := Def.uncached {
+                val conv = fileConverter.value
+                val siteMappings = (SitePlugin.autoImport.makeSite / mappings)
+                  .dependsOn(mdoc.toTask(" "))
+                  .value
+                  .map { case (ref, path) => conv.toPath(ref).toFile -> path }
+                ScaladocAnchors
+                  .resolve(siteMappings, (ScalaUnidoc / siteSubdirName).value, target.value / "scaladoc-anchors", streams.value.log)
+                  .mappings
+                  .map { case (file, path) => conv.toVirtualFile(file.toPath) -> path }
+              },
     ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
     Compile / paradoxTemplate := Def.uncached {
                 val themeDir = (Compile / paradoxThemeDirectory).value
