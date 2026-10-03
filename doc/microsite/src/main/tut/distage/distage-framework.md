@@ -437,6 +437,10 @@ Injector()
 
 ### Compile-time scanning
 
+On Scala.js and Scala Native, the default loader accepts explicit plugins, merges and overrides, but rejects
+runtime package scanning with an exception. Use `PluginConfig.const(...)` for explicit plugins, or compile-time
+scanning for plugins defined in a dependency module. Compile-time scanning runs Classgraph on the JVM compiler host.
+
 Plugin scan can be performed at compile-time, this is mainly useful for deployment on platforms with reduced runtime
 reflection capabilities compared to the JVM, such as Graal Native Image, Scala.js and Scala Native.
 Use @scaladoc[PluginConfig.compileTime](izumi.distage.plugins.PluginConfig$#compileTime) to perform a compile-time scan.

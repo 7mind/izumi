@@ -5245,3 +5245,165 @@ manifest's schema, it verifies all 81 repository and 65 evidence records with
 exit 0. These are checker failures, not product failures. This bounded
 configuration checkpoint is ready for a local commit; full parent and final
 gates remain open.
+
+
+## Step 1a part 2: Native logging and plugin extensions (2026-10-03)
+
+Configuration is committed as `3924521bd552de88dc2a2d60608bf49908f15df9`;
+root observes that HEAD and an empty working-tree status before this slice.
+The logging and plugin extension targets become `Targets.cross`. Logging
+uses its existing shared production sources and adds two Native cases that
+provision and execute suspended LogIO effects through injected Cats IO and ZIO
+runners, checking the public alias bindings and sink output without installing
+a static router. Four Native plugin cases exercise empty/disabled-only
+requests, explicit plugin/merge/override provisioning, a supplied constant
+loader and rejection of enabled runtime packages through both default factories.
+The Native default loader reuses the audited JS loader with a Native exception
+class and diagnostic; source/hash provenance is
+`/srv/nvme/tmp/izumi-impl/1a-part2-distage-extensions-native-source-provenance.json`.
+Classgraph remains a compiler-host dependency for the shared static macros.
+Public documentation distinguishes explicit and compile-time plugins from
+unavailable runtime package scanning on JS/Native.
+
+The first prescribed generator exits 0, recorded in
+`1a-part2-distage-extensions-native-generator-first.*` under the same scratch
+root. build.sbt is `7bbaa07930a514e33422670f5fdf52fb19a3b6a0580f0997bd4aec6ac5662321`;
+plugins.sbt and build.properties retain their preceding hashes. The candidate
+matrix freezes the two extension modules and all thirteen Native production
+prerequisite modules, then requests clean/testFull/publication on Native, JVM
+and JS with all three compilers. Its separate per-compiler closure publisher
+will publish every current Native prerequisite in dependency order before
+any published consumer runs. Separate consumers will scan a compiled dependency
+fixture module and execute both explicit and compile-time plugin bindings and
+the effect loggers. Verification is pending. Parent 1a.2/3/6/7/10 and final
+L1–L6 gates remain open.
+
+The first Scala 3 Native logging run executes all three cases: the inherited
+case passes and both new effect cases fail only on their output assertion.
+Root reads the diagnostics and Log.Message definition: template is a
+StringContext, whose toString returns `StringContext(ArraySeq(...))`, rather
+than the message text. The assertions now compare template.parts directly;
+no production correction is made. The failed source freeze, commands,
+log/completion and two XML reports remain retained, the latter under
+`1a-part2-distage-extensions-native-first-report-freeze/`. The candidate
+published-consumer driver's producer barrier exits 1 before starting any build;
+its launch completion explicitly records that boundary. A separate second
+matrix/consumer path will capture the corrected runs without overwriting the
+first evidence.
+
+The corrected Scala 3 producer and its fifteen-pair Native closure publication
+both exit 0. The second consumer's separately compiled plugin fixture exits 1:
+its inherited PluginDef DSL macros explicitly require -Yretain-trees, which the
+standalone fixture omitted. Root reads both diagnostics and the repository's
+compiler option before adding that option (and the existing max-inline bound)
+to a separate third consumer driver. The second fixture's source/build inputs,
+commands, log and actual completion remain frozen. No production correction
+is made for this fixture precondition.
+
+A direct post-publication audit of all fifteen Scala 3 Native pairs compares
+9,527 class/TASTy/NIR entries against current compiled outputs. All entry sets
+match, and only fundamentals-bio differs, in two NIR entries (FileLockMutex and
+__ZIORaceCompat). Class and TASTy bytes match. This disproves the assumption
+that a successful complete closure publication alone establishes byte identity.
+The published JAR/POMs and differing current NIR bytes are retained under
+`1a-part2-distage-extensions-native-publication-before-audit/`. Cause remains
+unestablished. The remaining producer lanes are still running; final consumers
+will wait for a verified byte-identical closure.
+
+All three corrected producer matrices and all three complete closure publishers
+exit 0. The independent extension artifact auditor exits 0: eighteen JAR/POM
+pairs, 1,069 current binary entries including 247 Native IR and 190 JS IR
+entries, thirty-six fresh Compile/Test classpaths, and 48 successful cases
+(21 Native, 24 JVM, three JS), with no cancellations or failures. Every
+registered JS case is present on Native; each compiler adds the six named
+Native cases. The plugin JS project compiles its shared fixtures and has zero
+registered suites. Production extension POMs preserve the existing boundaries:
+logging depends on config/core-api/logstage-core, plugins on core-api plus
+compiler-host Classgraph; their concrete effect and test libraries stay Test.
+No test fixtures are published.
+
+The complete post-publication comparison checks forty-five Native producer
+pairs and 27,764 binary entries. Only the already identified two Scala 3 BIO
+NIR entries differ; all Scala 2 pairs match. The complete before JAR/POM inputs
+and differing NIR files are frozen under
+`1a-part2-distage-extensions-native-complete-publication-before-audit/`.
+A single recorded Scala 3 fundamentals-bioNative/publishLocal process exits 0;
+the reconciliation driver then directly verifies all fifteen pairs on each
+compiler against current compiled entry sets and bytes. Scala 2 reconciliation
+runs only the comparator because those publications already match; it does not
+claim an extra publication process. All forty-five pairs now match. No source
+or dependency change is made for the IR delivery discrepancy; cause remains
+unestablished. The third standalone consumer now runs with the required Scala 3
+macro options and matching producer/publication/reconciliation completion hashes.
+
+The third separate published consumers complete on all three compilers with
+actual exits 0 and the expected NATIVE_PUBLISHED_EXTENSIONS_OK marker. Their
+separate fixture project defines a class and object PluginDef; the consuming
+project expands both PluginConfig.compileTime and StaticPluginLoader against
+that compiled dependency. Each Native executable provisions both plugin
+bindings, verifies explicit override precedence and empty compile-time scanning,
+rejects runtime package scanning with the Native diagnostic, then provisions
+and executes suspended injected IO and Task logging effects and their aliases.
+Each fixture also expands ScalaReleaseMaterializer and verifies its compiler
+argument. These are execution results, not link-only observations.
+
+The complete final public-consumer audit exits 0: six fresh JAR-only classpaths,
+forty-five consumed producer JAR/POM pairs, 27,764 current binary entries including
+17,695 Native IR entries, 458 frozen consumed JAR/POM references across the two
+classpaths per compiler, and 97 frozen compiled fixture entries. The latter
+are the consumer/fixture binaries, not extra producer entries. All resolved
+producer bytes and required own POM dependencies match the current compiled
+closure; no checkout classes or sources shadow publications. Classgraph remains
+present for the static macro host. The plugin-only fixture classpaths contain
+no concrete ZIO, Cats Effect or Circe core/generic; the executable consumer
+explicitly requests ZIO and Cats Effect and receives the JSON backend through
+logging's config dependency. Managed, Streams and zio-interop-cats are absent.
+Required reflection/tracer auxiliaries and Circe's Cats core/kernel remain
+present. No ScalaTest, TestSink, test helper, HOCON, circe-derivation, Test-only
+parser or ByteBuddy contaminates these production consumer classpaths or JARs.
+
+The final prescribed generator exits 0 with identical before/after/current
+hashes for all three generated files. Root directly verifies all 901
+current/frozen source/build pairs and all 24 final report files against the
+artifact-summary hashes, then freezes those reports under
+`1a-part2-distage-extensions-final-report-freeze/manifest.json`. These establish
+the bounded eighteen-project JDK 21 checkpoint. Full CI/JDK and final-head
+gates remain open; no complete parent step is marked done.
+
+Commands below run from the checkout except the captured standalone consumers,
+whose commands name their separate build directories. Paths are under
+`/srv/nvme/tmp/izumi-impl/` unless stated otherwise. Every final command has
+observed exit 0; the retained first assertion failure and second fixture
+precondition failure are explicitly historical evidence.
+
+| Command | Final evidence |
+| --- | --- |
+| `python3 1a-part2-distage-extensions-native-second-matrix.py` | `1a-part2-distage-extensions-native-second-snapshot/manifest.json`, `scala{3,213,212}-second.*` and `scala{3,213,212}-closure-publication.*` under the `1a-part2-distage-extensions-native-` prefix |
+| `python3 1a-part2-distage-extensions-native-artifact-audit.py` | `1a-part2-distage-extensions-native-artifact-summary.json` |
+| `python3 1a-part2-distage-extensions-native-publication-reconcile.py` | `1a-part2-distage-extensions-native-scala{3,213,212}-publication-reconcile.*`, fifteen compared pairs per compiler |
+| `python3 1a-part2-distage-extensions-native-published-consumer-third.py` | `1a-part2-distage-extensions-native-published-consumer-third/{3.9.0,2.13.18,2.12.21}/` source/build/compiled/dependency manifests, commands, logs and completions |
+| `python3 1a-part2-distage-extensions-native-published-consumer-third-audit.py` | `1a-part2-distage-extensions-native-published-consumer-third/audit-summary.json` |
+| `direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'` | `1a-part2-distage-extensions-native-generator-final.*`, idempotent hashes |
+
+The candidate is predecessor `3924521bd552de88dc2a2d60608bf49908f15df9`
+plus this slice's working changes. The first read-only source/producer review
+reports no concrete defect and independently verifies all 901 frozen input
+pairs, eighteen extension publications, forty-five reconciled Native pairs,
+thirty-six classpaths and all 48 XML cases. Final consumer/evidence review and
+the local checkpoint commit are pending. Parent 1a.2/3/6/7/10 and L1–L6
+statuses remain unchanged and open.
+
+The final independent read-only review reports no residual concrete defect or
+overclaim. Its full report is
+`1a-part2-distage-extensions-native-final-readonly-review/FINAL-REVIEW.md`, SHA256
+`9dff1d7746c9fdfa9a2f6bcdbd779c666a9177a267023a7b9d56b8c10d02c9d5`;
+its final-input-manifest.json SHA256 is
+`8ab2d623e66848f0acdc5d06b412b062a5b1a5b26dfb14738adc3886985b1520`.
+Root reads the complete report and verifies all 906 repository and 86 evidence
+records, including the 901 current/frozen source pairs. The reviewed ledger
+SHA256 is `15afd415c653d1440f26cc77fa4903d3be5e8cec1c00919e005bbc080dd67189`;
+only this review-provenance record follows that reviewed text. The reviewer
+independently reads captured commands/logs, hashes, ZIP bytes and XML, writes
+only in its new review directory, and runs no supplied auditor, build,
+publisher, generator or target program. The bounded extension checkpoint is
+ready for local commit; the whole-step and final-head gates remain open.

@@ -894,7 +894,7 @@ object Izumi {
         depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
           Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.plugins,
@@ -903,7 +903,7 @@ object Izumi {
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
           Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platformTest tin Scope.Test.jvm),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.framework,
