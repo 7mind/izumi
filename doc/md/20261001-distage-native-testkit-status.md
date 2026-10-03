@@ -4793,3 +4793,309 @@ Native distage ports, full step-1a evaluations, all parent/final gates, active
 session cancellation and captured MiniBIO parallel failures remain open.
 Work continues in the brief's dependency order, without pushing or changing
 acceptance/owner decisions.
+
+## Step 1a part 2: Native distage core and APIs (2026-10-03)
+
+The logstage checkpoint is committed as
+`d2d5d23163c25298b24dbab38a2c443121997e64`; root observes that exact HEAD
+and a clean working tree before this next slice. Core API, framework API and
+core now select cross targets, and core adds Native test scala-java-time.
+Five platform sources are copied with provenance in
+`1a-part2-distage-core-native-source-provenance.json`. The closed-world mirror
+and disabled dynamic proxies reuse JS boundaries with a Native diagnostic;
+the graph observer reuses JVM filesystem output. Native ZIO borrows its
+default executor as JS does; no executor shutdown ownership is claimed.
+
+Root reads the actual released Native source JARs for Cats Effect 3.7.1 and
+ZIO 2.1.26, retained in `1a-part2-distage-native-api-evidence/` with HTTP URLs
+and SHA256s. Cats' Native compute factory returns compute, polling API and
+shutdown; the Native port retains the poller and owns the third-field cleanup
+through Lifecycle. Blocking workers and runtime registration also have explicit
+resource release. Named CPU/IO overrides feed the actual runtime without
+transferring ownership of application-supplied executors. These are candidate
+implementation semantics pending execution, not yet verified postconditions.
+
+Native feature checks now exercise poller discovery, scheduled effects,
+termination of observed default compute/blocking workers, custom named
+executors and their retained ownership, Cats resource acquisition/release,
+both ZIO defaults, and actual GraphViz filesystem output. They supplement the
+unchanged shared suites; no parent or final evaluation is marked passed.
+The prescribed generator runs with actual exit 0; the generated build hash is
+`aa7b3ede3c25bdfe843bf87fbb075ee9541b5f0d053a39a4c53b557288b0268a`.
+Its argv/log/completion are `1a-part2-distage-core-native-generator-first.*`.
+
+The first clean strict Scala 3 lane exits 1 after compiling/linking the API and
+core tests. Its current XMLs record two core-API cases and 341 core cases,
+with exactly one failure in the newly written Cats default-resource fixture.
+The effect returns Some(Succeeded), because ScalaTest's assert returns its
+Assertion value; the fixture incorrectly expects Some(Unit). Root reads the
+actual failure and freezes all first-run XMLs before editing. This is a fixture
+oracle defect, not a resource/provisioning failure. The source freeze, argv,
+log, completion and `1a-part2-distage-core-native-first-xml/` preserve it.
+
+The first runtime checks of observed Cats compute/blocking worker termination,
+named executor overrides and actual graph-file output pass, as do both initial
+ZIO defaults. Root corrects the Cats fixture to return Unit explicitly. The
+Native ZIO candidate is then changed to acquire a separate Java work-stealing
+executor through Lifecycle.fromExecutorService and pass it through
+Executor.fromJavaExecutor, following the dependency/ownership rule. The revised
+default-module fixtures run yielding ZIO bodies through their injected runner
+and require the executor service and observed worker to terminate after
+release. This supersedes the first candidate's borrowed default executor;
+shared/JVM/JS sources remain unchanged. Revised verification is still required.
+
+The second clean Native matrix completes Scala 3 with actual exit 0: two
+core-API and 341 core cases, zero failures; framework API has no test cases.
+Its six fresh classpaths and three Native publications are captured. Scala
+2.13 then exits 1 during compilation of the new test fixtures: the final assert
+in a finally block and in a Unit-returning helper implicitly discard
+ScalaTest's Assertion under the project's fatal value-discard checks. Root
+reads both diagnostics, preserves the second source/argv/log/completion/XMLs,
+and explicitly binds those assertion results to val _. No production change
+is made for these fixture compile errors. Scala 2.12 has not run yet.
+
+The third clean Native matrix again completes Scala 3 with actual exit 0 and
+the same two core-API and 341 core cases. Scala 2.13 now compiles the tests,
+but core Native linking exits 1 with exactly two unreachable types,
+`zio.managed.ZManaged` and its companion. The captured reachability chains
+include interop Cats instances and Cats traversal through QuasiPrimitives;
+they do not establish that the test directly uses ZManaged. Root reads the
+actual linker diagnostics and freezes 38 available XMLs in
+`1a-part2-distage-core-native-third-xml/` before any subsequent clean.
+Scala 2.12 has not run. The third source freeze, argv, log and completion remain
+unchanged.
+
+A separate fresh classpath capture exits 0, recorded as
+`1a-part2-distage-core-native-scala213-link-classpath.*`. Its three blocks
+(core API Compile, core Compile, core Test) contain 38, 38 and 63 entries.
+Only core API Compile contains zio-managed; neither core classpath contains
+it. The released Native 2.13 interop POM declares zio-managed 2.1.26 optional.
+This is an observed dependency boundary; the upstream/library cause is still
+under investigation with a separate release-only probe. No dependency has
+been changed for this failure. The probe's first invocation fails while
+loading its build because the standalone SBT 2 harness has no `%%%` extension;
+that is retained as `bootstrap-*`, and does not reproduce the linker failure.
+The corrected harness uses explicit released Native artifact names.
+
+The corrected simple release-only Async probe links with actual exit 0 without
+Managed. Adding Cats IO List traversal to a separate probe reproduces the
+expected two unreachable Managed types with actual exit 1, using no izumi
+artifacts. Its 28 dependency JARs and POMs are frozen with hashes in
+`zio-interop-native-traversal-before/dependency-manifest.json`. An unchanged
+source control adding only Managed links and executes with exits 0 and the
+expected marker. A separate control uses the released public
+`zio.interop.CatsEffectInstances` class instead of the bundled catz object,
+and links and executes with exits 0 without Managed. The released sources
+show catz inherits eager Managed instance fields; the direct class supplies
+the same ZIO Async/Parallel implementations without those fields. The simple
+probe's success limits the finding to programs reaching the reported dispatch
+paths; merely summoning Async does not always fail.
+
+Root changes the shared ZIOCatsEffectInstancesModule to hold a private
+CatsEffectInstances instance and supply both bindings from it. No library
+dependency is added or made mandatory. This is a shared correction because
+the DI module's bundled instance selection causes the unwanted boundary; JVM
+and JS regression execution is required. The Native interop default fixture
+now invokes both injected Async and Parallel and checks their computed value.
+A fourth clean three-compiler matrix will verify this correction. The upstream
+tracker searches find no matching report; a minimal unfiled draft is pending.
+
+All fourth-matrix producer commands exit 0 and publish the nine Native
+JAR/POM pairs. The core cases execute as 341 on Scala 3 and 308 on Scala 2.13.
+Scala 2.12 executes 307 successful core cases and cancels one inherited
+Functoid constant-type case, guarded in the shared source by a Scala >= 2.13
+assumption; all three core-API lanes execute two successful cases. Root's first
+artifact audit fails because it requires zero cancellations. Root inspects the
+actual cancellation, shared source and XML before refining the audit to
+recognize exactly this compiler-specific existing case, with no unknown
+cancellation allowed. This does not mark a parent acceptance item done or
+change the suite's policy. JVM/JS reconciliation of the same case is pending.
+
+ScalaTest's Scala 2.12 XML records the canceled case as a testcase without
+a skipped child, and reports skipped=0. Therefore XML alone is insufficient
+to establish that every registered case executed; the audit records the actual
+ScalaTest result line and canceled-case marker alongside the XML identities.
+No zero-cancellation or 308-executed-case claim is made for this lane.
+The initial auditor is preserved as
+`1a-part2-distage-core-native-fourth-artifact-audit-first-attempt.py`.
+
+The released-library reproduction's independent dependency/source audit exits
+0 (`zio-interop-native-traversal-audit.py/.json`): 28, 29 and 28 frozen JARs
+and matching POM counts; the Managed control adds only its JAR/POM with
+byte-identical source and all preceding dependency bytes unchanged. The direct
+instance control uses the original 28 dependency bytes. Both executables exit
+0 with the expected marker. The minimal report is retained as
+`zio-interop-native-traversal-DRAFT-ISSUE.md`, explicitly unfiled and limited
+to the reproduced traversal/dispatch path.
+
+The revised fourth Native artifact audit exits 0: nine JAR/POM pairs, 9,806
+current binary entries including 6,428 Native IR entries, and 18 fresh
+Compile/Test classpaths. All published binary-entry names and bytes match
+current compiled outputs; no new Native fixture is published, and production
+classpaths/POMs exclude ScalaTest/test support and Native ByteBuddy. The audit
+records the sole inherited Scala 2.12 cancellation separately from executed
+cases. Its summary is `1a-part2-distage-core-native-artifact-summary.json`.
+
+The first separate published Native consumer run passes Identity and effect
+programs on Scala 3 with exit 0. Scala 2.13's Identity executable also passes,
+but the effects fixture fails compilation: accessing
+DefaultModule.forZIOPlusCats.module without an expected DefaultModule type
+infers environment Nothing and conflicts with invariant Tag[R]. The compiler
+then reports four downstream Any-typed tuple errors. Root reads the primary
+type mismatch and preserves this first fixture/log/completion. The final
+fixture gives the selected default module the explicit DefaultModule[Task]
+type, as the producer test already does through its parameter. No production
+change is made for this fixture inference failure. Final published consumer
+verification uses a separate directory and all three compilers.
+
+All JVM/JS regression producer commands exit 0 across the three compilers.
+The exact artifact audit exits 0: 18 JAR/POM pairs, 9,888 current binary entries
+including 3,140 JS IR entries, and 36 fresh classpaths. Core executes
+400/366/365 JVM and 335/302/301 JS successful cases on Scala 3/2.13/2.12,
+plus two API cases on each lane. Both Scala 2.12 core platforms cancel the
+same inherited constant-type case as Native; no additional case is canceled.
+The registered-case multiset audit finds every JS case on Native, with exactly
+the six new Native behavior cases added for each compiler. The summary is
+`1a-part2-distage-core-jvm-js-regression-artifact-summary.json`; these bounded
+regressions do not complete L1/L2 or any parent evaluation.
+
+All six final published Native consumer commands execute successfully, but
+their first complete closure audit fails an exact-byte check for a previously
+published fundamentals-platform Native IR entry. Root freezes every consumed
+JAR/POM before changing publications and audits all 36 consumed producer pairs.
+Entry sets match current outputs for all 36; eight pairs differ in 119 Native
+IR entries, with no class/TASTy differences. They are six Scala 3 foundation
+modules (platform, functoid, bio, functional, language and collections) and
+bio on both Scala 2 versions. No source-change cause is inferred from this
+binary observation. `1a-part2-distage-core-native-consumed-closure-before-*`
+retains exact differences; each final consumer's
+`consumed-before-reconciliation-manifest.json` retains frozen inputs. The
+reconciliation republishes those eight current compiled prerequisite pairs
+with separate recorded commands. Consumers must rerun against those actual
+publications before the checkpoint is claimed.
+
+The prerequisite reconciliation exits 0 for all three compiler processes;
+root directly compares every binary entry of the eight republished JARs to
+current classes and finds exact equality. A separate reconciled consumer build
+again executes all six programs with exits 0. Its first auditor then rejects
+Identity's classpath using an overly broad dev.zio group check: required
+izumi-reflect and standalone tracer artifacts belong to that group but are
+not the ZIO effect runtime. Root reads the actual classpath before correcting
+the audit to check the concrete Cats and ZIO runtime/interop artifact families.
+Identity omits Cats and the ZIO core effect library; it still resolves the
+required reflection/tracer dependencies. No production dependency is changed
+for this audit predicate correction. Managed and Streams remain absent from
+both consumer classpaths. The original predicate is retained in the
+reconciled auditor's `-first-attempt.py` file.
+
+A further auditor failure corrects the earlier stated absence of Managed and
+Streams in all consumer classpaths. Root reads all three released interop
+POMs: the Native Scala 3 POM declares Managed, Streams, Cats MTL and FS2 as
+ordinary transitive dependencies, while both Scala 2 POMs mark them optional.
+The ordinary Scala 3 effects consumer therefore includes those libraries;
+its successful execution does not prove their absence. The earlier collective
+absence claim is superseded. The observed POM differences are retained in
+`zio-interop-native-optional-dependency-platform-differences.json`.
+A final explicit-exclusion consumer control will exclude Managed and Streams
+on every compiler; the Identity consumer's classpath remains free of Cats
+and the ZIO core effect library, with reflection/tracer auxiliaries present.
+
+During final source review, root finds the new Native createCPUPool helper has
+no Native/shared caller; its JVM counterpart is used only by JVM-specific
+tests. It is removed from the new Native file. The newly copied Native proxy
+diagnostic names the retired cglib implementation; its wording is corrected
+to generated proxies. These are cleanup of this port's additions, not changes
+to JVM/JS behavior. A fifth clean Native matrix and final published consumers
+will verify the resulting sources; fourth-matrix evidence remains historical.
+
+All fifth clean Native producer processes now complete with actual exits 0.
+The six final published consumer commands also complete with actual exits 0;
+they explicitly exclude Managed and Streams on every compiler and record the
+matching fifth producer completion path/hash before each compiler's build.
+The Scala 2.12 consumer waits for that producer to finish before loading its
+publications. Full classpath/byte auditing remains required before the absence
+and final publication claims are made. The fifth producer's first artifact
+audit invocation was started prematurely and exits 1 on a missing Scala 2.12
+completion file, before that producer finished. This is an orchestration
+precondition failure, not a compilation, test or artifact failure. Root observes
+all producer completions and reruns the audit only after completion.
+
+The final prescribed generator runs with actual exit 0 and identical before/
+after hashes for all three generated files. build.sbt remains
+`aa7b3ede3c25bdfe843bf87fbb075ee9541b5f0d053a39a4c53b557288b0268a`;
+its command/completion/log are `1a-part2-distage-core-native-generator-final.*`.
+No generator input has changed during the final source cleanup. The reviewer
+reports no concrete source defect after reading all nine Native sources/tests,
+the generated targets, shared lifecycle/runtime modules and released Native
+CE shutdown/polling implementation. Final evidence review is pending.
+
+The completed final audits exit 0. The fifth Native producer audit verifies
+nine JAR/POM pairs and 9,803 current binary entries, including 6,425 Native IR
+entries, against the exact current compiled entry sets and bytes. Its 18 fresh
+Compile/Test classpaths satisfy the production/test dependency boundary. The
+final published consumer audit verifies all six executable markers, six fresh
+classpath blocks, and all 36 consumed izumi JAR/POM pairs (12 nonlegacy Native
+families on each compiler): 23,440 binary entries, including 15,209 Native IR
+entries, equal their current compiled outputs. It freezes 434 consumed JAR/POM
+references with hashes. Both consumer classpaths omit Managed and Streams on
+all three compilers under the explicit exclusions; Identity also omits Cats
+and the ZIO core effect library. Own core effect dependencies remain optional
+in its POM. Required reflection/tracer auxiliaries remain present.
+
+The final bounded nine producer lanes execute 3,043 successful cases: 962
+Native, 1,137 JVM and 944 JS. Each Scala 2.12 platform cancels the same inherited
+constant-type case; those three cancellations are separately recorded, not
+counted as execution. The final Native registered-case identities still include
+every JS case and exactly six additional Native core behavior cases per
+compiler. Framework API has no cases. These results are for this three-module
+checkpoint on JDK 21, not the complete L1/L2/L3 or final-head gates.
+
+The final verification entry points are below, all under
+`/srv/nvme/tmp/izumi-impl/`. The scripts retain the exact SBT argv, source hashes,
+compiler/classpath captures, full logs and actual completion records. Every
+listed command has observed exit 0; earlier failed attempts remain retained.
+
+| Command | Final captured evidence |
+| --- | --- |
+| `python3 1a-part2-distage-core-native-fifth-matrix.py` | `1a-part2-distage-core-native-fifth-snapshot/manifest.json`, `1a-part2-distage-core-native-scala{3,213,212}-fifth.*` |
+| `python3 1a-part2-distage-core-native-fifth-artifact-audit.py` | `1a-part2-distage-core-native-artifact-summary.json` |
+| `python3 1a-part2-distage-core-jvm-js-regression-matrix.py` | `1a-part2-distage-core-jvm-js-regression-snapshot/manifest.json`, `1a-part2-distage-core-jvm-js-scala{3,213,212}-regression.*` |
+| `python3 1a-part2-distage-core-jvm-js-regression-artifact-audit.py` | `1a-part2-distage-core-jvm-js-regression-artifact-summary.json` |
+| `python3 1a-part2-distage-core-native-published-consumer-final-head.py` | `1a-part2-distage-core-native-published-consumer-final-head/{3.9.0,2.13.18,2.12.21}/` source manifests, commands, logs and completions |
+| `python3 1a-part2-distage-core-native-published-consumer-final-head-audit.py` | `1a-part2-distage-core-native-published-consumer-final-head/audit-summary.json` and frozen dependencies |
+| `direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'` | `1a-part2-distage-core-native-generator-final.*`, identical before/after hashes |
+
+The implementation/source freezes are based on predecessor
+`d2d5d23163c25298b24dbab38a2c443121997e64` plus this checkpoint's working-tree
+changes. The JVM/JS regression freeze remains applicable after the final
+Native-only cleanup because neither its source inputs nor build inputs changed.
+Root verifies and freezes all 322 final producer XML reports, Native and JVM/JS,
+under `1a-part2-distage-core-final-report-freeze/manifest.json`; their bytes
+equal the hashes recorded in the two final artifact summaries.
+Final read-only review and the local checkpoint commit are pending. Items
+1a.2, 1a.3, 1a.6 and 1a.10 remain in progress; no complete step or final
+evaluation point is declared done.
+
+The final read-only review finds no concrete bounded defect or completion
+overclaim. Its report is
+`1a-part2-distage-core-native-final-readonly-review/FINAL-REVIEW.md`, SHA256
+`c86b506a30ba7907b8ded305765b8ddbc86b3a3f393cef5b152b32df249ce04a`.
+The reviewed input manifest is `final-input-manifest.json` in that directory,
+SHA256 `af8b3bfacd34465f7e0fd3c7731ed4246d1c0feccea0861926a8bbe8507567e1`.
+Root reads the complete report and verifies all 108 manifest hash records
+(20 candidate inputs and 88 evidence files) before this provenance append.
+The reviewed ledger hash is
+`2a2c4ab157eeae2d2892a82a32b4bfdac89637338b5c8edd1da221dc7dfb19c0`;
+only this review-provenance record is appended afterwards. Root separately
+checks all 287 Native and 1,644 JVM/JS current/frozen input pairs, recorded in
+`1a-part2-distage-core-native-root-final-snapshot-check.json`, with exit 0.
+The review launches no SBT, generator, publication or Native executable. Its
+three artifact-auditor reruns rewrite only their deterministic evidence
+summaries; root verifies those resulting hashes against the final manifest.
+The review's first direct input checker uses the wrong argv index for the
+shell payload and fails; its retained correction exits 0 without changing
+product inputs. Root's first manifest checker expects a nonexistent `files`
+key and fails; after reading the actual manifest keys, the corrected checker
+verifies both input groups with exit 0. Neither harness failure is presented
+as a product failure. This bounded checkpoint is ready for a local commit;
+complete-step and final-head gates remain open.

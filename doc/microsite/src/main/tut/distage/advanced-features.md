@@ -119,7 +119,7 @@ If you want to disable it, use `NoProxies` bootstrap configuration:
 Injector.NoProxies()
 ```
 
-Proxies are not supported on Scala.js.
+Generated proxies are not supported on Scala.js or Scala Native.
 
 #### Manual Resolution with by-name parameters
 

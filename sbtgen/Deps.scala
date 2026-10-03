@@ -832,7 +832,7 @@ object Izumi {
           Projects.fundamentals.functoid,
           Projects.fundamentals.bio,
         ).map(_ in Scope.Compile.all),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.proxyBytebuddy,
@@ -844,7 +844,7 @@ object Izumi {
         name = Projects.distage.frameworkApi,
         libs = Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.core,
@@ -852,6 +852,7 @@ object Izumi {
           zio_interop_cats in Scope.Optional.all
         ) ++ Seq(
           scala_java_time in Scope.Test.js,
+          scala_java_time in Scope.Test.native,
           javaXInject in Scope.Test.all,
         ),
         depends = Seq(
@@ -860,7 +861,7 @@ object Izumi {
           Projects.fundamentals.platform in Scope.Compile.all,
           Projects.fundamentals.platformTest tin Scope.Test.all,
         ),
-        platforms = Targets.jvmJs,
+        platforms = Targets.cross,
       ),
       Artifact(
         name = Projects.distage.config,

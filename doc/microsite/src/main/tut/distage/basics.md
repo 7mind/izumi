@@ -675,6 +675,12 @@ what exact components are available for each effect type, see
 
 DefaultModule occurs as an implicit parameter in `distage` entrypoints that require an effect type parameter, namely: `Injector[F]()` in `distage-core`, @ref[`extends RoleAppMain[F]`](distage-framework.md#roles) and @ref[`extends PlanCheck.Main[F]`](distage-framework.md#compile-time-checks) in `distage-framework` and @ref[`extends Spec1[F]`](distage-testkit.md) in `distage-testkit`.
 
+On Scala Native, `distage-core` supports Identity, Cats Effect IO and ZIO default modules, including ZIO's Cats Effect instances.
+The Cats IO support module installs a Native polling runtime and releases its default compute and blocking executors with the object graph.
+Named `"cpu"` and `"io"` executor overrides remain owned by the application.
+The ZIO support module also releases its default CPU executor with the object graph.
+Native graph dumping writes GraphViz files to the filesystem; @ref[generated proxies](advanced-features.md#automatic-resolution-with-generated-proxies) are unavailable.
+
 ## Set Bindings
 
 Set bindings are useful for implementing listeners, plugins, hooks, http routes, healthchecks, migrations, etc.
