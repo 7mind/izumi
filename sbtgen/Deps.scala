@@ -972,7 +972,7 @@ object Izumi {
         name = Projects.logstage.core,
         libs = Seq(scala_reflect) ++
           allCatsOptional ++ allZioOptional ++
-          Seq(scala_java_time in Scope.Compile.js),
+          Seq(scala_java_time in Scope.Compile.js, scala_java_time in Scope.Compile.native),
         depends = Seq(
           Projects.fundamentals.bio,
           Projects.fundamentals.platform,
@@ -1010,7 +1010,7 @@ object Izumi {
     )),
     pathPrefix = Projects.logstage.basePath,
     groups = Groups.logstage,
-    defaultPlatforms = Targets.jvmJs,
+    defaultPlatforms = Targets.cross,
   )
 
   val all = Seq(fundamentals, distage, logstage)

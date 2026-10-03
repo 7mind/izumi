@@ -3,7 +3,7 @@ out: index.html
 ---
 # LogStage
 
-LogStage is a zero-cost structural logging framework for Scala & Scala.js
+LogStage is a zero-cost structural logging framework for Scala, Scala.js and Scala Native
 
 Key features:
 
@@ -34,6 +34,19 @@ libraryDependencies ++= Seq(
 )
 ```
 @@@
+
+### Scala Native
+
+`logstage-core` and `logstage-rendering-circe` have Scala Native builds. Native
+supports the file sinks, including rotation, and `ThreadingLogQueue` uses a
+worker thread. Start the queue before use; after stopping log producers, close
+it to wait for its queued messages to be delivered.
+
+Native timestamps use scala-java-time's default time zone, initially UTC. The
+library does not discover the host's time zone automatically.
+
+The JUL adapter is unavailable on Native because Scala Native 0.5.12 does not
+provide `java.util.logging`. The SLF4J adapter and sink remain JVM-only.
 
 ## Overview
 

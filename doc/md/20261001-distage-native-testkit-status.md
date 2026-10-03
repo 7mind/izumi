@@ -31,7 +31,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 1a.8 | in progress | No evaluation point passed yet. |
 | 1a.9 | in progress | No evaluation point passed yet. |
 | 1a.10 | in progress | No evaluation point passed yet. |
-| 1a.11 | in progress | No evaluation point passed yet. |
+| 1a.11 | in progress | Bounded logstage checkpoint below passes all nine producer lanes and Native published shutdown/drain controls; final-head evaluation remains outstanding. |
 | 1b.1 | in progress | Plain-core Native build, execution, and publication checkpoint below; final recheck outstanding. |
 | 1b.2 | in progress | Plain-core strict Scala 3.9 checkpoint below; final recheck outstanding. |
 | 1b.3 | in progress | Cleaned published-artifact consumer checkpoint below; final recheck outstanding. |
@@ -4553,3 +4553,243 @@ The remaining Native logstage/distage ports, full L1–L6 evaluations, all paren
 and final gates, active session cancellation and captured MiniBIO parallel
 failures remain open. Work continues in the brief's dependency order; no push
 or acceptance/owner-decision change occurs.
+
+## Step 1a part 2: Native logstage checkpoint (2026-10-03)
+
+The Native BIO prerequisite is committed locally as
+`57f33433a31a57f3413bfcfcbf28138042ed0812`; root observes that exact HEAD
+and a clean working tree before the logstage port. The fixed acceptance scope
+remains every JS module except the legacy adapter, with item 1a.11 separately
+requiring Native implementations/tests or documented unavailability for the
+file sinks, threaded queue and JUL adapter.
+
+The two previously JVM/JS logstage modules now select `Targets.cross` and core
+adds its Native scala-java-time Compile dependency. JVM-only SLF4J modules
+retain their existing targets. Root reads the JVM file services/models/sink,
+real/dummy file suites, queue and rendering helper before adding Native sources.
+The 13 unchanged JVM-derived source/test files and SHA256 provenance are
+`1a-part2-logstage-native-source-provenance.json`. The existing five-case
+abstract file suite runs against both the real filesystem service and the
+hand-written in-memory service. The existing shared asynchronous sink test
+checks delivery of 100 messages after start/close. The new Native queue suite
+adds a controlled held flush: close must remain pending during an observed
+200ms interval and complete after release, with cleanup in finally. A second
+case checks synchronous flush and sync for a message appended after close.
+These feature tests are verification candidates, not yet passing evidence.
+
+Pinned Scala Native 0.5.12 Runtime source implements add/removeShutdownHook;
+root reads that primary source and captures its HTTP response/hash. Direct
+inspection of the actual resolved javalib JAR finds zero entries under
+`java/util/logging/`. `1a-part2-logstage-native-api-evidence/api-provenance.json`
+records those observations, not a JUL compile/link reproduction. Native JUL
+remains unavailable and will be documented. The downloaded scala-java-time
+2.6.0 Native source JAR supplies TimeZone initially set to UTC; its source
+explicitly leaves host-zone discovery unimplemented. The reused TimeOps calls
+ZoneId.systemDefault and does not establish host-zone parity. Source-JAR
+provenance is `java-time-provenance.json` in the same evidence directory.
+
+Root regenerates with the prescribed `--js --native` flags; the actual process
+exits 0. `1a-part2-logstage-native-first-matrix.py` freezes all generator and
+Native inputs, then starts three separate batch processes for Scala
+3.9.0/2.13.18/2.12.21. It applies strict Scala 3 Compile/Test unused checks,
+cleans the Native logstage aggregate, runs its full tests, captures four fresh
+Compile/Test classpaths per compiler and publishes both Native artifacts.
+Exact argv, logs and actual completions are saved per compiler. No build,
+runtime, publication or whole-step success is inferred before inspection.
+
+The first Native matrix completes with actual exits 0/0/0 and identical
+per-compiler totals: 106 core cases and three Circe-rendering cases. Root
+reads final markers, the two queue-case outputs, real/dummy file cases and
+current XML reports. `1a-part2-logstage-native-first-artifact-audit.py` exits 0,
+comparing all six published JAR/POM pairs to exact current compiled entry sets
+and bytes: 3,449 binary entries, including 2,040 NIR, and 12 fresh Compile/Test
+blocks. Sixteen XML reports per compiler have zero errors/failures/skips.
+Production graphs contain no test framework/support dependency. JUL definitions
+and test fixtures are absent from production JARs; the two JVM-only SLF4J
+Native coordinates are absent.
+
+A subsequent producer-publication recheck finds seven of the 39 earlier Native
+foundation publications differ from newly compiled bytes after the generated
+graph changes, including five Scala 3 artifacts and one BIO entry on each Scala
+2 compiler. The exact list is
+`1a-part2-logstage-native-fundamentals-publication-recheck.json` (32 matches,
+seven differences). This is a current-output/local-publication discrepancy;
+the earlier checkpoint's historical comparisons remain valid. Current producer
+publications will be reconciled before this checkpoint's final public-consumer
+proof, rather than describing those older JARs as current compiled output.
+
+Read-only review identifies a Native shutdown-lock hypothesis beyond the
+explicit-close tests: Runtime.runHooks holds its hook monitor while waiting for
+a hook whose stopPolling path calls removeShutdownHook and acquires that same
+monitor. A separate public Native process-exit probe is being built with frozen
+published inputs, explicit-close and no-queue controls, and a debugger capture
+if it stalls. No fix is applied from source inference alone. Root's tracker
+searches for shutdown/removeShutdownHook/runHooks deadlocks yield no matching
+report; unrelated GC/filesystem results are not evidence for this hypothesis.
+
+`1a-part2-logstage-jvm-js-regression-matrix.py` runs both full aggregates,
+including the two existing JVM-only SLF4J modules, across three compilers, with
+12 fresh classpath blocks and six publications per compiler. Its first attempt
+exits 1 before tests: it incorrectly gives the JVM-only project IDs a JVM
+suffix. Root resolves the actual generated IDs, preserves the first script,
+argv/log/completion/input freeze, corrects those two IDs and starts the captured
+batch again. The final input freeze covers the shared/JVM/JS sources that these
+lanes actually read, so Native-only changes are not misrepresented as inputs
+to those regression processes. The user-facing Native capabilities paragraph
+records JUL and SLF4J unavailability and the initially UTC time-zone policy.
+
+The corrected JVM/JS regression matrix completes with actual exits 0/0/0:
+110 JVM cases (105 core, three renderer and one per SLF4J module) and 97 JS
+cases (94 core, three renderer) per compiler. Root reads logs and current
+XMLs. `1a-part2-logstage-jvm-js-regression-artifact-audit.py` exits 0 and
+compares 18 current JAR/POM pairs, 4,010 binary entries including 1,232 JS IR,
+and 36 fresh Compile/Test blocks. All 31 XML reports per compiler have zero
+errors/failures/skips; production scopes retain their bounds. Its first audit
+attempt exits 1 because the existing SLF4J adapter main-resource directory uses
+SBT's `${BASE}` path alias. The failed script/completion are retained; resolving
+that alias alongside `${OUT}`/`${CSR_CACHE}` verifies the actual directory,
+without changing product code or tests.
+
+The shutdown defect is reproduced before its fix in
+`logstage-native-shutdown-published-before/`: a JAR-only separate consumer
+freezes 36 actual dependency JARs and nine producer POMs. Core's complete
+current compiled binary entry sets/bytes match its publication; the five older
+Scala 3 foundation publications differ from current output and are explicitly
+disclosed. No production definition is source-shadowed. Build exits 0;
+no-queue and explicit-close controls exit 0 in approximately 16ms. The unchanged
+unclosed-queue input prints its marker, fails to exit during a five-second
+observation, then its owning harness kills/reaps that child. This duration is
+a reproduction observation, not a new acceptance deadline.
+
+The separate GDB capture shows the actual hook thread blocked in
+Runtime.removeShutdownHook and the exit thread joining the same hook object
+`0x7fde79836a80` while Runtime.runHooks holds the registry monitor. Root reads
+the full stacks, consumer/source/argv/runtime logs and final REVIEW.md, confirms
+the pinned Runtime source equals the primary source capture, and reruns the
+independent `audit.py` (actual exit 0). All fixture-owned children and the
+GDB inferior are reaped. Initial public-consumer FileConverter, duplicate
+Native runtime closure and CAS/class-directory auditor harness failures remain
+separately captured; none substitutes for this actual runtime failure.
+
+Only after that expected failure is inspected, root changes the Native queue's
+private stopPolling boundary to take an explicit unregisterHook Boolean.
+The shutdown callback passes false, avoiding acquisition of Native's registry
+monitor while Runtime waits for that callback. Explicit close and the inherited
+poller-interruption path pass true. Draining/joining behavior remains in the
+Native implementation. This mitigates the reproduced queue deadlock; it does
+not repair the upstream Runtime monitor behavior or claim verification of other
+poller-interruption cases. JVM/JS sources remain byte-identical to their tested
+freeze. A minimal Runtime-only public reproduction and unfiled upstream draft
+are being captured separately, including Native's single-threaded control.
+
+Root runs `1a-part2-logstage-foundation-publication-reconciliation.py` in three
+separate batch processes, publishing all three fundamentals aggregates on each
+compiler; actual exits are 0/0/0. It freezes all foundation sources and build
+inputs, and does not consume the concurrently corrected logstage source.
+Current publication-byte verification follows. Root then starts
+`1a-part2-logstage-native-final-matrix.py`, with a new source freeze and three
+clean Native compile/link/runtime/publication lanes for the corrected queue.
+The historical first matrix and before-publication reproduction remain intact.
+Final tests, exact published-consumer replay and read-only review remain
+required before this sub-step is committed; whole 1a/final gates remain open.
+
+All three corrected Native final lanes complete with actual exits 0/0/0,
+again reporting 106 core and three renderer cases per compiler. Root reads the
+final markers. `1a-part2-logstage-native-final-artifact-audit.py` exits 0 with
+six current JAR/POM pairs, 3,449 matching binary entries including 2,040 NIR,
+and 12 fresh classpath blocks. Test/production boundaries and unavailable
+Native JUL/SLF4J coordinates remain verified. Source equality against the
+JVM/JS regression freeze holds for all 126 tested shared/platform/build inputs,
+so the Native-only queue correction does not invalidate those six lanes.
+
+The retained `1a-part2-logstage-foundation-reconciliation-artifact-audit.py`
+exits 0 after the final Native lanes, verifying the thirteen non-legacy
+foundation production families across nine lanes: 117 current JAR/POM pairs
+and 30,157 exact binary entries. It also checks frozen foundation/build inputs
+and production layer/test-dependency bounds. This comparison closes the seven
+previously observed publication discrepancies; it does not include the legacy
+JVM/JS assertion bridge in its production-purity claim. Aggregate publication
+commands remain broader than the explicitly named audit scope.
+
+The final prescribed `--js --native` generator completes with actual exit 0;
+build.sbt, plugins.sbt and build.properties are byte-identical before/after.
+Exact argv/hashes/log/completion are
+`1a-part2-logstage-native-generator-final.*`. Root observes `git diff --check`
+exit 0. The current generated build hash is
+`5776970ce00360cd110e5ec54adc2623caf89158f8bbc9798072f430643e3df8`.
+
+The independent Runtime-only public reproduction is
+`scala-native-runtime-shutdown-hook-public-before/`: ten frozen Scala/Native
+library JARs, zero Izumi dependencies/source shadows, explicit Native
+multithreading enabled. Three controls exit 0; removal from its own concurrent
+shutdown hook times out and the GDB stacks show the same lock/join cycle.
+The identical compiled public classfiles on JDK 21 reject removal with
+IllegalStateException and exit 0, matching the primary Java 21 Runtime API
+contract. A separately retained detected single-threaded Native control also
+rejects removal and exits 0, so the report is explicitly scoped to concurrent
+shutdown. Root reads the public source, draft and auditor, checks the primary
+API documentation, and reruns `audit.py` with actual exit 0. All owned children
+are reaped. `DRAFT-ISSUE.md` remains unfiled; no external message or upstream
+modification occurs. The upstream monitor defect remains; the Native queue
+avoids its reproduced trigger.
+
+The corrected public-consumer replay in
+`logstage-native-shutdown-published-after/` builds two separate JAR-only
+consumers on each compiler. Their closures freeze 36/35/35 dependency JARs
+and nine producer POMs per lane. The nine consumed producer binary entry sets
+and bytes match the current compiled outputs at capture. The original
+three-mode source is byte-identical to the failing before reproduction;
+no-queue, explicit-close and unclosed-queue modes now exit 0. The first
+held-sink drain probe also exits 0 and records 32 flush calls. Its IDs come
+from a delivery counter, so that first oracle establishes count, not original
+message identity or ordering. Root reads and reruns its retained `audit.py`
+with actual exit 0; the historical proof remains unchanged.
+
+Root strengthens that drain oracle in the separately retained
+`logstage-native-shutdown-published-final-review/`, using the same frozen
+published closures. The sink persists each original integer message argument,
+while a held first flush leaves all 32 entries undelivered before System.exit.
+A separate shutdown hook releases the sink. The exact output must be the
+ordered list 1 through 32, detecting omissions, duplicates and reordered
+delivery. The drain source SHA256 is
+`ebe63b029f8e58e53a0565b656fbb71a74e54e64c31021785d8a3ed414bfd6ad`;
+the unchanged original three-mode source is
+`5affb7a2bd94d33942d0c84a80c129fbf05637362ea078b7628fb852d9e87d46`.
+
+All three final separate builds/link commands exit 0. Root runs
+`python3 logstage-native-shutdown-published-final-review/runtime-replay.py`
+with each of `3.9.0`, `2.13.18` and `2.12.21`, from the scratch evidence root.
+All twelve controls exit 0 without timeouts; each actual held-drain output
+contains the original IDs 1–32 once, in order. Exact build/runtime argv,
+completions, logs, source/artifact/executable hashes and physical drain outputs
+are retained per compiler. Root reads the final auditor and runs
+`python3 logstage-native-shutdown-published-final-review/audit.py`, actual exit
+0: six JAR-only classpaths, no producer class directories or source shadows,
+frozen hashes intact and all fixture-owned children reaped. This establishes
+the reproduced queue shutdown correction and the controlled drain behavior;
+it does not establish arbitrary concurrent-producer shutdown semantics.
+
+The final read-only reviewer finds no concrete residual defect or unsupported
+completion claim in this bounded checkpoint. Its retained report is
+`1a-part2-logstage-final-readonly-review/FINAL-REVIEW.md`, SHA256
+`10cc70e4fb3b1c72b3f86976f21ec3810775a24ffaa361fd3687ee36eae88345`.
+It reruns the three Native, JVM/JS and foundation artifact auditors with actual
+exits 0. Independent XML multiset comparisons retain every one of the 94 JS
+core cases in Native's 106: exactly ten real/dummy file cases and two queue
+cases are added. Native omits JVM's single JUL case. Its direct consumed-closure
+comparison rereads all 27 frozen/current published/current compiled producer
+JARs, matching 15,993 binary entries, and verifies all 133 original/frozen
+JAR/POM hashes. Generator before/after/current hashes agree.
+
+Root reads that final report, the direct comparison script and recorded
+completions, then verifies all 37 reviewed input hashes (24 checkout inputs,
+13 evidence inputs) before this review-provenance append. The retained
+`current-input-manifest.json` SHA256 is
+`915373ebc694cc8885e36834739875613febf9cc3302fac166cd098e0d313f1a`;
+its ledger hash intentionally names the reviewed pre-append version.
+Root checks the final diff and commits this verified sub-step locally as
+`Enable Native logstage; verify nine lanes and shutdown drain`. The remaining
+Native distage ports, full step-1a evaluations, all parent/final gates, active
+session cancellation and captured MiniBIO parallel failures remain open.
+Work continues in the brief's dependency order, without pushing or changing
+acceptance/owner decisions.
