@@ -4,6 +4,9 @@ import distage.{Functoid, Id, ModuleDef, TagK}
 import izumi.distage.docker.model.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
+import izumi.fundamentals.platform.resources.IzResourcesDirty
+
+import java.nio.file.Files
 
 /**
   * Example postgres docker with flyway. It's sufficient to apply simple migrations on start.
@@ -20,7 +23,19 @@ object PostgresFlyWayDocker extends ContainerDef {
     schema: String = "public",
   )
   object Cfg {
-    lazy val defaultMigrationsResource: String = Option(classOf[Cfg].getResource("/sql")).fold("")(_.getPath)
+    lazy val defaultMigrationsResource: String = {
+      Option(classOf[Cfg].getResource("/sql")).fold("") {
+        url =>
+          url.getProtocol match {
+            case "file" =>
+              url.getPath
+            case _ =>
+              val extracted = Files.createTempDirectory("flyway-sql")
+              IzResourcesDirty(classOf[Cfg]).copyFromClasspath("sql", extracted)
+              extracted.toString
+          }
+      }
+    }
     lazy val default: Cfg = Cfg()
   }
 
@@ -76,11 +91,11 @@ object PostgresFlyWayDocker extends ContainerDef {
 }
 
 /**
-  * By default [[PostgresFlyWayDocker]] will mount the `resources/sql` directory in the target docker,
-  * however, this cannot work if `resources` folder is virtual, i.e. inside the JAR - this module will only work
-  * in development mode when resources are represented by files on the filesystem.
+  * By default [[PostgresFlyWayDocker]] will mount the `resources/sql` directory in the target docker.
+  * When `resources` is packaged inside a JAR, the `sql` directory is first extracted into a temporary
+  * directory, which is then mounted instead.
   *
-  * If you need to run [[PostgresFlyWayDocker]] in a JAR, please use a custom `cfg` parameter
+  * To mount a different directory, use a custom `cfg` parameter
   *
   * @param cfg Config with flyway migrations path
   */

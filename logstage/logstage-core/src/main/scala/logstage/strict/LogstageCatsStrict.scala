@@ -1,5 +1,6 @@
 package logstage.strict
 
+import scala.annotation.nowarn
 import cats.Monad
 import cats.syntax.flatMap.*
 import izumi.functional.bio.SyncSafe1
@@ -34,10 +35,11 @@ object LogstageCatsStrict {
     }
   }
 
+  @nowarn("msg=shadows field")
   private[logstage] abstract class WrappedLogIOStrict[F[_]](
     logger: AbstractLogger
-  )(F0: SyncSafe1[F]
-  ) extends UnsafeLogIOSyncSafeInstance[F](logger)(F0)
+  )(F: SyncSafe1[F]
+  ) extends UnsafeLogIOSyncSafeInstance[F](logger)(F)
     with LogIOStrict[F] {
 
     protected def wrap[A](f: AbstractLogger => A): F[A]
@@ -49,10 +51,11 @@ object LogstageCatsStrict {
       wrap(_.logTo(sinkKey)(logLevel)(messageThunk))
   }
 
+  @nowarn("msg=shadows field")
   private[logstage] abstract class WrappedLogIOStrictF[F[_]](
     logger: AbstractLoggerF[F]
-  )(F0: SyncSafe1[F]
-  ) extends UnsafeLogIOSyncSafeInstanceF[F](logger)(F0)
+  )(F: SyncSafe1[F]
+  ) extends UnsafeLogIOSyncSafeInstanceF[F](logger)(F)
     with LogIOStrict[F] {
 
     protected def wrap[A](f: AbstractLoggerF[F] => F[A]): F[A]

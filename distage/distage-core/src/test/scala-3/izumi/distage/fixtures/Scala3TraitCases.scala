@@ -43,7 +43,8 @@ object Scala3TraitCases {
 
   trait StackedTraitWithConstructor(val b: Int) extends ATraitWithConstructor with ATraitWithTypeParam[Int] { this: AbstractClassWithTraitWithConstructor => }
 
-  abstract class AbstractClassWithTraitWithConstructor(val a: Int, c0: Int) extends ATraitWithConstructor(c0)
+  @nowarn("msg=shadows field")
+  abstract class AbstractClassWithTraitWithConstructor(val a: Int, c: Int) extends ATraitWithConstructor(c)
 
   trait TraitWithAbstractClassStackedWithConstructor(override val a: Int) extends AbstractClassWithTraitWithConstructor
 

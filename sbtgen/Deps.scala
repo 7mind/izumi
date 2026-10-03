@@ -196,13 +196,23 @@ object Izumi {
     * fails outright, `planCheck` silently resolves a same-named config from another project.
     *
     * `compileIncremental` and not `compile`: the compilation itself happens in the body of the
-    * former, so only a dependency of the former is ordered before it.
+    * former, so only a dependency of the former is ordered before it. Applied to every library
+    * artifact: `copyResources` is cheap, and any module may acquire such a macro in its tests.
+    *
+    * Not applicable to sbt plugin projects: for those, sbt's `resourceGenerators` write the
+    * `sbt.autoplugins` descriptor from the *compiled* classes (`discoverSbtPluginNames` pulls
+    * `compile` through a dynamic `flatMapTask`), so ordering `copyResources` before compilation
+    * closes a cycle that sbt cannot detect and the build hangs forever in `Test / compile`.
     */
   private val testResourcesOnCompileClasspath: Seq[SettingDef] = Seq(
     SettingDef.RawSettingDef(
       """Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value"""
     )
   )
+
+  private def withTestResourcesOnCompileClasspath(artifacts: Seq[Artifact]): Seq[Artifact] = {
+    artifacts.map(artifact => artifact.copy(settings = artifact.settings ++ testResourcesOnCompileClasspath))
+  }
 
   private final val JvmRelease = "17"
 
@@ -384,8 +394,13 @@ object Izumi {
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
-        // sbt 2.0.5+ closes the adhoc test ClassLoader when the test task completes. Our effect
-        // runtimes still have live threads at that point, which then die with LinkageError.
+        // sbt 2.0.5+ closes the adhoc test ClassLoader once the test task completes. The ZIO and
+        // cats-effect runtimes keep their worker threads alive past that point (ZIO's global
+        // `Runtime.default` scheduler cannot be shut down at all), so the next class load on any of
+        // them fails and the JVM drowns in `LinkageError`s with no sbt-level error: CI produced
+        // 6351 of them from a run whose suites had all passed. Keeping the loader open leaks the
+        // threads instead, which is the lesser evil until ZIO can close its scheduler, see
+        // https://github.com/zio/zio/issues/10019 and https://github.com/zio/zio/pull/10926.
         "closeClassLoaders" := false,
         "scalacOptions" ++= Seq(
           SettingKey(Some(scala212), None) :=
@@ -545,7 +560,7 @@ object Izumi {
 
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
-    artifacts = Seq(
+    artifacts = withTestResourcesOnCompileClasspath(Seq(
       Artifact(
         name = Projects.fundamentals.basics,
         libs = Seq.empty,
@@ -607,7 +622,7 @@ object Izumi {
           Projects.fundamentals.collections in Scope.Compile.all,
 //          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
-        settings = testResourcesOnCompileClasspath,
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.functoid,
@@ -667,7 +682,7 @@ object Izumi {
         ),
         settings = Seq.empty,
       ),
-    ),
+    )),
     pathPrefix = Projects.fundamentals.basePath,
     groups = Groups.fundamentals,
     defaultPlatforms = Targets.cross,
@@ -681,7 +696,7 @@ object Izumi {
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
-    artifacts = Seq(
+    artifacts = withTestResourcesOnCompileClasspath(Seq(
       Artifact(
         name = Projects.distage.coreApi,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),
@@ -770,7 +785,7 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
         platforms = Targets.cross,
-        settings = testResourcesOnCompileClasspath,
+        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.distage.docker,
@@ -800,7 +815,7 @@ object Izumi {
           // and scoverage requires scala-xml v1 on Scala 2.12,
           // introduced when updating scoverage to 2.0.0 https://github.com/7mind/izumi/pull/1754
           "libraryDependencySchemes" += """"org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always""".raw
-        ) ++ testResourcesOnCompileClasspath,
+        ),
       ),
       Artifact(
         name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
@@ -813,7 +828,7 @@ object Izumi {
           "skip" in SettingScope.Raw("publish") := true
         ),
       ),
-    ),
+    )),
     pathPrefix = Projects.distage.basePath,
     defaultPlatforms = Targets.cross,
     groups = Groups.distage,
@@ -821,7 +836,7 @@ object Izumi {
 
   final lazy val logstage = Aggregate(
     name = Projects.logstage.id,
-    artifacts = Seq(
+    artifacts = withTestResourcesOnCompileClasspath(Seq(
       Artifact(
         name = Projects.logstage.core,
         libs = Seq(scala_reflect) ++
@@ -861,7 +876,7 @@ object Izumi {
         depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
         platforms = Targets.jvm,
       ),
-    ),
+    )),
     pathPrefix = Projects.logstage.basePath,
     groups = Groups.logstage,
     defaultPlatforms = Targets.cross,
@@ -923,7 +938,7 @@ object Izumi {
           // `sbt-paradox-material-theme` inlined, see `project/ParadoxMaterialTheme.scala`
           SettingDef.RawSettingDef("paradoxTheme := Some(ParadoxMaterialTheme.artifact)"),
           SettingDef.RawSettingDef("Compile / paradoxProperties ++= ParadoxMaterialTheme.properties"),
-          SettingDef.RawSettingDef("""Compile / paradox / mappings += {
+          SettingDef.RawSettingDef("""Compile / paradox / mappings += Def.uncached {
             val conv = fileConverter.value
             val (file, path) = ParadoxMaterialTheme.searchIndexMapping.value
             conv.toVirtualFile(file.toPath) -> path

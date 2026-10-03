@@ -1,5 +1,6 @@
 package izumi.distage.roles
 
+import scala.annotation.nowarn
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
@@ -148,7 +149,8 @@ abstract class RoleAppMain[F[_]](
     * object WiringTest extends PlanCheck.Main(MyApp, PlanCheckConfig(...))
     * }}}
     */
-  open class PlanCheck[Cfg <: PlanCheckConfig.Any](cfg: Cfg = PlanCheckConfig.empty)(implicit planCheckMaterializer: PlanCheckMaterializer[this.type, Cfg])
+  @nowarn("msg=shadows field")
+  open class PlanCheck[Cfg <: PlanCheckConfig.Any](cfg: Cfg = PlanCheckConfig.empty)(implicit planCheck: PlanCheckMaterializer[this.type, Cfg])
     extends izumi.distage.framework.PlanCheck.Main[this.type, Cfg](this, cfg)
 
   /** @see [[izumi.distage.framework.PlanCheck.assertAppCompileTime]] */
@@ -190,7 +192,8 @@ abstract class RoleAppMain[F[_]](
 
 object RoleAppMain {
 
-  abstract class LauncherBIO[F[+_, +_]: TagKK: DefaultModule2](implicit artifactMaterializer: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, _]] {
+  @nowarn("msg=shadows field")
+  abstract class LauncherBIO[F[+_, +_]: TagKK: DefaultModule2](implicit artifact: IzArtifactMaterializer) extends RoleAppMain[F[Throwable, _]] {
     // add LogIO2[F] for bifunctor convenience to match existing LogIO[F[Throwable, _]]
     override protected def roleAppBootOverrides(argv: ArgV): Module = super.roleAppBootOverrides(argv) ++ new ModuleDef {
       modify[ModuleProvider](_.mapApp(LogIO2Module[F]() +: _))
@@ -202,7 +205,8 @@ object RoleAppMain {
 
   type Launcher1[F[_]] = RoleAppMain[F]
 
-  abstract class LauncherIdentity(implicit artifactMaterializer: IzArtifactMaterializer) extends RoleAppMain[Identity] {
+  @nowarn("msg=shadows field")
+  abstract class LauncherIdentity(implicit artifact: IzArtifactMaterializer) extends RoleAppMain[Identity] {
     override protected def shutdownStrategy: AppShutdownStrategy[Identity] = {
       RoleAppMainPlatformSpecific.defaultIdentityShutdownStrategy
     }
