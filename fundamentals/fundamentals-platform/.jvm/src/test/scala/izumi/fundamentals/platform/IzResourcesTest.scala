@@ -5,8 +5,10 @@ import org.scalatest.wordspec.AnyWordSpec
 
 import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets
+import java.nio.file.attribute.PosixFilePermission
 import java.nio.file.{FileSystems, Files}
 import scala.jdk.CollectionConverters.*
+import scala.util.Using
 
 class IzResourcesTest extends AnyWordSpec {
   private val resources = IzResources(getClass)
@@ -49,8 +51,10 @@ class IzResourcesTest extends AnyWordSpec {
       val path = resources.materialize("scala/annotation/meta", "izumi-test").get
       assert(path.getFileSystem == FileSystems.getDefault)
       assert(Files.isDirectory(path))
-      val entries = Files.list(path).iterator().asScala.map(_.getFileName.toString).toList
+      val entries = Using.resource(Files.list(path))(_.iterator().asScala.map(_.getFileName.toString).toList)
       assert(entries.contains("companionClass.class"))
+      assert(Files.getPosixFilePermissions(path).contains(PosixFilePermission.OTHERS_READ))
+      assert(Files.getPosixFilePermissions(path).contains(PosixFilePermission.OTHERS_EXECUTE))
     }
 
     "return None for a missing resource" in {

@@ -44,13 +44,12 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
         path
       case LoadablePathReference(path, _) if Files.isDirectory(path) =>
         val target = Files.createTempDirectory(tempPrefix)
-        target.toFile.deleteOnExit()
-        IzResources.copyTree(path, target).foreach(_.toFile.deleteOnExit())
+        (target +: IzResources.copyTree(path, target)).foreach(IzResources.shareExtracted)
         target
       case LoadablePathReference(path, _) =>
         val target = Files.createTempFile(tempPrefix, "-" + path.getFileName.toString)
-        target.toFile.deleteOnExit()
         Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
+        IzResources.shareExtracted(target)
         target
       case UnloadablePathReference(uri) =>
         throw new IllegalStateException(s"Resource `$resPath` exists at $uri but its filesystem cannot be opened")
@@ -71,11 +70,7 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
 final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVal {
 
   def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
-    val pathReference = IzResources(classLoader).getPath(sourcePath)
-    if (pathReference.isEmpty) {
-      return RecursiveCopyOutput.empty
-    }
-    pathReference match {
+    IzResources(classLoader).getPath(sourcePath) match {
       case Some(LoadablePathReference(jarPath, _)) =>
         RecursiveCopyOutput(IzResources.copyTree(jarPath, targetDir).filter(Files.isRegularFile(_)))
       case _ =>
@@ -133,6 +128,14 @@ object IzResourcesDirty {
 object IzResources {
   @inline def apply(clazz: Class[?]): IzResources = new IzResources(clazz.getClassLoader)
   @inline def apply(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
+
+  private def shareExtracted(path: Path): Unit = {
+    val file = path.toFile
+    file.deleteOnExit()
+    file.setReadable(true, false)
+    if (file.isDirectory) file.setExecutable(true, false)
+    ()
+  }
 
   private[resources] def copyTree(source: Path, targetDir: Path): Seq[Path] = {
     val targets = mutable.ArrayBuffer.empty[Path]
