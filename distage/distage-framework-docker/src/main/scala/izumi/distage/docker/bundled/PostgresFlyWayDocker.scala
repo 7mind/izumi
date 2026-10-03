@@ -4,9 +4,7 @@ import distage.{Functoid, Id, ModuleDef, TagK}
 import izumi.distage.docker.model.Docker.{DockerPort, DockerReusePolicy, Mount}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
-import izumi.fundamentals.platform.resources.IzResourcesDirty
-
-import java.nio.file.{Files, Paths}
+import izumi.fundamentals.platform.resources.IzResources
 
 /**
   * Example postgres docker with flyway. It's sufficient to apply simple migrations on start.
@@ -23,19 +21,7 @@ object PostgresFlyWayDocker extends ContainerDef {
     schema: String = "public",
   )
   object Cfg {
-    lazy val defaultMigrationsResource: String = {
-      Option(classOf[Cfg].getResource("/sql")).fold("") {
-        url =>
-          url.getProtocol match {
-            case "file" =>
-              Paths.get(url.toURI).toString
-            case _ =>
-              val extracted = Files.createTempDirectory("flyway-sql")
-              IzResourcesDirty(classOf[Cfg]).copyFromClasspath("sql", extracted)
-              extracted.toString
-          }
-      }
-    }
+    lazy val defaultMigrationsResource: String = IzResources(classOf[Cfg]).materialize("sql", "flyway-sql").fold("")(_.toString)
     lazy val default: Cfg = Cfg()
   }
 

@@ -38,6 +38,23 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
     }
   }
 
+  def materialize(resPath: String, tempPrefix: String): Option[Path] = {
+    getPath(resPath).map {
+      case LoadablePathReference(path, _) if path.getFileSystem == FileSystems.getDefault =>
+        path
+      case LoadablePathReference(path, _) if Files.isDirectory(path) =>
+        val target = Files.createTempDirectory(tempPrefix)
+        IzResources.copyTree(path, target)
+        target
+      case LoadablePathReference(path, _) =>
+        val target = Files.createTempFile(tempPrefix, "-" + path.getFileName.toString)
+        Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
+        target
+      case UnloadablePathReference(uri) =>
+        throw new IllegalStateException(s"Resource `$resPath` exists at $uri but its filesystem cannot be opened")
+    }
+  }
+
   def read(fileName: String): Option[InputStream] = {
     Option(classLoader.getResourceAsStream(fileName))
   }
@@ -56,38 +73,12 @@ final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVa
     if (pathReference.isEmpty) {
       return RecursiveCopyOutput.empty
     }
-    val targets = mutable.ArrayBuffer.empty[Path]
-
     pathReference match {
       case Some(LoadablePathReference(jarPath, _)) =>
-        Files.walkFileTree(
-          jarPath,
-          new SimpleFileVisitor[Path]() {
-            private var currentTarget: Path = _
-
-            override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
-              currentTarget = targetDir.resolve(jarPath.relativize(dir).toString)
-              Files.createDirectories(currentTarget)
-              FileVisitResult.CONTINUE
-            }
-
-            override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-              val target = targetDir.resolve(jarPath.relativize(file).toString)
-              targets += target
-              Files.copy(
-                file,
-                target,
-                StandardCopyOption.REPLACE_EXISTING,
-              )
-              FileVisitResult.CONTINUE
-            }
-          },
-        )
-
+        RecursiveCopyOutput(IzResources.copyTree(jarPath, targetDir))
       case _ =>
+        RecursiveCopyOutput.empty
     }
-
-    RecursiveCopyOutput(targets.toSeq) // 2.13 compat
   }
 
   def enumerateClasspath(sourcePath: String): ContentIterator = {
@@ -140,6 +131,27 @@ object IzResourcesDirty {
 object IzResources {
   @inline def apply(clazz: Class[?]): IzResources = new IzResources(clazz.getClassLoader)
   @inline def apply(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
+
+  private[resources] def copyTree(source: Path, targetDir: Path): Seq[Path] = {
+    val targets = mutable.ArrayBuffer.empty[Path]
+    Files.walkFileTree(
+      source,
+      new SimpleFileVisitor[Path]() {
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          Files.createDirectories(targetDir.resolve(source.relativize(dir).toString))
+          FileVisitResult.CONTINUE
+        }
+
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          val target = targetDir.resolve(source.relativize(file).toString)
+          targets += target
+          Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING)
+          FileVisitResult.CONTINUE
+        }
+      },
+    )
+    targets.toSeq
+  }
 
   @inline implicit def toResources(clazz: Class[?]): IzResources = new IzResources(clazz.getClassLoader)
   @inline implicit def toResources(classLoader: ClassLoader): IzResources = new IzResources(classLoader)

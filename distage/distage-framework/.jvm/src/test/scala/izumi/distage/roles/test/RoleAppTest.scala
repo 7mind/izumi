@@ -20,7 +20,7 @@ import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.os.{IzOs, OsType}
-import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.platform.resources.{ArtifactVersion, IzResources}
 import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.logger.LogSink
 import izumi.logstage.api.routing.StaticLogRouter
@@ -30,7 +30,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import java.io.{File, OutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
 import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.{Files, Paths, StandardCopyOption}
+import java.nio.file.{Files, Paths}
 import java.nio.{BufferOverflowException, ByteBuffer}
 import java.util.UUID
 import scala.annotation.nowarn
@@ -705,21 +705,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
   }
 
   private def resourceAsFile(name: String): String = {
-    val url = getClass.getResource(name)
-    assert(url != null, s"Missing test resource: $name")
-    url.getProtocol match {
-      case "file" =>
-        Paths.get(url.toURI).toString
-      case "jar" =>
-        val target = Files.createTempFile("RoleAppTest-", "-" + Paths.get(name).getFileName.toString)
-        target.toFile.deleteOnExit()
-        val stream = url.openStream()
-        try Files.copy(stream, target, StandardCopyOption.REPLACE_EXISTING)
-        finally stream.close()
-        target.toString
-      case other =>
-        fail(s"Unsupported test resource location (protocol=$other): $url")
-    }
+    IzResources(getClass).materialize(name.stripPrefix("/"), "RoleAppTest").fold(fail(s"Missing test resource: $name"))(_.toString)
   }
 
   // Asserts the fatal failure was recorded as a structured error entry carrying the failure cause, rather than only
