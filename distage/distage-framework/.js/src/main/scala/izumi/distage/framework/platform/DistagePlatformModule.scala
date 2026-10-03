@@ -12,7 +12,7 @@ class DistagePlatformModule extends ModuleDef {
   make[IzScala].fromValue(IzScala)
 
   // pure
-  make[IzHashFunction].from(() => IzSha256HashFunction.getImpl)
+  make[IzHashFunction].fromValue(IzSha256HashFunction)
 
   // the rest of the pure helpers seem to be unnecessary
 }

@@ -60,8 +60,6 @@ object Izumi {
     sbtVersion = Some("2.0.9"),
     scalaJsVersion = Version.VExpr("PV.scala_js_version"),
     crossProjectVersion = Version.VConst("1.4.0"),
-    // npm dependencies are installed from the root `package.json` instead; node resolves them
-    // by walking up from the linker output directory
     bundlerVersion = None,
     sbtJsDependenciesVersion = None,
   )

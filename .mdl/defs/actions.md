@@ -210,12 +210,6 @@ VERSION_COMMAND="${action.setup-scala.version-command}"
 PLATFORM="${sys.axis.platform}"
 read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
-if [[ "$PLATFORM" == js* ]]; then
-  # Scala.js tests import npm packages (see package.json); node resolves them by walking up
-  # from the linker output directory, so a single install at the build root is enough.
-  npm ci --no-audit --no-fund
-fi
-
 if [[ "$PLATFORM" == "js-nojvm" ]]; then
   # Run compile and test in separate sbt JVMs so the incremental compiler and
   # Scala.js linker heap is freed between phases.
@@ -256,12 +250,6 @@ _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
 PLATFORM="${sys.axis.platform}"
 read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
-
-if [[ "$PLATFORM" == js* ]]; then
-  # Scala.js tests import npm packages (see package.json); node resolves them by walking up
-  # from the linker output directory, so a single install at the build root is enough.
-  npm ci --no-audit --no-fund
-fi
 
 if [[ "$PLATFORM" == "js-nojvm" ]]; then
   sbt --server -batch -no-colors -v \
