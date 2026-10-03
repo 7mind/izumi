@@ -7174,3 +7174,208 @@ are retained under `2b-active-cancellation-verified-commit-first/`.
 The follow-up ledger commit records this actual implementation hash and changes
 no code or build input. Final-head CI/publication gates remain open; generated
 build-info metadata is not claimed rebuilt after either commit.
+
+### Legacy runtime callback finalization: reproduced failure routes — 2026-10-03
+
+Work toward 2b.11/O.18 continues on predecessor ee9b76600. These captures use
+actual MiniBIO execution, the actual TestkitRunnerModule with an empty test list,
+a controlled QuasiIORunner adapter, and an owned executor. They gate public
+execution delivery or allocation release; they do not replace the by-name
+engine effect with a dummy that ignores it. Controls are Behavioral-Progression,
+Blackbox-Group regression checks. Every executed scratch source and driver is
+retained separately, along with source manifests, exact argv, raw output and
+actual completion. Executed capture inputs are not overwritten.
+
+Fail-first commands:
+
+| Command under `/srv/nvme/tmp/izumi-impl/` | Actual outcome |
+| --- | --- |
+| `python3 2b-legacy-runtime-finalized-callback-fail-first.py` | Exit 1 at the intended completion/release assertion. With release held: callback completed=true, acquired=1, released=0, callbacks=1. Throwing release: callback=Right(List()), original release error retained=false. Both cases subsequently release once, deliver one callback, drain callbacks and terminate their owned executor. |
+| `python3 2b-legacy-runtime-completion-failures-fail-first.py` | Exit 1 at the intended independent-failure assertion. Both failed-stop and throwing-stop controls report premature=true; execution+release and execution+stop+release retain all original failures=false. All four controls finish release once; stop is requested once where applicable. |
+| `python3 2b-legacy-runtime-completion-failures-fail-second.py` | Exit 1 at the same intended assertion. A separately captured fifth startup+release case reports retained=false, notified=false, released=1. Its notification check is nonblocking so missing notification cannot turn the reproduction into an unrelated timeout. |
+
+All three actual captures keep their 1,597 source inputs unchanged. The first
+capture also shows the allocation-release exception escaping into the global
+execution context instead of reaching the public callback. The failure mode is
+therefore observed, not inferred solely from the former independent callbacks.
+
+The candidate routes result callbacks through one finalized Future. Under the
+existing shutdown lock it closes execution admission, snapshots any previously
+claimed stop Future, waits for that Future even when it fails, and then releases
+the runtime allocation. Release errors enter the completion result. A single
+failure preserves the supplied Throwable object. Multiple failures use a wrapper
+with the primary cause and suppressed additional causes, retaining exact original
+objects even when their own suppression is disabled. The originals are not
+mutated. Startup error handling also releases before notifying and retains both
+startup and release failures.
+
+Candidate commands:
+`python3 2b-legacy-runtime-finalized-callback-candidate-first.py` and
+`python3 2b-legacy-runtime-completion-failures-candidate-first.py`.
+Both exit 0 with unchanged frozen source inputs and byte-identical copies of
+their executed fail-first probe sources. Held release now reports completed=false,
+released=0, callbacks=0; failing release retains its exact original cause. All
+five combined controls pass, with premature=false for asynchronous cases and
+retained=true throughout; startup+release also reports notified=true. Stop,
+allocation release and subscribed callback counters settle once where applicable.
+These are pre-format candidate captures, not final-head verification.
+
+Permanent controls add nine shared JVM/JS scenarios and two JVM held-release/
+executor-cleanup scenarios. The first full-suite command,
+`python3 2b-legacy-runtime-finalization-full-regression-first.py`, is terminal:
+actual SBT exits 1/1/1 and aggregate exit 1, all frozen sources unchanged. The
+new JVM helper's untyped Unit-returning scheduled action selects ambiguously
+between Runnable and Callable; Scala 2 additionally rejects an unused Future
+import in the new held-release fixture. No tests execute and no complete-suite
+claim is made. The helper now supplies an explicitly typed Runnable, the unused
+import is removed, and only the changed/new files are formatted using the pinned
+scalafmt 3.6.0 configuration. A fresh full-suite capture will evaluate those bytes.
+
+The JVM platform caller still has an independent catch/finally terminal-status
+path. Its early completion is a source prediction pending a public-suite
+interruption reproduction; this candidate does not change that caller. Complete
+front-end/session ownership, foreign interruption-action error fidelity, partial
+startup/rejected execution contexts, parallel failure routes, final-head CI and
+publication remain open. No parent step or final evaluation point is closed.
+
+The caller prediction is now reproduced through a Spec1[Identity] subclass's
+protected _doRunTests boundary, with actual MiniBIO engine execution and owned
+allocation cleanup. Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-caller-interruption-fail-first.py`.
+Actual exit 1, all source inputs unchanged: after interrupting the awaiting caller,
+premature=true, released=0, callerReturned=true. Cleanup then reports released=1,
+callerTerminated=true, executorTerminated=true before the intended assertion fails.
+No platform helper implementation state is accessed by the reproduction.
+
+A distinct second command,
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-caller-interruption-fail-second.py`,
+adds both a successful underlying execution and a combined execution/release
+failure. Actual exit 1 with unchanged source inputs. Both cases report premature
+completion; the caller's interrupt flag is false after return. The combined case
+reports retained=false for its two exact original runtime failures. Both cleanup
+controls terminate the caller/executor and release once before the final intended
+assertion. The first already executed probe remains unchanged.
+
+The JVM caller candidate receives the finalized Either into its result Promise.
+An InterruptedException requests early shutdown and resumes awaiting that result;
+it does not complete the suite. Terminal suite/global completion occurs once the
+finalized result arrives, retaining interruption alongside independent runtime
+failures, and the caller restores its interrupt flag on return. Two permanent
+JVM controls cover held completion and combined execution/release failure. They
+reuse the held-release fixture's owned tracked execution context. The next full
+legacy matrix therefore expects 358/146 successful JVM/JS tests per compiler,
+plus the same nineteen deliberate cancellations on each platform; no outcome is
+inferred from its preparation or launch.
+
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-caller-interruption-candidate-first.py`.
+Actual exit 0, unchanged frozen inputs and byte-identical second caller probe.
+Both cases now report premature=false, released=0, callerReturned=false while
+execution delivery is held. After opening the gate, both release once and
+terminate their caller/executor; retained=true and interruptFlag=true in both
+successful-execution and combined-failure modes. This is a bounded public-suite
+caller observation, not complete session/cache ownership.
+
+The second full legacy capture starts only after that command terminates.
+Its Scala 3 JVM run succeeds with 358 tests and nineteen deliberate cancellations,
+including all thirteen new JVM controls. Its JS run reports 139 successful,
+seven failed, nineteen deliberately canceled cases. All seven asynchronous new
+controls fail in ScalaTest SerialExecutionContext with "Queue is empty while
+future is not completed" before their behavioral assertions complete; both
+synchronous startup controls pass. The project already supplies a timer-backed
+execution context to MiniBIO AsyncWordSpec tests on JS. The new fixture's
+platform trait needs that same explicit asynchronous scheduling. Its shared
+JVM-only runBlocking member also produces an unused-private-member JS warning;
+platform-specific runner subclasses will provide only supported methods. No
+complete six-lane gate is accepted from this capture. Source changes wait until
+its actual terminal outcome so its frozen inputs remain stable.
+
+The second full capture terminates with actual SBT exits 1/1/1, aggregate exit 1,
+and unchanged frozen sources. Scala 2.13 reproduces the same seven JS serial-
+context failures. Scala 2.12 additionally rejects duplicate `val _` bindings in
+two new owned-thread/executor helper blocks before running tests; those blocks
+now use the project's explicit Discarder syntax. The JS fixture now owns a timer-
+backed execution context, and platform runner subclasses delegate only supported
+methods. No acceptance criteria or production scheduling policy is weakened.
+
+The third full capture terminates with actual exits 1/0/0 and aggregate exit 1,
+all source inputs unchanged. Both Scala 2 compilers complete JVM/JS full suites
+with 358/146 successes, nineteen deliberate cancellations per platform, and all
+new controls. Scala 3 reports 357 successes, one failure and nineteen deliberate
+cancellations on JVM, and does not proceed to its full JS suite. The failed caller
+control's raw log shows InterruptedException in Scala 3's lazy global execution-
+context initialization at TestRunnerRuntime.scala:97, after the engine starts
+but before runtime.runTests returns. Its gate opens during cleanup but allocation
+release never runs. Its Thread Try boundary also excludes InterruptedException,
+so the uncaught exception prevents publishing the owned caller's return Promise.
+This is separate from the intended awaiting-caller case: engine completion plus
+thread liveness did not establish callback registration. The third capture is
+retained as startup-leak and fixture-precondition evidence, not a complete gate.
+
+The required global callback context now resolves before runtimeLifecycle.acquire.
+Code sequencing therefore puts a context-initialization exception before runtime
+allocation; the captured race is not represented as an after-change forced cold-
+initialization test. The permanent caller fixture wraps the actual public runtime
+interface solely to signal AsyncResult callback registration, waits for that
+signal before interrupting, and explicitly captures Throwable at its owned-thread
+return boundary. It still executes the actual engine and releases its owned
+allocation. A separately frozen fourth full matrix evaluates these source bytes.
+The read-only reviewer independently confirms the third capture's stack and
+results and preserves its earlier inputs separately from the fourth candidate.
+
+### Bounded legacy completion checkpoint: full verification — 2026-10-03
+
+Command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-runtime-finalization-full-regression-fourth.py`.
+Actual aggregate exit 0; SBT exits 0/0/0 for Scala 3.9.0/2.13.18/2.12.21. Each
+executes Test/testFull on both legacy projects, with 358 JVM and 146 JS successes,
+nineteen deliberate cancellations per platform, zero failures/ignored/pending,
+all controlled completion markers, and no rejected callbacks. All 1,602 frozen
+source inputs remain unchanged; each lane has no validationFailures. Every JVM
+lane verifies held release, executor/caller termination, restored interrupt flag
+and retained combined runtime failures. Both platforms run all nine shared
+completion/failure scenarios on each compiler.
+
+Independent command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-runtime-finalization-full-fourth-result-audit-first.py`.
+Actual exit 0. It rehashes all current/frozen source inputs, checks exact full-
+suite commands and raw status/held-cleanup markers, and rehashes/reparses 483
+frozen XML reports. Total: 1,512 successful tests, 114 deliberate cancellations,
+1,626 XML testcase elements, zero XML failures/errors. It separately identifies
+the twelve new-control reports, with 66 cases and no skipped/failed/error child.
+Legacy XML still does not encode the deliberate cancellation status; successful
+execution counts come from raw runtime statistics, not unmarked XML elements.
+
+The fourth capture establishes these bounded source-byte controls, not full
+2b.11/O.18 completion. It does not provide a forced after-change cold global-EC
+initialization failure; the relocation before acquire is directly inspected code
+sequencing, with the earlier observed failing race retained. Stop controls use
+immediate failed/throwing actions and repeated serial requests, rather than a
+held successful stop Future or simultaneous shutdown admission. RecordingControl
+retains the first notification without counting duplicate suite notifications.
+Complete session configuration/environment caches, bootstrap concurrency, other
+partial startup/rejecting contexts, all foreign/parallel error paths, structured
+assertion transport, common CLI/SBT/IDE integration, publication and parent/final
+head evaluation points remain open. The work does not weaken those criteria.
+
+The completed bounded read-only report finds no concrete introduced defect or
+material overclaim blocking this local legacy-completion checkpoint. Root reads
+the complete report and independently verifies all 10 repository/frozen-ledger
+and 1,361 evidence records: 1,371 hashes/sizes, zero mismatches, actual audit exit
+0. The reviewer directly checks all three raw fourth logs and 483 frozen XML
+reports; its full-source comparison claim is attributed to the separate root
+auditor. Earlier and final reviewed ledger copies remain immutable. Report:
+`2b-legacy-runtime-finalization-preparatory-readonly-review-first/PREPARATORY-REVIEW.md`,
+SHA256 `0ff97684c028fd9382cc1f4a8b08bf39c99c7be347b337a36f57c2c489ac16c3`.
+Schema-1 manifest SHA256:
+`9b15895e89f112b8beedeae784ac4fde1f744f3d4acd2898ea7441f10517cde5`.
+Inspection SHA256:
+`8897a8cf1f33b4f1bb8290a1969daa9255791901921fc58b9185dd0d75c8328f`.
+Root command:
+`python3 /srv/nvme/tmp/izumi-impl/2b-legacy-runtime-finalization-preparatory-root-hash-audit-first.py`.
+
+This source checkpoint contains only the two legacy completion-boundary
+corrections, five retained regression fixture files, and this ledger entry.
+The source diff check passes. The planned local commit preserves all unresolved
+parent/final gates above; no push is authorized. Generated build-info metadata
+is not claimed rebuilt after the forthcoming local commits.

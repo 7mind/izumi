@@ -13,8 +13,8 @@ import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
-import scala.concurrent.{ExecutionContext, Promise}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Try}
 
 trait TestRunnerRuntime {
   def runTests[F0[_]](
@@ -65,7 +65,23 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
       testsToRun: Seq[DistageTest[F0]],
     ): Either[List[EnvResult], AsyncResult[List[EnvResult]]] = {
 
+      // run subsequent callbacks on globalEC, not testEC (that is implicitly contained in `runtime`),
+      // because `runtimeLifecycle.release(alloc)` will shutdown the testEC
+      val globalEC = IzPlatform.platformGlobalExecutionContext
+
       val alloc = runtimeLifecycle.acquire
+
+      def releaseWithResult[A](result: Try[A]): Try[A] = {
+        val failures =
+          try {
+            runtimeLifecycle.release(alloc)
+            Nil
+          } catch {
+            case cause: Throwable => List(cause)
+          }
+        combineFailures(result, failures)
+      }
+
       val (future, interrupt) =
         try {
           val runtime = runtimeLifecycle.extract(alloc).merge
@@ -74,15 +90,11 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
           }
         } catch {
           case t: Throwable =>
-            runtimeLifecycle.release(alloc)
-            asyncSuitesHandle.completeOuterSuite(Some(t))
+            val cause = releaseWithResult(Failure[Nothing](t)).failed.get
+            asyncSuitesHandle.completeOuterSuite(Some(cause))
             asyncSuitesHandle.completeAllSuitesIfGlobal()
-            throw t
+            throw cause
         }
-
-      // run subsequent callbacks on globalEC, not testEC (that is implicitly contained in `runtime`),
-      // because `runtimeLifecycle.release(alloc)` will shutdown the testEC
-      val globalEC = IzPlatform.platformGlobalExecutionContext
 
       val shutdownLock = new Object
       var completed = false
@@ -97,36 +109,46 @@ object TestRunnerRuntime extends TestRunnerRuntimePlatformSpecific {
             Some(completion)
           }
         }
-        requested.foreach { completion =>
-          completion.future.onComplete {
-            case Failure(cause) =>
-              asyncSuitesHandle.completeOuterSuite(Some(cause))
-              asyncSuitesHandle.completeAllSuitesIfGlobal()
-            case Success(_) => ()
-          }(using globalEC)
-          try { val _ = completion.completeWith(interrupt.apply()) }
-          catch { case cause: Throwable => val _ = completion.failure(cause) }
+        requested.foreach {
+          completion =>
+            try { val _ = completion.completeWith(interrupt.apply()) }
+            catch { case cause: Throwable => val _ = completion.failure(cause) }
         }
       }
 
-      future.onComplete { _ =>
-        val pending = shutdownLock.synchronized {
-          completed = true
-          cancellation.map(_.future)
-        }
-        pending match {
-          case Some(stopping) => stopping.onComplete(_ => runtimeLifecycle.release(alloc))(using globalEC)
-          case None => runtimeLifecycle.release(alloc)
-        }
+      val finalized = future.transformWith {
+        result =>
+          val pending = shutdownLock.synchronized {
+            completed = true
+            cancellation.map(_.future)
+          }
+          pending match {
+            case Some(stopping) =>
+              stopping.transform(stopResult => releaseWithResult(combineFailures(result, stopResult.failed.toOption.toList)))(using globalEC)
+            case None => Future.fromTry(releaseWithResult(result))
+          }
       }(using globalEC)
 
       val asyncResult = AsyncResult[List[EnvResult]](
-        resultCallback = cb => future.onComplete(res => cb(res.toEither))(using globalEC),
+        resultCallback = cb => finalized.onComplete(res => cb(res.toEither))(using globalEC),
         earlyShutdown = () => doShutdown(),
       )
 
       Right(asyncResult)
     }
+  }
+
+  private def combineFailures[A](result: Try[A], failures: List[Throwable]): Try[A] = {
+    (result.failed.toOption.toList ++ failures) match {
+      case Nil => result
+      case cause :: Nil => Failure(cause)
+      case primary :: additional => Failure(new RuntimeCompletionException(primary, additional))
+    }
+  }
+
+  private final class RuntimeCompletionException(primary: Throwable, additional: List[Throwable])
+    extends RuntimeException("Multiple failures during test runtime completion", primary) {
+    additional.foreach(addSuppressed)
   }
 
   def runnerLifecycleForMiniBIOAsync(): Lifecycle[Identity, QuasiIORunner[MiniBIOAsync[Throwable, _]]] = {
