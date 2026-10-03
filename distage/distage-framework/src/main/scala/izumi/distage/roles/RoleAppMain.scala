@@ -5,6 +5,7 @@ import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
 import izumi.distage.model.Locator
 import izumi.distage.model.definition.{Axis, Module, ModuleDef}
+import izumi.distage.model.plan.Roots
 import izumi.distage.modules.{DefaultModule, DefaultModule2}
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.roles.RoleAppMain.ArgV
@@ -89,9 +90,15 @@ abstract class RoleAppMain[F[_]](
     val argv = ArgV(args)
     val crashLogRouterRef = new CrashLogRouterRef(new AtomicReference(Option.empty[LogRouter]))
     try {
-      Injector.NoProxies[Identity]().produceRun(roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)), Some(crashLogRouterRef))) {
-        (appResource: AppResource[F]) =>
-          appResource.resource.use(_.run())
+      RoleAppMainPlatformSpecific.runMain[F] {
+        observeShutdown =>
+          Injector.NoProxies[Identity]()
+            .produce(roleAppBootModule(argv, RequiredRoles(requiredRoles(argv)), Some(crashLogRouterRef)), Roots.target[AppResource[F]])
+            .use {
+              locator =>
+                observeShutdown(locator.find[AppShutdownStrategy[F]])
+                locator.get[AppResource[F]].resource.use(_.run())
+            }
       }
     } catch {
       case t: Throwable =>

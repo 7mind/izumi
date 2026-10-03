@@ -37,32 +37,20 @@ class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends LogQu
     result.setDaemon(true)
     result
   }
-  val shutdownHook = new Thread(
-    () => {
-      stopPolling(unregisterHook = false)
-    },
-    "logstage-shutdown-hook",
-  )
+  lazy val shutdownHook: Thread = unsupportedShutdownHook()
 
-  locally {
-    Runtime.getRuntime.addShutdownHook(shutdownHook)
+  private def unsupportedShutdownHook(): Thread = {
+    throw new UnsupportedOperationException(
+      "Automatic shutdown draining is unavailable on Scala Native; use ThreadingLogQueue.resource or close the queue explicitly"
+    )
   }
 
   override def close(): Unit = {
-    stopPolling(unregisterHook = true)
+    stopPolling()
   }
 
-  private def stopPolling(unregisterHook: Boolean): Unit = {
+  private def stopPolling(): Unit = {
     if (stop.compareAndSet(false, true)) {
-      if (unregisterHook) {
-        try {
-          // Native holds its hook monitor while joining hooks; a running hook must not acquire it again.
-          Runtime.getRuntime.removeShutdownHook(shutdownHook)
-        } catch {
-          case _: IllegalStateException =>
-        }
-      }
-
       try {
         pollingThread.join()
       } catch {
@@ -90,7 +78,7 @@ class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends LogQu
           }
         } catch {
           case _: InterruptedException =>
-            stopPolling(unregisterHook = true)
+            stopPolling()
 
           case e: Throwable => // bad case!
             fallback.log(IzumiProject.bugReportPrompt("LogStage polling loop failed"), e)

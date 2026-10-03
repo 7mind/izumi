@@ -910,12 +910,15 @@ object Izumi {
         libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler) ++ Seq(
           circe_parser in Scope.Test.all,
           circe_parser in Scope.Compile.js,
+          circe_parser in Scope.Compile.native,
         ),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvmJs,
-        settings = Seq.empty,
+        platforms = Targets.cross,
+        settings = Seq(
+          "nativeConfig" in (SettingScope.Test, Platform.Native) := """nativeConfig.value.withEmbedResources(true)""".raw,
+        ),
       ),
       Artifact(
         name = Projects.distage.docker,

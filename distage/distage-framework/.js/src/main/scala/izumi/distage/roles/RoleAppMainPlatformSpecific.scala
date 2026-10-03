@@ -8,6 +8,8 @@ import scala.concurrent.Future
 private[roles] object RoleAppMainPlatformSpecific {
   type MainEffect[+A] = Future[A]
 
+  def runMain[F[_]](run: (Option[AppShutdownStrategy[F]] => Unit) => Future[Unit]): MainEffect[Unit] = run(_ => ())
+
   def failedMain(t: Throwable): Future[Unit] = Future.failed(t)
 
   def defaultEarlyFailureHandler: AppFailureHandler = AppFailureHandler.NullHandler

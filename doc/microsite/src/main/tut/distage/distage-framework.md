@@ -271,6 +271,35 @@ On Scala.js and Scala Native, it uses Circe decoders and JSON configuration obje
 Automatic derivation uses `circe-generic` on Scala 2 and Scala 3, and respects custom decoders.
 These platforms support unquoted dot-separated paths; quoted HOCON paths and derived configuration schemas are unavailable.
 
+Native role launchers read UTF-8 JSON from `-c` files and bundled references named
+`<role>.json`, `<role>-reference.json`, `<role>-reference-dev.json`, and the same
+names for `application` and `common`. Active role inputs override shared/global
+inputs; within each group, explicit files override references. This preserves
+the JVM merger's ordering. Reference filtering uses the launcher's existing options.
+Enable Scala Native's `nativeConfig ~= (_.withEmbedResources(true))` to include
+bundled JSON. Missing optional references are empty; explicit missing files and
+malformed or non-object JSON cause configuration errors. Automatic system
+property/`CONFIG_FORCE_` overlays and the schema-producing `configwriter` task
+are unavailable with this JSON backend. The latter fails explicitly if invoked.
+
+Native launchers run synchronously. With the default Native shutdown strategy,
+an explicit shutdown request from another thread waits for application, runtime
+and bootstrap resources to finalize. A
+request from the launcher thread signals shutdown and returns so that this thread
+can release its scopes. `Runtime.exit` requested from another thread while the
+launcher awaits shutdown also waits for those finalizers. Scala Native 0.5.12's
+concurrent shutdown registry requires the Native strategy to signal cleanup
+completion after all scopes release and before removing its hook. Custom shutdown
+strategies retain their own dispatch and completion policy. Graceful
+SIGINT/SIGTERM completion is not established:
+a standalone 0.5.12 control receiving SIGTERM while its main thread waits on a
+latch or joins another thread fails with `IllegalMonitorStateException` in
+`Thread.join`. The reproduction and unfiled upstream report are recorded in the
+Native implementation status ledger.
+The Native platform module provides its available filesystem, OS, DNS, hashing
+and Scala helpers. JVM classpath introspection, the JVM UUID helper and the
+NIO-channel-based `IzSockets` helper are unavailable there.
+
 To use it, add the `distage-extension-config` library:
 
 @@dependency[sbt] { group="io.7mind.izumi"

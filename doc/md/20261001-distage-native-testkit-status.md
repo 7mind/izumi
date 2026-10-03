@@ -5407,3 +5407,552 @@ independently reads captured commands/logs, hashes, ZIP bytes and XML, writes
 only in its new review directory, and runs no supplied auditor, build,
 publisher, generator or target program. The bounded extension checkpoint is
 ready for local commit; the whole-step and final-head gates remain open.
+
+
+## Step 1a part 2: Native framework candidate (2026-10-03)
+
+The logging/plugin checkpoint is committed as
+`bdffb423d2810f367ff0c5c305b583e64cd24fc6`; root observes that HEAD and
+an empty working-tree status before beginning this slice. No whole-step or
+final acceptance gate is completed by that bounded checkpoint. Framework
+1a.2/3/6/7/10 and L1–L6 remain in progress.
+
+Before choosing Native framework capabilities,
+`/srv/nvme/tmp/izumi-impl/1a-part2-distage-framework-native-capabilities.py`
+builds and executes default and embedded variants on Scala 3.9.0/JDK 21/Native
+0.5.12. Actual exit is 0 and both expected markers occur once. Both variants
+create/write/read/delete an owned UTF-8 JSON file and set/read/restore an owned
+system property. The included resource is null with default embedding disabled;
+embedding enabled reads the exact UTF-8 bytes through ClassLoader and absolute
+Class resource streams. Missing streams return null in both. The report,
+source/build/command/completion manifests and pinned NativeConfig/ClassLoader/
+runtime Class source provenance are retained under the matching scratch
+directory. These are runtime API observations on Scala 3, not framework
+implementation or Scala 2 proof. Native uses streams because its ClassLoader
+has no getResource URL API.
+
+The unchanged shared JvmExitHookBlockingShutdownStrategy is reproduced on Native
+before adding a correction. Final driver
+`1a-part2-distage-framework-native-shutdown-before-final.py` copies byte-identical
+AppShutdownStrategy.scala and DebugProperties.scala with hash provenance,
+compiles them against published prerequisites, and runs a forked JVM process-exit
+control before Native link. Actual build exit is 0. The JVM control reaches
+await-returned and cleanup-completed markers. The same Native executable's manual
+control exits 0 and reaches both markers; its Runtime.exit input prints readiness
+and reaches neither marker during a ten-second observation, after which the
+owning harness kills and reaps it. This duration is a reproduction observation,
+not an acceptance deadline. Exact executable SHA256 is
+`5d6961f47a1157d9ece1654635d9423c5069618814b256ced5e3871ff634fb76`.
+Root reads the actual logs/completions, not just the driver's aggregate result.
+The monitor/join mechanism is supported by the pinned Runtime source and the
+earlier independently reproduced Runtime-only deadlock with GDB stacks.
+
+Two retained earlier harness attempts do not establish this Native failure:
+`...shutdown-before/` runs Runtime.exit inside SBT's JVM and terminates SBT
+before the Native commands; `...shutdown-before-forked/` passes the proper JVM
+control but Native link rejects basename native because it conflicts with its
+work directory. The final fixture forks the JVM and sets a distinct Native
+basename. Neither requires a product change.
+
+Only after reading the expected failure, root adds NativeShutdownStrategy.
+It signals the post-cleanup latch before hook removal, retaining the graceful
+wait while avoiding the registry-monitor acquisition that prevented cleanup.
+Repeated requests use trySuccess; duplicate awaits fail explicitly. The first
+after driver builds successfully on Scala 3 and the manual, Runtime.exit,
+duplicate-await, early-request and no-await controls all exit 0 with their
+expected markers. Its SIGTERM control reaches cleanup but exits 1 with
+IllegalMonitorStateException in Thread.join, rather than the expected signal
+exit 143. That driver exits 1; Scala 2 lanes have not run in that attempt.
+The first sources, dependencies, executable, logs and completions are retained
+under `1a-part2-distage-framework-native-shutdown-after-first/`, including an
+explicit launch completion. A separate after-second driver will verify the
+five non-signal controls on all compilers without overwriting that run.
+
+The signal failure is isolated in
+`scala-native-runtime-signal-public-before.py`, with no Izumi dependencies or
+source replacements. It builds Native and JVM variants from the same public
+source, with Native multithreading enabled; actual build and driver exits are 0.
+Every JVM input completes correctly: Runtime.exit gives 0, and five externally
+delivered SIGTERM modes give 143, with hook/cleanup markers as applicable.
+On Native, Runtime.exit gives 0 and the bare-hook and main-thread-sleep SIGTERM
+controls give 143. Main-thread join, latch wait and cleanup-on-main SIGTERM
+inputs give 1 with IllegalMonitorStateException in Thread.join; the latter
+does not reach its cleanup marker. All twelve owned children are reaped.
+These establish a runtime limitation separately from the hook-removal deadlock;
+no unsupported claim that Native signal shutdown is fixed is made. The source,
+commands, resolved classpaths, twenty frozen JAR/POM references (ten JARs),
+actual process logs/completions and pinned runtime sources are retained in that
+new public reproduction directory. Tracker search and an unfiled draft report
+are being captured; no upstream issue is filed.
+
+The framework candidate targets Targets.cross and adds Native Circe parsing.
+Its JSON backend retains the owner's default and JS overlay policy: automatic
+system-property/CONFIG_FORCE_ overlays remain unavailable and are documented
+with a debug diagnostic. Native FS and embedded-stream loading are implemented
+through ConfigSourceReader, preserving file/reference precedence, filtering,
+optional missing references and configuration-domain errors for invalid explicit
+inputs. Reference names use .json. The schema/HOCON-dependent ConfigWriter fails
+explicitly as unavailable. The audited JVM planning options, graph-dump wiring,
+ResourceRewriter, boot args/config wiring and synchronous launcher syntax are
+ported; the late logger follows the JS implementation without the unavailable
+JUL adapter. Native platform helpers exclude classpath introspection and the
+JVM-only UUID helper. Copy provenance is
+`1a-part2-distage-framework-native-source-provenance.json`.
+
+The first prescribed --js --native generator exits 0, with command/log/hash
+records under `1a-part2-distage-framework-native-generator-first.*`. Its new
+build.sbt SHA256 is
+`a6d772c2d7adc69897c57c2c83b0e701536440ba13a13f1c671d254aa0d2c442`;
+plugins.sbt and build.properties retain their preceding hashes. Native Test
+embedding is enabled so tests exercise actual bundled JSON. The new contract
+suite runs identical behavior against a hand-written reader and real FS/resource
+streams. Actual Identity/Cats IO/ZIO task tests check config injection, execution
+counts and AutoCloseable acquisition/release. A shutdown case checks concurrent
+manual requests and duplicate-await rejection.
+
+`1a-part2-distage-framework-native-first-matrix.py` freezes the complete
+eighteen-module Native production closure plus framework JVM/JS/test inputs,
+then requests clean/testFull/classpaths/publication on all three platform/compiler
+lanes and complete Native closure publication. It is running; tests, delivery
+audits, separate published framework/PlanCheck consumers and read-only review
+remain pending. New docs describe intended candidate behavior; they do not
+establish passing postconditions. Parent/final statuses remain open.
+
+The first framework producer exits 1 after production compilation and before
+test execution. Root reads both diagnostics: a wildcard import makes getClass
+ambiguous in the FS contract fixture, and the shutdown owner lambda returns
+Int | Unit rather than Unit. Tests now use this.getClass and discard the atomic
+count result. The first complete source snapshot, argv/log and actual completion
+remain retained; no production correction is made. A separate second matrix
+freezes the corrected candidate. Native docs now state the shared merger's exact
+group ordering (active role inputs before shared/global inputs, explicit before
+references within each group); the contract adds a role-reference versus global
+explicit key to verify it. No JVM merge policy changes.
+
+The separate after-second shutdown driver completes five controls each on
+Scala 3 and 2.13, all with actual exit 0 and expected markers. Its 2.12 build
+exits 1 before execution because the standalone fixture omitted the project's
+-language:higherKinds flag. Root reads that feature diagnostic. A separate
+after-third fixture adds that flag for the remaining 2.12 lane; the first two
+passing lanes remain applicable because the production strategy is unchanged.
+The after-second driver launch completion explicitly records its exit 1.
+
+The second framework producer compiles both production and tests, then exits 1
+at Native link. Root reads all four missing-symbol diagnostics: DatagramChannel
+and ServerSocketChannel types/open methods are reached through eager IzSockets
+initialization in DistagePlatformModule. This reproduces that helper's unsupported
+Native NIO dependency. The Native platform binding/import is removed and the
+capability is documented; shared/JVM sources are unchanged. The first two
+candidate freezes and actual failures remain retained.
+
+The read-only source reviewer identifies a separate ConfigWriter classification
+hypothesis: unlike the JVM writer, the Native writer lacks BundledTask, so the
+shared all-custom-tasks autoset may include the unavailable bundled writer.
+Before any correction, a new public RoleAppMain case selects all-tasks from
+BundledRolesModule alongside a custom task and requires that only the custom
+task runs. The third matrix freezes that failing candidate to reproduce the
+classification defect after correcting the unrelated linking precondition.
+
+The after-third standalone shutdown fixture completes the remaining five
+Scala 2.12 controls with actual exit 0 and expected markers. Thus all fifteen
+non-signal controls pass across the three compilers against unchanged production
+strategy bytes. These remain standalone checks; actual framework service
+process controls are pending.
+
+The Runtime signal public reproduction's independent audit exits 0, verifying
+all twelve outcomes and frozen inputs, ten external JAR/POM pairs and eleven
+compiled fixture entries. Primary Runtime/Thread/PosixThread/Proxy/ObjectMonitor
+source bytes match their pinned source archives. Exact GitHub issue search for
+SIGTERM plus IllegalMonitorStateException returns zero results; broader saved
+queries return old process/multithreading PRs and unrelated reports, not a
+matching titled report. Search requests/responses/hashes are retained.
+`scala-native-runtime-signal-public-before/DRAFT-ISSUE.md` records the minimal
+public source, exact controls, observed stacks and the signal/parking re-entry
+hypothesis with its uncertainty. It is unfiled. The monitor-registry deadlock
+and signal-handler failure are distinct: this public signal program never
+removes a hook. No signal-runtime correction is made from this hypothesis.
+
+The third producer links and executes all sixteen Scala 3 Native cases. Fifteen
+pass; the new all-tasks case fails with exactly the predicted
+UnsupportedOperationException from ConfigWriter.start through RunAllTasks.start.
+Root reads the failure and complete stack, then freezes all six XML reports
+under `1a-part2-distage-framework-native-third-report-freeze/manifest.json`.
+The third source snapshot, command, actual log/completion and reports retain
+the pre-correction failure. Only then does the Native writer gain the JVM's
+BundledTask marker, which excludes it from the shared custom-task autoset.
+A separate case requests configwriter directly and requires its explicit
+unavailable-facility error. The fourth matrix captures the corrected candidate
+without overwriting the reproduced failure.
+
+The fourth producer's Scala 3 Native/JVM/JS lanes and complete Native closure
+publication all exit 0: seventeen Native, twenty-three JVM and four JS cases
+pass without failure, cancellation, ignored or pending cases. Its 2.13 lane
+exits 1 at Test compilation: the test's BundledRolesModule factory sees both
+the outer method TagK and RoleAppMain's inherited TagK as ambiguous implicits.
+Root reads that exact diagnostic and makes the fixture constructor's TagK
+argument explicit. No production source changes. A separate fifth matrix
+freezes the corrected test and reruns the nine lanes; all fourth captures are
+retained. Final delivery/public-consumer/service proof remains outstanding.
+
+The initial independent source review reads the actual third classification
+failure and the corrected writer, platform bindings, merge wording and fixtures.
+It finds no additional concrete source defect and explicitly leaves service,
+publication and full matrix postconditions unproved. Its updated full report
+is `1a-part2-distage-framework-native-initial-readonly-review/UPDATED-SOURCE-REVIEW.md`,
+SHA256 `ca8a684c9e7c21b0201a40fb7c90fa4bc67a69469e81aca2e2652a535d7b847b`;
+updated-input-manifest.json SHA256 is
+`f154a3f550daa4e8932fbbb99b48566293946f795a7006596de7af1856e5b603`.
+Root reads the entire report and independently verifies all sixty repository
+and twenty-one evidence records, six third-before XML records and six exact
+current/fourth-frozen source comparisons before changing the 2.13 fixture.
+The reviewed ledger hash is
+`2db12bf632c322f26ab6bb4afcd02d8d2764c43ea610368f41ee5038ee70a545`.
+This is an initial source review, not completion of any parent/final gate.
+
+The fifth producer exits 1 in Scala 3 Test compilation before execution:
+BundledRolesModule's constructor does not accept the extra parameter list used
+by the preceding fixture correction. Root reads that exact diagnostic; the
+fourth Scala 3 results remain historical observations, not fifth results.
+The fixture now creates a constructor function in the outer method's unambiguous
+TagK scope and invokes it inside the launcher plugin. A separate sixth matrix
+freezes this candidate. No production source changes. The fifth commands,
+snapshot, log and actual exit remain retained.
+
+The sixth Scala 3 producer and complete Native closure publication both exit 0,
+again passing seventeen Native, twenty-three JVM and four JS cases. Its 2.13
+Test compile exits 1 at makeRole[NativeFrameworkTask[F]] with the same outer
+versus inherited TagK ambiguity. Moving only BundledRolesModule construction
+resolved that call but left the remaining plugin bindings in the ambiguous
+scope. Root reads the diagnostic and moves the entire fixture plugin constructor
+function into the outer method. A separate seventh matrix freezes and runs this
+candidate. All sixth evidence remains retained; production sources are unchanged.
+
+The seventh Scala 3 producer and closure publisher exit 0. Scala 2.13 now passes
+the preceding implicit-resolution point but stops at the fixture's final assert:
+its ScalaTest Assertion value is discarded by the Unit-returning try/finally,
+which the pinned Scala 2 options reject. Root reads that fatal value-discard
+warning and explicitly discards the assertion result. The eighth matrix freezes
+that single-line test correction; no production changes, and all prior failure
+evidence is preserved.
+
+The eighth producer finishes all nine platform/compiler lanes and all three
+complete Native closure publications with actual exit 0. Root's own artifact
+and report audit exits 0: 132 successful cases (51 Native, 69 JVM, 12 JS),
+eighteen fresh Compile/Test classpath blocks, nine framework JAR/POM pairs,
+5,074 exact current binary entries including 2,040 NIR and 672 JS IR entries.
+All eighteen shared StaticPluginLoader case executions agree across platforms;
+Native adds its configuration, resource, launcher and shutdown cases. XML reports
+and own published artifacts are frozen under
+`1a-part2-distage-framework-native-artifact-audit/`. This tests the eighth
+candidate, which still has the newly reproduced launcher shutdown defect.
+
+A separate Scala 3 published preflight verifies all eighteen Native JARs against
+current class/TASTy/NIR entries, then compiles a separate fixture dependency and
+consumer under strict flags. PlanCheckMaterializer checks a RoleAppMain object
+and explicit embedded JSON at compilation; the linked consumer also expands
+ScalaReleaseMaterializer. The preflight build exits 0. Identity/IO/ZIO task and
+manual-service processes each exit 0 with execution, service and application
+resource finalization, and bootstrap finalization markers exactly once.
+Its Runtime.exit(0) Identity process exits 0 but omits bootstrap finalization,
+so the preflight driver exits 1 at that required postcondition. Build, actual
+commands, dependency and compiled-fixture freezes, process outputs/completions
+and driver-completion.json remain under
+`1a-part2-distage-framework-native-published-preflight-scala3/`.
+
+Before correction, a separate all-controls driver runs the same frozen Native
+binary for all nine task/manual/runtime combinations. It exits 0 as a failing
+reproduction: all three runtime effects omit bootstrap finalization while every
+task/manual combination includes it. All nine children exit 0, have no timeout,
+and are reaped; the reproduced defect is lost cleanup, not the process exit code.
+Its executable SHA256 is
+`d09b01fef1655b52efad3dbb7ba030254954e5aebb5f8e60f8664f4c3f314499`.
+The matching published JVM fixture compiles unchanged and runs six real
+manual/runtime Identity/IO/ZIO controls, all exit 0 with all five markers once.
+Evidence is under `1a-part2-distage-framework-native-published-preflight-scala3-all-controls/`
+and `1a-part2-distage-framework-shutdown-jvm-public-before/`. No JVM defect is
+established by these controls. The source-backed Native hypothesis is that
+finishShutdown releases the runtime hook before outer graphs finalize, then
+blocks removing it on Native's held registry monitor; the process can terminate
+before those outer finalizers. An independent read-only pre-implementation
+review is checking deferral until the launcher's entire bootstrap scope releases.
+
+
+The complete eighth Native publication auditor's first run exits 1 because its
+forbidden-dependency predicate incorrectly treats optional zio-managed as required.
+The first script, partial artifact copies and diagnostic are retained; this is an
+auditor precondition failure, not a product dependency defect. A separately named
+second auditor excludes optional/provided dependencies for that requirement. It
+exits 0 and compares all 54 Native JAR/POM pairs: 30,980 binary entries, 19,953 NIR,
+zero byte mismatches. The separately named second reconciliation compares the
+already matching eighteen-module closure on each compiler without another SBT
+publication; all three comparisons exit 0. Evidence prefixes are
+`1a-part2-distage-framework-native-complete-publication-before-second-audit/`
+and `1a-part2-distage-framework-native-*-publication-reconcile.*`.
+
+The independent pre-implementation review confirms the observed Native launcher
+boundary defect and leaves ownership/override/failure controls pending. Root reads
+its full report and verifies twelve repository and 360 evidence hashes. The report
+is `1a-part2-distage-framework-shutdown-boundary-preimplementation-readonly-review/PREIMPLEMENTATION-REVIEW.md`,
+SHA256 `ea65235b3dea4be2ebee7e54c000b592d4fec9d8f552b3460a91fb4755a04096`.
+No correction or passing postcondition follows merely from that review.
+
+A new public logstage reproduction proves that outer launcher completion deferral
+alone cannot preserve cleanup. It starts the actual published queue, places its
+hook at MIN_PRIORITY, and uses a normal-priority independent hook to request main
+thread queue.close and wait for completion. JVM manual/runtime and Native manual
+complete with actual exit 0. Native runtime prints HIGH_PRIORITY_HOOK_STARTED and
+QUEUE_CLOSE_STARTED, stalls through the five-second observation, then is killed
+and reaped with -9 by the fixture. This is a failed close postcondition; -9 is
+fixture cleanup. Build exits 0. Exact source, classpaths, frozen dependencies,
+commands, executable hashes and all four process outcomes are retained under
+`1a-part2-logstage-native-close-during-runtime-before/`.
+
+The second read-only review finds explicit manual/resource ownership with
+unavailable automatic Native exit-time drain permitted by acceptance 1a.11; 1a.7
+is not its justification. The supported managed release must still preserve
+runner events/finalizers under 2e.7. Root reads the report and verifies ten
+repository and 110 evidence hashes. Report
+`1a-part2-logstage-native-managed-queue-policy-readonly-review/POLICY-REVIEW.md`
+SHA256 is `1654731e587e67072b7ead9172d2a79a95805c28219d3ca3b66e96340b6d0fbc`;
+manifest SHA256 is
+`021fd7438aec4c19d585e1c74716f90a817e6115e1f272681c3c27b7e21fcbee`.
+The candidate Native queue now installs no automatic Runtime hook; resource/close
+still owns synchronous worker join and draining. Its stable Thread-typed lazy
+shutdownHook getter fails explicitly only on access. Public docs state the
+capability difference. Prior unclosed-queue automatic-drain results are historical
+observations of the earlier source, not current capability promises.
+
+Before deferral, a separate published bootstrap-finalizer control calls the actual
+injected initiator.releaseAwaitLatch during RouterFactory resource release. All
+three Identity/IO/ZIO controls exit 0, including both request boundary markers and
+bootstrap cleanup once. Evidence is
+`1a-part2-distage-framework-native-boot-request-before/`. The initial candidate
+launcher wrapper observes the provisioned strategy without adding a DI root and
+defers Native completion until the entire outer produce/use scope releases. JVM
+and JS keep their existing synchronous/asynchronous return behavior. The wrapper
+is inside the existing failure-handler try so completion precedes an early handler
+that may exit. A new focused producer freezes this candidate under
+`1a-part2-distage-framework-native-shutdown-boundary-first-snapshot/`; compilation,
+queue checks, actual launcher runtime cleanup and bootstrap-finalizer self-wait
+controls remain pending. No parent/final acceptance item is marked complete.
+
+
+The first focused shutdown-boundary producer and eighteen-module Native Scala 3
+closure publisher both exit 0. Root freezes all successful XML cases: 107 logstage
+and seventeen framework cases. Its separately named complete-publication audit
+exits 0 for eighteen JAR/POM pairs, 10,614 binaries and 6,568 NIR, zero byte
+mismatches. Evidence is under `shutdown-boundary-first` producer/snapshot/report
+prefixes and `complete-publication-shutdown-boundary-first-audit/`.
+
+The new managed queue policy control builds unchanged JVM and corrected Native
+published logstage dependencies, then executes manual/runtime close on each.
+All four child processes exit 0 without timeout and are reaped. Both Native cases
+observe explicit UnsupportedOperationException from shutdownHook and complete
+owned close. Native runtime now prints both QUEUE_CLOSED and
+HIGH_PRIORITY_HOOK_COMPLETED. This checks the supported policy, not implicit exit
+drain. Evidence: `1a-part2-logstage-native-managed-close-during-runtime-after/`.
+
+The separately named published bootstrap-finalizer control then reproduces the
+new completion-deferral self-wait on all three effects: Native children reach
+BOOT_REQUEST_STARTED after service/application release, omit BOOT_REQUEST_COMPLETED
+and BOOT_RELEASED, stall through five seconds, then are killed and reaped (-9).
+Root reads each actual completion and the marker sequence before correcting it.
+Evidence: `1a-part2-distage-framework-native-boot-request-deferred-before/`.
+Only then is deferral changed to record its launcher thread atomically before
+running the application; that thread signals a request without waiting for its
+own outer cleanup, while other requesting threads still wait for full completion.
+The private Native completion protocol preserves standalone finishShutdown and
+custom strategy dispatch. Fresh matrix/public controls remain pending.
+
+
+The second shutdown-boundary Scala 3 producer and complete closure publisher exit
+0: 107 Native logstage, twenty Native framework, twenty-three JVM framework and
+four JS framework cases, all successful. New Native cases check that launcher
+requests return while external requesters wait for the outer scope, duplicate
+observation retains first completion without mutating the second strategy, and a
+self-contained AppResource runs/finalizes without provisioning an otherwise unused
+shutdown strategy. The separately compiled published Scala 3 controls are running
+against this source's exact eighteen-module closure; their results remain pending.
+
+The second producer stops at Scala 2.13 production compilation with a fatal
+dead-code warning in the synthetic initialization following a directly throwing
+lazy shutdownHook val. Root reads that exact diagnostic. The getter now invokes a
+Thread-returning private method which throws the same explicit unavailable error,
+preserving lazy stable getter semantics without a bottom-typed lazy initializer.
+The new Native scope callback also explicitly discards its final ScalaTest
+Assertion, consistent with the pinned Scala 2 Unit-returning callback convention
+already reproduced earlier. A new third matrix freezes this candidate; second
+captures are retained, and no gate is inferred complete from Scala 3 alone.
+
+
+The second candidate's separate strict published Scala 3 fixture/consumer build
+exits 0 and all 24 owned children (eight modes times Identity/IO/ZIO) exit 0
+without timeout and are reaped. Root reads the actual marker sequences for
+runtime, bootstrap request, held bootstrap cleanup, custom strategy and both
+finalizer-failure modes. Runtime includes bootstrap release exactly once;
+bootstrap self-requests return and then release; held cleanup witnesses that an
+external request has not returned before release. Custom strategy await/finish
+are each once. Application and bootstrap finalizer failures remain observable,
+with all owned application/service/bootstrap release counts once and requesters
+joined. Compile-time PlanCheck/explicit JSON and runtime ScalaRelease checks also
+pass. These are source-backed second-candidate controls, retained under
+`1a-part2-distage-framework-native-published-shutdown-controls-scala3/`.
+
+An attempted optional freeze of the second candidate's intermediate XML reports
+exits 1 because the third producer's clean had already removed the Native logstage
+reports. Its directory/completion records zero claimed frozen cases. The second
+actual producer logs/completions still retain the 154 successful cases; no XML
+freeze result is invented. Final third-candidate XML/artifact audits and all three
+compiler public-consumer controls remain pending.
+
+
+The third producer's Scala 3 and 2.13 lanes/closure publishers exit 0, each
+passing 154 cases. Its Scala 2.12 logstage lane passes all 107 cases, then
+framework production compilation rejects the covariant MainEffect alias in the
+contravariant higher-order run parameter. Root reads that exact diagnostic.
+Platform wrappers now name their concrete input result (Unit on Native/JVM,
+Future[Unit] on JS), retaining the platform MainEffect return and runtime behavior.
+This is a version-compatible signature correction. A fourth matrix captures it.
+The reviewer also identifies an overbroad public paragraph: full outer-scope waits
+belong to the default Native strategy, while custom strategy policy is untouched.
+The paragraph is qualified accordingly before the fourth source freeze.
+
+The third-source published consumer completes 24 controls each on Scala 3 and
+2.13, all actual 0/reaped/no timeout. It then waits for the failed 2.12 producer's
+publication barrier. Root terminates only that owned idle driver with SIGTERM,
+collects tool-observed termination exit 143 (signal 15), and records 48 completed target children with no live
+target child. This is not a successful full driver. Captured lane evidence remains
+under `published-shutdown-controls-final/`; fresh fourth controls remain pending.
+
+The extended JVM public fixture's first build exits 0, but its new task mode exits
+1 with ConfigException.Missing settings: the Native JSON reference filename is
+not the JVM conf-reference default. Application and bootstrap release markers are
+once. Root reads that diagnostic and creates a separately named second fixture
+with the JVM reference .conf name containing the same JSON. No production correction
+is made for this missing fixture input. Both captured directories are retained.
+
+
+The final queue policy control rebuilds against the helper-based Native getter.
+Build and all four JVM/Native manual/runtime processes exit 0, with unavailable
+Native hook access and completed owned close/drain boundaries; no timeout, all
+children reaped. Evidence is `managed-close-during-runtime-final/`.
+
+The second extended JVM fixture builds and passes nine task/manual/runtime
+children with all markers once, then its bootstrap repeat-request case fails
+with Promise already completed. This exercises the generic JVM async strategy's
+existing non-idempotent primaryLatch.success policy. A new baseline driver runs
+the same compiled public fixture/probe against the frozen pre-correction JVM
+framework and dependency JARs: all three effects reproduce that exact failure
+(actual child 1, no timeout, reaped; driver 0 as a failing reproduction).
+Evidence is `1a-part2-distage-framework-jvm-repeated-request-baseline/`.
+Thus no launcher regression is established by this new Native-specific input.
+No unrelated JVM strategy correction is made. The unchanged-policy JVM public
+control continues with task/manual/runtime/custom/application-failure/bootstrap-
+failure modes; Native additionally verifies its idempotent bootstrap request and
+full outer-scope waiting policy. Final fourth producer/public-consumer/artifact
+proof and read-only completion review remain pending.
+
+
+The corrected unchanged-policy JVM public fixture's third build and all eighteen
+children exit 0, with task/manual/runtime/custom/application-finalizer-failure/
+bootstrap-finalizer-failure modes each on Identity/IO/ZIO. Every required release
+marker is once, no timeout, all reaped. Evidence is
+`1a-part2-distage-framework-shutdown-jvm-public-after-third/`.
+
+Root reads the entire independent postimplementation report and verifies every
+one of its 1,063 repository and 1,922 evidence hash records, with zero mismatches.
+Report `1a-part2-distage-framework-shutdown-boundary-postimplementation-readonly-review/POSTIMPLEMENTATION-REVIEW.md`
+SHA256 is `0c7bc6584a146f09b3083a4e70f2184724863d8294e749be3e917d6707fdb326`;
+final manifest SHA256 is
+`f8909f01523377ba99d71342010c404a6b23e3af2a459d241ae315541618c280`.
+Root hash audit is retained as
+`1a-part2-distage-framework-shutdown-postimplementation-root-hash-audit.*`.
+The reviewer finds no further established production defect, confirms the
+corrected default-strategy documentation scope, and explicitly leaves fourth
+matrix/current-publication/full-consumer/generator closure pending. Its measured
+held-bootstrap control concerns explicit requests, not Runtime.exit while held;
+process fixtures count application/service/bootstrap resources, not every runtime
+executor thread. No stronger coverage or final acceptance closure is claimed.
+
+
+The fourth producer completes every lane and all three full Native closure
+publishers with actual exit 0. Per compiler: 107 Native logstage, twenty Native
+framework, twenty-three JVM framework and four JS framework cases, with zero
+failure/cancellation/ignored/pending cases. Total: 462 successful cases. Root's
+fourth framework artifact/report audit exits 0 for nine JAR/POM pairs, 5,110 exact
+binaries (2,070 NIR and 672 JS IR), eighteen fresh Compile/Test classpaths and
+141 successful framework cases; the shared StaticPluginLoader identities agree
+across platforms. The independent Native queue audit exits 0 with three JAR/POM
+pairs, six fresh classpaths and 321 XML cases. All own JARs match current compiled
+entry sets and bytes and exclude test artifacts. Its complete eighteen-module
+Native publication audit exits 0 for 54 pairs: 31,013 binaries, 19,980 NIR and no
+byte mismatches. Reports, artifacts and summary metadata are frozen in the three
+separately named `shutdown-boundary-fourth-artifact-audit`,
+`complete-publication-shutdown-boundary-fourth-audit`, and
+`logstage-native-shutdown-fourth-artifact-audit` directories.
+
+The fourth separate published fixture/consumer builds all exit 0; compile-time
+PlanCheck with embedded explicit JSON and runtime ScalaRelease checks pass on
+Scala 3/2.13/2.12. All 72 Native children (eight task/service/shutdown/failure modes
+per compiler, each Identity/IO/ZIO) exit 0, no timeout, all reaped. All required
+application/service/bootstrap release markers are exactly once. These consume
+current JARs whose entire eighteen-module closure is compared byte-for-byte before
+each build; dependency JAR/POMs and compiled fixtures are frozen. Evidence is
+`1a-part2-distage-framework-native-published-shutdown-controls-fourth/`.
+The final prescribed generator and final read-only bounded closure review remain
+pending. No parent/final acceptance item is marked complete by this checkpoint.
+
+
+The final prescribed --js --native generator exits 0. All before/after hashes are
+identical for build.sbt, project/plugins.sbt and project/build.properties, retaining
+the first generator's candidate hashes. Captured argv/log/hash completion is
+`1a-part2-distage-framework-native-generator-final.*`. Root's separate final
+public-capture audit verifies all 72 Native outcomes, required marker counts and
+all recorded fixture/dependency/compiled-fixture hashes; its metadata is
+`1a-part2-distage-framework-native-fourth-public-capture-audit/summary.json`.
+Final bounded read-only review and local verified commit remain pending.
+
+### Verified framework and managed queue source checkpoint — 2026-10-03
+
+The final bounded read-only report finds no concrete unresolved defect or
+overstated checkpoint claim. Root reads the entire report and independently
+verifies all 1,063 repository and 2,481 evidence hash records: 3,544 checked,
+zero mismatches, actual audit exit 0. The reviewed ledger hash is
+`f1824dfb59d0f20cc4ab79576cdafd00296314d6fea15f68fa27150117cf424d`;
+this provenance addition follows the review and is not text it reviewed.
+Report `1a-part2-distage-framework-shutdown-boundary-final-readonly-review/FINAL-REVIEW.md`
+SHA256: `297c864461447d37595cac122bef748caecdddf084e05ab21340738d173ac133`.
+Its `final-reviewed-input-manifest.json` SHA256:
+`8f8d2bca660aa3983e2d584ebf690d33e4f2f17691b0da64ae0fe95c5fa3d9b9`.
+Root audit: `1a-part2-distage-framework-shutdown-final-root-hash-audit.py`
+and the separately retained JSON result under `/srv/nvme/tmp/izumi-impl/`.
+
+The local commit containing this entry is the verified source checkpoint for
+the Native framework port, the outer default-strategy shutdown completion
+boundary, the managed Native logging queue correction, generated build and
+public capability documentation. Verification commands are captured exactly
+in the named drivers and their commands.json files; all paths below are relative
+to `/srv/nvme/tmp/izumi-impl/`.
+
+| Command capture | Observed result |
+| --- | --- |
+| `python3 1a-part2-distage-framework-native-shutdown-boundary-fourth-matrix.py` | Twelve clean producer/test/publication lanes and three full eighteen-module Native publishers, all actual 0; 462 successful tests. |
+| `python3 1a-part2-distage-framework-native-shutdown-boundary-fourth-artifact-audit.py` | Actual 0; nine framework JAR/POM pairs, 5,110 exact compiled binaries, eighteen fresh classpaths and 141 XML cases. |
+| `python3 1a-part2-distage-framework-native-complete-publication-shutdown-boundary-fourth-audit.py` | Actual 0; 54 Native pairs, 31,013 exact compiled binaries, 19,980 NIR, zero differences. |
+| `python3 1a-part2-logstage-native-shutdown-fourth-artifact-audit.py` | Actual 0; three Native queue pairs, six fresh classpaths, 321 XML cases. |
+| `python3 1a-part2-distage-framework-native-published-shutdown-controls-fourth.py` | Three separately published consumer builds and 72 Native children actual 0, no timeout, all reaped. |
+| `python3 1a-part2-distage-framework-native-fourth-public-capture-audit.py` | Actual 0; 72 outcomes, required markers and 720 input hashes verified. |
+| `python3 1a-part2-distage-framework-shutdown-jvm-public-after-third.py` | Build and eighteen supplemental JVM children actual 0, no timeout, all reaped. |
+| `python3 1a-part2-logstage-native-managed-close-during-runtime-final.py` | Build and four JVM/Native manual/runtime children actual 0, no timeout, all reaped. |
+| `python3 1a-part2-distage-framework-native-generator-final.py` | Actual 0; prescribed --js --native generation idempotent for all three tracked outputs. |
+| `python3 1a-part2-distage-framework-shutdown-final-root-hash-audit.py` | Actual 0; all 3,544 final reviewer input hashes agree. |
+
+The reviewer additionally compares every binary member's literal bytes in all
+54 consumed pairs with the frozen producer closure, including exact POM bytes:
+31,013 binary members, zero differences. The bounded scope and limits above
+remain: held-bootstrap coverage is explicit-request coverage; resource counters
+do not enumerate every runtime executor; automatic unclosed Native queue drain
+and graceful Native signal completion are not established. JVM repeated-request
+baseline failures are retained rather than reported as passing controls.
+No parent 1a/O.18/2b/2e item or final-head CI/publication evaluation becomes done
+at this source checkpoint. The Native testkit core/runner port proceeds next.

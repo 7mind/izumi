@@ -13,6 +13,15 @@ class NativeThreadingLogQueueTest extends AnyWordSpec {
   private val DrainObservationMillis = 200L
 
   "Native threading log queue" should {
+    "reject automatic shutdown hook access while supporting explicit close" in {
+      val queue = new ThreadingLogQueue(1.millis, 10)
+      queue.start()
+      try {
+        val failure = intercept[UnsupportedOperationException](queue.shutdownHook)
+        assert(failure.getMessage.contains("Automatic shutdown draining is unavailable on Scala Native"))
+      } finally queue.close()
+    }
+
     "wait for an active sink flush before completing close" in {
       val entered = new CountDownLatch(1)
       val release = new CountDownLatch(1)
