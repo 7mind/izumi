@@ -4,7 +4,7 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotFoundException
 import distage.ModuleDef
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
-import izumi.distage.docker.model.Docker.{ContainerFile, DockerReusePolicy}
+import izumi.distage.docker.model.Docker.{ContainerFile, ContainerId, DockerReusePolicy}
 import izumi.distage.docker.model.{ContainerHook, DockerFailureException}
 import izumi.distage.testkit.docker.ContainerFilesTest.*
 import izumi.distage.testkit.model.TestConfig
@@ -27,10 +27,10 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
   )
 
   private final class RecordingHook(val reuseKey: String, failure: Option[Throwable]) extends ContainerHook {
-    val observed = new AtomicReference[Option[(String, String)]](None)
+    val observed = new AtomicReference[Option[(ContainerId, String)]](None)
 
-    override def afterCreate(client: DockerClient, containerId: String): Unit = {
-      observed.set(Some((containerId, client.inspectContainerCmd(containerId).exec().getState.getStatus)))
+    override def afterCreate(client: DockerClient, containerId: ContainerId): Unit = {
+      observed.set(Some((containerId, client.inspectContainerCmd(containerId.name).exec().getState.getStatus)))
       failure.foreach(throw _)
     }
   }
@@ -52,7 +52,7 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
           .scoped {
             for {
               _ <- removeTestContainers(client)
-              containerId <- resource.copy(config = resource.config.copy(afterCreate = Seq(hook))).use(c => ZIO.succeed(c.id.name))
+              containerId <- resource.copy(config = resource.config.copy(afterCreate = Seq(hook))).use(c => ZIO.succeed(c.id))
               _ <- assertIO(hook.observed.get().contains((containerId, "created")))
             } yield ()
           }.ensuring(removeTestContainers(client).orDie)
@@ -64,8 +64,8 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
         val sawCopiedFile = new AtomicReference[Option[Boolean]](None)
         val hook = new ContainerHook {
           override def reuseKey: String = "check-copied-file"
-          override def afterCreate(client: DockerClient, containerId: String): Unit = {
-            val found = Try(Using.resource(client.copyArchiveFromContainerCmd(containerId, copiedPath).exec())(_.read())).isSuccess
+          override def afterCreate(client: DockerClient, containerId: ContainerId): Unit = {
+            val found = Try(Using.resource(client.copyArchiveFromContainerCmd(containerId.name, copiedPath).exec())(_.read())).isSuccess
             sawCopiedFile.set(Some(found))
           }
         }
@@ -97,7 +97,7 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
                 case _ => false
               })
               containerId <- ZIO.fromOption(hook.observed.get().map(_._1)).orElseFail(new IllegalStateException("the hook did not run"))
-              removed <- ZIO.attempt(client.rawClient.inspectContainerCmd(containerId).exec()).either
+              removed <- ZIO.attempt(client.rawClient.inspectContainerCmd(containerId.name).exec()).either
               _ <- assertIO(removed match {
                 case Left(_: NotFoundException) => true
                 case _ => false
@@ -123,7 +123,7 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
               result <- resource.copy(config = unstartable).use(_ => ZIO.unit).either
               _ <- assertIO(result.isLeft)
               containerId <- ZIO.fromOption(hook.observed.get().map(_._1)).orElseFail(new IllegalStateException("the hook did not run"))
-              removed <- ZIO.attempt(client.rawClient.inspectContainerCmd(containerId).exec()).either
+              removed <- ZIO.attempt(client.rawClient.inspectContainerCmd(containerId.name).exec()).either
               _ <- assertIO(removed match {
                 case Left(_: NotFoundException) => true
                 case _ => false

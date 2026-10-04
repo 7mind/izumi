@@ -2,7 +2,7 @@ package izumi.distage.docker.impl
 
 import com.github.dockerjava.api.DockerClient
 import izumi.distage.docker.model.ContainerHook
-import izumi.distage.docker.model.Docker.ContainerFile
+import izumi.distage.docker.model.Docker.{ContainerFile, ContainerId}
 
 import java.io.ByteArrayInputStream
 
@@ -11,11 +11,11 @@ final class CopyFilesHook(files: List[ContainerFile]) extends ContainerHook {
 
   override lazy val reuseKey: String = s"copy-files:${ContainerFileArchive.digest(archives).getOrElse("")}"
 
-  override def afterCreate(client: DockerClient, containerId: String): Unit = {
+  override def afterCreate(client: DockerClient, containerId: ContainerId): Unit = {
     archives.foreach {
       archive =>
         client
-          .copyArchiveToContainerCmd(containerId)
+          .copyArchiveToContainerCmd(containerId.name)
           .withRemotePath(ContainerFileArchive.extractionRoot)
           .withTarInputStream(new ByteArrayInputStream(archive.archive))
           .exec()

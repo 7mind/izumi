@@ -398,7 +398,7 @@ open class ContainerResource[F[_], Tag](
 
   private def startCreated(imageName: String, containerId: ContainerId): F[DockerContainer[Tag]] = {
     F.maybeSuspend {
-      runAfterCreateHooks(containerId.name)
+      runAfterCreateHooks(containerId)
 
       logger.debug(s"Going to start container ${containerId.name -> "id"}...")
       rawClient.startContainerCmd(containerId.name).exec()
@@ -440,7 +440,7 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
-  protected def runAfterCreateHooks(containerId: String): Unit = {
+  protected def runAfterCreateHooks(containerId: ContainerId): Unit = {
     afterCreateHooks.foreach {
       hook =>
         logger.debug(s"Going to run after-create ${hook.toString -> "hook"} on ${containerId -> "id"}...")

@@ -1,6 +1,7 @@
 package izumi.distage.docker.model
 
 import com.github.dockerjava.api.DockerClient
+import izumi.distage.docker.model.Docker.ContainerId
 
 /**
   * Runs against a container after it is created and before it is started.
@@ -14,5 +15,5 @@ import com.github.dockerjava.api.DockerClient
   */
 trait ContainerHook {
   def reuseKey: String
-  def afterCreate(client: DockerClient, containerId: String): Unit
+  def afterCreate(client: DockerClient, containerId: ContainerId): Unit
 }
