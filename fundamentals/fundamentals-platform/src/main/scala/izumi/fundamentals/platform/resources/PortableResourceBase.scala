@@ -39,9 +39,16 @@ trait PortableResourceBase {
   }
 
   protected def extractResourceContents(
-    sourcePath: String,
+    sourcePath: String
   ): Either[String, Seq[(String, String)]] = {
-    val scanResult = new ClassGraph()
+    extractResourceContents(sourcePath, new ClassGraph())
+  }
+
+  protected def extractResourceContents(
+    sourcePath: String,
+    classGraph: ClassGraph,
+  ): Either[String, Seq[(String, String)]] = {
+    val scanResult = classGraph
       .acceptPaths(sourcePath)
       .disableModuleScanning()
       .disableNestedJarScanning()
