@@ -11193,3 +11193,132 @@ Root reads the report and verifies all 126 original/copy hash/size records;
 Only this ledger, the diagnostic README and tested new helper are eligible for
 local commit `Reproduce missing fork task-error reporting on the pinned SDKs`,
 parent `5617a7b99d91ae96c948f7e97ff007a53a46bb63`. No push or full gate claim.
+
+
+## 2026-10-04: held real host delivery and command repeat (2d.4/11/13/17/22, in progress)
+
+The preceding expected-defect diagnostic was committed locally as
+`26b6609ca5ef3b1c2a5d01c009ce36cc6bbd2518`, parent
+`5617a7b99d91ae96c948f7e97ff007a53a46bb63`. Its postcommit record verifies
+exactly three paths, 1,679 qualified inputs, 212 unchanged publication pairs
+and a clean index/worktree at that point. Record
+`2d-sdk-task-error-local-commit-first/completion.json`, SHA256
+`9009d7b70f3a7f3a64fa6a6e30ac89d25bcb4c1f40f8d6cafd9085471c66b68e`.
+No postcommit producer rebuild or full gate is attributed to that record.
+
+A public forwarding framework delegates the published production framework's
+Runner and Task behavior. It records child Runner.done entry before delegation
+and completion only after that delegate returns. A public TestsListener gates
+the first three-success suite batch. The driver opens its gate only after a
+frozen observation proves all fifteen bodies, the one paired DI release, an
+empty owned receipt directory, a live child distinct from SBT, done entry for
+all five selected suites, and absence of done completion. This proves the
+bounded wrapper completion wait; no private waiter-stack observation is claimed.
+Only the production listener publishes acknowledgement receipts.
+
+After release, the command must report precisely all fifteen physical/XML
+identities. An explicit fixture input file switches delivery to normal; a second
+command in the same SBT process must execute with fresh paired DI resources,
+a new command receipt directory and fifteen exact positive XML cases. Both
+directories must be absent after completion. Settings are not reapplied between
+these commands. Capture and independent driver validation use explicitly scoped
+Test/target reports, with no production orchestration copied or substituted.
+
+Executed scratch commands use
+`/srv/nvme/tmp/izumi-impl/2d-held-fork-driver-fifth.py` for both SDKs at Scala3.9,
+and frozen driver-sixth for SDK1 all three Scala versions and SDK2 Scala2.
+Every command requires `--artifact-version 1.3.0-SNAPSHOT`, explicit SDK/Scala
+lists and a new evidence directory. The six positive combinations are:
+
+- `2d-held-fork-actual-fifth`: SDK2/3.9 actual0, lane validator passes. Its
+  following SDK1 build load fails, so aggregate1 is retained and is not a pass.
+  Terminal SHA256 `2d7f46577c333c0e54f7c46d511c55b2ff49add6dbb903e38304bb15e3ffc188`.
+- `2d-held-fork-actual-sixth`: SDK1/3.9, 2.13.18 and 2.12.21 all actual0,
+  driver0. Terminal SHA256
+  `e6b4eac11ef2818b3785f5db0e11451fe797d9a37222640c51840d131a8cf666`.
+- `2d-held-fork-actual-seventh`: SDK2/2.13.18 and 2.12.21 both actual0,
+  driver0. Terminal SHA256
+  `60165aa0e522500e759a62351baec834b19383bff80965ed1105cc652580d63e`.
+
+These six combinations reconcile 180 bodies, 180 positive XML cases, twelve
+fresh paired DI resources and twelve distinct cleaned receipt directories.
+
+Earlier harness failures remain captured. First and second reach held/released
+production execution with fifteen positive XML cases, then their enclosing
+fixture verification fails without a console diagnostic. Their gate file was
+named host.release and therefore also matched the resource verifier's *.release
+pattern: the retained physical files show two release records versus one
+acquisition. This independently observed invariant mismatch is not an SDK
+failure or positive aggregate. Third uses the new scoped capture task and
+completes its first command; its repeat reconstructs a listener, holds again
+without a driver gate release, and times out/incompletely fails. Fourth adds an
+explicit delivery-mode input: actual SDK2 exits0 for both commands, while its
+oracle still counts the gate file as a second DI release and returns1. Fifth
+renames that file host.allow, giving the positive SDK2 lane above; its SDK1 load
+fails because a parser value is immediately followed by a nested block without
+an explicit terminator. Sixth adds the type/terminator. No production input
+changes are made for any of these corrections.
+
+First/second/third terminal SHA256 (same terminal bytes, different preserved
+captures) `30b246949198284e7ed56d0d0c73d6bddbbc8c1f3a4fb3fe1ced3b4c571c48c7`;
+fourth `0cea78f0678ad189bfd1754cf9fd6f7d460e66984400bf5e7feda3871e5bd354`.
+No failed capture is overwritten or reclassified as a positive aggregate.
+
+The permanent repository helper adds a shebang and relative ROOT, removing
+three unused mutations of the copied original verifyFixture task. Its selected
+commands use the new captureHeldFixture task and the independent Python oracle.
+Its own replay command:
+
+`python3 -B test-fixtures/host-sharing-consumer/verify-held-forks.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0
+--scala-version 3.9.0
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-held-fork-permanent-first`.
+
+Both actual processes0/driver0, terminal SHA256
+`cb0d5892daa810f3ae44a64c83683726725ecc0713e5709b0c6e747905936e09`.
+These are separate helper replays, not additional distinct Scala/SDK combinations.
+
+Independent root audit-first returns0, checking the six positive combinations
+plus both permanent helper replays: 240 bodies, 240 positive XML cases, sixteen
+fresh paired DI lifetimes/cleaned directories. It directly reconciles exact
+logged/resolved test and meta classpaths against current published artifacts,
+without ScalaTest/Scalactic on target test classpaths, and checks held observations,
+parent/child IDs, callback return, all selected physical/report identities and
+unchanged captured sources. It freezes 805 records and 212 external JARs.
+`2d-held-fork-root-audit-first/audit.json` SHA256
+`188983fc93a33e7aac9315b520931f4b30375bd819fb2df475eace71d9446dcf`.
+The fifth aggregate's SDK1 load failure is explicitly excluded from its positive
+lane inventory. All 212 publication pairs retain their qualified bytes.
+
+This closes the bounded normal held-delivery control. It does not prove a full
+SDK logger drain, actual SDK2 task-exception reporting, mixed frameworks,
+comprehensive history, cancellation, cleanup-fault behavior, terminal publication
+invariants or any parent/final evaluation point. All listed acceptance items
+remain in progress; no whole step, dependency upgrade, private SDK replacement,
+goal completion or push is claimed.
+
+
+Final source qualification freezes the tested permanent helper/README alongside
+1,679 prior inputs: 1,680 total, no production compiler-input changes.
+`2d-held-fork-final-inputs-first/qualified-sources.json` SHA256
+`3f5bd40e097ed24eb73e23f6fe462c8e3cd0a5c091793982e098d4ff5465485e`;
+helper SHA256 `fef8109d683cf4f5c206e1fe42cd9c018370e0567cadc33603a2f82bf0dcae64`.
+
+The bounded read-only review directly reconciles all eight selected positive
+lanes, sixteen commands, 240 body/XML identities and sixteen paired resources/
+cleaned directories. It finds no material blocker within that scope. Earlier
+first–fourth failure explanations retain root provenance; large classpath/
+publication inventory retains root provenance. Report SHA256
+`5072b301b875e791c5a1d34c241e6d9bfffd216a515e4c95bdc33cc3c5fa683d`,
+schema1 manifest `69d5d0e591b0ac24b965b0866c9951578af0afe695ade86c381880af9b4be627`,
+inspection `f1abff29db1b8b99b20c4a1c32da602cdcd8db69529b314281c45d62ae96c6d4`.
+Root reads the complete report and verifies all 567 original/copy hash/size
+records, returning0. `2d-held-fork-review-root-first.json` SHA256
+`2503574444cae5e54d30c6ad71619c07f73de17f966ad2f691e8d6b70f09e041`.
+Neither review nor observation establishes a minimum dwell time, a private wait
+stack or every live runtime artifact replica. The enclosing gate remains open.
+
+Exactly this ledger, fixture README and tested helper are eligible for local
+commit `Verify counted forks under held host delivery on both SDKs`, parent
+`26b6609ca5ef3b1c2a5d01c009ce36cc6bbd2518`. The guard verifies source/evidence/
+publication equality and exact paths before commit. No push or full gate claim.

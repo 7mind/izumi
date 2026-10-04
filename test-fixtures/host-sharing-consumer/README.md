@@ -62,3 +62,28 @@ dependency closure first. Each run requires a new evidence directory. This
 fixture verifies owned fork completion and same-process command recovery;
 held delivery, SDK task-error replacement, mixed frameworks, comprehensive
 history, cancellation and cleanup faults require separate controls.
+
+`verify-held-forks.py` checks a real held host event batch with five DI suites.
+A public framework forwards the production runner and tasks, recording entry
+and return from the child runner's `done`. A public listener holds the first
+three-event suite batch. The driver releases that callback only after it records
+all fifteen physical bodies, the paired DI release, an empty host receipt
+directory, and a live child inside `done` with no completion receipt. It then
+checks all fifteen XML cases and repeats the command in the same SBT process
+with normal delivery, fresh resources and a new cleaned receipt directory.
+
+```sh
+python3 -B test-fixtures/host-sharing-consumer/verify-held-forks.py \
+  --artifact-version 1.3.0-SNAPSHOT \
+  --sbt-version 2.0.9 1.13.0 \
+  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/held-forks-example
+```
+
+The hold mode changes through an explicit fixture input file, without settings
+reapplication. Each lane freezes the held observation before opening its gate.
+The fixture never publishes an acknowledgement. Its forwarding framework
+changes only completion instrumentation and public framework argument routing;
+production execution and receipt waiting remain delegated. This control does
+not establish a complete SDK logger drain, task-exception reporting, mixed
+frameworks, history, cancellation, cleanup faults or final runner acceptance.
