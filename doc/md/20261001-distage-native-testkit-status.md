@@ -80,18 +80,18 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
 | 2d.10 | not started | No evaluation point passed yet. |
-| 2d.11 | in progress | Permanent plain/DI sharing fixture passes 72 actual host cases below; the complete runner fixture inventory and final evaluation stay open. |
+| 2d.11 | in progress | Permanent sharing/plugin fixtures pass 174 published host cases below; distinct stock digests, complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
 | 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below; complete mixed-framework domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | not started | No evaluation point passed yet. |
-| 2d.18 | not started | No evaluation point passed yet. |
+| 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
+| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error after body success; actual-host teardown/cache failure cases and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
-| 2d.21 | in progress | Initial plugin builds/publishes for pinned SBT1/2 hosts below; list/plan tasks, normalized arguments and final evaluation remain open. |
-| 2d.22 | not started | No evaluation point passed yet. |
+| 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
+| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below; full terminal/failure domain and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -9698,3 +9698,273 @@ bindings, generated build integration, permanent consumer driver, documentation
 and ledger. This is a verified initial-policy checkpoint, not completion of 2d,
 any O requirement or final evaluation. Exact resulting SHA and postconditions
 are recorded after commit. No push.
+
+### Initial SBT plugin postcommit and next application work — 2026-10-04
+
+Actual local commit is `8abe2e61987b0eb8dbe2ca2488df623f14303f8c`, parent
+`b1d47b36825ceb1a3472ef50ba6d197ebd21d6b5`. The terminal postcommit record
+`/srv/nvme/tmp/izumi-impl/2d-distage-plugin-verified-commit-first/completion.json`
+reports exit 0, a clean checkout, unchanged 1,650 runtime/build/driver inputs and
+the two explicit non-runtime README/.gitignore exceptions. Root rechecks the
+clean checkout and actual HEAD at the start of this continuation. The preceding
+turn therefore made authoritative progress; no parent or final gate is closed.
+
+The third producer's exact command was
+`direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx8G "sbt-distage-testkit / compile" "sbt-distage-testkit / publishLocal" "++ 2.12.21" "sbt-distage-testkit / compile" "sbt-distage-testkit / publishLocal"'`.
+Its tool returned actual terminal exit 0, with raw output in
+`/srv/nvme/tmp/izumi-impl/2d-distage-plugin-producer-third/run.log`. That producer
+directory did not persist a commands.json or EXIT marker; this entry records
+the tool observation rather than inventing a historical capture.
+
+Next bounded work routes the JVM bootstrap through TestApplication and adds
+shared normalized request arguments. A new bootstrap control requests one
+structured path/variant plus activation, filtering and memoization overrides;
+it must execute and report exactly that test. Unknown identities must reject
+before provider planning. The current identity-only bootstrap is checked first;
+no passing result or completed acceptance item is claimed in this entry.
+
+### Normalized request and inspection candidate: reproductions — 2026-10-04
+
+The inline Python driver's exact SBT argv is retained in
+`2d-bootstrap-request-before-first/commands.json`. Actual SBT exit 1
+rejects the new arguments at the old identity-only parser, before the selected
+body marker. The reproduction inputs are copied immediately after that process,
+with explicit post-execution provenance. `2d-bootstrap-request-after-first`
+then records actual exit 0, protocol218 and bootstrap34. These are pilot checks,
+not all-source or published-closure proofs.
+
+The new singleton-size normalization control fails at runtime under
+`2d-request-inspection-compile-first/`: sorting a one-element vector never
+evaluates its key function. Explicit serialization of every ID corrects that
+reproduced omission. `2d-request-inspection-compile-second/commands.json` and
+raw log record actual exit 0: protocol219/schema4, base802, bootstrap36,
+eleven actual standalone child cases, six actual inspection child cases and
+both pinned plugin compilations. CLI captures retain literal argv/frames and
+body absence; their temporary SBT bg-jobs replica equality was not prefrozen.
+
+Preparatory review is root-read and verifies all 89 immutable copy sizes/hashes:
+report SHA-256 `5aced7e04842c8d8f9886cf44dacdc93bcc63c64daf707bf98b778889681be3a`,
+manifest `059dfe0b85aefd9c66a5d88830a94548b27cbfd8501f452305a1f08b8a1aa356`,
+inspection `be273ad55194377fb5ffaf1292b46404a8f8ea0174cc4abe253f5cb69c8afb13`.
+Directory: `2d-request-inspection-preparatory-readonly-review-first/`;
+root record: `2d-request-inspection-preparatory-root-verification-first.json`.
+Its 22 non-ledger source matches are selected-path checks, not the complete
+1,657-input producer inventory.
+
+Review F1 is reproduced before correction by command
+`python3 /srv/nvme/tmp/izumi-impl/2d-bootstrap-live-fatal-repro-second.py`.
+The first attempt fails compilation because old SBT bg-jobs replicas have been
+removed; it is not callback-defect evidence. The second binds current own
+compiled directories and byte-equivalent external cache entries, checking
+loaded Framework/TestApplication/RunSession bytes against current compiled
+products. Its LinkageError child exits 2 after the bounded ten-second join,
+with an uncaught worker error and pending SDK task. InterruptedException child
+exits 0 and propagates the exact original, but does not request cancellation.
+Both immediate model cleanup markers are present; neither is a held-finalizer
+proof. Exact commands, classes, outcomes and raw logs are retained separately.
+
+Review F2 is also reproduced before correction by command
+`python3 /srv/nvme/tmp/izumi-impl/2d-inspection-fork-repro-first.py`.
+Fresh SBT2 uses the published candidate, Test/fork=true and a property supplied
+only in Test/javaOptions. The suite constructor cannot see it: actual exit 1,
+visible Discovery rejection with INSPECTION_FORK_SENTINEL_MISSING and no body
+execution. Public inspect/delegates show the unqualified runner resolves to the
+project runner instead of the configuration's run/runner. Three candidate
+JAR/POM pairs are frozen and checked unchanged during this reproduction.
+
+The first nine-lane matrix continues with unchanged candidate sources before
+these two SDK corrections. Its Scala3 and Scala2.13 processes have actual exit0
+and all fixed bounded markers; Scala2.12 remains running. Known F1/F2 prevent
+treating this candidate as complete. Corrections, held-finalizer/follower
+controls, configuration-fork sentinels and fresh published consumers remain
+pending. All fixed parent/final gates remain open; no commit or push yet.
+
+First matrix command
+`python3 /srv/nvme/tmp/izumi-impl/2d-request-inspection-nine-lane-first.py`
+now finishes with driver0 and all three actual SBT exits0. All 1,657 frozen
+non-ledger inputs remain unchanged at each process exit. Protocol219/schema4
+passes on all nine source lanes; base802 (801 on Scala2.12), core143/103/118,
+higher639/516/516, original application/channel-loss controls and the eleven
+standalone/six inspection child cases per compiler retain their exact markers.
+This proves the bounded common-code checks, while the separately reproduced
+SDK callback/fork defects remain exclusions from any completed SDK gate.
+
+After terminal matrix completion, the SDK delivery boundary now wraps only
+already-captured fatal callback errors in a NonFatal carrier; task-boundary
+rethrow retains the original object. The internal suite factory is explicit,
+allowing held-provider finalizer/follower controls without mutable global state.
+Both SBT variants select the configuration's public run/runner. Updated source
+command `python3 /srv/nvme/tmp/izumi-impl/2d-request-inspection-jvm-fixes-first.py`
+freezes the current 1,657 inputs and confirms exactly six changes from the
+preceding matrix, all JVM/plugin/fixture paths. Portable shared/JS/Native code
+is unchanged. Scala3 and Scala2.13 corrected JVM processes finish0; Scala2.12
+remains running. New bootstrap50 includes both held-fatal-callback controls:
+actual cancellation observed in the provider, exact original error identity,
+two pending SDK tasks while finalization is held, one acquire/release, and a
+visible follower transport error after release. No current published SDK
+consumer claim follows yet.
+
+Publication audit attempts remain failed captures. First audit erroneously
+requires every runtime-closure POM to lack ScalaTest even in test scope; core
+modules still declare legacy test dependencies pending step5. Second retains
+the compile-scope bound for that closure and the all-scope bound for the new
+protocol/base/plugin artifacts, then observes an actual binary mismatch between
+the old framework JAR and current ConfigWriter compiled products. Saved javap
+old/current disassembly differs in embedded BuildStatus timestamp and GitStatus
+commit (`f4fc3084...` versus `8abe2e619...`); it is not a source logic correction.
+The old publication remains unchanged, but cannot be claimed byte-equal to
+current products. Full 210-pair runtime publication plus both plugins is
+prepared, not executed yet. Fresh frozen artifact audit and 174 published SDK
+cases (29 per host/compiler lane) remain pending. No acceptance item is waived.
+
+The corrected JVM matrix is now terminal: command
+`python3 /srv/nvme/tmp/izumi-impl/2d-request-inspection-jvm-fixes-first.py`
+returns0, all three actual SBT processes return0, and all 1,657 frozen
+non-ledger inputs remain unchanged. Bootstrap50, the eleven standalone child
+cases, six inspection child cases, and the existing core/higher/application
+controls pass on all three compilers. Command
+`python3 /srv/nvme/tmp/izumi-impl/2d-bootstrap-live-fatal-replay-third.py`
+also returns0: both reproduced callback children return0, retain the original
+exception object, observe provider cancellation and cleanup, and leave no
+pending task. The stronger held-finalizer/follower evidence is in Bootstrap50,
+not in those immediate-cleanup children.
+
+Command
+`python3 /srv/nvme/tmp/izumi-impl/2d-request-inspection-runtime-closure-publication-first.py`
+returns0, with all three actual publication processes returning0 and unchanged
+frozen inputs. It republishes all 210 runtime JAR/POM pairs and both plugin
+variants. Command
+`python3 /srv/nvme/tmp/izumi-impl/2d-request-inspection-publication-audit-third.py`
+returns0: all 212 pairs are fresh, and 76,001 class/resource entries equal the
+current compiled products (manifest excluded). The audit freezes every pair
+before consumer execution; `audit.json` SHA256 is
+`c3177de413dc682005960a86d255ad0be1a09bd7e39920dcf8af5351c3e21f1b`.
+The POM assertion excludes ScalaTest from production dependency scope across
+the runtime closure and from every scope of the new protocol/base/plugin
+artifacts. Legacy core test-scope dependencies remain pending step5.
+
+The first 174-case consumer command is
+`python3 -B test-fixtures/sbt-plugin-consumer/verify-matrix.py --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 --scala-version 3.9.0 2.13.18 2.12.21 --evidence-dir /srv/nvme/tmp/izumi-impl/2d-request-inspection-plugin-consumers-first`.
+Its first actual SBT process returns1 at the individual-ID case, after three
+positive inspections. The driver then raises ValueError while inspecting
+unexecuted later cases, before writing completion.json. Its retained raw log
+and explicit post-execution observation record preserve those separate exits;
+this is not a passing consumer matrix.
+
+Before changing the fixture, command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-bootstrap-sdk-request-repro-first.py`
+returns0 for its expected actual SBT failure1. A controlled, public
+sbt.testing.Framework delegate prints the exact arguments: the quoted JSON
+path segment `equal display name` arrives split into three framework arguments.
+The protocol parser correctly rejects the resulting option/value vector.
+Command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-bootstrap-sdk-request-replay-second.py`
+uses JSON Unicode escapes for those spaces and returns0 with actual SBT0,
+exactly one physical body, one JUnit case, and one paired resource lifetime.
+The production parser remains unchanged. The permanent fixture and CLI
+README now use/document this representation. Missing inspection markers now
+produce explicit validation failures instead of preventing a completion record.
+
+Command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-inspection-fork-replay-second.py`
+replays F2 against the corrected published artifacts and returns0 with actual
+SBT0. Both list and plan constructors observe the property supplied only by
+Test/javaOptions with Test/fork=true, and no body executes. Its three frozen
+artifact pairs remain unchanged. This replay does not itself record child PIDs;
+the permanent inspection-only configuration adds that separate observation.
+
+The second consumer uses the first command with evidence directory
+`2d-request-inspection-plugin-consumers-second/`. Its first SBT2/Scala3 process
+returns0 and completes all 29 cases. Driver1 rejects sentinel-plan because
+SBT2 caches the task-key parent verification after sentinel-list; the second
+case has its child-property/PID marker but no fresh parent marker. The raw log
+shows the disk cache hit. The fixture correction is a case-named input key,
+with its case identity required in the parent marker. The unchanged required
+per-case parent/child observation is rerun in a fresh matrix, not waived.
+
+Before each fresh consumer, root inline commands freeze all 1,657 current
+non-ledger inputs and check the 212 published pairs remain unchanged. Captures
+`2d-request-inspection-consumer-input-qualification-second/` and `...-third/`
+record the exact exceptions from the publication inventory: only the plugin
+README and permanent consumer driver change; the subsequent helper correction
+changes only that driver. Production sources and published bytes remain the
+qualified corrected candidate. The third consumer is running with the same
+174-case command and evidence directory
+`2d-request-inspection-plugin-consumers-third/`. The predicted aggregate
+858 bodies/JUnit cases and 114 paired lifetimes is not yet a terminal observed
+result. All parent/final acceptance gates remain open; no new commit or push.
+
+Third consumer is terminal: the command above returns driver0; all six actual
+SBT processes return0 with 29 cases and no validation failures each.
+`completion.json` SHA256 is
+`3a28e940ce2591fde6d093b2f55b521d3675a7db987fc9842d38ff340baeb060`.
+No earlier failed capture is replaced or treated as successful.
+
+Root independent command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-request-inspection-consumer-root-audit-first.py`
+returns0. It checks all 1,657 current qualified inputs, all 212 publication
+pairs unchanged, copied fixture adaptations, compiled fixture-only namespaces,
+and twelve Test dependency/full-classpath comparisons against actual SDK
+update reports (24 own published JARs per comparison, no root producer paths
+or ScalaTest). It reconciles 174 cases, 858 physical body records with 858 JUnit
+cases, 114 globally distinct paired resource lifetimes, 54 exact schema4
+zero-body inspection responses, and twelve stock no-ops. Twelve per-case
+sentinel observations retain different child/parent PIDs and a property present
+only in the child. The audit freezes six logs/update reports, 145 external JARs,
+264 fixture binary files, 1,380 body/report records, and 132 explicit empty
+directories. `audit.json` SHA256 is
+`ad28d6db0bc6415899bdd2a42a64ecb4848b7556c5c2d7e27af0e0bd2c5a8796`.
+This is not a literal child-classpath/argv replica audit, a complete
+activation/input-domain proof, a distinct-stock-digest result, or a completed
+2d/final evaluation. Read-only correction/completion review remains running;
+production and published bytes remain unchanged during it.
+
+Independent future-fixture probe command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-stock-separated-suite-digest-probe-first.py`
+returns0; all three actual SBT2 compiler processes return0 and observe five
+pairwise distinct public stock suite digests, with zero physical body execution.
+It follows the existing transport report's observed experiment at
+`doc/md/spikes/20261001/transport/REPORT.md:377–380`: scratch copies move the five
+concrete suites into separate files and add distinct marker1..5 methods. No
+stock digest salt or policy override is installed. All 212 publication pairs
+remain unchanged. This tests the combined fixture transformation, not separate
+causal effects of moving files and adding markers. The permanent fixture and
+the already-executed 174-case checkpoint still have the original equal digests;
+installing and verifying the corrected distinct-digest fixture is next work.
+It does not retroactively pass the checkpoint's excluded precondition or the
+complete 2d.11 acceptance item.
+
+Corrected bounded read-only review is terminal and root-read:
+`2d-request-inspection-corrected-readonly-review-first/REVIEW.md` SHA256
+`6ccc4bf3a0bb3ec53a0dcf780c55414fe56e16373dd53511389b4b2f1f2c51c4`,
+`INPUT-MANIFEST.json` SHA256
+`5993bea373f1be6b8feac2dbd7571d4490455fb9806ce5e88607e813e118c67d`,
+and `inspection.json` SHA256
+`d2cf9c9d7fdcce2c9d5888e3cacc1ec4043732133f20ab4ff02fad2116953c38`.
+Root reads the complete report/inspection and independently verifies all 3,798
+manifest rows (25 repository, 3,773 evidence; 1,469 unique reviewed copies) by
+size/hash, with no original-path changes at verification time. Record:
+`2d-request-inspection-corrected-root-verification-first.json`.
+
+The reviewer finds no concrete introduced defect or unsupported claim blocking
+the bounded checkpoint, resolves F1/F2 in their reproduced domains, and directly
+reconciles all six consumer lanes. Its independent producer member check is
+selected: twenty protocol/base/plugin pairs and 5,985 non-manifest members
+against the preserved producer comparison hashes. The full 212-pair current
+compiled-output comparison remains root-audit evidence, not an exhaustive
+independent reviewer claim. The held callback finalizers are model
+ExecutionProviders; actual DI Lifecycle failure/cache behavior is still open.
+The review launches no program or supplied auditor. Its own incorrect initial
+Planned-response/marker-label processing assumptions are retained separately;
+the corrected independent checker reports no discrepancies. The future
+split-source digest trial is excluded from this checkpoint verdict.
+
+2026-10-04 bounded request/inspection local commit containing this entry is
+above predecessor `8abe2e61987b0eb8dbe2ca2488df623f14303f8c`. Production captures
+and publications were made under that source-capture HEAD, and all 1,657
+qualified non-ledger inputs remain byte-equal before the local commit. The
+postcommit source/commit observation is a separate next action; no build is
+claimed to have run at the not-yet-created commit. No push, parent-step
+completion or final evaluation is claimed. Next independent work installs and
+verifies the prepared separate-source/distinct-marker fixture and makes its
+public stock-digest precondition a failing oracle before incremental cases.

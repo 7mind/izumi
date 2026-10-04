@@ -6,11 +6,12 @@ import izumi.distage.testkit.runner.spec.{AnyWordSpec, AsyncWordSpec}
 
 import sbt.testing.{Event, EventHandler, Status, SuiteSelector, Task, TaskDef, TestSelector}
 
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{CountDownLatch, Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
+import scala.util.control.NonFatal
 
 object BootstrapFixtures {
   private final val ParallelTasks = 2
@@ -105,6 +106,101 @@ object BootstrapFixtures {
     verify(runner.done().isEmpty, "Runner completion must release its lifecycle")
     verify(rejected { val _ = runner.tasks(definitions) } && rejected { val _ = runner.done() }, "Spent runners must reject subsequent task requests and completion")
     verify(Thread.getAllStackTraces.keySet().asScala.filterNot(previousThreads.contains).filter(_.getName.startsWith("ForkJoinPool-")).forall(!_.isAlive), "Bootstrap-owned executor threads must terminate before host completion")
+    val argumentSuite = classOf[BootstrapArgumentSuite].getName
+    val selectedId = s"""{"target":"bootstrap-target","suite":"$argumentSuite","path":["a","b c"],"variant":"selected"}"""
+    val selectionFlags = flags ++ Array(
+      "--test-id", selectedId,
+      "--axis", """{"axis":"repo","value":"real"}""",
+      "--axis-filter", """{"axis":"mode","value":"enabled"}""",
+      "--memoization", "disabled",
+    )
+    val selectedRunner = framework.runner(selectionFlags, Array.empty, loader)
+    val selectedHandler = new RecordingHandler
+    execute(selectedRunner.tasks(Array(definition(argumentSuite))).head, selectedHandler)
+    verify(selectedHandler.events.size == 1 && selectedHandler.events.head.status() == Status.Success, "Normalized arguments must execute and report only the structured selected test with its effective overrides")
+    verify(selectedHandler.events.head.selector().asInstanceOf[TestSelector].testName() == "a b c", "Host display projection must preserve the selected test's label")
+    verify(selectedRunner.done().isEmpty, "Selected request runner must drain its lifecycle")
+    val unknownRunner = framework.runner(flags ++ Array("--test-id", selectedId.replace("selected", "unknown")), Array.empty, loader)
+    val unknownHandler = new RecordingHandler
+    execute(unknownRunner.tasks(Array(definition(argumentSuite))).head, unknownHandler)
+    verify(unknownHandler.events.size == 1 && unknownHandler.events.head.status() == Status.Error && unknownHandler.events.head.throwable().get().getMessage.contains("Unknown explicit identities"), "Unknown saved test identities must reject before provider planning or body execution")
+    verify(unknownRunner.done().isEmpty, "Rejected request runner must drain its lifecycle")
+    val lossRunner = framework.runner(flags, Array.empty, loader)
+    val outputFailure = new IllegalStateException("Live host output failed")
+    val lossHandler = new EventHandler { override def handle(event: Event): Unit = throw outputFailure }
+    val lossPropagated = try { val _ = lossRunner.tasks(Array(definition(classOf[BootstrapChannelLossSuite].getName))).head.execute(lossHandler, Array.empty); false }
+    catch { case cause: IllegalStateException => cause eq outputFailure }
+    verify(lossPropagated, "Common application output failure must retain the original host callback exception after provider cleanup")
+    verify(lossRunner.done().isEmpty, "Lost-channel runner must drain its lifecycle")
+    Vector(new LinkageError("Held live linkage failure"), new InterruptedException("Held live interrupt failure")).foreach { failure =>
+      val held = new CountDownLatch(1)
+      val release = new CountDownLatch(1)
+      val acquired = new AtomicInteger(0)
+      val released = new AtomicInteger(0)
+      val worker = Executors.newFixedThreadPool(ParallelTasks)
+      val workers = ExecutionContext.fromExecutorService(worker)
+      val request = RequestArguments.parse(flags.toVector).fold(error => throw new IllegalArgumentException(error.message), value => value)
+      val primary = definitions.head.fullyQualifiedName()
+      val factory: String => TestSuite = name => new TestSuite {
+        override def register(registration: RegistrationContext): RegisteredSuite = {
+          val suite = SuiteDescriptor(SuiteId(name), name)
+          val test = TestDescriptor(TestId(registration.target, suite.id, Vector("held callback"), None), "held callback", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
+          val provider = registration.provider(ProviderId("held-host-callback"), () => new ExecutionProvider {
+            override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(selected) }
+            override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
+              override val tests: Vector[TestDescriptor] = selected
+              override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+              override def execute(context: RunExecutionContext): Future[ProviderOutcome] = Future {
+                require(acquired.incrementAndGet() == 1, "Held provider acquired twice")
+                try {
+                  val first = selected.find(_.id.suite.value == primary).get
+                  val result = TestResult(first.id, TestStatus.Succeeded, None, 0L)
+                  context.emit(ProviderEvent.TestStarted(first.id))
+                  context.emit(ProviderEvent.TestCompleted(result))
+                  require(context.cancellation.isRequested, "Fatal SDK callback did not cancel the provider")
+                  val cancelled = selected.filterNot(_.id == first.id).map { descriptor =>
+                    val value = TestResult(descriptor.id, TestStatus.Cancelled, None, 0L)
+                    context.emit(ProviderEvent.TestCompleted(value))
+                    value
+                  }
+                  ProviderOutcome(result +: cancelled, Vector.empty, cancelled = true)
+                } finally {
+                  held.countDown()
+                  require(release.await(TimeoutSeconds, TimeUnit.SECONDS), "Held provider finalizer was not released")
+                  require(released.incrementAndGet() == 1, "Held provider released twice")
+                }
+              }(registration.executionContext)
+            })
+          })
+          RegisteredSuite(suite, Vector(test), provider)
+        }
+      }
+      val fatalRunner = new BootstrapRunner(flags, Array.empty, factory, request)
+      val fatalTasks = fatalRunner.tasks(definitions)
+      val fatalHandler = new EventHandler { override def handle(event: Event): Unit = throw failure }
+      val follower = new RecordingHandler
+      def executeAsync(task: Task, handler: EventHandler): Future[Either[Throwable, Unit]] = Future {
+        try { val _ = task.execute(handler, Array.empty); Right(()) }
+        catch { case cause: Throwable if NonFatal(cause) || cause.isInstanceOf[LinkageError] || cause.isInstanceOf[InterruptedException] => Left(cause) }
+      }(workers)
+      try {
+        val first = executeAsync(fatalTasks.head, fatalHandler)
+        verify(held.await(TimeoutSeconds, TimeUnit.SECONDS), "Fatal SDK callback must reach provider finalization")
+        val second = executeAsync(fatalTasks.last, follower)
+        verify(acquired.get() == 1 && released.get() == 0 && !first.isCompleted && !second.isCompleted, "Both SDK tasks must remain pending while their provider finalizer is held")
+        release.countDown()
+        verify(Await.result(first, TimeoutSeconds.seconds).left.exists(_ eq failure), "Fatal SDK callback must rethrow the original object after finalization")
+        verify(Await.result(second, TimeoutSeconds.seconds).isRight && follower.events.map(_.status()) == Vector(Status.Error), "Follower task must report a visible transport error without body success")
+        verify(acquired.get() == 1 && released.get() == 1, "Fatal SDK output loss must join exactly one provider finalizer")
+        verify(fatalRunner.done().isEmpty, "Fatal callback runner must drain both SDK tasks")
+        val kind = if (failure.isInstanceOf[LinkageError]) "linkage" else "interrupted"
+        println("BOOTSTRAP_FATAL_CALLBACK_DRAIN_OK kind=" + kind + " original=true cancellation=provider finalization=joined follower=error")
+      } finally {
+        release.countDown()
+        worker.shutdown()
+        verify(worker.awaitTermination(TimeoutSeconds, TimeUnit.SECONDS), "Fatal callback fixture executor must terminate")
+      }
+    }
     println(s"BOOTSTRAP_FIXTURES_OK checks=$checks tasks=sequential+parallel sessions=fresh handlers=bounded")
   }
 
@@ -189,5 +285,62 @@ final class BootstrapFinalizingSuite extends TestSuite {
       })
     }
     RegisteredSuite(suite, Vector(descriptor), provider)
+  }
+}
+
+final class BootstrapArgumentSuite extends TestSuite {
+  override def register(context: RegistrationContext): RegisteredSuite = {
+    val suite = SuiteDescriptor(SuiteId(getClass.getName), getClass.getSimpleName)
+    val first = TestId(context.target, suite.id, Vector("a b", "c"), None)
+    val second = TestId(context.target, suite.id, Vector("a", "b c"), Some("selected"))
+    val axes = Vector(AxisChoice(AxisId("repo"), AxisValue("real")), AxisChoice(AxisId("mode"), AxisValue("enabled")))
+    val tests = Vector(first, second).map(id => TestDescriptor(id, "a b c", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true)))
+    val provider = new ExecutionProvider {
+      override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = {
+        require(overrides.axes == axes.take(1) && overrides.axisFilters == axes.drop(1) && overrides.memoization == MemoizationOverride.Disabled, "Framework lost normalized overrides")
+        Right(selected.map(_.copy(settings = EffectiveSettings(axes, memoization = false))))
+      }
+      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
+        override val tests: Vector[TestDescriptor] = selected
+        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+        override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
+          require(selected.map(_.id) == Vector(second), "Framework executed an unselected path or variant")
+          val results = selected.map { test =>
+            context.emit(ProviderEvent.TestStarted(test.id))
+            val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
+            context.emit(ProviderEvent.TestCompleted(result))
+            println("BOOTSTRAP_ARGUMENT_BODY_OK id=structured variant=true axes=2 memoization=false count=1")
+            result
+          }
+          Future.successful(ProviderOutcome(results, Vector.empty, cancelled = false))
+        }
+      })
+    }
+    RegisteredSuite(suite, tests, provider)
+  }
+}
+
+final class BootstrapChannelLossSuite extends TestSuite {
+  override def register(context: RegistrationContext): RegisteredSuite = {
+    val suite = SuiteDescriptor(SuiteId(getClass.getName), getClass.getSimpleName)
+    val test = TestDescriptor(TestId(context.target, suite.id, Vector("channel loss"), None), "channel loss", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
+    val provider = new ExecutionProvider {
+      override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(selected) }
+      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
+        override val tests: Vector[TestDescriptor] = selected
+        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+        override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
+          val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
+          context.emit(ProviderEvent.TestStarted(test.id))
+          try {
+            context.emit(ProviderEvent.TestCompleted(result))
+            require(context.cancellation.isRequested, "Common application failed to cancel the provider on host output loss")
+            println("BOOTSTRAP_CHANNEL_LOSS_CANCELLATION_OK observed=provider error=original")
+            Future.successful(ProviderOutcome(Vector(result), Vector.empty, cancelled = true))
+          } finally println("BOOTSTRAP_CHANNEL_LOSS_CLEANUP_OK phase=before_task_return")
+        }
+      })
+    }
+    RegisteredSuite(suite, Vector(test), provider)
   }
 }

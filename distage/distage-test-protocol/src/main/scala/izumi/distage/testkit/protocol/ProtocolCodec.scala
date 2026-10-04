@@ -22,17 +22,36 @@ object ProtocolCodec {
     frame
   }
 
-  def decode(frame: String): Either[ProtocolDecodeError, ProtocolMessage] = {
+  def decode(frame: String): Either[ProtocolDecodeError, ProtocolMessage] = parseJson(frame).flatMap { json =>
+    val cursor = json.hcursor
+    cursor.get[Int]("schemaVersion").left.map(error => ProtocolDecodeError(error.message)).flatMap { version =>
+      if (version != SchemaVersion) Left(ProtocolDecodeError(s"Unsupported protocol schema version: $version"))
+      else cursor.get[ProtocolMessage]("message").left.map(error => ProtocolDecodeError(error.message))
+    }
+  }
+
+  private[protocol] def encodeTestArgument(id: TestId): String = encodeArgument(testIdCodec, id)
+  private[protocol] def decodeTestArgument(value: String): Either[ProtocolDecodeError, TestId] = decodeArgument(testIdCodec, value)
+  private[protocol] def encodeAxisArgument(choice: AxisChoice): String = encodeArgument(axisChoiceCodec, choice)
+  private[protocol] def decodeAxisArgument(value: String): Either[ProtocolDecodeError, AxisChoice] = decodeArgument(axisChoiceCodec, value)
+
+  private def encodeArgument[A](codec: Codec[A], value: A): String = {
+    val json = codec(value)
+    codec.decodeJson(json).fold(error => throw new IllegalArgumentException(error.message), _ => ())
+    val encoded = Printer.noSpaces.copy(escapeNonAscii = true).print(json)
+    require(encoded.length <= MaxFrameCharacters, "Protocol argument exceeds its character limit")
+    encoded
+  }
+
+  private def decodeArgument[A](codec: Codec[A], value: String): Either[ProtocolDecodeError, A] = {
+    parseJson(value).flatMap(json => codec.decodeJson(json).left.map(error => ProtocolDecodeError(error.message)))
+  }
+
+  private def parseJson(frame: String): Either[ProtocolDecodeError, Json] = {
     if (frame.length > MaxFrameCharacters) Left(ProtocolDecodeError("Protocol frame exceeds its character limit"))
     else if (frame.indexOf('\n') >= 0 || frame.indexOf('\r') >= 0) Left(ProtocolDecodeError("Protocol frame must occupy one channel line"))
     else {
-      validateJsonDepth(frame).flatMap(_ => parse(frame).left.map(error => ProtocolDecodeError(error.message))).flatMap { json =>
-        val cursor = json.hcursor
-        cursor.get[Int]("schemaVersion").left.map(error => ProtocolDecodeError(error.message)).flatMap { version =>
-          if (version != SchemaVersion) Left(ProtocolDecodeError(s"Unsupported protocol schema version: $version"))
-          else cursor.get[ProtocolMessage]("message").left.map(error => ProtocolDecodeError(error.message))
-        }
-      }
+      validateJsonDepth(frame).flatMap(_ => parse(frame).left.map(error => ProtocolDecodeError(error.message)))
     }
   }
 

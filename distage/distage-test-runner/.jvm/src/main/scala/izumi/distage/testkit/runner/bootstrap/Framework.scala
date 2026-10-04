@@ -21,27 +21,15 @@ final class Framework extends SbtFramework {
   override def name(): String = "distage"
   override def fingerprints(): Array[Fingerprint] = Array(fingerprint)
   override def runner(args: Array[String], remoteArgs: Array[String], testClassLoader: ClassLoader): Runner = {
-    new BootstrapRunner(args.clone(), remoteArgs.clone(), testClassLoader, BootstrapArguments.parse(args))
-  }
-}
-
-private[bootstrap] object BootstrapArguments {
-  def parse(arguments: Array[String]): CatalogueIdentity = {
-    val pairs = arguments.toVector.grouped(2).toVector
-    require(pairs.forall(_.size == 2), "Each bootstrap option requires one value")
-    val expected = Set("--build-id", "--target-id", "--catalogue-id")
-    require(pairs.map(_.head).toSet == expected && pairs.size == expected.size, "Bootstrap requires exactly --build-id, --target-id and --catalogue-id")
-    require(pairs.forall(_(1).nonEmpty), "Bootstrap identities must not be empty")
-    def value(option: String): String = pairs.find(_.head == option).get(1)
-    CatalogueIdentity(BuildId(value("--build-id")), BuildTargetId(value("--target-id")), CatalogueId(value("--catalogue-id")))
+    new BootstrapRunner(args.clone(), remoteArgs.clone(), name => JvmSuiteLoader.load(name, testClassLoader), RequestArguments.parse(args.toVector).fold(error => throw new IllegalArgumentException(error.message), value => value))
   }
 }
 
 private[bootstrap] final class BootstrapRunner(
   arguments: Array[String],
   remoteArguments: Array[String],
-  loader: ClassLoader,
-  identity: CatalogueIdentity,
+  factory: String => TestSuite,
+  request: RunRequest,
 ) extends Runner {
   private var spent = false
   private var activeTasks = 0
@@ -60,7 +48,7 @@ private[bootstrap] final class BootstrapRunner(
         case _ => throw new IllegalArgumentException("Task fingerprint does not identify a distage suite")
       }
     }
-    val invocation = new Invocation(identity, definitions.toVector, loader)
+    val invocation = new Invocation(request, definitions.toVector, factory)
     invocation.projections.map { projection =>
       new Task {
         private var executed = false
@@ -118,13 +106,13 @@ private[bootstrap] final class BootstrapRunner(
   }
 }
 
-private[bootstrap] final class Invocation(identity: CatalogueIdentity, definitions: Vector[TaskDef], loader: ClassLoader) {
+private[bootstrap] final class Invocation(request: RunRequest, definitions: Vector[TaskDef], factory: String => TestSuite) {
   private final val ShutdownPollSeconds = 1L
   val projections: Vector[SuiteProjection] = definitions.map(new SuiteProjection(_))
   private val completion = Promise[Either[Throwable, RunOutcome]]()
   private val cancellation = new Cancellation
   private var started = false
-  @volatile private var activeSession = Option.empty[RunSession]
+  @volatile private var activeApplication = Option.empty[TestApplication]
 
   def result(interruption: TaskInterruption): Either[Throwable, RunOutcome] = {
     val launch = synchronized {
@@ -139,7 +127,7 @@ private[bootstrap] final class Invocation(identity: CatalogueIdentity, definitio
 
   private def cancel(): Unit = {
     cancellation.request()
-    activeSession.foreach(_.cancel())
+    activeApplication.foreach(_.cancel())
   }
 
   private def execute(interruption: TaskInterruption): Either[Throwable, RunOutcome] = {
@@ -149,34 +137,44 @@ private[bootstrap] final class Invocation(identity: CatalogueIdentity, definitio
       val factories = projections.map { projection => () => new TestSuite {
         override def register(context: RegistrationContext): RegisteredSuite = {
           val name = projection.definition.fullyQualifiedName()
-          val instance = try classOf[TestSuite].cast(Class.forName(name, true, loader).getConstructor().newInstance())
-          catch { case cause: LinkageError => throw new SuiteLoadingFailure(name, cause) }
+          val instance = factory(name)
           val registered = instance.register(context)
           projection.associate(registered.descriptor.id)
           registered
         }
       }}
-      val sink = new EventSink {
-        override def accept(event: ProtocolMessage.Event): Unit = event.event match {
-          case RunEvent.TestCompleted(_, test) =>
+      val run = RunId(UUID.randomUUID().toString)
+      var terminal = Option.empty[RunOutcome]
+      var finished = Option.empty[RunOutcome]
+      val output = new ProtocolOutput {
+        override def accept(message: ProtocolMessage): Unit = message match {
+          case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, test)) =>
             val matching = projections.filter(_.owns(test.id.suite))
             require(matching.size == 1, "Test completion has no unique suite task owner")
             matching.head.complete(test)
-          case _ => ()
+            matching.head.requireDelivery()
+          case ProtocolMessage.Event(_, RunEvent.Finished(_, outcome)) => finished = Some(outcome)
+          case ProtocolMessage.Event(_, _) => ()
+          case ProtocolMessage.Completed(outcome) =>
+            require(terminal.isEmpty && finished.contains(outcome), "Application completion differs from its terminal event")
+            terminal = Some(outcome)
+          case ProtocolMessage.Rejected(_, failure) =>
+            require(terminal.isEmpty, "Application emitted duplicate terminal responses")
+            terminal = Some(RunOutcome(run, Vector.empty, Vector(failure), cancellation.isRequested))
+          case _ => throw new IllegalStateException("Execution application emitted an unexpected response")
         }
       }
-      val session = new RunSession(identity, factories, executionContext, sink)
-      activeSession = Some(session)
-      if (cancellation.isRequested) session.cancel()
-      val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
-      val execution = session.execute(RunId(UUID.randomUUID().toString), request)
-      val outcome = interruption.await(Await.result(execution, Duration.Inf), () => cancel())
-      Right(outcome)
+      val application = new TestApplication(run, request.identity, factories, executionContext, output)
+      activeApplication = Some(application)
+      if (cancellation.isRequested) application.cancel()
+      val execution = application.accept(ProtocolMessage.Request(RequestOperation.Execute, run, request))
+      interruption.await(Await.result(execution, Duration.Inf), () => cancel())
+      Right(terminal.getOrElse(throw new IllegalStateException("Application returned without a terminal response")))
     } catch { case NonFatal(cause) => Left(cause) }
     finally {
+      activeApplication = None
       executionContext.shutdown()
       interruption.await({ while (!executionContext.awaitTermination(ShutdownPollSeconds, TimeUnit.SECONDS)) (); () }, () => cancel())
-      activeSession = None
     }
   }
 }
@@ -212,6 +210,13 @@ private[bootstrap] final class SuiteProjection(val definition: TaskDef) {
   def deliveryFailure: Option[Throwable] = synchronized { callbackFailure }
 
   def rethrowDeliveryFailure(): Unit = synchronized { callbackFailure.foreach(throw _) }
+
+  def requireDelivery(): Unit = synchronized {
+    callbackFailure.foreach { cause =>
+      if (NonFatal(cause)) throw cause
+      else throw new HostDeliveryFailure(cause)
+    }
+  }
 
   def complete(result: TestResult): Unit = {
     val status = result.status match {
@@ -255,6 +260,8 @@ private[bootstrap] final class SuiteProjection(val definition: TaskDef) {
   }
 }
 
+private[bootstrap] final class HostDeliveryFailure(cause: Throwable) extends RuntimeException("Host event delivery failed", cause)
+
 private[bootstrap] final class ProjectedFailure(val failure: Failure)
   extends RuntimeException(s"${failure.phase}: ${failure.exceptionClass}: ${failure.message}", failure.causes.headOption.map(new ProjectedFailure(_)).orNull) {
   failure.causes.drop(1).foreach(cause => addSuppressed(new ProjectedFailure(cause)))
@@ -264,8 +271,6 @@ private[bootstrap] final class ProjectedFailure(val failure: Failure)
 
 private[bootstrap] final class ProjectedCaptureError(val error: FailureCaptureError)
   extends RuntimeException(s"Cannot capture failure field ${error.field}: ${error.exceptionClass}")
-
-private[bootstrap] final class SuiteLoadingFailure(name: String, cause: LinkageError) extends RuntimeException(s"Cannot load suite $name", cause)
 
 private[bootstrap] final class TaskInterruption {
   private var failure = Option.empty[InterruptedException]

@@ -18,10 +18,7 @@ object StandaloneLauncher {
     require(suites.distinct == suites, "Launcher suite catalogue contains duplicates")
     val identity = CatalogueIdentity(BuildId(arguments(0)), BuildTargetId(arguments(1)), CatalogueId(arguments(2)))
     val loader = getClass.getClassLoader
-    val factories = suites.map(name => () => {
-      try classOf[TestSuite].cast(Class.forName(name, true, loader).getConstructor().newInstance())
-      catch { case cause: LinkageError => throw new IllegalStateException("Cannot load suite " + name, cause) }
-    })
+    val factories = suites.map(name => () => JvmSuiteLoader.load(name, loader))
     val source = FileProtocolFrameSource.open(Paths.get(arguments(3)))
     val result = try {
       val sink = FileProtocolFrameSink.createNew(Paths.get(arguments(4)))

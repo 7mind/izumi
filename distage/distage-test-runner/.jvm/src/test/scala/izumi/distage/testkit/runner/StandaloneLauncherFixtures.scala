@@ -45,6 +45,9 @@ object StandaloneLauncherFixtures {
     val successSuite = "izumi.distage.testkit.runner.LauncherSuccessSuite"
     val failureSuite = "izumi.distage.testkit.runner.LauncherFailureSuite"
     val planningFailureSuite = "izumi.distage.testkit.runner.LauncherPlanningFailureSuite"
+    val selectedId = TestId(identity.target, SuiteId(successSuite), Vector("CLI", "should", "run"), None)
+    val selectedRequest = RequestArguments.parse(RequestArguments.render(request.copy(selection = Selection.Only(Vector.empty, Vector(selectedId)), overrides = request.overrides.copy(memoization = MemoizationOverride.Disabled))))
+      .fold(error => throw new IllegalArgumentException(error.message), value => value)
     def command(operation: RequestOperation, value: RunRequest): ProtocolMessage = ProtocolMessage.Request(operation, run, value)
     val cases = Vector(
       Case("success", Vector(ProtocolMessage.Discover(run, identity.build, identity.target), command(RequestOperation.Resolve, request), command(RequestOperation.Plan, request), command(RequestOperation.Execute, request)), successSuite, 0, Some("CLI_SUCCESS_BODY_STDOUT"), true, false, false),
@@ -57,6 +60,7 @@ object StandaloneLauncherFixtures {
       Case("cancel-only", Vector(ProtocolMessage.Cancel(run)), successSuite, 1, None, false, false, false),
       Case("pre-cancel", Vector(ProtocolMessage.Cancel(run), command(RequestOperation.Execute, request)), successSuite, 1, None, false, true, false),
       Case("empty", Vector.empty, successSuite, 1, None, false, false, false),
+      Case("normalized-selection", Vector(command(RequestOperation.Resolve, selectedRequest), command(RequestOperation.Plan, selectedRequest), command(RequestOperation.Execute, selectedRequest)), successSuite, 0, Some("CLI_SUCCESS_BODY_STDOUT"), true, false, false),
     )
     cases.foreach { test =>
       val capture = Files.createDirectory(directory.resolve(test.name))
@@ -97,6 +101,12 @@ object StandaloneLauncherFixtures {
         require(listed.size == 1 && resolved == listed && planned == listed && completed.map(_.results.map(_.id)) == listed, "CLI discovery/resolve/plan/run IDs must agree")
       }
       if (test.name == "test-failure") require(completed.head.results.exists(_.failure.exists(_.message.contains("Expected CLI test failure"))), "CLI must preserve test failure diagnostics")
+      if (test.name == "normalized-selection") {
+        require(completed.head.results.map(_.id) == Vector(selectedId), "Standalone normalized selection must execute and report exactly the selected ID")
+        val resolved = messages.collect { case ProtocolMessage.Resolved(_, selection) => selection }
+        val planned = messages.collect { case ProtocolMessage.Planned(_, plan) => plan.selection }
+        require(resolved.size == 1 && planned == resolved && resolved.head.request == selectedRequest && resolved.head.tests.map(_.id) == Vector(selectedId) && resolved.head.tests.forall(!_.settings.memoization), "Standalone resolution and plan must retain the normalized request and disabled memoization")
+      }
       if (test.name == "planning-failure") require(messages.collect { case ProtocolMessage.Planned(_, plan) => plan.inspection.failures }.exists(_.exists(value => value.failure.phase == FailurePhase.Planning && value.failure.message == "Controlled CLI planning failure")), "CLI must retain planning failure diagnostics on unsuccessful inspection")
       println("STANDALONE_LAUNCHER_CASE_OK name=" + test.name + " exit=" + process.exitValue() + " frames=" + messages.size)
     }

@@ -1,6 +1,6 @@
 package izumi.distage.sbt
 
-import izumi.distage.testkit.protocol.{BuildId, BuildTargetId, CatalogueId, CatalogueIdentity}
+import izumi.distage.testkit.protocol.{BuildId, BuildTargetId, CatalogueId, CatalogueIdentity, RequestArguments}
 
 import sbt.{TestDefinition, TestFramework, TestOption, Tests}
 import sbt.testing.SubclassFingerprint
@@ -11,6 +11,7 @@ import java.security.MessageDigest
 
 private[sbt] object DistageHostPolicy {
   val framework = new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")
+  val inspectionLauncher = "izumi.distage.testkit.runner.InspectionLauncher"
   private final val SuiteSuperclass = "izumi.distage.testkit.runner.TestSuite"
   private val IdentityOptions = Set("--build-id", "--target-id", "--catalogue-id")
 
@@ -42,6 +43,13 @@ private[sbt] object DistageHostPolicy {
       case _ => false
     }
     retained :+ Tests.Argument(framework, arguments: _*)
+  }
+
+  def inspectionArguments(operation: String, identities: Seq[String], options: Seq[String], definitions: Seq[TestDefinition]): Seq[String] = {
+    val suites = definitions.filter(isDistage).map(_.name).sorted
+    require(suites.nonEmpty, "Distage inspection found no suite definitions")
+    val request = RequestArguments.parse((identities ++ options).toVector).fold(error => throw new IllegalArgumentException(error.message), value => value)
+    Vector(operation) ++ RequestArguments.render(request) ++ Vector("--") ++ suites
   }
 
   def conservativeFilter(

@@ -212,6 +212,7 @@ object ProtocolFixtures {
     verify(ProtocolCodec.validate(oversizedPayload) == Right(()), "Payload schema validation does not impose channel frame size on in-process values")
     rejectProducer(oversizedPayload, "character limit")
     UnicodeFrameFixtures.run(verify, rejectProducer)
+    RequestArgumentsFixtures.run(verify)
     println(s"PROTOCOL_FIXTURES_OK checks=$checks schema=${ProtocolCodec.SchemaVersion}")
     println(s"PROTOCOL_GOLDEN $golden")
   }

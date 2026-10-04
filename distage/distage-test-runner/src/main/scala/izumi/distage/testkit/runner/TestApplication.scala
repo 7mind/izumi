@@ -33,6 +33,8 @@ final class TestApplication(
   private val deliveryMonitor = new Object
   private var deliveryFailure = Option.empty[Throwable]
 
+  private[runner] def cancel(): Unit = session.cancel()
+
   def accept(message: ProtocolMessage): Future[Unit] = message match {
     case command: ProtocolMessage.Discover => acceptCommand(command.run, command) {
       if (command.build != identity.build || command.target != identity.target) reject(command.run, FailurePhase.Discovery, "Discovery refers to another build target")
@@ -58,7 +60,7 @@ final class TestApplication(
         val completed = synchronized(executionCompleted)
         if (completed) enqueue(reject(run, FailurePhase.Transport, "Application execution has already completed"))
         else {
-          session.cancel()
+          cancel()
           Future.successful(())
         }
       } else acceptCommand(command.run, command)(Future.unit)
