@@ -13,9 +13,7 @@ import zio.{IO, Task, ZIO}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
-import scala.jdk.CollectionConverters.*
 import scala.util.{Try, Using}
 
 final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
@@ -35,27 +33,18 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
     }
   }
 
-  private def removeTestContainers(client: DockerClientWrapper[Task]): Task[Unit] = removeContainersLabelled(client, testLabels)
-
-  private def removeContainersLabelled(client: DockerClientWrapper[Task], labels: Map[String, String]): Task[Unit] = ZIO.attempt {
-    client.rawClient.listContainersCmd().withShowAll(true).withLabelFilter(labels.asJava).exec().asScala.foreach {
-      c => client.rawClient.removeContainerCmd(c.getId).withForce(true).exec()
-    }
-  }
-
   "After-create hooks" should {
 
     "run on the created container before it is started" in {
       (resource: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
         val hook = new RecordingHook("observe", None)
-        ZIO
-          .scoped {
-            for {
-              _ <- removeTestContainers(client)
-              containerId <- resource.copy(config = resource.config.copy(afterCreate = Seq(hook))).use(c => ZIO.succeed(c.id))
-              _ <- assertIO(hook.observed.get().contains((containerId, "created")))
-            } yield ()
-          }.ensuring(removeTestContainers(client).orDie)
+        ZIO.scoped {
+          for {
+            containers <- testContainers(resource, client)
+            containerId <- containers.configured(_.copy(afterCreate = Seq(hook))).use(c => ZIO.succeed(c.id))
+            _ <- assertIO(hook.observed.get().contains((containerId, "created")))
+          } yield ()
+        }
     }
 
     "run after `files` are copied" in {
@@ -69,18 +58,15 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
             sawCopiedFile.set(Some(found))
           }
         }
-        ZIO
-          .scoped {
-            for {
-              _ <- removeTestContainers(client)
-              hostFile <- ZIO.acquireRelease(ZIO.attempt(Files.createTempFile("container-hooks", ".txt")))(p => ZIO.attempt(Files.deleteIfExists(p)).orDie)
-              _ <- ZIO.attempt(Files.write(hostFile, "copied".getBytes(StandardCharsets.UTF_8)))
-              _ <- resource
-                .copy(config = resource.config.copy(files = Seq(ContainerFile(hostFile, copiedPath)), afterCreate = Seq(hook)))
-                .use(_ => ZIO.unit)
-              _ <- assertIO(sawCopiedFile.get().contains(true))
-            } yield ()
-          }.ensuring(removeTestContainers(client).orDie)
+        ZIO.scoped {
+          for {
+            containers <- testContainers(resource, client)
+            hostFile <- ZIO.acquireRelease(ZIO.attempt(Files.createTempFile("container-hooks", ".txt")))(p => ZIO.attempt(Files.deleteIfExists(p)).orDie)
+            _ <- ZIO.attempt(Files.write(hostFile, "copied".getBytes(StandardCharsets.UTF_8)))
+            _ <- containers.configured(_.copy(files = Seq(ContainerFile(hostFile, copiedPath)), afterCreate = Seq(hook))).use(_ => ZIO.unit)
+            _ <- assertIO(sawCopiedFile.get().contains(true))
+          } yield ()
+        }
     }
 
     "remove the container and keep the hook's exception as the cause when a hook fails" in {
@@ -90,8 +76,8 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
         ZIO
           .scoped {
             for {
-              _ <- removeTestContainers(client)
-              result <- resource.copy(config = resource.config.copy(afterCreate = Seq(hook))).use(_ => ZIO.unit).either
+              containers <- testContainers(resource, client)
+              result <- containers.configured(_.copy(afterCreate = Seq(hook))).use(_ => ZIO.unit).either
               _ <- assertIO(result match {
                 case Left(failure: DockerFailureException) => failure.getCause eq cause
                 case _ => false
@@ -103,24 +89,25 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
                 case _ => false
               })
             } yield ()
-          }.ensuring(removeTestContainers(client).orDie)
+          }
     }
 
     "remove the container when it fails to start" in {
       (resource: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
         val hook = new RecordingHook("unstartable", None)
-        val labels = Map("distage.test" -> s"unstartable-${UUID.randomUUID()}")
-        val unstartable = resource.config.copy(
-          userTags = labels,
-          entrypoint = Seq("/nonexistent-entrypoint"),
-          reuse = DockerReusePolicy.ReuseDisabled,
-          autoRemove = false,
-          afterCreate = Seq(hook),
-        )
         ZIO
           .scoped {
             for {
-              result <- resource.copy(config = unstartable).use(_ => ZIO.unit).either
+              containers <- testContainers(resource, client)
+              unstartable = containers.configured(
+                _.copy(
+                  entrypoint = Seq("/nonexistent-entrypoint"),
+                  reuse = DockerReusePolicy.ReuseDisabled,
+                  autoRemove = false,
+                  afterCreate = Seq(hook),
+                )
+              )
+              result <- unstartable.use(_ => ZIO.unit).either
               _ <- assertIO(result.isLeft)
               containerId <- ZIO.fromOption(hook.observed.get().map(_._1)).orElseFail(new IllegalStateException("the hook did not run"))
               removed <- ZIO.attempt(client.rawClient.inspectContainerCmd(containerId.name).exec()).either
@@ -129,18 +116,16 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
                 case _ => false
               })
             } yield ()
-          }.ensuring(removeContainersLabelled(client, labels).orDie)
+          }
     }
 
     "reuse only containers created with hooks of identical reuse keys" in {
       (resource: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
-        def withHook(key: String): ContainerResource[Task, RunningContainer.Tag] = {
-          resource.copy(config = resource.config.copy(afterCreate = Seq(new RecordingHook(key, None))))
-        }
         ZIO
           .scoped {
             for {
-              _ <- removeTestContainers(client)
+              containers <- testContainers(resource, client)
+              withHook = (key: String) => containers.configured(_.copy(afterCreate = Seq(new RecordingHook(key, None))))
               ids <- withHook("a").use {
                 first =>
                   withHook("a").use {
@@ -152,7 +137,7 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
               _ <- assertIO(first == sameKey)
               _ <- assertIO(first != otherKey)
             } yield ()
-          }.ensuring(removeTestContainers(client).orDie)
+          }
     }
 
   }

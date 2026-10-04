@@ -4,24 +4,25 @@ import distage.ModuleDef
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
-import izumi.distage.docker.model.Docker.{ContainerFile, DockerReusePolicy}
+import izumi.distage.docker.model.Docker.{ContainerConfig, ContainerFile, DockerReusePolicy}
 import izumi.distage.docker.model.DockerFailureException
 import izumi.distage.testkit.docker.ContainerFilesTest.*
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec2}
 import izumi.fundamentals.platform.files.IzFiles
-import zio.{IO, Task, ZIO}
+import zio.{IO, Scope, Task, ZIO}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.attribute.PosixFilePermissions
 import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
 import scala.jdk.CollectionConverters.*
 
 object ContainerFilesTest {
   final val copiedDirectory = "/opt/distage/copied"
   final val copiedFile = "/opt/distage/single.txt"
   final val reusedFile = "/opt/distage/reused.txt"
-  final val testLabels: Map[String, String] = Map("distage.test" -> "container-files")
+  final val testLabel = "distage.test"
   final val keepRunningSeconds = "3600"
 
   object VerifyingContainer extends ContainerDef {
@@ -56,12 +57,30 @@ object ContainerFilesTest {
         registry = Some("public.ecr.aws"),
         image = "docker/library/busybox:1.36.1",
         ports = Seq.empty,
-        userTags = testLabels,
         entrypoint = Seq("sleep", keepRunningSeconds),
         reuse = DockerReusePolicy.ReuseEnabled,
         healthCheck = ContainerHealthCheck.succeed,
       )
     }
+  }
+
+  final class TestContainers[T](base: ContainerResource[Task, T], client: DockerClientWrapper[Task]) {
+    val labels: Map[String, String] = Map(testLabel -> UUID.randomUUID().toString)
+
+    def configured(configure: ContainerConfig[T] => ContainerConfig[T]): ContainerResource[Task, T] = {
+      val config = configure(base.config)
+      base.copy(config = config.copy(userTags = config.userTags ++ labels))
+    }
+
+    def removeAll: Task[Unit] = ZIO.attempt {
+      client.rawClient.listContainersCmd().withShowAll(true).withLabelFilter(labels.asJava).exec().asScala.foreach {
+        c => client.rawClient.removeContainerCmd(c.getId).withForce(true).exec()
+      }
+    }
+  }
+
+  def testContainers[T](base: ContainerResource[Task, T], client: DockerClientWrapper[Task]): ZIO[Scope, Nothing, TestContainers[T]] = {
+    ZIO.acquireRelease(ZIO.succeed(new TestContainers(base, client)))(_.removeAll.orDie)
   }
 
   final class HostFiles(val root: Path) {
@@ -125,12 +144,13 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
     }
 
     "fail naming the host path when it is missing, with and without reuse" in {
-      (fresh: ContainerResource[Task, VerifyingContainer.Tag], reused: ContainerResource[Task, RunningContainer.Tag]) =>
+      (fresh: ContainerResource[Task, VerifyingContainer.Tag], reused: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
         ZIO.scoped {
           for {
             files <- hostFiles
+            containers <- testContainers(reused, client)
             freshResult <- fresh.copy(config = fresh.config.copy(files = Seq(ContainerFile(files.missing, copiedFile)))).use(_ => ZIO.unit).either
-            reusedResult <- reused.copy(config = reused.config.copy(files = Seq(ContainerFile(files.missing, reusedFile)))).use(_ => ZIO.unit).either
+            reusedResult <- containers.configured(_.copy(files = Seq(ContainerFile(files.missing, reusedFile)))).use(_ => ZIO.unit).either
             _ <- ZIO.foreachDiscard(List(freshResult, reusedResult)) {
               result =>
                 assertIO(result.swap.exists {
@@ -170,36 +190,26 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
 
     "reuse only containers created with identical files" in {
       (resource: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
-        def withFile(path: Path): ContainerResource[Task, RunningContainer.Tag] = {
-          resource.copy(config = resource.config.copy(files = Seq(ContainerFile(path, reusedFile))))
+        ZIO.scoped {
+          for {
+            files <- hostFiles
+            containers <- testContainers(resource, client)
+            withFile = (path: Path) => containers.configured(_.copy(files = Seq(ContainerFile(path, reusedFile))))
+            ids <- withFile(files.first).use {
+              first =>
+                withFile(files.first).use {
+                  sameFiles =>
+                    withFile(files.second).use {
+                      otherFiles =>
+                        containers.configured(identity).use(noFiles => ZIO.succeed((first.id, sameFiles.id, otherFiles.id, noFiles.id)))
+                    }
+                }
+            }
+            (first, sameFiles, otherFiles, noFiles) = ids
+            _ <- assertIO(first == sameFiles)
+            _ <- assertIO(Set(first, otherFiles, noFiles).size == 3)
+          } yield ()
         }
-
-        val removeTestContainers = ZIO.attempt {
-          client.rawClient.listContainersCmd().withShowAll(true).withLabelFilter(testLabels.asJava).exec().asScala.foreach {
-            c => client.rawClient.removeContainerCmd(c.getId).withForce(true).exec()
-          }
-        }
-
-        ZIO
-          .scoped {
-            for {
-              files <- hostFiles
-              _ <- removeTestContainers
-              ids <- withFile(files.first).use {
-                first =>
-                  withFile(files.first).use {
-                    sameFiles =>
-                      withFile(files.second).use {
-                        otherFiles =>
-                          resource.use(noFiles => ZIO.succeed((first.id, sameFiles.id, otherFiles.id, noFiles.id)))
-                      }
-                  }
-              }
-              (first, sameFiles, otherFiles, noFiles) = ids
-              _ <- assertIO(first == sameFiles)
-              _ <- assertIO(Set(first, otherFiles, noFiles).size == 3)
-            } yield ()
-          }.ensuring(removeTestContainers.orDie)
     }
 
   }
