@@ -10690,3 +10690,131 @@ for the next local sub-step commit, subject
 `Verify exit-zero fork death without a completed SBT run`, parent
 `5d28753bc1e54eac72618c001adeb3e337d9e06b`. The postcommit record will verify
 exactly those three paths and unchanged qualified sources/publications; no push.
+
+### Counted fork-receipt boundary — 2026-10-04
+
+The preceding three-path diagnostic commit is
+`48cb0406de32000d8a52da0035f264afbcaae94e`, parent
+`5d28753bc1e54eac72618c001adeb3e337d9e06b`. Its postcommit record returns0,
+verifies exactly its guarded/current/committed paths, 1,669 unchanged qualified
+sources and 212 publication pairs, with a clean index/worktree at that point:
+`2d-exit-zero-postcommit-first.json` SHA256
+`8bb0b04958180fa16002838b351f4574a9f9fbc39103dbf3f45ddab2ce751262`.
+Precommit guard SHA256
+`dcca6b85613264f0d4f4043f7fffdcafe30add14c77932fcbab3ca1e90a25996`.
+
+A JVM-only protocol boundary now represents suite identity, seven distinct
+status counts and completed group count. Its filesystem adapter creates a fresh
+command directory, publishes complete versioned receipts with an atomic move,
+and exposes a read-only target view. Waiting rejects mismatching complete
+receipts and has explicit finite timeout/interruption behavior. Cleanup deletes
+only the owned command directory. No host plugin or bootstrap runner uses this
+boundary yet; it does not correct the previously reproduced fork defect.
+
+The same contract runs against a hand-written memory implementation and the
+real filesystem. `direnv exec . sh -c 'exec sbt --server -java-home "$JDK21"
+-batch -J-Xmx6G "$@"' fork-receipt-primitive 'project distage-test-protocolJVM'`
+then, for each pinned `3.8.4`, `2.13.18`, `2.12.21`, executes `++<version>` and
+`Test/runMain izumi.distage.testkit.protocol.ForkReceiptFixtures <new-owned-dir>`.
+Exact argv, cwd, frozen sources and raw log are retained in
+`2d-counted-fork-receipt-primitive-third`. Actual SBT process0/driver0,
+twelve success markers: both contract legs plus ownership/cleanup and malformed
+filesystem controls on each Scala lane. Checks cover absent/held delivery,
+exact counts rather than equal totals, empty selection, repeated group counts,
+timeout, interruption, closed reads, stale-generation isolation and malformed
+identity/negative counts. All three fixture directories are absent afterward.
+Terminal SHA256
+`bda386d6eacf8c063ac4ab4f9b8ebc5a241babd220ae17dd04e25231d77e8073`.
+First is the earlier Scala3-only contract. Second retains two passing lanes and
+actual1 on Scala2.12 because duplicate `val _` bindings do not compile there.
+Third uses the returned write path for the following operation and passes all
+three lanes; no earlier capture is overwritten.
+
+Root audit-second returns0, freezes seventy source/input/log/compiled records
+and checks current/frozen source equality, the twelve markers, all three shown
+main/test source lists and fixture cleanup. Its compiled receipt/fixture records
+number 27/18/18 on Scala3.8.4/2.13/2.12. Audit SHA256
+`52ffe1131c227a06e62bf932078995c8232711a371c4d43b3b8a9bf2fc589053`.
+Audit-first failed solely because its fixture class check duplicated the package
+path; its after-failure record is retained, with no runtime replay to correct it.
+Root rechecks the prior 1,669 qualified sources and 212 unchanged publication
+pairs, then adds the two new JVM source records in qualification-first.
+Complete runtime classpath qualification and new publication are not claimed.
+
+This prepares the counted receipt part of 2d.10/2d.22. Explicit fork-only runner
+arguments, actual selected target counts (including Task.execute exceptions),
+host-generation ownership, full failure/cleanup behavior and mixed/history
+controls remain open. No whole step, final gate, Native/JS runtime or push.
+
+The first bounded review verifies its seven original/copy records before source
+corrections, but identifies a malformed UTF-16 input-domain gap, retirement of
+earlier matching receipts while publication remains mutable, and absence of
+concurrent independently opened reader coverage. First review SHA256
+`2a1a00b52ecd0ac80512f7812b7c1476260f24e0a55e0a2ba38feab1bde056bc`;
+root verification `a2e4fb85632bee2055b1b00d0e0a1a5e42f25ead588c562b76728687b8325b7b`.
+
+Both suspected defects reproduce before implementation changes in
+`2d-counted-fork-receipt-regressions-first`: actual SBT process exit1 for each
+of two runMain commands. Unicode mode accepts a lone surrogate, then observes a
+filesystem identity rejection; replacement mode observes waiter success after
+the earlier matching receipt changed to a different status while another suite
+remained pending. Both fail their intended assertions. The outer driver also
+returns1 because its Unicode predicate omitted Scala require's
+`requirement failed:` prefix. Root directly verifies both raw failures before
+the fixes; before-fix verification returns0, SHA256
+`cebbebd1903ce4b25a1c40c587628e3842d62a2a6a5c38cb9a67d8f1eeaaf884`.
+No original failed capture is replaced or called passing acceptance.
+
+The constructor now rejects malformed UTF-16 rather than permitting lossy UTF-8
+conversion. Valid supplementary Unicode still round-trips. The awaiter rechecks
+the complete expected map on each pending sweep, detecting replacement of an
+earlier match. Contract fixtures now use an independently opened filesystem
+reader during held delivery. Fourth passes both corrected regression bodies on
+the real filesystem; fifth additionally runs the same regression bodies against
+the shared memory dummy and the independent filesystem view on all three pinned
+JVM Scala lanes. Fifth actual SBT0/driver0, eighteen success markers and six
+expected replacement rejections, terminal SHA256
+`7d1bd43d358fbbb1dc52ca6bfb91629838a440208eb4982bdb121b86fbe68b84`.
+Its exact commands/frozen inputs/raw log are under
+`2d-counted-fork-receipt-primitive-fifth`; all nine fixture directories are absent
+afterward. The original negative inputs now pass their intended contract.
+
+Root audit-third returns0 and freezes one hundred records, including both
+before-fix raw failures, current/frozen source equality and 33/23/23 compiled
+primitive/fixture records on Scala3.8.4/2.13/2.12. It checks the eighteen markers,
+six replacement rejections, all three shown main/test source lists, nine
+directory removals, 1,669 unchanged prior sources and 212 unchanged publication
+pairs. Audit SHA256
+`d448c53a60f31218ce0cd1c2fe5d8ab24c8d66bf56b64c510dee01e3d38c1728`.
+Qualification-second adds the three current JVM source files (1,672 total),
+SHA256 `769d8d7549c59065fdecc42470d56236e71835c4892e44c6c2468a9542f635a6`;
+its publication manifest remains
+`5babeb76d565d7e4f0cd01f892893826c3d8fdb8fba4200ac39e04e719b86b23`.
+Earlier qualification and closure captures retain their historical source bytes.
+
+Matching observations during this wait do not establish immutable terminal
+publication after return. Production integration must establish that lifecycle
+invariant. Independent reader concurrency is exercised within one JVM on the
+local filesystem; cross-process/platform behavior and full producer publication
+remain unverified. No host/Framework integration or final acceptance is claimed.
+
+The second bounded read-only review finds both reproduced defects corrected
+within the primitive scope. It reads the three current sources, fifth inputs/log/
+terminal, both negative logs/commands and the before-fix verification record.
+It retains the lack of immutable later publication or an atomic snapshot across
+suite files, cross-process/platform proof, and all production/parent/final gaps.
+Report SHA256
+`d0631dfea21a11898efe3ad67ffdd0a1a5547d5ed22363e670c04aa2140c1061`,
+schema1 manifest `4ea1d22578ad1fd9f6d7567234932c5ff4a4bdfad00b47f4a6114280901d583e`,
+inspection `c744e07cb3559436813eae6a01519165d7d8fea80c7d09730d42e6f1e9065407`.
+Root reads the report and verifies all fifteen supplied originals/copies
+(3 repository, 12 evidence), returning0; root verification-second SHA256
+`f47c57c27233843e8cb2fdf8cc7f2215d341cd1646bc0c31ffe5611ae5ffcddb`.
+The larger source/publication/compiled closure inventory retains root provenance.
+
+Only this ledger and the three JVM receipt implementation/fixture sources are
+eligible for the next local sub-step commit, subject
+`Add counted fork receipts with filesystem contract tests`, parent
+`48cb0406de32000d8a52da0035f264afbcaae94e`. Postcommit verification will check
+exactly those four paths and unchanged other qualified sources/publications;
+no push, whole step or final gate.
