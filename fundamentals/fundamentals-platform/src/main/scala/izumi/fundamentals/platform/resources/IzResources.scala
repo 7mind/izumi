@@ -1,6 +1,7 @@
 package izumi.fundamentals.platform.resources
 
 import izumi.fundamentals.platform.files.IzFiles
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, MaterializedResource, PathReference, RecursiveCopyOutput, ResourceLocation, UnloadablePathReference}
 import izumi.fundamentals.platform.resources.IzResourcesDirty.ContentIterator
 
@@ -13,6 +14,7 @@ import java.util.zip.ZipEntry
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
@@ -49,13 +51,25 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
       case LoadablePathReference(path, _) if path.getFileSystem == FileSystems.getDefault =>
         MaterializedResource.InPlace(path)
       case LoadablePathReference(path, _) if Files.isDirectory(path) =>
-        val target = Files.createTempDirectory(tempPrefix)
-        IzResources.copyTree(path, target)
-        MaterializedResource.Extracted(target)
+        extractInto(Files.createTempDirectory(tempPrefix))(IzResources.copyTree(path, _).discard())
       case LoadablePathReference(path, _) =>
-        val target = Files.createTempFile(tempPrefix, "-" + path.getFileName.toString)
-        Files.copy(path, target, StandardCopyOption.REPLACE_EXISTING)
-        MaterializedResource.Extracted(target)
+        extractInto(Files.createTempFile(tempPrefix, "-" + path.getFileName.toString))(Files.copy(path, _, StandardCopyOption.REPLACE_EXISTING).discard())
+    }
+  }
+
+  private def extractInto(target: Path)(copy: Path => Unit): MaterializedResource.Extracted = {
+    val extracted = MaterializedResource.Extracted(target)
+    try {
+      copy(target)
+      extracted
+    } catch {
+      case NonFatal(failure) =>
+        try {
+          extracted.close()
+        } catch {
+          case NonFatal(cleanup) => failure.addSuppressed(cleanup)
+        }
+        throw failure
     }
   }
 
@@ -216,6 +230,12 @@ object IzResources {
     }
     final case class Extracted(path: Path) extends MaterializedResource {
       override def close(): Unit = {
+        if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+          deleteTree()
+        }
+      }
+
+      private def deleteTree(): Unit = {
         Files.walkFileTree(
           path,
           new SimpleFileVisitor[Path]() {
