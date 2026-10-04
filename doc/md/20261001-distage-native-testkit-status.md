@@ -84,7 +84,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
-| 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below; complete mixed-framework domain and final evaluation remain open. |
+| 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions with exact body/SDK-output/XML identities and same-session repeats. Held foreign delivery, remaining mixed-framework domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error after body success; actual-host teardown/cache failure cases and final evaluation remain open. |
@@ -11322,3 +11322,86 @@ Exactly this ledger, fixture README and tested helper are eligible for local
 commit `Verify counted forks under held host delivery on both SDKs`, parent
 `26b6609ca5ef3b1c2a5d01c009ce36cc6bbd2518`. The guard verifies source/evidence/
 publication equality and exact paths before commit. No push or full gate claim.
+
+
+## 2026-10-04: normal mixed-framework forks and command repeat (2d.4/11/13/15/17/22, in progress)
+
+The preceding held-delivery checkpoint was committed locally as
+`83528df3c7fad79b28eef00dd9733f99e6d622d6`, parent
+`26b6609ca5ef3b1c2a5d01c009ce36cc6bbd2518`. Its postcommit record checks
+exactly three paths, 1,680 qualified inputs, 212 unchanged publication pairs
+and a clean index/worktree at that point. Record
+`2d-held-fork-local-commit-first/completion.json`, SHA256
+`7703e445fa09cee92d33be9798af98a87e62d4cf31dbf1fdd73645584822ae69`.
+No postcommit producer rebuild or full gate is attributed to that record.
+
+The new public CompletionAuditFramework forwards the production Runner/Tasks,
+records child done entry/completion, and preserves forwarded arguments. Public
+Tests.Execution metadata rebinds the existing distage argument owner to this
+control. The command's public TestResultLogger records/checks Tests.Output
+before invoking the inherited production result logger. The original foreign
+framework source, CREATE_NEW recording and execute-once guard are unchanged.
+Five DI suites share one real Lifecycle and execute fifteen bodies; the original
+foreign suite executes three bodies. Every command must reconcile eighteen
+physical identities, six three-success SDK results and eighteen positive XML
+cases. A repeat in the same SBT process must use fresh resources/directories,
+without settings reapplication. No fixture listener publishes acknowledgements.
+
+Frozen scratch driver `2d-mixed-fork-driver-first.py` requires explicit artifact,
+SDK/compiler lists and a new evidence directory. Commands select all six suites
+with testOnly, capture baseline and repeat, then show resolved test classpaths.
+`2d-mixed-fork-actual-first` covers SDK2/SDK1 at Scala3.9.0; both actual0 and
+driver0, terminal SHA256
+`83a74299aaaa5079d690ea7f3964a8a7784a930f681e9e3be55d00d2dc63f249`.
+`2d-mixed-fork-actual-second` covers both SDKs at Scala2.13.18 and Scala2.12.21;
+all four actual0 and driver0, terminal SHA256
+`594b3edced21dc709afb25ac0001ba85210facb715e5eaf684fdb8c8ad85503c`.
+These six combinations reconcile 216 bodies, 216 SDK-output/XML cases,
+180 DI bodies, 36 foreign bodies, twelve paired resources and twelve distinct
+cleaned receipt directories.
+
+The permanent helper differs only by shebang and relative ROOT. It imports the
+frozen held helper's SOURCE and changes only its class/control name. Its replay:
+
+`python3 -B test-fixtures/host-sharing-consumer/verify-mixed-forks.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0
+--scala-version 3.9.0
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-mixed-fork-permanent-first`.
+
+Both actual processes0/driver0, terminal SHA256
+`39b3a26f685743c15ae13ccc262bf3ca94251aa649baab0d43c62aed67845de9`.
+These two replays are additional helper executions, not new SDK/Scala combinations.
+
+Independent root audit-first returns0 across all eight lanes: 288 physical
+bodies, 288 exact SDK-output/XML cases, 240 DI bodies and 48 foreign bodies,
+sixteen paired lifetimes and cleaned receipt directories. It checks all generated
+inputs, unchanged original foreign source, forwarding completion, parent/child
+separation, exact reports and logged/resolved test/meta classpaths. Target test
+classpaths contain no ScalaTest/Scalactic; all 212 publication pairs retain their
+qualified bytes. It freezes 873 records and 212 external JARs.
+`2d-mixed-fork-root-audit-first/audit.json` SHA256
+`eb35e5e5b8b6ac9b5b74d946d19d8ba606395dad6a5704881d7e5e7eaa2638ce`.
+
+The bounded read-only review directly reconciles the six actual combinations,
+twelve commands and 216 identities, finding no material blocker. Permanent replay
+and broad classpath/publication inventory retain root provenance. Report SHA256
+`9b6a99cf9d2413478f4a6c89d0144e8b8ff937dd6f9947e8d3a1ff622becdc80`,
+schema1 manifest `d6cbf0425772f6cb5b35f594249fda064d8b7dbdb19d436843879619cf8ea9f9`,
+inspection `c258a7fc975076b45b29fa9269dae81f2ea3b128422463714d824bb983ed18cf`.
+Root reads the complete report and verifies all 476 original/copy hash-size
+records, returning0. `2d-mixed-fork-review-root-first.json` SHA256
+`e7d0aa61a1c1606f82467e21d8049535e0ada0f1035d07ff4c8ffc591fc408ee`.
+Final source qualification adds the tested mixed helper/README to the prior
+inputs: 1,681 total, no production compiler-input changes.
+`2d-mixed-fork-final-inputs-first/qualified-sources.json` SHA256
+`66a580aab3d12d196affa5fab02bc35074e8613422fcd855c8727a60d323a28a`;
+helper SHA256 `42c6e420376d9a7939386dd84aebfae2d6d49ac88bcad2ce4635edf62d93ad20`.
+
+This establishes coexistence in the measured normal-success domain, not all
+framework orders, held foreign delivery, complete logger drain, non-success
+fidelity, comprehensive cache history, cancellation, cleanup faults or any
+parent/final gate. Actual SDK2 task-exception structured reporting stays open.
+Exactly this ledger, fixture README and tested helper are eligible for local
+commit `Verify normal mixed-framework forks on both SDKs`, parent
+`83528df3c7fad79b28eef00dd9733f99e6d622d6`. No dependency upgrade,
+production correction, private SDK replacement, goal completion or push is claimed.

@@ -87,3 +87,25 @@ changes only completion instrumentation and public framework argument routing;
 production execution and receipt waiting remain delegated. This control does
 not establish a complete SDK logger drain, task-exception reporting, mixed
 frameworks, history, cancellation, cleanup faults or final runner acceptance.
+
+`verify-mixed-forks.py` executes five DI suites together with the unchanged
+foreign control framework. Each command must execute eighteen distinct bodies
+and return the same six suites and eighteen successes through SBT's public
+`Tests.Output` and JUnit XML. The foreign bodies retain their plain resource
+marker, and the DI bodies share one recorded Lifecycle. A repeat in the same
+SBT process must use a fresh DI resource and cleaned command receipt directory.
+
+```sh
+python3 -B test-fixtures/host-sharing-consumer/verify-mixed-forks.py \
+  --artifact-version 1.3.0-SNAPSHOT \
+  --sbt-version 2.0.9 1.13.0 \
+  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/mixed-forks-example
+```
+
+The helper reuses the held fixture's public completion instrumentation while
+forwarding production tasks without a delivery gate. It preserves the foreign
+framework's source and registration. A public result logger records and checks
+the SDK output before invoking the inherited logger. This bounded normal
+mixed-framework control does not establish held foreign delivery, a complete
+logger drain, all framework orders, cache history, failures or cancellation.
