@@ -68,7 +68,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.5 | in progress | Application revalidates stale build/target/catalogue and explicit empty selection in all nine producer and audited published-consumer lanes below; CLI/saved clients and final evaluation remain open. |
 | 2c.6 | in progress | Structured ID collision and repeated application identity controls pass all nine producer and audited published-consumer lanes below; complete clients and final evaluation remain open. |
 | 2c.7 | in progress | Actual application axis override/filter precedence, memoization overrides and within-graph resource sharing pass all nine producer and audited published-consumer lanes below; full application/host and final evaluation remain open. |
-| 2c.8 | in progress | Application and finite launcher retain model-provider inspection failures below; prospective real ConfigLoader/module-provider controls pass eighteen public-boundary checks on one published JVM lane. Root installation, all-nine proofs, clients and final evaluation stay open. |
+| 2c.8 | in progress | Real ConfigLoader/module-provider application controls now pass eighteen public-boundary checks on all nine producer and audited published-consumer lanes below, with Planning diagnostics and reconciled failed outcomes. Full clients and final evaluation remain open. |
 | 2c.9 | in progress | Schema-4 protocol: 186 checks per producer lane; typed/framed application and real JVM file contracts pass audited published consumers below. Standalone/host transports and final evaluation remain open. |
 | 2d.1 | not started | No evaluation point passed yet. |
 | 2d.2 | not started | No evaluation point passed yet. |
@@ -9307,3 +9307,49 @@ The separate planning preparatory report is root-read/hash-verified:2c-applicati
 Bounded launcher completion addendum is root-read and hash-verified:2c-launcher-completion-readonly-review-first/COMPLETION-ADDENDUM.md SHA256ffdd0fd29aea47b7f3794b558f9e66df87fe6b0416982c3ce69cd262d4046702; INPUT-MANIFEST.json SHA2566a2af6598b4b4e4210f8347b0edb21dcbda05b5e69fb158b3165d55c18684b33; inspection.json SHA256cc8492dc2d8ebb2e467f4471b4806c936171531400b5f6ce3225debcb9bab01e. Root independently rechecks7472 manifest rows/4116 unique preserved copies by size/hash, reads the complete addendum and structured inspection, and confirms no direct check failures. Reviewer independently checks current/frozen210 JAR/POM pairs and75,777 frozen member identities,9 resolved/logged/update closures,23 source/copy adaptations,2692 consumer binaries and30 actual child outcome/frame captures. D1 is resolved; historical child-runtime replica byte equality remains unverified and is not claimed. Reviewed ledgeraf656b324e1906b9e88daaf059d6e689c6721a7c039e4f430fd52282ce146e60 precedes this completion entry.
 
 2026-10-04 bounded finite-launcher local commit containing this entry is above foundation predecessorf4fc3084f675d30fc7635dffa5bddb989d866eaf, with current all-nine producer/published consumers and explicit ten-case JVM CLI outcomes per compiler. No push, parent-step completion or final evaluation is claimed. Next work installs only the prepared public-DI planning failure fixtures and runs their corrected18 positive controls across all9 root lanes; unchanged production/build bytes permit explicit reuse of the newly prefrozen210 publication closure for new test-only consumers. Work continues.
+
+Bounded finite-launcher commit observed:a0806780bb101b755dbdfa8a1bc382877a6b100f. Post-commit git status --short is empty; all1634 committed non-ledger inputs retain tested production/fixture bytes, with exactly the separately reviewed NonFatal documentation qualification. No push.
+
+Next18-check planning slice is installed through2c-application-planning-installation-first.py:four test-only files match root-drafts-second byte-for-byte, plus one call in DistageProviderFixtures; installation provenance2c-application-planning-installation-first.json. Shared public SpecIdentity fixture exercises actual ConfigLoader.loadConfig and BootstrapFactory.makeModuleProvider failures through Discover/Resolve/Plan/Execute; counters and terminal oracles retain the measured limits from its preparatory review. Expected higher producer counts639JVM/516JS+Native; no production/build delta. Command:python3 /srv/nvme/tmp/izumi-impl/2c-application-planning-nine-lane-first.py, with1638 source inputs expected, strict Scala3 unused checks and four Native clean tasks per compiler. Root source freezes until this new matrix and guarded test-only published consumers finish. No new root runtime or final2c.8 result yet.
+
+Planning producer first Scala3 process completes0 with stable inputs, no strict diagnostics, protocol186 each, base802 each, core143/103/118, higher639/516/516, file59 and ten actual CLI cases. Both real planning-failure stages and all18 positive controls now pass on JVM/JS/Native at the Scala3 checkpoint; protocol still uses3.8.4. Scala2.13 also completes0 with the same18 controls on allthree platforms, stable inputs and no diagnostic failures (six current lanes passed); Scala2.12 is running. No all-nine/published/final2c.8 claim is made. Live producer capture:2c-application-planning-nine-lane-first/.
+
+Continuation audit: the preceding goal turn made authoritative progress by committing the verified finite launcher and installing/executing new real planning-failure controls. Re-poll of the same live producer handle now returns terminal exit0; no restart. Full new producer matrix is complete:all3 process exits0, stable1638 inputs, higher639JVM/516JS+Native per compiler, original protocol/base/core/file/CLI markers and strict diagnostics retained. Current18 configuration-loader/module-provider controls pass all9 source lanes. Command now running:python3 /srv/nvme/tmp/izumi-impl/2c-application-planning-published-consumers-first.py. Explicitly reuses prior prefrozen210 binary/POM pairs after source/build byte equality because this addition is test-only; new consumers/published audit remain pending.
+
+Updated environment skill is read because SMIND_SANDBOXED=1. Direct /proc/self/mountinfo observation confirms the project, .cache, .ivy2 and /srv/nvme/tmp are explicit rw binds. These verification/test-cache/scratch actions access granted paths directly; no host escape or exchange-script approval is needed.
+
+Planning fixture published consumers complete:all3 actual SBT process exits0/driver0, eighteen positive public-DI controls on eachJVM/JS/Native lane, explicit acquired/released/body zero and config-read/module-provider phase counts, Planning diagnostic retention and selected-ID/result/event reconciliation. Both compiler-specific helpers and owned platform contexts execute, with no strict callback/classloading/unhandled-thread diagnostics. Root classpath audit exits0:1638 frozen inputs,12 consumer copy records,9 actual Compile/update/logged equalities,458 unique external JARs,547 own compiled consumer namespace entries; exactly24JVM/23JS+Native current own artifacts per compiler, all equal to unchanged prior prefrozen210 JAR/POM hashes. Prior publication source/build byte comparison is explicit: no new production/build input changed, and no republishing or fresh current compiled-directory equality is asserted for this test-only addition. Commands:python3 /srv/nvme/tmp/izumi-impl/2c-application-planning-published-consumers-first.py and python3 /srv/nvme/tmp/izumi-impl/2c-application-planning-published-consumers-root-audit-first.py. Driver hashes:2c-application-planning-driver-provenance-first.json.
+
+Bounded planning completion reviewer is running; no parent/final item is closed. Root non-ledger inputs remain frozen through review/commit, while independent SBT target-bootstrap host controls are prepared outside checkout.
+
+### Public DI planning failures: verified test-only checkpoint — 2026-10-04
+
+The bounded completion review is now root-read and independently hash-verified.
+Directory: `/srv/nvme/tmp/izumi-impl/2c-application-planning-completion-readonly-review-first/`.
+`COMPLETION-REVIEW.md` SHA-256
+`cf151e26e17af82e3e92136bc835df9e1a2395bf50bd42f0ff92390747eaebc0`;
+`INPUT-MANIFEST.json` SHA-256
+`3be50419b494408f8b2a188f26fcbf41695c5588c01e942efc6eafddb0fc7599`;
+`inspection.json` SHA-256
+`fafd1de3f1c747d0b83327af1026a2e1390369e80137e0fd2be0ac73ea7d1648`.
+Root checks all 5,188 manifest rows and 2,632 unique preserved copies by size
+and SHA-256, reads the complete report, and confirms the structured inspection
+has exit 0 and no failed predicates. All 1,638 current non-ledger inputs equal
+their tested freezes. Direct verification record:
+`2c-application-planning-root-completion-verification-first.json`.
+
+The review supports 18 actual public-DI controls on each of nine producer and
+nine published-consumer lanes, including retained configuration-loader and
+module-provider planning failures and exact failed result/event reconciliation.
+The reused 210 binary/POM pairs remain applicable because this commit adds only
+four test files and one orchestration call; production/build/public-document
+bytes are unchanged. No fresh publication or compiled-directory comparison is
+claimed. Physical parser behavior, all default bootstrap hooks, arbitrary
+custom extensions and in-process SDK shutdown remain outside this proof.
+
+The local commit containing this entry is above
+`a0806780bb101b755dbdfa8a1bc382877a6b100f`. Item 2c.8, parent steps, host/client
+requirements and final evaluation points remain open. No push. The next
+independent work measures actual SBT target-only bootstrap behavior with plain
+and DI suites, exact body/report sets and physical memoized resource lifetimes
+before deciding whether a host framework substitution is necessary.
