@@ -87,7 +87,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions. Foreign bodies execute exactly once in both measured held registration orders, while SDK2 omits their Output in the own-first order. Complete mixed delivery/result domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. A current published SBT2/Scala3.9 actual host cleanup failure is rejected, but five stock suite-success cache entries are reproduced after that failed command; conservative same-session recovery executes. Public cache-store probes pass the bounded three-Scala SDK2 copied-source matrix; production integration, complete teardown/failure domain and final evaluation remain open. |
+| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission now prevents owned stock success publication in three-Scala published consumers:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. SDK1, tracked closure, complete teardown/failure domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
@@ -12439,3 +12439,277 @@ A separate exact-delta qualification records this sole provenance replacement.
 Only this ledger is eligible for local evidence checkpoint
 `Record public SDK2 cache-store probes` at parent
 `b06f15ee35403f37858a03615c652e6e5c5c505a`. No push.
+
+## 2026-10-04: retain a controlled cache-publication failure, in progress
+
+Local ledger checkpoint df99ee8a8a98fd6f4670c328c7e51f8a61deb0fa records the
+preceding bounded cache-store probes. Its guard SHA256
+`1cd697e5f113398b9e2c5a3d0b9a09f78a46d3f2a78df2786a1a2c48f089b2c0`,
+completion `a6368e7f7f364d58f697a35da61196071c478863fb2f9b72a8046dcb0ee02bdf`.
+Production source remains 3d0146e36 and current publication remains
+`f5b35712b88e28a743138c9efd31344ac3c7a66d8df223b5ff3e114316262494`.
+No production cache-store adapter or cache-failure correction is integrated.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-cache-publication-fault-repro-driver-first.py`
+creates a fresh isolated SDK2.0.9/Scala3.9 copied-source host fixture. Its public
+ActionCacheStore adapter throws a controlled IOException before delegated blob
+publication for each of five owned suite status writes. Normal receipt cleanup
+and all fifteen physical bodies finish, but the public testSelected task returns
+Value(Passed). The outer assertion fails with
+`OWNED_CACHE_PUBLICATION_FALSE_SUCCESS: Value(Passed)`: actual SBT exit1.
+This reproduces cache-error swallowing rather than the earlier cleanup fault.
+
+The first diagnostic driver also returns1 because it looks for XML directly
+under build/target/test-reports. Its completion records fifteen bodies and zero
+located XML, with a validation failure; SHA256
+`4d5827e3dac264ff7b1ba3604a5a25eb0e5390a9e6faed78887696d59d830f54`.
+It is not a successful diagnostic. Its scope phrase "actual SBT1" refers to
+exit1; the argv and welcome identify SDK2.0.9, not SDK1.
+
+A fresh read-only root audit derives the report directory from the recorded
+receipt directory and checks it against logged Test/target. The actual SDK2
+reports are under build/target/out/jvm/scala-3.9.0/cleanupconsumer/test-reports.
+Without target replay or executed-evidence edits, it verifies five positive XML
+reports containing the exact fifteen cases, one paired DI resource/observed
+child PID, removed owned receipt directory, five controlled cache faults and
+the recorded public Value(Passed). Root diagnostic0, original actual1/driver1;
+94 preserved records. Audit SHA256
+`701a806dcf6459102c0fe28c7683a261e485efcee83e58d05a012a150e55f625`.
+This negative audit does not inventory the Test dependency JARs.
+
+The first positive-driver generator inserts raw newlines inside a serialized
+Python string. Both compilation and attempted execution fail with SyntaxError
+before any build/output directory exists. The unchanged failed driver and
+`2d-sdk2-cache-publication-fault-positive-first-generator-failure.json` remain
+preserved; no runtime check is attributed to them.
+
+The fresh second driver passes actual0/driver0. Its copied HostReceipt records
+a typed first HostPublicationFailure containing the original cause and origin.
+Both fork-publication and cache-publication recording use that first slot. The
+input argument hook registers a callback capturing the current generation's
+receipt. On a controlled cache put failure, the public store adapter records the
+cause and rethrows; later task verification rejects it even when the SDK ignores
+the listener failure. The public testSelected task returns Inc with
+`Incomplete distage success-cache publication: CONTROLLED_OWNED_CACHE_BLOB_FAILURE`.
+The outer fixture checks that rejection and returns0. Fifteen exact bodies and
+positive XML cases, one paired DI lifetime/removed receipt directory; completion
+SHA256 `9c38d8f5509873c17e2f28a10962539164b972df8539f2c5b566137d39aaf89b`.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-cache-publication-fault-positive-driver-third.py`
+adds full execution registration inside the copied host settings and runs full
+and input fault commands in the same parent process. Both public tasks reject
+the original cache cause after five controlled faults each. The full command
+includes three foreign bodies; total33 bodies/positive XML cases, two distinct
+paired DI resources/observed child PIDs and removed receipt directories.
+Actual0/driver0, completion SHA256
+`1a6a82f0c1feea16f475c566b826d4b5bed02debc88c9a13e90b85a8ad3b03e7`.
+Fifteen copied HostReceiptTest checks include both cache-first and fork-first
+failure ordering, original Throwable identity, origin and closed-receipt
+rejection. The repository HostReceiptTest still has fourteen checks; the added
+check and correction are confined to the relocated source fixture.
+
+Independent root positive audit returns0: 179 preserved records and 103 bound
+JARs across update configurations, with owned JARs matched against the current212-pair
+publication. It reconciles the two positive captures:48 exact body/XML cases,
+three distinct paired DI resources/observed child PIDs, two parent processes,
+three removed receipt directories and fifteen host contracts. SHA256
+`27d082f90770ca94c99f7d0f5b3009cedd1e6efa9f4e0a06fa72cef70e4c2123`.
+The checker was executed from stdin; its result and preserved inputs are
+archived, not a separately frozen checker program. Boot paths are excluded
+before inspection. No full runtime replica is inferred.
+
+These are controlled copied-source SDK2/Scala3.9 probes, not current
+published-host consumers or production corrections. The prototype registry
+keeps action-key callback closures across commands; scoped release and healthy
+recovery are being checked separately. SDK1, all-Scala cache-fault behavior,
+arbitrary argument/configuration ownership, multi-store faults, preexisting
+history, tracked closure, global acknowledgement, cancellation/drain and every
+final gate remain open. No acceptance item is narrowed, waived or marked done.
+
+## 2026-10-04: task-scoped SDK2 success digests, in progress
+
+The callback adapter's retention hypothesis is reproduced before any release
+correction. Command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-cache-registration-retention-repro-driver-first.py`
+adds only registration-count instrumentation to the copied-source adapter and
+checks it after the existing full cache-publication fault and normal fork
+cleanup. The public full task rejects the original cache IOException, but five
+action registrations containing receipt callbacks remain. The final assertion
+fails with `RETAINED_OWNED_CACHE_REGISTRATIONS count=5`: actual1/diagnostic0,
+eighteen exact body/XML cases, one paired DI lifetime/removed receipt directory,
+five controlled faults and fifteen host contracts. Completion SHA256
+`aaab07cee415f5a469f145e6a1e286e7ae78ac424bd472c983b4db2e1863c8bf`.
+This establishes retention in the scratch adapter, not production. No release
+implementation or claim of bounded registry lifetime follows from this check.
+
+Pinned SDK2 sources show a simpler public seam. Its stock TestStatusReporter
+looks up each completed suite in its configured definedTestDigests map; an
+absent suite has no status-cache publication. Incremental selection likewise
+treats an absent digest as lacking a successful result. The digest key is
+public. These observations use the preserved v2.0.9 Defaults.scala,
+internal/IncrementalTest.scala and public Keys.scala as source evidence, not
+private SDK classes as APIs. No listener is replaced or wrapped.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-task-scoped-digest-omission-driver-first.py`
+uses the existing published host plugin with fixture-only public settings.
+The three Test/test, Test/testSelected and Test/testQuick scoped digest maps
+omit the five known fixture-owned names and retain the foreign suite. The
+unscoped map retains six distinct stock digests for independent history checks.
+No host source or meta cache adapter is copied and no cache-store hook remains.
+This first binding reads the unscoped map; inherited task-specific customization
+is checked separately below.
+
+Actual0/driver0. The real input cleanup fault is rejected; owned empty/explicit
+argument history remains empty after that failure, mixed full recovery and
+incremental repeat. Foreign empty/explicit success keys remain distinct and
+present; the repeated foreign key is zero-body/zero-XML. Fifty-four exact body
+and XML cases, three paired fresh DI resources/observed child PIDs, one parent
+and five recorded removed receipt directories. Independent root audit0 has
+141 preserved records, 103 bound JARs across update configurations and 24 matched
+owned published JARs. SHA256
+`89102e46e289b41150a73bdc5b76c0a88128b2d568684fd64e977db69ac84c70`.
+This is a published-host consumer with fixture binding, not production binding.
+
+The second driver takes required `--scala-version` values3.9.0,2.13.18,2.12.21,
+creates three fresh builds and filters each previous task-scoped map rather
+than replacing it from the unscoped map. It adds a full-command cleanup fault
+before the input-command fault. Both faults preserve their original public
+task rejection and leave no owned success entries. Each fixture obstruction
+is explicitly repaired before checking owned flat-directory cleanup. The same
+parent then performs mixed full recovery and incremental repeat without
+settings reapplication. Foreign history/no-op controls remain unchanged.
+
+Command for each lane:
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-task-scoped-digest-omission-driver-second.py
+--scala-version <version>`. All three actual SBT processes exit0. Each capture
+contains72 exact body/XML cases, four distinct paired DI resources/observed
+child PIDs and six recorded removed receipt directories. The original drivers
+return1 solely because their substring count for HOST_CLEANUP_TASK_REJECTED
+also matches FULL_HOST_CLEANUP_TASK_REJECTED. Original completion hashes:
+Scala3 `1eedea504f9fccf78e09fc5bc76cfadcb2ce2237397109579857d148a2439c95`,
+Scala2.13 `755dddbc70b2ec0acfd2b91c492e3467c8eb78d0d0c84086d4f58b95e9bbbaec`,
+Scala2.12 `fe147e842c06f0bbf0e9e72c1ac23c4f6643e45be9558f134d505db6b478444a`.
+These are not successful diagnostic drivers.
+
+A fresh read-only third auditor uses anchored distinct full/input markers,
+requires the exact retained original diagnostic failure and independently
+reconciles cases, history, resource/process/directory identities and source/JAR
+inventories without replaying targets or editing executed evidence. Its earlier
+second-auditor file is written but unexecuted and establishes no check. Corrected
+root audits each return0 with175 preserved records and24 owned published JARs:
+Scala3/103 total update-configuration JARs,
+`54012d8f906864bf92d5d78b1a57a8e36e3b88ed2f246f212558a06bc0ca3825`;
+Scala2.13/57 update-configuration JARs,
+`7c6f902c27616d10bc74be9aeee8e13d430795718475b85d49b5409455eeab22`;
+Scala2.12/56 update-configuration JARs,
+`acc594eed86fcb8a9013c3b126b21459d2f1e385c77ebc0bf4b242d7b38585b5`.
+The three-lane total is216 bodies/XML, twelve paired DI lifetimes and eighteen
+recorded removed directories. Cross-lane identity reconciliation is pending;
+foreign child identities are unobserved. Boot paths are excluded before reads;
+no full runtime replica or meta artifact closure is claimed.
+
+Production SDK2 HostSettings now has a twelve-line addition:
+three scoped digest settings plus a shared classifier using actual distage
+fingerprints and an observable untracked-input-closure omission decision.
+Each setting preserves its previous scoped digest map. The stock status
+listener and foreign digest entries remain in place. The log records a digest
+map policy decision during task evaluation, not an observed attempted cache
+put. Root compile, fourteen host contracts and local SDK2 plugin publication
+finish actual0. Source SHA256
+`eeafc65554cbbf4405e424a32f33ea32263976dc79f651fbb6aec6f6cef0da49`.
+No callback-adapter source or registry is introduced into production.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-task-scoped-digest-omission-publish-driver-first.py`
+uses the root pinned SDK2/Scala3.8.4 plugin compiler, runs HostReceiptTest before
+publishLocal, records actual SBT0, and verifies1,685 original/frozen source
+inputs. Its subsequent artifact predicate mistakenly expects module suffix
+_3_2.0; the actual published module is sbt-distage-testkit_sbt2_3. The writer
+therefore exits1 after publication, without a completion/publication manifest.
+Its unchanged driver/capture are retained; it is not a successful writer.
+
+Fresh read-only root qualification independently verifies actual0, all fourteen
+host checks, removed contract parent, all1,685 source pairs and all212 physical/
+frozen Jar/Pom pairs. Exactly one SDK2 plugin pair changes;211 retain prior
+qualification. Member deltas are confined to HostSettings classes/tasty and
+manifest; no fixture classes leak. It writes a new publication manifest without
+republishing or editing the executed writer. New SDK2 plugin JAR SHA256
+`a1c31d6c9dfeadc943d160edd5fc1c50958ec5b2be609212ee6d0831131d7a04`;
+current publication manifest
+`9034f125e043106c3e48e4ef983fe065e691eca51dfb372dc99fdcccd43005e7`,
+qualified sources
+`20e5c6fc96e456b875ce9928e56bf0a167f96cf2d5538b594f49bb7f4246ca68`,
+root audit `7effc1088acd292f6646f0a0fbb176414ef5c5191258eec151f9bccfc2898118`.
+Older copied-source audits retain their pre-integration HostSettings snapshot;
+their original file is intentionally changed now and is historical evidence,
+not a final-HEAD check.
+
+Current production published consumers use command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-task-scoped-digest-omission-published-consumer-driver-first.py
+--scala-version <3.9.0|2.13.18|2.12.21>`. All actual processes and diagnostic
+drivers return0. These fresh fixtures remove the digest setting overrides;
+they retain only read-only scope diagnostics. No host source/meta adapter is
+copied. The production fingerprint classifier omits precisely the five owned
+suite digests in full/selected/quick task scopes; the unscoped map stays six
+distinct digests and the foreign value remains unchanged. Their commands.json
+scope retains an inherited "fixture-only" phrase despite later saying no
+fixture override. Generated sources, completion and root audit establish the
+production binding; the contradictory metadata wording is retained and qualified.
+
+Each lane verifies real full and input cleanup task rejections, no owned stock
+success under empty/explicit argument keys after faults and healthy commands,
+explicit fixture repair, same-parent mixed full recovery and incremental
+repeat, foreign two-key history and its cached zero-body/zero-XML no-op.
+Seventy-two exact body/XML cases and four paired fresh DI lifetimes per lane.
+Completion hashes:
+Scala3 `58f1e760358d73db70660e0c8a486c18b8769b165b4d575e403c50f032993619`,
+Scala2.13 `16cb3ad4df2d54ee69b9c3faf4b73e9435056d9dc18bf6c66e814868a219c99f`,
+Scala2.12 `f01845b0dd64c133f3a25885560b4a20f482bd2ddb18a4e11583d40745527b34`.
+
+Independent consumer root audits each return0 with182 preserved records,
+24 owned Test JARs matched to the new publication, and the new plugin physical/
+frozen Jar/Pom and qualified HostSettings source bytes preserved:
+Scala3/103 update-configuration JARs,
+`8f020c735de4daa5a2c0036db625e03c9fe041e92d8c03592b2c16f253626809`;
+Scala2.13/57 update-configuration JARs,
+`2f3e2916ae9ea6e99edfb2c1dee7fa927ea7afe9023164279990c648f3765b86`;
+Scala2.12/56 update-configuration JARs,
+`5492d99336a170ceec45ec0a58df7b17d8169c8375cf9a402da70c05389fc085`.
+Boot is excluded before inspection; no complete meta/runtime replica is claimed.
+Cross-lane root reconciliation verifies216 bodies/XML, twelve distinct paired
+DI resources/observed child PIDs, three parent processes and eighteen distinct
+recorded removed receipt directories. Foreign child identities remain
+unobserved. Aggregate SHA256
+`a41e0cf117c745f46365864274ebb9c2a5fe0bb43cacdf5fa05c505a9aef9ada`.
+The larger103/57/56 inventories span every update configuration, including
+compiler/documentation tools; original audit scopes and earlier inventory
+labels saying Test-only are qualified by this distinction. A separate root
+check derives the actual Test configuration and compares it to the logged
+dependency/full external classpaths:49 distinct JARs on Scala3 and51 on each
+Scala2 lane, with24 owned Test JARs each. Those exact sets equal the preserved
+Test update reports and are subsets of the larger bound inventories. No boot
+path is accessed. Test-closure qualification SHA256
+`c6bcef38f38afaad0009f9de047b6ef4e12a84888fc697c9dbb63ce79e680ee6`.
+Root rehashes all1,685 source pairs, all212 publication pairs and every current
+consumer record/JAR before review; pre-review qualification SHA256
+`9e44bb0caf8ed5653cf7b2570702911112db031f2accc28cf9cb5e2b0e331378`.
+This twelve-line SDK2 source correction and ledger are eligible for local
+checkpoint commit following bounded review. Report SHA256
+`34d4b32782f4b599d83b01a74353ee413e0a81d6a0617dc39ad0042390b5ccdf`,
+schema1 manifest `88aaafddc90e9af5f69bf9d26d2b796818c412823e19e1784de9385ba6ef11e8`,
+inspection `599f28d7741d6dc280c0ca6eb0e348f7c568daa4a89c1cc2cad018060b41b2e5`.
+Direct review preserves four current repository/555 evidence inputs plus one
+historical ledger input and passes1,160 checks. Root reads the complete report
+and reconciles all559 current original/copy pairs, the historical ledger copy
+against its recorded old hash/current final hash, and thirteen review artifacts.
+Reviewer schema/predicate failures remain preserved and qualified; the two
+inventory/scope wording findings are resolved in the reviewed candidate.
+Full1,685-source/212-pair inventories retain root provenance. Only the final
+review provenance is added after the reviewed ledger; an exact-delta guard
+qualifies this stamp. Local checkpoint: `Skip SDK2 stock history for untracked
+distage suites`, parent df99ee8a8a98fd6f4670c328c7e51f8a61deb0fa. No push.
+
+This conservative policy omits unjustified owned stock history; it does not
+establish tracked-closure success caching, remove preexisting entries or solve
+SDK1 status publication. General configuration/argument and multiproject
+ownership, global acknowledgement, full teardown/cancellation/drain and all
+final gates remain open. No acceptance item is narrowed, waived or done.

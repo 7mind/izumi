@@ -5,6 +5,7 @@ import izumi.distage.sbt.DistageTestkitPlugin.autoImport.*
 import sbt.*
 import sbt.Keys.*
 import sbt.complete.DefaultParsers.spaceDelimited
+import sbt.util.{Digest, Logger}
 
 private[sbt] object HostSettings {
   def settings: Seq[Def.Setting[?]] = Seq(
@@ -16,6 +17,9 @@ private[sbt] object HostSettings {
     testSelected / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
     testQuick / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
     executeTests / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
+    testSelected / definedTestDigests := Def.uncached { cacheableDigests((testSelected / definedTestDigests).value, definedTests.value, streams.value.log) },
+    testQuick / definedTestDigests := Def.uncached { cacheableDigests((testQuick / definedTestDigests).value, definedTests.value, streams.value.log) },
+    test / definedTestDigests := Def.uncached { cacheableDigests((test / definedTestDigests).value, definedTests.value, streams.value.log) },
     testSelected / testFilter := Def.uncached { new HostSelectionObserver((testSelected / testFilter).value, HostReceiptPolicy.names(definedTests.value), (testSelected / HostReceiptPolicy.owner).value) },
     testQuick / testFilter := Def.uncached {
       val filter = DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testSelected / testFilter).value, streams.value.log)
@@ -49,4 +53,12 @@ private[sbt] object HostSettings {
       }
     },
   )
+
+  private def cacheableDigests(inherited: Map[String, Digest], definitions: Seq[TestDefinition], log: Logger): Map[String, Digest] = {
+    val owned = HostReceiptPolicy.names(definitions).map(_.value)
+    inherited.keys.filter(owned.contains).toVector.sorted.foreach { name =>
+      log.info("DISTAGE_CACHE_PUBLICATION suite=" + name + " decision=omit reason=untracked-input-closure")
+    }
+    inherited.filterNot { case (name, _) => owned.contains(name) }
+  }
 }
