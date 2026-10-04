@@ -1,7 +1,7 @@
 package izumi.distage.docker.bundled
 
 import distage.{Functoid, Id, Lifecycle, ModuleDef, TagK}
-import izumi.distage.docker.model.Docker.{DockerPort, DockerReusePolicy, Mount}
+import izumi.distage.docker.model.Docker.{ContainerFile, DockerPort, DockerReusePolicy}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
 import izumi.fundamentals.platform.functional.Identity
@@ -75,7 +75,7 @@ object PostgresFlyWayDocker extends ContainerDef {
         "baseline",
         "migrate",
       ),
-      mounts = Seq(Mount(migrations.directory.path.toString, "/flyway/sql")),
+      files = Seq(ContainerFile(migrations.directory.path, "/flyway/sql")),
     )
 
     override def config: Config = Config(
@@ -94,11 +94,11 @@ object PostgresFlyWayDocker extends ContainerDef {
 }
 
 /**
-  * By default [[PostgresFlyWayDocker]] will mount the `resources/sql` directory in the target docker.
+  * By default [[PostgresFlyWayDocker]] will copy the `resources/sql` directory into the target docker.
   * When `resources` is packaged inside a JAR, the `sql` directory is extracted into a temporary
-  * directory for the lifetime of the FlyWay container, which is then mounted instead.
+  * directory for the lifetime of the FlyWay container, which is then copied instead.
   *
-  * To mount a different directory, set `flyWaySqlPath` in the `cfg` parameter
+  * To copy a different directory, set `flyWaySqlPath` in the `cfg` parameter
   *
   * @param cfg Config with flyway migrations path
   */
