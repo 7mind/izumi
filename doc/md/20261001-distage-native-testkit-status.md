@@ -11867,3 +11867,99 @@ open. No acceptance item is narrowed or waived, whole step completed or push mad
 Exactly this ledger, host-sharing README and the two tested prototype helpers
 are eligible for local commit `Verify retained fork acknowledgement failures`,
 parent `b4318430448ab3bebad1356b8afb5f6e6ceceafa`, after review reconciliation.
+
+
+## 2026-10-04: retain production fork-receipt publication failures, in progress
+
+The preceding ACK task-boundary prototype commit is observed at
+`c7d7110262869ef55c844716309ad6248dd088e6`, parent
+`b4318430448ab3bebad1356b8afb5f6e6ceceafa`. Frozen guard SHA256
+`cbe81f88044ce3f5ba057cf13185163c38521b60a47428e73ec243d0f9f3b86a`,
+completion `5bd534efbaf0752941e0ef499dd4493b8ccb2d014657b3b73d9e6b1cf4f3a4ff`.
+Its post-commit guard verifies exactly four paths, 1,684 sources, unchanged
+212 published pairs, and a clean index/worktree. Review root reconciliation
+SHA256 `fbfdbd8abb09963c86378f6acea93012297332d9ed6be36514c0c25f0c6b3d10`.
+The review-ledger stamp writer wrote its complete record, then returned1 because
+its final digest-print function received a Path instead of bytes. This checker
+failure is not a successful command. Independent qualification-second returns0
+and verifies the exact provenance-only replacement against reviewed bytes,
+SHA256 `4797a5eb139eaa12198b745feab03ca8160186c0267c87d1f10accc093f8d2de`.
+The commit guard independently checked the written stamp's exact hashes. No push.
+
+Items 2d.4/2d.11/2d.17/2d.22 remain in progress. The measured SDK listener
+exception boundary prompted a separate production counterexample: a complete
+owned event/group receipt can still be accepted after acknowledgement publication
+throws. Before changing production, frozen
+`2d-host-publication-failure-repro-driver-first.py` copies the original SDK1
+host sources into an isolated build, adds one regression check to its copied
+HostReceiptTest, and runs its main through batch SBT1.13.0/Scala2.12.21/JDK21.
+The check closes the real command-owned FileForkReceiptStore, catches the expected
+publication invariant exception from endGroup, completes the host receipt, then
+requires result verification to reject that publication failure with its cause.
+Actual SBT1 fails with `HOST_PUBLICATION_FALSE_SUCCESS: verification did not
+retain the publication cause: None`, after the preceding twelve checks pass.
+Production sources are unchanged during reproduction. Diagnostic driver0
+requires that defect; it is not acceptance. Command:
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-repro-driver-first.py
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-repro-first`.
+Completion SHA256
+`f0cb307cbca54c029c74bcbfb47109bbbfe5409130849af34136a1338bcafda6`.
+The original source row for the copied test retains the repository-original
+hash; its deliberately injected target is separately qualified, not an identical
+frozen original. Root repro audit returns0, SHA256
+`8149c009f09171999cf22c02f3a4bb149123516ff7796632bdf222ad5d9d9c10`.
+
+HostForkReceiptListener now records a NonFatal publication exception in its
+session-owned HostReceipt before rethrowing. Both result verification and
+completion verification reject a retained failure with MessageOnlyException
+and preserve the original cause. Successful event counts cannot clear that
+failure. Completion verification also covers the existing public task-owner
+path when a result logger is replaced. This is a production correction for the
+reproduced publication invariant; it does not integrate the prototype's global
+ACK protocol or establish broader filesystem-fault/cancellation coverage.
+
+The identical injected regression test now lives in HostReceiptTest and runs
+both verification paths. Producer commands:
+
+- `python3 -B /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-sdk1-driver-first.py
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-sdk1-first`:
+  isolated SDK1/current frozen host and protocol sources, actual0/driver0,
+  thirteen checks; completion SHA256
+  `2fbc5d8000091e8622d2f0ccc0325b0a29d6be190c111e2c92a579de38d99ab8`.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-sdk2-driver-first.py
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-sdk2-first`:
+  root `project sbt-distage-testkit`, `++3.8.4`,
+  `Test/runMain izumi.distage.sbt.HostReceiptTest <fresh-owned-dir>`,
+  actual0/driver0, thirteen checks; completion SHA256
+  `28728a2b8ab66bc89165e7b2aab7ca458ced4f5d49004dc1b567dbc8112f2f4c`.
+
+The two new verification modes each observe the closed-store publication
+exception and verify preserved cause identity; the original twelve checks per
+SDK remain passing. These are host contract checks, not actual fork body cases.
+Source hashes remain stable through each producer command, and owned fixture
+parents are removed. Root audit-first freezes 58 records, directly checks all
+26 host checks and their source/test identity and reproduction boundary, and
+returns0, SHA256
+`08cf71db94f24f8fd4427c6eec80b0f49ec43c679e83842bf246093ef8757a82`.
+Qualification freezes 1,684 current non-ledger inputs, changing only production
+HostReceipt and its regression test against the preceding checkpoint, SHA256
+`6ac9161606c13a9b1576e79db59f76acc91e1421ba215421d94613828adf7b8d`.
+All 212 published pairs retain their old bytes and predate this correction:
+current publication, actual-fork controls with the new artifacts and final-head
+verification are not claimed.
+
+The bounded read-only review reports no blocking finding. Report SHA256
+`2ec5f13962870b4c20d91d786ce86b5a133e4533edca20a3bd190c6bc0c497e8`,
+schema1 manifest `b03f5781fd8d8bbbf87357be2819e3d6aa469d3a424d21874851e816280fcb10`,
+inspection `ff253afb439e25bae1254db6746b81487194fbe3a764413d0019e79c8376327f`.
+Its initial literal-name predicate error is preserved as a reviewer checker
+failure; corrected inspection passes. Root reads the complete report and
+verifies all 53 original/copy hash-size pairs, two predecessor Git blobs and
+review artifacts before this provenance stamp. Larger source/publication
+inventories retain root provenance. A separate exact-delta qualification records
+this sole change to reviewed ledger bytes. Full global completion, structured run-error
+projection, cache/history, cleanup/cancellation/error/logger drain and final
+gates remain open. No acceptance item is waived or whole step completed.
+Exactly this ledger, HostReceipt.scala and HostReceiptTest.scala are eligible
+for local commit `Retain fork receipt publication failures`, parent
+`c7d7110262869ef55c844716309ad6248dd088e6`, after review reconciliation. No push.

@@ -186,6 +186,31 @@ object HostReceiptTest {
       require(directories == Seq(Seq(ForkReceiptArguments.HostDirectoryOption, current.store.directory.toString)), "Inherited receipt directory was retained")
       first.abort(previous); second.abort(current)
     }
+
+    check("retain a fork publication failure through result and completion verification") {
+      Seq(false, true).foreach { completionOnly =>
+        val current = owner()
+        val generation = current.enter()
+        val listener = new HostForkReceiptListener(current.receipt.configure(Set(name)), current.receipt, generation.store)
+        current.receipt.expect(name)
+        listener.startGroup(name.value)
+        listener.testEvent(TestEvent(Seq(event(name, Status.Success))))
+        generation.store.close()
+        var publicationFailure = Option.empty[Throwable]
+        try listener.endGroup(name.value, TestResult.Passed)
+        catch { case scala.util.control.NonFatal(cause) => publicationFailure = Some(cause) }
+        require(publicationFailure.exists(cause => cause.isInstanceOf[IllegalArgumentException] && cause.getMessage.contains("Fork receipt directory is closed")), "Publication fault was not reproduced: " + publicationFailure)
+        listener.doComplete(TestResult.Passed)
+        var verificationFailure = Option.empty[Throwable]
+        try {
+          if (completionOnly) current.receipt.verifyCompletion()
+          else current.consume(output(new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)))
+        } catch { case scala.util.control.NonFatal(cause) => verificationFailure = Some(cause) }
+        finally current.abort(generation)
+        require(verificationFailure.exists(cause => cause.isInstanceOf[MessageOnlyException] && (cause.getCause eq publicationFailure.get)), "HOST_PUBLICATION_FALSE_SUCCESS: verification did not retain the publication cause: " + verificationFailure)
+      }
+    }
+
     Files.delete(parent)
   }
 

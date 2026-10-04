@@ -4,6 +4,8 @@ import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkReceiptArgument
 
 import sbt._
 
+import scala.util.control.NonFatal
+
 private[sbt] final case class HostSuiteName(value: String)
 
 private[sbt] final case class HostSuiteCounts(result: TestResult, passed: Int, failed: Int, errors: Int, skipped: Int, ignored: Int, canceled: Int, pending: Int) {
@@ -32,6 +34,7 @@ private[sbt] final class HostReceipt {
   private var ends = Map.empty[HostSuiteName, Int]
   private var received = Map.empty[HostSuiteName, HostSuiteCounts]
   private var completed = Option.empty[TestResult]
+  private var publicationFailure = Option.empty[Throwable]
   private var closed = false
 
   def configure(names: Set[HostSuiteName]): TestsListener = synchronized {
@@ -96,6 +99,7 @@ private[sbt] final class HostReceipt {
 
   def verifyCompletion(): Unit = synchronized {
     closed = true
+    verifyPublication()
     if (expected != starts.keySet || starts != ends || (expected.nonEmpty && completed.isEmpty) ||
       (completed.contains(TestResult.Passed) && received.values.exists(_.result != TestResult.Passed))) {
       throw new MessageOnlyException(s"Incomplete distage host completion: selected=$expected started=$starts completed=$ends received=$received overall=$completed")
@@ -107,6 +111,7 @@ private[sbt] final class HostReceipt {
   def verify(output: Tests.Output): Unit = synchronized {
     requireOpen()
     closed = true
+    verifyPublication()
     val actual = output.events.collect { case (name, counts) if owned.contains(HostSuiteName(name)) => HostSuiteName(name) -> HostSuiteCounts.from(counts) }
     if (expected != starts.keySet || starts != ends || actual != received ||
       (output.overall == TestResult.Passed && received.values.exists(_.result != TestResult.Passed))) {
@@ -115,6 +120,17 @@ private[sbt] final class HostReceipt {
   }
 
   private def requireOpen(): Unit = require(!closed, "Host event emitted after receipt completion")
+
+  def failPublication(cause: Throwable): Unit = synchronized {
+    requireOpen()
+    if (publicationFailure.isEmpty) publicationFailure = Some(cause)
+  }
+
+  private def verifyPublication(): Unit = publicationFailure.foreach { cause =>
+    val failure = new MessageOnlyException("Incomplete distage fork acknowledgement: " + cause.getMessage)
+    val _ = failure.initCause(cause)
+    throw failure
+  }
 }
 
 private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val store: FileForkReceiptStore)
@@ -183,7 +199,12 @@ private[sbt] final class HostForkReceiptListener(inherited: TestsListener, recei
   override def endGroup(name: String, cause: Throwable): Unit = { inherited.endGroup(name, cause); publish(name) }
   override def endGroup(name: String, result: TestResult): Unit = { inherited.endGroup(name, result); publish(name) }
   override def doComplete(result: TestResult): Unit = inherited.doComplete(result)
-  private def publish(name: String): Unit = receipt.forkSummary(HostSuiteName(name)).foreach(summary => store.publish(ForkReceiptSuite(name), summary))
+  private def publish(name: String): Unit = {
+    try receipt.forkSummary(HostSuiteName(name)).foreach(summary => store.publish(ForkReceiptSuite(name), summary))
+    catch {
+      case NonFatal(cause) => receipt.failPublication(cause); throw cause
+    }
+  }
 }
 
 private[sbt] final class HostSelectionObserver(val inherited: Seq[String] => Seq[String => Boolean], names: Set[HostSuiteName], owner: HostReceiptOwner)
