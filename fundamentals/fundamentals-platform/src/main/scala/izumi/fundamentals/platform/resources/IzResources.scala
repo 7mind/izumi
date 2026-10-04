@@ -38,6 +38,11 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
     }
   }
 
+  /**
+    * Filesystem path of a classpath resource: the resource itself when it is a plain file or directory, otherwise
+    * a copy extracted from its jar into a world-readable temporary file or directory, deleted on JVM exit.
+    * `None` when the resource does not exist or its filesystem cannot be opened.
+    */
   def materialize(resPath: String, tempPrefix: String): Option[Path] = {
     getPath(resPath).collect {
       case LoadablePathReference(path, _) if path.getFileSystem == FileSystems.getDefault =>
