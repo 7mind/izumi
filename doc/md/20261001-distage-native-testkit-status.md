@@ -73,14 +73,14 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below; normal SDK2 notification loss, remaining failure/terminal domains and final evaluation stay open. |
+| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery forks pass six SDK/Scala combinations; SDK2 task-exception reporting, remaining failure/terminal domains and final evaluation stay open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
 | 2d.10 | in progress | Receipt guard rejects omissions, inconsistent fork results and recorded target death. Generic exit-zero false success and normal SDK2 notification loss remain reproduced; complete preservation/recovery and final evaluation stay open. |
-| 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Bounded fork-death/recovery prototypes pass both SDKs; expanded normal baselines fail. Complete failure/input inventory and final evaluation stay open. |
+| 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Production counted normal/death/recovery controls pass both SDKs on all three Scala versions. SDK2 task-exception reporting, complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
@@ -91,7 +91,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below; expanded forked failure control exposes an SDK2 result/XML contradiction below. Correction, full terminal/failure domain and final evaluation remain open. |
+| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below. Counted normal fork controls correct the recorded omission, while real SDK2 Task.execute exceptions still lack structured group/completion reporting. Full terminal/failure domain and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -11078,3 +11078,118 @@ README/helper are eligible for local commit `Acknowledge owned fork results thro
 parent `7d8e43e77dd0e8df3609b744f5cae7d30323c6f7`. The guard verifies the ten
 paths, tested producer/fixture bytes and all current publication pairs before
 commit. No push, whole step or final acceptance.
+
+
+## 2026-10-04: real fork task-exception boundary (2d.4/11/13/17/22, in progress)
+
+The preceding counted-fork integration was committed locally as
+`5617a7b99d91ae96c948f7e97ff007a53a46bb63`, parent
+`7d8e43e77dd0e8df3609b744f5cae7d30323c6f7`. Its postcommit record verifies
+exactly ten paths, all 1,678 qualified sources and 212 current publication pairs,
+and a clean index/worktree at that point. Record
+`/srv/nvme/tmp/izumi-impl/2d-counted-fork-integration-local-commit-first/completion.json`,
+SHA256 `616d66b76281ff7dbe91ff8f7029b81d07feedd923c052a9277a05d888bc5d74`.
+This provenance does not assert a postcommit build or a final evaluation pass.
+
+A public Framework/Runner/Task forwarder injects LinkageError immediately after
+an actual fork SDK EventHandler buffers its first Success. It delegates the
+published built-in runner, preserves arguments and rebinds only the public
+command-scoped Tests.Execution framework arguments. Its child completion
+receipt is written only after the production delegate.done returns. SuiteA is
+plain: these controls do not cover DI acquisition or finalization.
+
+Commands use the frozen
+`/srv/nvme/tmp/izumi-impl/2d-counted-fork-sdk-error-pilot-second.py`, with required
+`--artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0`, respective
+`--sbt-version 2.0.9|1.13.0` and fresh `--evidence-dir` values. SDK2 capture
+`2d-counted-fork-sdk-error-pilot-sdk2-second` has actual SBT1/driver1: the
+intentional task error is logged, no counted.done or XML exists, and shutdown
+finds the owned receipt directory already closed. The verifier then fails with
+FileNotFoundException. This is a failed acceptance control, not a positive
+expected-defect run. Terminal SHA256
+`5056c7e4f495a332ca0ce18b241993eca13562577e3f0bc3071bacec008dc6a0`.
+SDK1 capture `2d-counted-fork-sdk-error-pilot-sdk1-first` has actual SBT0/driver0:
+the nested test command fails as intended, reports one replacement Error/XML
+case, completes counted.done, and removes the receipt directory. Terminal
+SHA256 `2bdebf3a3ccfc648eb06b2fec5db48cbd2acaece47d1444512a4e97e952e8278`.
+Each pilot records exactly three physical plain SuiteA bodies and one buffered
+Success callback. No cross-process original Throwable reference identity is
+claimed; the SDKs project ForkError/PersistedException wrappers.
+
+The first SDK2 pilot selected undefined generic Test/testExecution and fails
+before runtime. The second uses public Test/testSelected/testExecution on SDK2
+and Test/testOnly/testExecution on SDK1. The first capture is retained and
+supplies no runtime evidence.
+
+A smaller public test-interface-only reproduction removes distage and its
+plugin entirely. Generic Task.execute emits one Success, writes a target receipt
+after handle returns, then either returns normally or throws LinkageError.
+On both SDKs normal return exits0 and yields one positive XML case. Both throwing
+commands exit1. SDK1 yields one replacement Error/XML case plus group and
+terminal doComplete callbacks; SDK2 has neither group/event/doComplete callbacks
+nor XML in these controls. This is missing failure reporting, not false success.
+
+Scratch generic-first completes four expected-defect controls, driver0, terminal
+SHA256 `a2321ce042a6566faf7fdb5478f7356405c12385e88d793c3d007440aeb2f5bc`.
+The permanent helper resolves ROOT relative to its repository location and
+strengthens child/parent PID separation and the explicit SDK2 absent-report
+predicate. Its own replay command is:
+
+`python3 -B test-fixtures/sbt-worker-receipt-race/verify-task-error.py
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-sdk-task-error-generic-permanent-first`.
+
+It completes all four controls, driver0 with actual exits 0/1/0/1, terminal
+SHA256 `b289cd9ac5bc027bbcbe743d5ab79782fbfc07916c2360e9d37c3276c27b95fa`.
+Driver0 requires the reproduced SDK2 defect and is not product acceptance.
+The helper and README are an unfiled upstream report; no SDK pin or production
+runner source is changed.
+
+Pinned SDK2 ForkTestMain.testError sends forkError before runTest sends the
+one-error testEvents replacement. React fails the response promise on forkError;
+mainTestTask closes the worker/unregisters its listener and skips normal
+listener.doComplete. The frozen source ordering is consistent with the runtime
+observations. No wire trace proves the historical transport sequence or a claim
+that every throwing task loses its group. SDK1's control continues processing
+the diagnostic and replacement error batch. Sources are retained in
+`2d-fork-selection-sdk2-source-first/{actions_3/sbt/ForkTests.scala,
+worker/sbt/internal/worker1/ForkTestMain.java}` and
+`2d-fork-ack-sdk1-source-first/test-agent/sbt/ForkMain.java`.
+
+Official tracker searches on 2026-10-04 for forkError, forked 2.0.9 error reports,
+ForkTestMain and missing forked JUnit results did not identify an exact matching
+report among returned results. [sbt/sbt#9667](https://github.com/sbt/sbt/pull/9667)
+addresses an escaping LinkageError in TestRunner, rather than this separately
+measured fork-worker ordering. Searches do not prove no existing report exists.
+
+Root audit-second returns0, independently checks eight generic controls, both
+plain forwarding pilots, exact body/XML/marker/PID inputs, the three source
+files and current 212 JAR/POM pairs. It verifies all 1,678 prior qualified inputs:
+only this diagnostic README changed, with the new helper added. It freezes 130
+records. Completion SHA256
+`56e5e5bb711d07ea07f24791553f2825baf2afdc58a1ed1cdc3f735bbe8985e5`;
+schema1 manifest `88f3e1868879d086b4af6e99b7b07a30be9cda5ceab19f7d65c55b20c484ec84`.
+Audit-first incorrectly treated SDK2 virtual ${OUT}/${CSR_CACHE} classpath paths
+as physical paths and failed. Correct path resolution required no runtime
+replay; its failed capture remains separate.
+
+The actual SDK2 task-exception completion/reporting domain stays open, alongside
+held delivery, mixed frameworks, history, cancellation, cleanup faults and final
+SDK/platform evaluations. No full step or goal completion, dependency upgrade,
+private SDK replacement, push or upstream issue submission is claimed.
+
+
+The bounded read-only review finds no material blocker for this diagnostic and
+approves no production correction or acceptance item. It directly inspects eight
+generic controls, both plain forwarding pilots and matching pinned archive
+members, retaining all scope limits. The observed XML has no skipped nodes;
+the helper's ordinary one-case predicate does not separately reject skipped
+nodes, while the independent root XML audit checks skipped=0.
+Report SHA256 `3c9ce7c74bf97eb49fcc1806c1009d6298169264f0d849494b68c6bca201424a`,
+schema1 manifest `1b3b115f414d5292ab3700b761443d950382957310d747c70fb532c76f5ac351`,
+inspection `6729de1ebe3b72cdd14743e7a7db7447764f78da7a4239baf39e1a1d347a0db2`.
+Root reads the report and verifies all 126 original/copy hash/size records;
+`2d-sdk-task-error-review-root-first.json` returns0, SHA256
+`71d7f5712761c8593afe24ba488553c6b4c7ca098219f688c87b20f12334d47d`.
+Only this ledger, the diagnostic README and tested new helper are eligible for
+local commit `Reproduce missing fork task-error reporting on the pinned SDKs`,
+parent `5617a7b99d91ae96c948f7e97ff007a53a46bb63`. No push or full gate claim.

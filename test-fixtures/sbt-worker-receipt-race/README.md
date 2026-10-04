@@ -90,6 +90,45 @@ it does not establish that queued, unread IPC notifications were processed.
 That distinction also matters for the separate recorded normal DI baseline
 failures. Their exact historical wire ordering was not captured.
 
+`verify-task-error.py` isolates the fork worker's task-exception path. Its generic
+task emits one `Success` through the target EventHandler, records that the call
+returned, then throws `LinkageError`. The normal control returns from the same
+task instead. Neither build uses distage. Both throwing commands fail; their
+structured reporting differs:
+
+| SDK | Control | Actual process exit | Target buffered successes | Host group / doComplete | JUnit cases / errors |
+| --- | --- | --- | --- | --- | --- |
+| SBT2.0.9 | normal return | 0 | 1 | Passed / Passed | 1 / 0 |
+| SBT2.0.9 | task throws | 1 | 1 | absent / absent | 0 / 0 |
+| SBT1.13.0 | normal return | 0 | 1 | Passed / Passed | 1 / 0 |
+| SBT1.13.0 | task throws | 1 | 1 | Error / Error | 1 / 1 |
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-task-error.py \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-task-error-example
+```
+
+Driver0 requires this four-control reproduction, including the missing SBT2
+report. It does not establish product acceptance. Each control uses a fresh
+build and records its inputs, target and parent process identities, classpaths,
+raw output, XML and actual exit. The target receipt proves buffering by the
+worker's EventHandler; it does not prove delivery to the host.
+
+In the pinned SBT2 source, ForkTestMain.testError sends a `forkError` notification
+before runTest sends its replacement one-error `testEvents` batch. React handles
+`forkError` by failing the response promise immediately; mainTestTask then closes
+the worker and unregisters the listener. Its normal doComplete call is skipped.
+This source ordering is consistent with the measured missing report. The
+capture does not contain a wire trace and does not prove that every throwing
+task loses its group. SBT1's corresponding diagnostic does not abort event
+processing before its replacement error batch in this control.
+
+Tracker searches on 2026-10-04 did not identify an exact matching fork-worker
+report among the returned results. [sbt/sbt#9667](https://github.com/sbt/sbt/pull/9667)
+addresses an escaping LinkageError in TestRunner; the pinned fork worker has the
+separate notification ordering described above. This reproduction remains an
+unfiled draft report, with no SDK upgrade or private SDK replacement.
+
 This remains an unfiled upstream report. Tracker searches on 2026-10-04 for
 `fork tests exit zero EOF success incomplete`, `"ForkTests" "Passed"`
 and `"System.exit(0)" test`, restricted to `site:github.com/sbt/sbt/issues`,
