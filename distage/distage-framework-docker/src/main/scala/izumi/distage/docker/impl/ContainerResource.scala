@@ -49,7 +49,7 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected lazy val hooksDigest: Option[String] = {
-    if (afterCreateHooks.isEmpty) None else Some(IzHash.sha256(afterCreateHooks.map(_.reuseKey).mkString("\n")))
+    ContainerResource.hooksDigest(afterCreateHooks.map(_.reuseKey))
   }
 
   protected lazy val stableLabels: Map[String, String] = {
@@ -599,4 +599,8 @@ open class ContainerResource[F[_], Tag](
 
 object ContainerResource {
   final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
+
+  def hooksDigest(reuseKeys: Seq[String]): Option[String] = {
+    if (reuseKeys.isEmpty) None else Some(IzHash.sha256(reuseKeys.map(IzHash.sha256).mkString))
+  }
 }
