@@ -6847,7 +6847,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     ),
     (Compile / paradox) / version := version.value,
     paradoxTheme := Some(ParadoxMaterialTheme.artifact),
-    Compile / paradoxProperties ++= ParadoxMaterialTheme.properties,
+    Compile / paradoxProperties ++= ParadoxMaterialTheme.properties(IzumiSite.materialTheme),
     Compile / paradox / mappings += Def.uncached {
                 val conv = fileConverter.value
                 val (file, path) = ParadoxMaterialTheme.searchIndexMapping.value
@@ -7114,12 +7114,49 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     Test / packageDoc / publishArtifact := false,
     sbtPlugin := true,
     sbtPluginPublishLegacyMavenStyle := false,
-    crossScalaVersions := Seq(appConfiguration.value.provider.scalaProvider.version, "2.12.21"),
+    crossScalaVersions := Seq("3.8.4", "2.12.21"),
     scalaVersion := crossScalaVersions.value.head,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "3.8.4") => Seq(
+        "-source:3.8",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
     pluginCrossBuild / sbtVersion := {
                 scalaBinaryVersion.value match {
                   case "2.12" => "1.9.0"
-                  case _ => sbtVersion.value
+                  case _ => "2.0.9"
                 }
               },
     withBuildInfo("izumi.sbt.deps", "Izumi"),

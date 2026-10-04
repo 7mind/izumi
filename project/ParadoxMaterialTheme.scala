@@ -21,11 +21,17 @@ object ParadoxMaterialTheme {
 
   val artifact: ModuleID = "com.github.sbt" % "paradox-material-theme" % V.paradox_material_theme
 
-  private val repository: URI = uri("https://github.com/7mind/izumi")
+  final case class Site(
+    copyright: String,
+    repository: URI,
+    customStylesheet: Option[String],
+    customJavaScript: Option[String],
+  )
+
   private val textFont: String = "Roboto"
   private val codeFont: String = "Roboto Mono"
 
-  lazy val properties: Map[String, String] = Map(
+  def properties(site: Site): Map[String, String] = Map(
     "material.theme.version" -> V.paradox_material_theme,
     // defaults of the plugin's `ParadoxMaterialTheme()`
     "material.font.text" -> textFont,
@@ -36,20 +42,11 @@ object ParadoxMaterialTheme {
     "material.favicon" -> "assets/images/favicon.png",
     "material.search" -> "true",
     "material.search.tokenizer" -> "[\\s\\-]+",
-    "material.copyright" -> "7mind.io",
-    "material.repo" -> repository.toString,
+    "material.copyright" -> site.copyright,
+    "material.repo" -> site.repository.toString,
     "material.repo.type" -> "github",
-    "material.repo.name" -> repository.getPath.dropWhile(_ == '/'),
-    // Default dark theme: a static dump of Dark Reader (Dynamic mode) applied to the
-    // white Material theme. Loaded after the Material stylesheets so its !important rules win.
-    // Asset is staged via mdoc passthrough from src/main/tut/assets/stylesheets/darkreader.css.
-    "material.custom.stylesheet" -> "assets/stylesheets/darkreader.css",
-    // Visitor-facing toggle that disables the dark stylesheet at runtime via
-    // link.disabled and persists the choice to localStorage. Provides a
-    // fixed-position floating button; primarily intended as a visual-accessibility
-    // override for users who need the lighter Material theme.
-    "material.custom.javascript" -> "assets/javascripts/scheme-switch.js",
-  )
+    "material.repo.name" -> site.repository.getPath.dropWhile(_ == '/'),
+  ) ++ site.customStylesheet.map("material.custom.stylesheet" -> _) ++ site.customJavaScript.map("material.custom.javascript" -> _)
 
   /** Lunr index consumed by the theme's search box, served at `search/search_index.json`. */
   def searchIndexMapping: Def.Initialize[Task[(File, String)]] = Def.task {
@@ -63,9 +60,13 @@ object ParadoxMaterialTheme {
   private val headerTags: Set[String] = Set("h1", "h2", "h3", "h4", "h5", "h6")
 
   private def indexJson(mappings: Seq[(File, String)]): String = {
-    mappings
-      .filter { case (_, path) => path.endsWith(".html") }
-      .flatMap(readSections)
+    val pages = mappings.filter { case (_, path) => path.endsWith(".html") }.map(mapping => mapping._2 -> readSections(mapping))
+    val unsearchable = pages.collect { case (path, None) => path }
+    if (unsearchable.nonEmpty) {
+      sys.error(unsearchable.sorted.mkString(s"Pages without the theme's `$searchableSelector` element, the search index would miss them:\n  ", "\n  ", ""))
+    }
+    pages
+      .flatMap(_._2.toList.flatten)
       .map {
         section =>
           s"{${jsonString("location")}:${jsonString(section.location)}," +
@@ -75,7 +76,9 @@ object ParadoxMaterialTheme {
       .mkString(s"{${jsonString("docs")}:[", ",", "]}")
   }
 
-  private def readSections(mapping: (File, String)): Seq[Section] = {
+  private val searchableSelector: String = "body .md-content__searchable"
+
+  private def readSections(mapping: (File, String)): Option[Seq[Section]] = {
     val (file, location) = mapping
     val doc = Jsoup.parse(file, "UTF-8")
 
@@ -90,15 +93,19 @@ object ParadoxMaterialTheme {
       if (anchor == null) location else location + "#" + anchor.attr("name")
     }
 
-    val searchable = doc.select("body .md-content__searchable").asScala.toList.flatMap(_.children().asScala.toList)
-    val (sections, last) = searchable.foldLeft((Vector.empty[Section], Section(location, docTitle, ""))) {
-      case ((done, current), header) if headerTags(header.tagName) =>
-        (done :+ current, Section(headerLocation(header), header.text, ""))
-      case ((done, current), element) =>
-        val text = if (current.text.isEmpty) element.text else current.text + "\n" + element.text
-        (done, current.copy(text = text.trim))
+    val roots = doc.select(searchableSelector).asScala.toList
+    if (roots.isEmpty) {
+      None
+    } else {
+      val (sections, last) = roots.flatMap(_.children().asScala.toList).foldLeft((Vector.empty[Section], Section(location, docTitle, ""))) {
+        case ((done, current), header) if headerTags(header.tagName) =>
+          (done :+ current, Section(headerLocation(header), header.text, ""))
+        case ((done, current), element) =>
+          val text = if (current.text.isEmpty) element.text else current.text + "\n" + element.text
+          (done, current.copy(text = text.trim))
+      }
+      Some(sections :+ last)
     }
-    sections :+ last
   }
 
   private def jsonString(value: String): String = {

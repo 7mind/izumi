@@ -392,6 +392,28 @@ object Izumi {
         "-Wconf:msg=method in is not declared infix:silent",
       )
 
+      def scala3Options(source: String): Seq[Const] = {
+        withoutBackendParallelism(
+          withJvmRelease(
+            Seq[Const](
+              s"-source:$source",
+              "-Xkind-projector:underscores",
+              // Scala 3.9.0 scans every classpath root, including sbt's synthesized JDK `rt.jar`, to suggest
+              // imports for "not found"/"missing given" errors. On JDK 21+ that parse trips an inner-class
+              // assertion (`javax.swing.RepaintManager$PaintManager`) and crashes the compiler instead of
+              // reporting the error; the typecheck-expecting tests in distage-testkit-scalatest hit it
+              // deterministically. Disabling the suggestions only loses the "did you mean to import" hints.
+              //
+              // Tracked in https://github.com/scala/scala3/issues/25451; drop this flag once that is fixed.
+              "-Ximport-suggestion-timeout:0",
+            ) ++ Defaults.Scala3Options
+              .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
+              .filterNot(scala3Wconf.contains(_))
+            ++ scala3Wconf
+          )
+        )
+      }
+
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
         "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
         // sbt 2.0.5+ closes the adhoc test ClassLoader once the test task completes. The ZIO and
@@ -412,26 +434,7 @@ object Izumi {
             withJvmRelease(
               (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf
             ),
-          SettingKey(Some(scala300), None) :=
-            withoutBackendParallelism(
-              withJvmRelease(
-                Seq[Const](
-                  "-source:3.9",
-                  "-Xkind-projector:underscores",
-                  // Scala 3.9.0 scans every classpath root, including sbt's synthesized JDK `rt.jar`, to suggest
-                  // imports for "not found"/"missing given" errors. On JDK 21+ that parse trips an inner-class
-                  // assertion (`javax.swing.RepaintManager$PaintManager`) and crashes the compiler instead of
-                  // reporting the error; the typecheck-expecting tests in distage-testkit-scalatest hit it
-                  // deterministically. Disabling the suggestions only loses the "did you mean to import" hints.
-                  //
-                  // Tracked in https://github.com/scala/scala3/issues/25451; drop this flag once that is fixed.
-                  "-Ximport-suggestion-timeout:0",
-                ) ++ Defaults.Scala3Options
-                  .filterNot(x => x == ("-Ykind-projector:underscores": Const) || x == ("-Xkind-projector:underscores": Const))
-                  .filterNot(scala3Wconf.contains(_))
-                ++ scala3Wconf
-              )
-            ),
+          SettingKey(Some(scala300), None) := scala3Options("3.9"),
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
@@ -535,16 +538,22 @@ object Izumi {
       final val basePath = Seq("sbt-plugins")
 
       final val sbt1PluginTarget = "1.9.0"
+      final val sbt2PluginTarget = "2.0.9"
+      final val sbt2PluginScala = ScalaVersion("3.8.4")
 
       final val settings = Seq(
         "sbtPlugin" := true,
         "sbtPluginPublishLegacyMavenStyle" := false,
-        SettingDef.RawSettingDef(s"""crossScalaVersions := Seq(appConfiguration.value.provider.scalaProvider.version, "${scala212.value}")"""),
+        SettingDef.RawSettingDef(s"""crossScalaVersions := Seq("${sbt2PluginScala.value}", "${scala212.value}")"""),
         SettingDef.RawSettingDef("""scalaVersion := crossScalaVersions.value.head"""),
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(sbt2PluginScala), None) := root.scala3Options("3.8"),
+          SettingKey.Default := Const.EmptySeq,
+        ),
         SettingDef.RawSettingDef(s"""pluginCrossBuild / sbtVersion := {
             scalaBinaryVersion.value match {
               case "2.12" => "$sbt1PluginTarget"
-              case _ => sbtVersion.value
+              case _ => "$sbt2PluginTarget"
             }
           }"""),
       )
@@ -931,7 +940,7 @@ object Izumi {
           "version" in SettingScope.Raw("(Compile / paradox)") := "version.value".raw,
           // `sbt-paradox-material-theme` inlined, see `project/ParadoxMaterialTheme.scala`
           SettingDef.RawSettingDef("paradoxTheme := Some(ParadoxMaterialTheme.artifact)"),
-          SettingDef.RawSettingDef("Compile / paradoxProperties ++= ParadoxMaterialTheme.properties"),
+          SettingDef.RawSettingDef("Compile / paradoxProperties ++= ParadoxMaterialTheme.properties(IzumiSite.materialTheme)"),
           SettingDef.RawSettingDef("""Compile / paradox / mappings += Def.uncached {
             val conv = fileConverter.value
             val (file, path) = ParadoxMaterialTheme.searchIndexMapping.value
