@@ -368,7 +368,7 @@ open class ContainerResource[F[_], Tag](
       _ <- F.when(config.autoPull) {
         doPull(imageName, imageRegistry, registryAuth)
       }
-      out <- F.maybeSuspend {
+      out <- F.bracketCase(acquire = F.maybeSuspend {
         @nowarn("msg=method.*Bind.*deprecated")
         val createContainerCmd = Value(baseCmd)
           .mut(config.name)(_.withName(_))
@@ -387,50 +387,57 @@ open class ContainerResource[F[_], Tag](
           .get
 
         logger.debug(s"Going to create container from image `$imageName`...")
-        val res = createContainerCmd.exec()
-
-        runAfterCreateHooks(res.getId)
-
-        logger.debug(s"Going to start container ${res.getId -> "id"}...")
-        rawClient.startContainerCmd(res.getId).exec()
-
-        val inspection = rawClient.inspectContainerCmd(res.getId).exec()
-        val hostName = inspection.getConfig.getHostName
-        val maybeMappedPorts = mapContainerPorts(inspection)
-
-        maybeMappedPorts match {
-          case Left(value) =>
-            throw DockerFailureException(
-              s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!",
-              DockerFailureCause.MissingPorts(value),
-            )
-
-          case Right(mappedPorts) =>
-            val container = DockerContainer[Tag](
-              id = ContainerId(res.getId),
-              name = inspection.getName,
-              hostName = hostName,
-              labels = inspection.getConfig.getLabels.asScala.toMap,
-              containerConfig = config,
-              clientConfig = client.clientConfig,
-              connectivity = mappedPorts,
-              availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
-            )
-            logger.info(s"Created new $container from $imageName... Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
-            config.networks.foreach {
-              network =>
-                rawClient
-                  .connectToNetworkCmd()
-                  .withContainerId(container.id.name)
-                  .withNetworkId(network.id)
-                  .exec()
-            }
-
-            container
-        }
-      }
+        ContainerId(createContainerCmd.exec().getId)
+      })(release = {
+        case (containerId, Some(_)) => client.removeContainer(containerId, ContainerDestroyMeta.NoMeta, RemovalReason.FailedToStart)
+        case (_, None) => F.unit
+      })(use = startCreated(imageName, _))
       result <- await(out)
     } yield result
+  }
+
+  private def startCreated(imageName: String, containerId: ContainerId): F[DockerContainer[Tag]] = {
+    F.maybeSuspend {
+      runAfterCreateHooks(containerId.name)
+
+      logger.debug(s"Going to start container ${containerId.name -> "id"}...")
+      rawClient.startContainerCmd(containerId.name).exec()
+
+      val inspection = rawClient.inspectContainerCmd(containerId.name).exec()
+      val hostName = inspection.getConfig.getHostName
+      val maybeMappedPorts = mapContainerPorts(inspection)
+
+      maybeMappedPorts match {
+        case Left(value) =>
+          throw DockerFailureException(
+            s"Created container from `$imageName` with ${containerId.name -> "id"}, but ports are missing: $value!",
+            DockerFailureCause.MissingPorts(value),
+          )
+
+        case Right(mappedPorts) =>
+          val container = DockerContainer[Tag](
+            id = containerId,
+            name = inspection.getName,
+            hostName = hostName,
+            labels = inspection.getConfig.getLabels.asScala.toMap,
+            containerConfig = config,
+            clientConfig = client.clientConfig,
+            connectivity = mappedPorts,
+            availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
+          )
+          logger.info(s"Created new $container from $imageName... Going to attach container ${containerId.name -> "id"} to ${config.networks -> "networks"}")
+          config.networks.foreach {
+            network =>
+              rawClient
+                .connectToNetworkCmd()
+                .withContainerId(container.id.name)
+                .withNetworkId(network.id)
+                .exec()
+          }
+
+          container
+      }
+    }
   }
 
   protected def runAfterCreateHooks(containerId: String): Unit = {
@@ -441,17 +448,11 @@ open class ContainerResource[F[_], Tag](
           hook.afterCreate(rawClient, containerId)
         } catch {
           case NonFatal(t) =>
-            val failure = DockerFailureException(
+            throw DockerFailureException(
               s"After-create hook $hook failed on container $containerId: $t",
               DockerFailureCause.Throwed(t),
               t,
             )
-            try {
-              rawClient.removeContainerCmd(containerId).withForce(true).exec()
-            } catch {
-              case NonFatal(removal) => failure.addSuppressed(removal)
-            }
-            throw failure
         }
     }
   }

@@ -4,7 +4,7 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotFoundException
 import distage.ModuleDef
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
-import izumi.distage.docker.model.Docker.ContainerFile
+import izumi.distage.docker.model.Docker.{ContainerFile, DockerReusePolicy}
 import izumi.distage.docker.model.{ContainerHook, DockerFailureException}
 import izumi.distage.testkit.docker.ContainerFilesTest.*
 import izumi.distage.testkit.model.TestConfig
@@ -13,6 +13,7 @@ import zio.{IO, Task, ZIO}
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters.*
 import scala.util.{Try, Using}
@@ -34,8 +35,10 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
     }
   }
 
-  private def removeTestContainers(client: DockerClientWrapper[Task]): Task[Unit] = ZIO.attempt {
-    client.rawClient.listContainersCmd().withShowAll(true).withLabelFilter(testLabels.asJava).exec().asScala.foreach {
+  private def removeTestContainers(client: DockerClientWrapper[Task]): Task[Unit] = removeContainersLabelled(client, testLabels)
+
+  private def removeContainersLabelled(client: DockerClientWrapper[Task], labels: Map[String, String]): Task[Unit] = ZIO.attempt {
+    client.rawClient.listContainersCmd().withShowAll(true).withLabelFilter(labels.asJava).exec().asScala.foreach {
       c => client.rawClient.removeContainerCmd(c.getId).withForce(true).exec()
     }
   }
@@ -101,6 +104,32 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
               })
             } yield ()
           }.ensuring(removeTestContainers(client).orDie)
+    }
+
+    "remove the container when it fails to start" in {
+      (resource: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
+        val hook = new RecordingHook("unstartable", None)
+        val labels = Map("distage.test" -> s"unstartable-${UUID.randomUUID()}")
+        val unstartable = resource.config.copy(
+          userTags = labels,
+          entrypoint = Seq("/nonexistent-entrypoint"),
+          reuse = DockerReusePolicy.ReuseDisabled,
+          autoRemove = false,
+          afterCreate = Seq(hook),
+        )
+        ZIO
+          .scoped {
+            for {
+              result <- resource.copy(config = unstartable).use(_ => ZIO.unit).either
+              _ <- assertIO(result.isLeft)
+              containerId <- ZIO.fromOption(hook.observed.get().map(_._1)).orElseFail(new IllegalStateException("the hook did not run"))
+              removed <- ZIO.attempt(client.rawClient.inspectContainerCmd(containerId).exec()).either
+              _ <- assertIO(removed match {
+                case Left(_: NotFoundException) => true
+                case _ => false
+              })
+            } yield ()
+          }.ensuring(removeContainersLabelled(client, labels).orDie)
     }
 
     "reuse only containers created with hooks of identical reuse keys" in {
