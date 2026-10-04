@@ -33,6 +33,7 @@ object BaseRunnerFixtures {
       if (!condition) throw new IllegalStateException(message)
     }
     CauseSnapshotFixtures.run(verify)
+    val framed = FramedChannelFixtures.run(() => FramedChannelFixtures.memory(), "memory", ec, verify)
     val identity = CatalogueIdentity(BuildId("base-build"), BuildTargetId("base-target"), CatalogueId("base-catalogue"))
     val inherited = RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit)
     val instances = new AtomicInteger(0)
@@ -62,7 +63,7 @@ object BaseRunnerFixtures {
     verify(first.resolve(request.copy(selection = Selection.Only(Vector.empty, Vector.empty))).isLeft, "Empty explicit selection must reject")
     verify(first.resolve(request.copy(overrides = inherited.copy(axes = Vector(AxisChoice(AxisId("unknown"), AxisValue("value")))))).isLeft, "Plain providers reject unsupported activation axes")
 
-    first.execute(RunId("first"), request).flatMap { selected =>
+    framed.flatMap(_ => first.execute(RunId("first"), request)).flatMap { selected =>
       verify(selected.successful && selected.results.map(_.id) == Vector(futureId), "Only selected Future body may execute")
       verify(syncBodies.get() == 0 && futureBodies.get() == 1, "Future body completes through the session execution context")
       val events = firstSink.snapshot
@@ -166,7 +167,7 @@ object BaseRunnerFixtures {
         val selectedId = catalogue(invalid).tests.head.id
         verify(invalid.resolve(RunRequest(identity, Selection.Only(Vector.empty, Vector(selectedId)), inherited)).isLeft, "Provider resolution must not reintroduce an unselected registered test")
         ProviderBoundaryFixtures.run(identity, verify)
-      }.flatMap(_ => PlanAggregationFixtures.run(identity, ec, verify)).flatMap(_ => registrationOwnership(ec, verify)).flatMap(_ => CancellationFixtures.run(ec, verify)).flatMap(_ => AssertionTransportFixtures.run(ec, verify)).flatMap(_ => ThrowableCaptureFixtures.run(ec, verify)).map { _ =>
+      }.flatMap(_ => PlanAggregationFixtures.run(identity, ec, verify)).flatMap(_ => ApplicationFixtures.run(identity, ec, verify)).flatMap(_ => registrationOwnership(ec, verify)).flatMap(_ => CancellationFixtures.run(ec, verify)).flatMap(_ => AssertionTransportFixtures.run(ec, verify)).flatMap(_ => ThrowableCaptureFixtures.run(ec, verify)).map { _ =>
         println(s"BASE_RUNNER_FIXTURES_OK checks=${checks.get()} sessions=isolated finalization=awaited")
       }
     }

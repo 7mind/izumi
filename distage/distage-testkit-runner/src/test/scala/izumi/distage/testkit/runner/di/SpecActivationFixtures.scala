@@ -75,42 +75,68 @@ private[di] object SpecActivationFixtures {
         }
       }
       val identity = CatalogueIdentity(BuildId("spec-activation"), BuildTargetId("spec-target"), CatalogueId(request.name))
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () }
-      val session = new RunSession(identity, Vector(() => suite), context, sink)
-      val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
-      verify(request.name + " discovery suspends activation inputs and resources", configurations.get() == 0 && acquired.get() == 0 && bodies.get() == 0)
-      val selection = if (request.unknownId) Selection.Only(Vector.empty, Vector(catalogue.tests.head.id.copy(path = Vector("missing")))) else Selection.All
-      val runRequest = RunRequest(identity, selection, request.overrides)
-      val resolution = session.resolve(runRequest)
-      request.expected match {
-        case Some(expected) =>
-          verify(request.name + " resolves effective activation before filtering", resolution.exists(value => value.tests.size == 2 && value.tests.forall(test => test.settings.axes.contains(AxisChoice(AxisId(Mode.name), AxisValue(expected))) && test.settings.memoization == (request.overrides.memoization != MemoizationOverride.Disabled))))
-        case None => verify(request.name + " rejects its explicit selection before provisioning", resolution.left.toOption.exists(failure => failure.phase == FailurePhase.Selection && failure.message.nonEmpty))
-      }
-      val execution = resolution match {
-        case Left(_) => session.execute(RunId(request.name), runRequest)
-        case Right(resolved) => session.plan(resolved).flatMap {
-          case Left(failure) => Future.failed(new IllegalStateException(failure.message))
-          case Right(planned) =>
-            val description = planned.description
-            verify(request.name + " plan output retains resolved activation and logical identities", description.selection == resolved.description && description.selection.tests.map(_.id) == catalogue.tests.map(_.id))
-            val allocations = description.inspection.scopes.filter(_.steps.exists(step => description.inspection.keys.exists(key => key.id == step.key && key.displayName == DIKey[Resource].toString) && step.operation == PlanOperation.AllocateResource))
-            val sharedScope = if (request.overrides.memoization == MemoizationOverride.Disabled) {
-              allocations.size == 2 && allocations.forall(scope => scope.kind == PlanScopeKind.Test && scope.tests.size == 1)
-            } else allocations.size == 1 && allocations.head.kind == PlanScopeKind.Memoization && allocations.head.tests.toSet == catalogue.tests.map(_.id).toSet
-            verify(request.name + " plan output describes actual resource sharing boundaries", sharedScope)
-            verify(request.name + " plan inspection provisions no application resources or bodies", acquired.get() == 0 && released.get() == 0 && bodies.get() == 0 && shared.get() == 0)
-            val frame = ProtocolMessage.Planned(RunId(request.name), description)
-            verify(request.name + " plan output round-trips through the protocol", ProtocolCodec.decode(ProtocolCodec.encode(frame)) == Right(frame))
-            session.execute(RunId(request.name), planned)
+      var messages = Vector.empty[ProtocolMessage]
+      val output = new ProtocolOutput {
+        override def accept(message: ProtocolMessage): Unit = synchronized {
+          require(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "Activation application output must round-trip")
+          messages :+= message
         }
       }
-      execution.map { outcome =>
-        val expectedBodies = if (request.expected.isDefined) 2 else 0
-        verify(request.name + " executes its resolved choice with its intended lifetime", acquired.get() == request.resources && released.get() == request.resources && bodies.get() == expectedBodies && shared.get() == expectedBodies && wrongChoice.get() == 0)
-        verify(request.name + " execution agrees with resolution or explains rejection", if (request.expected.isDefined) outcome.successful && outcome.results.map(_.id) == catalogue.tests.map(_.id) else !outcome.successful && outcome.results.isEmpty && outcome.failures.size == 1 && outcome.failures.head.phase == FailurePhase.Selection)
-        verify(request.name + " retains one suite configuration snapshot", configurations.get() == (if (request.unknownId) 0 else 1))
-        println("DISTAGE_SPEC_ACTIVATION name=" + request.name + " resources=" + acquired.get() + " bodies=" + bodies.get() + " successful=" + outcome.successful)
+      def snapshot: Vector[ProtocolMessage] = output.synchronized(messages)
+      val run = RunId(request.name)
+      val application = new TestApplication(run, identity, Vector(() => suite), context, output)
+      application.accept(ProtocolMessage.Discover(run, identity.build, identity.target)).flatMap { _ =>
+        val catalogue = snapshot.last.asInstanceOf[ProtocolMessage.Discovered].catalogue
+        verify(request.name + " discovery suspends activation inputs and resources", configurations.get() == 0 && acquired.get() == 0 && bodies.get() == 0)
+        val selection = if (request.unknownId) Selection.Only(Vector.empty, Vector(catalogue.tests.head.id.copy(path = Vector("missing")))) else Selection.All
+        val runRequest = RunRequest(identity, selection, request.overrides)
+        def command(operation: RequestOperation): Future[Unit] = application.accept(ProtocolMessage.Request(operation, run, runRequest))
+        command(RequestOperation.Resolve).flatMap { _ =>
+          val resolution = snapshot.last match {
+            case ProtocolMessage.Resolved(_, selected) => Right(selected)
+            case ProtocolMessage.Rejected(_, failure) => Left(failure)
+            case other => throw new IllegalStateException("Unexpected activation resolution: " + other)
+          }
+          request.expected match {
+            case Some(expected) =>
+              verify(request.name + " resolves effective activation before filtering", resolution.exists(value => value.tests.size == 2 && value.tests.forall(test => test.settings.axes.contains(AxisChoice(AxisId(Mode.name), AxisValue(expected))) && test.settings.memoization == (request.overrides.memoization != MemoizationOverride.Disabled))))
+            case None => verify(request.name + " rejects its explicit selection before provisioning", resolution.left.toOption.exists(failure => failure.phase == FailurePhase.Selection && failure.message.nonEmpty))
+          }
+          val planning = resolution match {
+            case Left(_) => Future.unit
+            case Right(resolved) => command(RequestOperation.Plan).flatMap { _ =>
+              val description = snapshot.last.asInstanceOf[ProtocolMessage.Planned].plan
+              verify(request.name + " plan output retains resolved activation and logical identities", description.selection == resolved && description.selection.tests.map(_.id) == catalogue.tests.map(_.id))
+              val allocations = description.inspection.scopes.filter(_.steps.exists(step => description.inspection.keys.exists(key => key.id == step.key && key.displayName == DIKey[Resource].toString) && step.operation == PlanOperation.AllocateResource))
+              val sharedScope = if (request.overrides.memoization == MemoizationOverride.Disabled) {
+                allocations.size == 2 && allocations.forall(scope => scope.kind == PlanScopeKind.Test && scope.tests.size == 1)
+              } else allocations.size == 1 && allocations.head.kind == PlanScopeKind.Memoization && allocations.head.tests.toSet == catalogue.tests.map(_.id).toSet
+              verify(request.name + " plan output describes actual resource sharing boundaries", sharedScope)
+              verify(request.name + " plan inspection provisions no application resources or bodies", acquired.get() == 0 && released.get() == 0 && bodies.get() == 0 && shared.get() == 0)
+              val frame = ProtocolMessage.Planned(run, description)
+              verify(request.name + " plan output round-trips through the protocol", ProtocolCodec.decode(ProtocolCodec.encode(frame)) == Right(frame))
+              command(RequestOperation.Plan).map { _ => verify(request.name + " repeated application inspection retains the prepared plan", snapshot.last == frame && acquired.get() == 0 && bodies.get() == 0) }
+            }
+          }
+          planning.flatMap(_ => command(RequestOperation.Execute)).map { _ =>
+            val expectedBodies = if (request.expected.isDefined) 2 else 0
+            verify(request.name + " executes its resolved choice with its intended lifetime", acquired.get() == request.resources && released.get() == request.resources && bodies.get() == expectedBodies && shared.get() == expectedBodies && wrongChoice.get() == 0)
+            val successful = snapshot.last match {
+              case ProtocolMessage.Completed(outcome) =>
+                verify(request.name + " execution agrees with resolution or explains rejection", request.expected.isDefined && outcome.successful && outcome.results.map(_.id) == catalogue.tests.map(_.id))
+                val events = snapshot.collect { case event: ProtocolMessage.Event => event }
+                verify(request.name + " application event stream finishes after release", events.map(_.sequence) == events.indices.map(_.toLong).toVector && events.last.event == RunEvent.Finished(run, outcome) && released.get() == request.resources)
+                outcome.successful
+              case ProtocolMessage.Rejected(_, failure) =>
+                verify(request.name + " execution agrees with resolution or explains rejection", request.expected.isEmpty && failure.phase == FailurePhase.Selection && resolution.left.toOption.contains(failure))
+                verify(request.name + " rejected application emits no execution or successful terminal frames", !snapshot.exists { case _: ProtocolMessage.Event => true; case _: ProtocolMessage.Completed => true; case _ => false })
+                false
+              case other => throw new IllegalStateException("Unexpected activation execution: " + other)
+            }
+            verify(request.name + " retains one suite configuration snapshot", configurations.get() == (if (request.unknownId) 0 else 1))
+            println("DISTAGE_SPEC_ACTIVATION name=" + request.name + " resources=" + acquired.get() + " bodies=" + bodies.get() + " successful=" + successful)
+          }
+        }
       }
     } }
   }

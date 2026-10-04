@@ -29,11 +29,13 @@ object FixturePlatform {
   def run(body: ExecutionContext => Future[Unit]): Unit = {
     val executor = Executors.newFixedThreadPool(WorkerThreads)
     val executionContext = ExecutionContext.fromExecutorService(executor)
-    try Await.result(body(executionContext), TimeoutSeconds.seconds)
+    try Await.result(body(executionContext).flatMap(_ => FileProtocolFrameFixtures.run(executionContext))(using executionContext), TimeoutSeconds.seconds)
     finally {
       executionContext.shutdown()
       if (!executionContext.awaitTermination(TimeoutSeconds, TimeUnit.SECONDS)) throw new IllegalStateException("Fixture execution context did not terminate")
     }
+    ApplicationBlockingFixtures.main(Array.empty)
+    ApplicationOutputBlockingFixtures.main(Array.empty)
     bootstrap.BootstrapFixtures.main(Array.empty)
   }
 }

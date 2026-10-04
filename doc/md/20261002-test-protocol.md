@@ -10,6 +10,10 @@ Schema 4 frames are compact JSON objects with `schemaVersion` and `message`.
 The caller sends each frame as one line on a dedicated protocol channel.
 Ordinary test output belongs on stdout, separately from that channel. JSON
 escaping keeps embedded line breaks in diagnostic text within one frame.
+Encoding also escapes every non-ASCII UTF-16 code unit. This preserves lone
+surrogates through UTF-8 channels and leaves each frame ASCII. The character
+limit includes the expanded Unicode escapes. The JSON payload schema is
+unchanged by this representation.
 Channel implementations and application operation bindings are separate runner
 work; a codec alone does not supply a transport.
 

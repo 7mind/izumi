@@ -139,6 +139,68 @@ private[di] object SpecCancellationFixtures {
     }
   }
 
+  def applicationChannelLoss(context: ExecutionContext, verify: (String, Boolean) => Unit): Future[Unit] = {
+    implicit val ec: ExecutionContext = context
+    val zioDefaults = implicitly[DefaultModule[zio.Task]]
+    val runtime = QuasiIORunner.fromBIO[MiniBIOAsync](using MiniBIOAsync.UnsafeRunMiniBIOAsync(using context))
+    Vector("cats", "zio").foldLeft(Future.unit) { (previous, kind) => previous.flatMap { _ =>
+      val stats = new Statistics(false)
+      val writesAfterLoss = new AtomicInteger(0)
+      val failedWrite = new IllegalStateException(kind + " active DI application channel failure")
+      val label = kind + " application channel loss "
+      val run = RunId("di-channel-" + kind)
+      val identity = CatalogueIdentity(BuildId("di-channel-build"), BuildTargetId("di-channel-target"), CatalogueId(kind))
+      var messages = Vector.empty[ProtocolMessage]
+      val output = new ProtocolOutput {
+        override def accept(message: ProtocolMessage): Unit = synchronized {
+          require(writesAfterLoss.get() == 0, "Failed DI channel received another write")
+          message match {
+            case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, result)) if result.id.path == Vector("trigger channel loss") =>
+              writesAfterLoss.incrementAndGet()
+              throw failedWrite
+            case _ =>
+              require(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "DI application frame must round-trip")
+              messages :+= message
+          }
+        }
+      }
+      def snapshot: Vector[ProtocolMessage] = output.synchronized(messages)
+      val factory: () => TestSuite = kind match {
+        case "cats" => () => new CatsChannelSuite(stats)
+        case "zio" => () => new ZIOChannelSuite(stats)(using zioDefaults)
+      }
+      val application = new TestApplication(run, identity, Vector(factory), context, output)
+      val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
+      def bounded[A](phase: String, signal: Future[A]): Future[A] = timed(signal, CancellationTimeout, () => throw new AssertionError(label + "timed out during " + phase), runtime, context)
+      application.accept(ProtocolMessage.Discover(run, identity.build, identity.target)).flatMap { _ =>
+        verify(label + "discovery does not load application resources or bodies", snapshot.last.asInstanceOf[ProtocolMessage.Discovered].catalogue.tests.size == 2 && stats.acquired.get() == 0 && stats.bodies.get() == 0)
+        application.accept(ProtocolMessage.Request(RequestOperation.Plan, run, request))
+      }.flatMap { _ =>
+        verify(label + "inspection leaves the actual memoized resource unacquired", snapshot.last.isInstanceOf[ProtocolMessage.Planned] && stats.acquired.get() == 0 && stats.bodies.get() == 0)
+        val execution = application.accept(ProtocolMessage.Request(RequestOperation.Execute, run, request))
+        val checked = bounded("interruption and finalizer entry", Future.sequence(Vector(stats.interrupted.future, stats.releaseEntered.future))).flatMap { _ =>
+          verify(label + "interrupts a real active body without opening its gate", stats.entered.isCompleted && !stats.bodyGate.isCompleted && stats.bodies.get() == 2 && writesAfterLoss.get() == 1)
+          verify(label + "waits for actual Lifecycle finalization", !execution.isCompleted && stats.acquired.get() == 1 && stats.released.get() == 0)
+          verify(label + "emits no terminal frames on the lost channel", !snapshot.exists { case ProtocolMessage.Event(_, _: RunEvent.Finished) => true; case _: ProtocolMessage.Completed => true; case _ => false })
+          // Settle the cancelled Future's callback while its effect runtime is still held alive.
+          val _ = stats.bodyGate.trySuccess(())
+          require(stats.releaseGate.trySuccess(()), "DI channel finalizer gate opened twice")
+          bounded("command completion", execution.failed).map { cause =>
+            verify(label + "retains the original delivery exception after cleanup", cause eq failedWrite)
+            verify(label + "releases the memoized resource once", stats.acquired.get() == 1 && stats.released.get() == 1 && stats.releaseCompleted.isCompleted)
+            verify(label + "does not retry the lost channel", writesAfterLoss.get() == 1 && !snapshot.exists(_.isInstanceOf[ProtocolMessage.Completed]))
+            println("DISTAGE_APPLICATION_CHANNEL_LOSS kind=" + kind + " active=interrupted acquired=" + stats.acquired.get() + " released=" + stats.released.get() + " error=original writes=stopped")
+          }
+        }
+        checked.transformWith { result =>
+          if (!execution.isCompleted) { val _ = stats.bodyGate.trySuccess(()) }
+          val _ = stats.releaseGate.trySuccess(())
+          bounded("cleanup", execution).transformWith(_ => Future.fromTry(result))
+        }
+      }
+    } }
+  }
+
   private def timed[A](signal: Future[A], duration: FiniteDuration, timeout: () => A, runtime: QuasiIORunner[MiniBIOAsync[Throwable, _]], context: ExecutionContext): Future[A] = {
     implicit val ec: ExecutionContext = context
     val (timer, cancel) = runtime.runFutureInterruptible(MiniBIOAsync.WeakAsyncForMiniBIOAsync.sleep(duration))
@@ -207,5 +269,25 @@ private[di] object SpecCancellationFixtures {
         .onInterrupt(ZIO.succeed { require(stats.interrupted.trySuccess(()), "ZIO body interrupted twice") })
     }
     "after cancellation" in { (_: Resource) => ZIO.succeed { val _ = stats.bodies.incrementAndGet(); () } }
+  }
+
+  private final class CatsChannelSuite(stats: Statistics) extends Spec1[IO] {
+    override protected def config: TestConfig = configuration(stats, TestConfig.Parallelism.Sequential, QuasiIO[IO], QuasiAsync[IO]).copy(parallelTests = TestConfig.Parallelism.Fixed(2))
+    "active channel loss" in { (_: Resource) =>
+      IO { val _ = stats.bodies.incrementAndGet(); require(stats.entered.trySuccess(())) }
+        .flatMap(_ => IO.fromFutureCancelable(IO.pure((stats.bodyGate.future, IO.unit))))
+        .onCancel(IO { require(stats.interrupted.trySuccess(()), "Channel IO body interrupted twice") })
+    }
+    "trigger channel loss" in { (_: Resource) => IO.fromFuture(IO.pure(stats.entered.future)).map { _ => val _ = stats.bodies.incrementAndGet(); () } }
+  }
+
+  private final class ZIOChannelSuite(stats: Statistics)(implicit defaults: DefaultModule2[zio.IO]) extends Spec2[zio.IO] {
+    override protected def config: TestConfig = configuration(stats, TestConfig.Parallelism.Sequential, QuasiIO[zio.Task], QuasiAsync[zio.Task]).copy(parallelTests = TestConfig.Parallelism.Fixed(2))
+    "active channel loss" in { (_: Resource) =>
+      ZIO.succeed { val _ = stats.bodies.incrementAndGet(); require(stats.entered.trySuccess(())) }
+        .flatMap(_ => ZIO.fromFuture(_ => stats.bodyGate.future))
+        .onInterrupt(ZIO.succeed { require(stats.interrupted.trySuccess(()), "Channel ZIO body interrupted twice") })
+    }
+    "trigger channel loss" in { (_: Resource) => ZIO.fromFuture(_ => stats.entered.future).map { _ => val _ = stats.bodies.incrementAndGet(); () } }
   }
 }

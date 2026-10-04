@@ -1,6 +1,6 @@
 package izumi.distage.testkit.protocol
 
-import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
+import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json, Printer}
 import io.circe.parser.parse
 
 object ProtocolCodec {
@@ -16,7 +16,7 @@ object ProtocolCodec {
 
   def encode(message: ProtocolMessage): String = {
     val payload = messageCodec(message)
-    val frame = Json.obj("schemaVersion" -> Json.fromInt(SchemaVersion), "message" -> payload).noSpaces
+    val frame = Printer.noSpaces.copy(escapeNonAscii = true).print(Json.obj("schemaVersion" -> Json.fromInt(SchemaVersion), "message" -> payload))
     require(frame.length <= MaxFrameCharacters, "Protocol frame exceeds its character limit")
     messageCodec.decodeJson(payload).fold(error => throw new IllegalArgumentException(s"Invalid protocol message: ${error.message}"), _ => ())
     frame

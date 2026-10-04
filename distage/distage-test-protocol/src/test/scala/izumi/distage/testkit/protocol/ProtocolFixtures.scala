@@ -211,6 +211,7 @@ object ProtocolFixtures {
     val oversizedPayload = ProtocolMessage.Rejected(run, failure.copy(message = "x" * (ProtocolCodec.MaxFrameCharacters + 1)))
     verify(ProtocolCodec.validate(oversizedPayload) == Right(()), "Payload schema validation does not impose channel frame size on in-process values")
     rejectProducer(oversizedPayload, "character limit")
+    UnicodeFrameFixtures.run(verify, rejectProducer)
     println(s"PROTOCOL_FIXTURES_OK checks=$checks schema=${ProtocolCodec.SchemaVersion}")
     println(s"PROTOCOL_GOLDEN $golden")
   }

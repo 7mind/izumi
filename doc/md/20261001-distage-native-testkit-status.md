@@ -61,15 +61,15 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.9 | in progress | Duplicate plain and distage path/suite/test IDs reject in all nine JVM/JS/Native lanes below; final evaluation outstanding. |
 | 2b.10 | waiting on owner | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below. The approved factory migration requires non-import edits to eligible custom hooks; the fixed item remains unmet for those hooks. Complete inventory and final evaluation outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
-| 2c.1 | not started | No evaluation point passed yet. |
-| 2c.2 | not started | No evaluation point passed yet. |
-| 2c.3 | in progress | Prepared-plan activation inspection passes in nine producer lanes; published protocol consumers preserve synthetic axis payloads. Actual published activation semantics and full application/final evaluation remain open. |
+| 2c.1 | in progress | Typed application agrees on discovered, planned and executed IDs in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
+| 2c.2 | in progress | Application rejects unknown IDs and actual DI axis values before provisioning in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
+| 2c.3 | in progress | Actual application axis/configuration and prepared-plan inspection pass in all nine producer and audited published-consumer lanes below; full application/host and final evaluation remain open. |
 | 2c.4 | in progress | Shared/nested/per-test resource scope inspection and execution pass in nine producer lanes and published consumers; full application/final evaluation remains open. |
-| 2c.5 | not started | No evaluation point passed yet. |
-| 2c.6 | not started | No evaluation point passed yet. |
-| 2c.7 | in progress | Effective axis override/filter precedence passes in nine producer lanes. Published higher consumers verify memoization overrides and nested sharing; actual published axis precedence and full application/final evaluation remain open. |
-| 2c.8 | not started | No evaluation point passed yet. |
-| 2c.9 | in progress | Schema-4 resolved/planned output: 159 protocol checks per producer lane, 30 published consumer platform executions and four isolated String exchanges pass. Application channel/CLI and final evaluation remain open. |
+| 2c.5 | in progress | Application revalidates stale build/target/catalogue and explicit empty selection in all nine producer and audited published-consumer lanes below; CLI/saved clients and final evaluation remain open. |
+| 2c.6 | in progress | Structured ID collision and repeated application identity controls pass all nine producer and audited published-consumer lanes below; complete clients and final evaluation remain open. |
+| 2c.7 | in progress | Actual application axis override/filter precedence, memoization overrides and within-graph resource sharing pass all nine producer and audited published-consumer lanes below; full application/host and final evaluation remain open. |
+| 2c.8 | in progress | Application retains a model-provider planning-extension failure separately from test failures on JVM; actual config-loader/extension application proofs and final evaluation remain open. |
+| 2c.9 | in progress | Schema-4 protocol: 186 checks per producer lane; typed/framed application and real JVM file contracts pass audited published consumers below. Standalone/host transports and final evaluation remain open. |
 | 2d.1 | not started | No evaluation point passed yet. |
 | 2d.2 | not started | No evaluation point passed yet. |
 | 2d.3 | not started | No evaluation point passed yet. |
@@ -136,7 +136,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.16 | not started | No evaluation point passed yet. |
 | O.17 | in progress | Declarative registration and arbitrary-constructor side-effect boundary documented; no-resource front-end discovery verified below; final evaluation outstanding. |
 | O.18 | in progress | Provider-owned loader factories and bootstrap controls pass below, including opaque/warmed-worker request reconstruction, distinct owner caches, retained creation failures and held-creator concurrency. Caller-owned prebuilt state/incompatible policies, complete custom-hook audit and final evaluation outstanding. |
-| O.19 | not started | No evaluation point passed yet. |
+| O.19 | in progress | Typed application command layer, portable framed memory and explicit JVM file channels pass all nine producer/audited published-consumer lanes below; full application/CLI/host semantics and final evaluation remain open. |
 | O.20 | not started | No evaluation point passed yet. |
 | O.21 | not started | No evaluation point passed yet. |
 | O.22 | not started | No evaluation point passed yet. |
@@ -8606,3 +8606,602 @@ recovery conclusion follows from code evaluation placement, not a runtime
 constructor-failure oracle. Its scope excludes the next application draft,
 complete 2c and all parent/final gates. A local verified inspection-slice commit
 follows; its resulting hash will be recorded after creation. No push occurs.
+
+Verified inspection slice committed locally as `d06823c774f0c3861e96173ba3192d5b8ae56d36`
+(`Describe prepared plans; verify nine producer and published consumer lanes`).
+Root compares all 25 latest non-ledger reviewed repository blobs directly
+with this commit: every SHA-256 matches. The ledger includes the subsequent
+review-result append; its earlier reviewed copies retain their capture-point
+identity. Working tree was clean immediately after the commit. No push occurs.
+
+### 2c application command layer: first implementation, tests pending — 2026-10-04
+
+After committing the inspection slice, a portable TestApplication now wraps
+one correlated RunId and fresh RunSession with explicit suite factories,
+execution context and typed ProtocolOutput. Non-cancel commands are serialized;
+exact resolved requests/prepared plans and original planning failures are
+retained. Changed requests after planning and repeated execution are rejected.
+Cancellation bypasses queued execution and held cleanup. Event delivery failures
+retain the original exception, request cancellation, suppress further channel
+writes and fail the command only after the provider cleanup path returns;
+descriptive delivery failures fail immediately. No framing or launcher exists
+yet. This is implementation state, not a passing acceptance claim.
+
+New permanent base controls cover listed structured IDs, selection/stale
+catalogue rejection, plan reuse, original planning failure retention, held
+finalization/cancellation and delivery errors. Existing real-DI activation
+controls now exercise the application messages for all ten cases, preserving
+configuration/activation/filter/memoization/resource oracles and adding repeated
+inspection plus validated terminal/event output. These changes require fresh
+execution. The earlier provider/publication evidence remains tied to its frozen
+pre-application source; no result is reused as proof of this new dispatcher.
+
+`python3 /srv/nvme/tmp/izumi-impl/2c-application-jvm-pilot-first.py`
+ends actual/driver 1 during main compilation (all frozen inputs unchanged).
+Scala3 E045 reports that the recursive session value needs an explicit type:
+the deferred event-sink closure calls session.cancel during execution. No
+application/base/higher runtime fixture is reached. The correction supplies the
+RunSession field's explicit type; it does not change construction timing or
+instantiate suites. A separately named second JVM pilot follows. Missing later
+markers are consequences of that compile failure, not separate runtime defects.
+
+The second JVM application pilot ends terminal/actual 0 with base736,
+higher605, the new application marker, factory and executor-termination markers
+and every frozen input unchanged. The explicit field type resolves the compile
+failure; all new command/resource/channel controls execute. This is a Scala3
+JVM check, not a portable/publication or complete application gate.
+
+A separate Java reflection probe executes against the already published protocol
+JVM artifact and its frozen public consumer dependency closure:
+`/srv/nvme/tmp/izumi-impl/2c-protocol-utf8-probe-first.java`, commands/logs at
+`/srv/nvme/tmp/izumi-impl/2c-protocol-utf8-probe-first/`.
+ProtocolCodec.encode accepts a Cancel with nonempty run string containing an
+unpaired UTF-16 surrogate. Actual runtime exit1 prints
+`ENCODED_FRAME_VALID rawSurrogate=true utf8Lossless=false`, then fails the exact
+UTF-8 preservation oracle. The surrounding evidence wrapper returns0 after
+recording that expected observed failure and verifying unchanged dependencies;
+it does not mark the reproduction successful. Raw Unicode printing retains the
+surrogate in the String frame, and Java's UTF-8 conversion replaces it. This
+is a reproduced transport serialization defect, not a discovery/execution
+failure. Correct JSON Unicode escaping will be tested before file framing.
+
+Preparatory review predicts an inline/reentrant queue defect. The public API
+accepts a caller-supplied ExecutionContext and has no non-reentrant-output
+precondition. A new permanent control supplies an inline context, reenters Plan
+from the Discovered callback, holds that plan, then submits Execute. Before the
+correction, `python3 /srv/nvme/tmp/izumi-impl/2c-application-reentrancy-fail-first.py`
+compiles0 and ends actual/driver1 at exactly
+`Reentrant inline output must keep execution queued behind its held plan`.
+Its finally opens the planning gate; no resource is acquired by this control.
+All frozen inputs stay unchanged. This establishes the predicted failure.
+
+The correction publishes a Promise as the new queue tail before evaluating
+previous.flatMap. Inline/reentrant callbacks therefore append to that published
+pending tail, rather than having their later command overwritten by the outer
+enqueue return. The original reproduction fixture remains byte-identical.
+A separately named replay follows; no success is inferred from the correction.
+
+The queue replay ends terminal/actual0, base740/higher605, all exact markers
+and frozen inputs unchanged. Its four permanent inline/reentrant checks pass
+with the same fixture bytes as fail-first. Publishing the pending tail before
+calling flatMap addresses the observed overwrite; no asynchronous-context or
+non-reentrant-output precondition is introduced.
+
+The forced held-state fixture probe's first driver compiles0/runtime1 at the
+expected cleanup oracle but then references the wrong log filename and ends1
+before its final dependency audit. The separate corrected second driver reuses
+the byte-identical source, compiles0/runtime1 at
+`FORCED_ORACLE_FAILURE released=0 executionCompleted=false`, records the expected
+failure and ends driver0 with all dependencies/source unchanged. The probe's
+own finally opens and drains the held provider and terminates its executor;
+that external drain is not attributed to the defective fixture. Captures:
+`2c-application-cleanup-fault-probe-first/` and `...-second/` under the scratch
+root. Root fixture cleanup now opens its release gate and waits for execution
+before propagating the original assertion error, retaining a distinct cleanup
+error as suppressed. A permanent deliberate failing-oracle control tests that
+behavior. These resources are a base-provider AtomicInteger/Promise model;
+actual DI Lifecycle resource proof belongs to the higher controls.
+
+Finished-time cancellation policy is made operational: RunEvent.Finished means
+execution and finalization are terminal, so cancellation admission closes
+before invoking its output callback. A permanent callback submits Cancel at
+that point. `2c-application-terminal-cancel-fail-first/` compiles0 and ends
+actual/driver1 at exactly
+`Finished closes cancellation admission before terminal output callbacks`.
+All frozen inputs stay stable. Production now marks completion on Finished
+before delivering it, retaining a final failed-Future completion path too.
+The original immutable outcome is not rewritten. Replay remains pending.
+
+Root reads the complete first preparatory application review, preserves its
+historical scope and verifies report SHA-256
+`472dd655945c514dc22f84ed540ff82bd3664d0f17f9372be10fccbd4c7d9751`,
+schema-1 INPUT-MANIFEST.json
+`2435ddcad4ea56e8a9c6e5a70769a6b0998d0038f0db7681ece5553f4c264c3b`,
+and inspection.json
+`5b20b2775bd47cf00eb731d056561a7c20b705d57c6eece4488d96a57778dbea`.
+All 19 repository and 36 evidence preserved copies match hashes/sizes in the
+manifest's reviewedCopy fields. Path:
+`/srv/nvme/tmp/izumi-impl/2c-application-preparatory-readonly-review-first/`.
+It directly confirms pilot736 and the separate unchanged-fixture queue
+fail/replay740; later cleanup and Finished-admission corrections are outside
+that report. Remaining proof gaps include actual IO/ZIO DI cleanup on channel
+loss, active/terminal delivery errors, pre-execution cancellation, concurrent
+submissions, portable/published application executions, framing/CLI and all
+parent/final gates. No acceptance item is marked done from this review.
+
+Terminal-cancellation replay ends terminal/actual0, base751/higher605 with all
+frozen inputs stable. The unchanged callback-admission oracle now passes;
+Finished closes cancellation admission before callback delivery, without
+rewriting the immutable outcome. Its first failure also ran the new forced-
+oracle cleanup control before reaching the failing terminal check.
+The independent copied-helper cleanup replay ends compile/runtime/driver0:
+`FORCED_ORACLE_FAILURE released=1 executionCompleted=true` and
+`FIXTURE_CLEANUP_FAULT_PROBE_OK released=1 drained=true`, with its executor
+terminated and all captured dependencies unchanged. The external fault oracle
+is unchanged; only the copied root helper's recovery/drain behavior changes.
+Its source records that delta rather than claiming byte-identical helper code.
+
+The permanent protocol UTF-8 fixture fails before its correction: source freeze
+at `2c-protocol-utf8-fixture-fail-first/`, compile0/runtime/driver1 at exactly
+`Encoded protocol frames must retain every UTF-16 code unit during UTF-8 transport`.
+It covers lone high/low surrogates, Unicode pairs/text, escaped line/quote text
+and Unicode expansion at the frame limit. Production encoding now uses the
+pinned Circe 0.14.14 Printer with escapeNonAscii=true. The complete printed
+frame is ASCII and its existing limit is measured after escape expansion;
+this is JSON representation, not a payload-schema change. Permanent replay and
+all-platform/pub verification remain pending. The first combined patch attempted
+an incorrect document heading, failed validation and applied no changes; the
+corrected patch edits the observed protocol paragraph and encoder only.
+
+Copied-helper replay provenance qualification: the unchanged fault-injection
+oracle and copied-helper recovery delta do not establish an identical production
+binary closure across the two probes. The replay's TestApplication class/TASTy
+also include the intervening terminal-admission correction; their hashes differ
+from the fail-second closure. ProtocolOutput class/TASTy are unchanged. Each
+27-directory producer closure is frozen/stable within its own run. The source
+recovery/drain placement and observed released/completed postcondition support
+the cleanup conclusion, while no helper-only binary causal-isolation or
+published-only claim is made.
+
+Protocol UTF-8 permanent replay ends terminal/actual0: 186/schema4, unchanged
+fixture bytes and all frozen inputs stable. ASCII golden frame remains exact.
+All eight Unicode/surrogate/escape cases and the expanded-character-limit
+boundary pass on JVM. Portable and fresh published UTF-8 proof are still open.
+
+An additional JVM/Native-only control now checks cancellation with a blocking
+synchronous body on an inline execution context. Two owned worker threads
+coordinate the held body and cancellation; available host processors checked
+with nproc:48. Shared reentrant controls already pass, but enqueue still invokes
+inline continuations while holding the application monitor, predicting that a
+second thread's cancellation admission can block behind the body. A fail-first
+JVM capture is running at `2c-application-inline-blocking-fail-first/`. No
+production correction or passing result is inferred yet. Scala.js has no
+corresponding blocking-thread control; its portable inline/reentrant checks are
+separate.
+
+Real Cats IO and ZIO channel-loss controls are added using two concurrent test
+bodies and an actual memoized Lifecycle: one body holds a cancelable gate, the
+other waits for active entry and triggers output failure. They check interruption
+without opening the body gate, held finalization, original delivery exception,
+once-only release and no further output writes. Their execution is pending;
+no actual-DI channel-loss claim is borrowed from the base-provider model.
+
+Root reads the complete second preparatory application review and verifies its
+report SHA-256 851e45b1e876a00c2d2bcdb211b2aaf2c72504e7ae0545026fb571267695526a,
+INPUT-MANIFEST.json a817f5542455f0b6975547d82b4e4b3ca28ea9a8302f39493dde06cb20b6912c,
+and inspection.json e8fa130bce4ddccffd9e8bbc853365394abc3c0969386859ba58e88db151aed9.
+All 45 preserved copies (9 repository, 36 evidence) match captured sizes/hashes.
+Path: /srv/nvme/tmp/izumi-impl/2c-application-preparatory-readonly-review-second/.
+It confirms the bounded JVM terminal-admission and negative-helper draining
+results, qualifies their differing production dependency closures, and proposes
+actual DI channel-loss controls. Later blocking-body and DI application controls
+are excluded from that historical report; no parent/final gate is closed.
+
+The inline blocking-body reproduction terminates at the expected cancellation
+admission invariant. The strengthened second capture explicitly observes
+cancellationEntered=true, returned=false, bodyHeld=true, then drains the body and
+terminates its owned executor. Both captures compile successfully and runtime/
+driver exit 1; shared base751 passes before the separate platform failure.
+The second capture's higher markers are absent because only the base project was
+requested, not evidence of a higher-provider failure. Inputs remain unchanged.
+Paths: 2c-application-inline-blocking-fail-first/ and -fail-second/ under the
+scratch root. Production enqueue now publishes/swaps its queue tail under the
+monitor, then attaches the potentially inline continuation outside it. This
+retains reentrant ordering while allowing another thread to admit Cancel during
+a blocked synchronous body. The byte-identical strengthened JVM/Native fixture
+is retained. Fresh JVM replay, including the added actual Cats/ZIO DI channel-loss
+controls, is running at 2c-application-inline-blocking-replay-first/. No replay
+success or portable/published postcondition is inferred yet.
+
+Inline-blocking replay ends actual/driver0, base751/higher621; frozen inputs
+unchanged. It observes cancellationEntered=true, returned=true, bodyHeld=true,
+then a cancelled non-successful outcome only after the body gate opens, with
+executor termination. Both actual Cats and ZIO application channel-loss controls
+pass: active body interrupted while its gate remains closed, acquisition=1,
+release held until explicitly opened, release=1, original delivery exception
+returned and no further writes. These are JVM producer observations, not portable
+or published-only proof. Exact commands/log/completion at
+/srv/nvme/tmp/izumi-impl/2c-application-inline-blocking-replay-first/.
+
+The next application slice adds portable framed output and caller-owned frame
+source/sink contracts, plus JVM UTF-8 file adapters. File output creates a new
+explicit channel and flushes one LF-delimited frame per message; file input is
+character-bounded and rejects malformed UTF-8 or incomplete framing. File
+transport failures are retained. One shared behavioral contract exercises both
+a strict manual memory implementation and the actual file implementation,
+including an application run with ordinary stdout. JVM-specific boundary
+controls cover truncation, UTF-8 errors, exact/oversized limits and preservation
+of existing output files. Their runtime verification is pending; no framing,
+CLI or final acceptance item is marked done from source existence.
+
+Framing JVM first capture compiles production successfully but stops at an extra
+closing parenthesis in the new physical UTF-8 test (line47). Protocol186 passes;
+no framing runtime postcondition was evaluated. Actual/driver1, frozen inputs
+stable. Corrected the fixture syntax only; a fresh second capture is running.
+
+Framing JVM second capture ends actual/driver0, protocol186/base768/higher621,
+all inputs unchanged; the same memory and real-file contract passes and actual
+file-boundary controls report checks25. This is JVM producer verification only.
+
+A further material hypothesis remains: deliver holds the application monitor
+while invoking a possibly blocking output callback. That can prevent a different
+thread from admitting Cancel even though the command queue lock was corrected.
+A separately named JVM/Native control holds the Started output callback, enters
+Cancel on a second worker, requires it to return while output remains held, then
+opens the gate, drains execution and terminates both workers on either path.
+The original held-body fixture stays unchanged. The failing reproduction is
+running at 2c-application-output-blocking-fail-first/. No production correction
+or failure is assumed before its observed result.
+
+The held-output reproduction compiles successfully and fails at the expected
+cancellation-admission invariant: cancellationEntered=true, returned=false,
+outputHeld=true. It drains the output gate and terminates its executor. Shared
+base768 and the unchanged held-body control pass beforehand; later higher tasks
+are not reached. Actual/driver1 and stable frozen inputs at
+2c-application-output-blocking-fail-first/. Production output serialization now
+uses a separate delivery monitor, leaving the short command/state monitor
+available for cancellation admission. The unchanged held-output oracle is
+included in the fresh all-nine producer matrix now running at
+2c-application-nine-lane-first/. Protocol, base, core and higher TestFull tasks
+are requested for every compiler/platform, with all Native modules cleaned and
+strict unused checks on Scala3. No replay or platform success is inferred yet.
+
+All Scala3 TestFull processes in the first application matrix exit0, with
+protocol186x3/base768x3/core143,103,118/higher621,498,498, including both
+unchanged blocking-cancellation controls. The aggregate driver correctly exits1
+because a Native ZIO callback rejection appears at raw log10539–10553 after the
+channel-loss success marker. No Scala2 lane runs. The stack identifies the new
+applicationChannelLoss cleanup's Promise.trySuccess, which opens bodyGate after
+execution/runtime teardown. The lifetime/error oracles passed, but rejected
+callbacks violate clean completion and this capture is not a passing matrix.
+All frozen sources stay stable. The reviewer independently identifies the same
+raw failure without running a probe.
+
+Fixture correction: after proving interruption with bodyGate still closed and
+finalization held, settle that cancelled Future's callback before opening the
+release gate, while its effect runtime remains alive. Recovery only opens the
+body gate while execution is still active, and still opens/drains finalization.
+Production application and all positive assertions remain unchanged. The new
+second all-nine capture replays the rejection check and all original oracles.
+Commands/logs are under 2c-application-nine-lane-second/; no success inferred yet.
+
+Prospective launcher sources remain outside the checkout while its application
+matrix freezes root inputs. A separate direct-compiler probe uses an independently
+copied JVM producer/compiler closure, not mutable outputs or published-only
+artifacts. First probe compiles0/runtime1 because its input helper attempts to
+encode a protocol-invalid empty explicit selection, which the codec correctly
+rejects before launcher admission. Its owned executor terminates. The corrected
+second probe uses a valid unknown explicit ID and still checks empty input,
+stale saved build, pre-execution cancellation and held-provider draining after
+an original input error. These are draft/preparatory controls, not root HEAD or
+CLI process proof. Capture paths: 2c-launcher-draft-probe-first/ and -second/.
+
+Root reads the complete framing preparatory review and verifies report hash
+4b7ec1abb4389f43a3f7b19e5975b17de2dc379deff2c81a90725be0bc7a5d88,
+INPUT-MANIFEST.json 429a2c0eddb95c15262cf10de9b57931278c3a86ede04248cb8de744a82c903c,
+and inspection.json 3b57b24e73471c8293e295e2a7dc29add6720ebbc722dc1ca590cadd141251fa.
+All 49 preserved review copies match hashes/sizes. Path:
+/srv/nvme/tmp/izumi-impl/2c-application-framing-preparatory-readonly-review-first/.
+It independently confirms the bounded commands/source assessment and the first
+matrix's rejected Native cleanup callback, without borrowing later replay or
+publication. Limits remain: successful-release-only DI loss controls, no forced
+physical writer I/O error, JVM-only physical framing, JS/Native memory framing,
+and unimplemented full CLI/host semantics. No parent/final item is closed.
+
+Application second matrix: Scala3 and 2.13 producer processes/validations pass on
+all three platforms, protocol186/base768/core143,103,118/higher621,498,498, with
+no rejected callbacks. Scala2.12 stops at test compilation: FileProtocolFrameFixtures
+has two val _ discard bindings in one scope, which that compiler treats as a
+redefinition. Actual/driver1; only its JVM protocol186 executes beforehand.
+Production compiles, and this is not a framing-runtime failure. All input freezes
+remain stable. The fixture now uses the project's existing Discarder for the
+three Files.write results; assertions and production remain unchanged. A fresh
+third all-nine matrix is running, still without any all-nine success claim.
+
+The prospective launcher second probe compiles/runtime0 against its independently
+frozen JVM producer closure. It checks valid unknown IDs, stale saved requests,
+empty input, pre-execution cancellation, and exact original input-error identity
+only after a held model provider drains. Its executor terminates; frozen sources
+and closure remain stable. Path: 2c-launcher-draft-probe-second/. Sources are still
+outside checkout, and neither published-only nor actual CLI-process proof is
+claimed.
+
+Third application matrix stops at Scala3 JVM test compilation: the attempted
+Discarder import is unavailable in the base runner's deliberately narrow graph.
+Protocol186 passes; actual/driver1; stable inputs; no other platform result.
+The assumption that a higher-runner helper was also in the base graph was wrong.
+The fixture now discards Files.write in one small local writeBytes helper, with
+one val _ binding per method scope. No dependency/build/production change.
+Fresh fourth full matrix is running at 2c-application-nine-lane-fourth/.
+
+Fourth application matrix terminates actual/driver0 for every compiler/platform,
+36 TestFull tasks. Protocol186/schema4 on all9; base768 (Scala3/2.13) and767
+(2.12) on each platform; core143JVM/103JS/118Native; higher621JVM/498JS/498Native.
+All required markers, Native clean tasks and strict Scala3 unused options are
+captured; no rejected callbacks; all frozen source inputs unchanged. Unchanged
+held-output/body oracles pass on JVM/Native, real Cats/ZIO channel-loss assertions
+pass on all9, memory framing passes all9, and the real file contract/boundaries
+pass all3 JVM lanes with checks25 each. Source-only writer-I/O-failure latching
+and untested negative-startup/failing-release limits remain as reviewed.
+Path: /srv/nvme/tmp/izumi-impl/2c-application-nine-lane-fourth/.
+
+Fresh explicit publication of the four changed modules for all9 is starting at
+2c-application-publication-first/. Artifact closure comparison and independent
+application consumers remain pending; no published/final postcondition is inferred.
+
+Fresh publication terminates all3 compiler processes/driver0 with stable frozen
+sources. Artifact audit exits0: 36 current binary/POM pairs and 10,610 compiled
+members match producer classes and packaged output; manifest differences are
+only normalized per-task timestamps. Non-test POM dependencies exclude ScalaTest
+and Scalactic. Path: 2c-application-publication-artifact-audit-first/audit.json.
+Independent application consumers now run against this publication, with copied
+test oracles in a consumer namespace (no production sources copied), actual
+activation/configuration/filtering, shared/disabled memoization, Cats/ZIO output
+loss, UTF-8 expansion and portable/JVM file channel contracts. Root classpath,
+namespace and artifact audits remain pending; no consumer success claimed yet.
+
+The original byte-identical Java UTF-8 reproduction now passes against the fresh
+published protocol: rawSurrogate=false, utf8Lossless=true and lossless marker1.
+Same original source hash5495d4b26f8ea032f2089479a063b7e069c08afdde4a2518e5df7032c9f00f72,
+same eleven-path published JVM3.8.4 classpath; only the protocol JAR bytes differ,
+while ten other dependency JARs equal the original capture. All within-run source/
+JAR hashes remain stable. Path: 2c-protocol-utf8-published-replay-first/.
+
+First application consumer capture stops at Scala3 JVM compilation, actual/
+driver1, before runtime: the minimal inspection-consumer build lacks optional
+Cats IO/ZIO runtime dependencies and the underscore kind-projector flag required
+by the copied cancellation fixture. This is a consumer setup defect, not evidence
+of a producer runtime failure. Root sources/publication remain unchanged. The
+second isolated consumer declares project-pinned Cats Effect3.7.1, ZIO2.1.26
+(with the project's izumi-reflect exclusion), Scala2 kind-projector0.13.4 and
+matching underscore flags. All test oracles are unchanged; a fresh capture runs
+at 2c-application-published-consumers-second/.
+
+Second independent application consumer terminates actual/driver1. Published
+Scala3 JVM passes all213 checks, real file25 and both blocking-cancellation
+controls. JS passes application/memory/activation and Cats channel-loss controls,
+then ZIO channel loss times out during command completion after its held-finalizer
+phase. Native and Scala2 lanes did not run. Root sources and all36 published
+artifact pairs remain equal to the frozen publication. This is a reproduced
+consumer failure; no production correction or all-nine published claim is made.
+Path: /srv/nvme/tmp/izumi-impl/2c-application-published-consumers-second/.
+Investigation now compares the producer/consumer runtime closure and narrows the
+JS finalization failure before any correction.
+
+Isolated published Scala3 JS channel-loss capture reproduces the ZIO command-
+completion timeout without preceding activation tests. Thirteen printed assertions
+pass (all8 Cats, first5 ZIO), establishing interruption, unopened body gate and
+held Lifecycle finalizer before the missing completion. All16 unchanged oracles
+remain required; actual/driver1. Path: 2c-application-channel-loss-js-isolation-first/.
+
+Runtime closure diagnosis freezes the original55 distinct JS dependency JARs.
+The old published fundamentals-bio is missing14 current parallel-child/pair/worker
+compiled members. Only that JS dependency is freshly published from unchanged
+root sources; publication0; all1,537 members match current producer classes.
+The other54 original dependency binaries remain byte-identical. Old/new artifacts
+and hashes are retained at 2c-application-runtime-closure-diagnosis-first/ and
+2c-application-bio-publication-js-first/. A second isolated capture now replays
+identical positive assertions against that single refreshed dependency. No
+production implementation is changed, and the causal result remains pending.
+
+Second isolated JS replay terminates actual/driver0 and all16 identical positive
+channel-loss assertions pass, including ZIO original-error identity and actual
+Lifecycle release after interruption. The same55 distinct runtime JAR paths are
+used; within both replays only fundamentals-bio differs, other54 byte-identical.
+This establishes stale local publication of that dependency as the cause of the
+consumer timeout, rather than a defect in current application source. It does
+not isolate which internal change in the dependency is responsible. All source
+inputs remain frozen/stable. Path: 2c-application-channel-loss-js-isolation-second/.
+Fresh publication of the complete23-module portable runtime closure for all9
+lanes is starting at 2c-application-runtime-closure-publication-first/. Full
+published application replay and current closure audit remain pending.
+
+Prospective launcher memory/file dual contract compiles/runtime0 using the
+previous independently frozen JVM producer/compiler closure. Same contract body
+runs against manual memory and actual files: all50 checks pass across complete,
+inspection, stale build/catalogue, unknown ID, cancellation-only, pre-cancel and
+empty-input cases. Executor termination marker1; no rejected callbacks; frozen
+inputs remain stable. Path: 2c-launcher-draft-contracts-probe-first/. Draft sources
+remain outside checkout; no root-HEAD or published standalone-process proof.
+
+Prospective launcher actual-process probe compiles/runtime0 using independently
+frozen JVM producer/compiler dependencies. All9 child JVM CLI cases exit as
+expected: success and inspection0; test failure, stale build/catalogue, unknown
+ID, cancellation-only, pre-cancel and empty input1. Protocol UTF-8 file frames
+decode, success list/resolve/plan/run IDs agree, terminal events/completion remain
+ordered, failure diagnostics survive, and ordinary body stdout stays out of the
+explicit frame channel. Each child terminates within30s. Captured argv/files/
+stdout/stderr are retained at 2c-launcher-draft-cli-probe-first/. This is draft-only
+JVM process evidence; no root-installed, published-only, Scala2, JS or Native
+launcher postcondition is claimed.
+
+Complete23-module runtime closure publication terminates all3 compiler processes/
+driver0 with all frozen inputs stable. Current closure audit exits0: 207 binary/
+POM pairs and75,635 compiled members equal actual producer classes/package
+contents (only per-task manifest timestamps normalized). Non-test POM dependencies
+exclude ScalaTest/Scalactic. Optional SDK dependencies are recorded explicitly.
+Path: 2c-application-runtime-closure-artifact-audit-first/audit.json.
+Third application consumer capture now uses this full closure, unchanged213
+positive oracles and the pinned optional SDK setup; only an unused copied file-
+fixture wildcard import is removed. Source/classpath/namespace root audit and
+all-nine outcomes are still pending. Path: 2c-application-published-consumers-third/.
+The original byte-identical Java UTF-8 probe also starts a new replay against the
+current published protocol. Path: 2c-protocol-utf8-published-replay-second/.
+
+Second Java published UTF-8 replay terminates0 with original source unchanged,
+all ten other dependency JARs unchanged, rawSurrogate=false and utf8Lossless=true.
+The current protocol artifact is the only changed dependency relative to the
+original fail-first capture. Path: 2c-protocol-utf8-published-replay-second/.
+
+Third application consumer capture terminates driver1. Scala3 and2.13 each have
+all3 application213 runtime markers and command exits0, but both SBT process
+shutdowns print NoClassDefFoundError:zio/Scope$State$Exited from ZIO Runtime's
+shutdown hook through SBT's closed ZombieClassLoader. Those exits alone do not
+establish clean JVM shutdown. Scala2.12 stops at compilation (four errors;
+missing QuasiIO/QuasiAsync[zio.Task]), before runtime. The consumer omitted the
+root's Scala2.12-only -Ypartial-unification flag. All source/publication freezes
+are unchanged. No all-nine consumer or clean-shutdown claim is made; original
+capture remains immutable at 2c-application-published-consumers-third/.
+The fresh driver will retain all positive assertions, add the pinned root flag,
+and reject shutdown/ClassNotFound errors as well as rejected callbacks. The
+JVM classloader failure is being narrowed independently before mitigation.
+Tracker searches found no exact ZIO/SBT issue; downloaded authoritative Runtime
+v2.1.26 source shows unsafe.fromLayer registers a JVM shutdown callback retaining
+its Scope, line329. Source/hash:2c-zio-sbt-shutdown-investigation-first/source.json.
+Related JUnit closed-classloader incident is not asserted to be this defect:
+https://github.com/junit-team/junit-framework/issues/4469. No issue is filed.
+
+Root directly reads the fresh bounded preparatory foundation report and verifies
+its hashes and175 preserved source/evidence copies: report4ca5e89c20633d012b026674d9fd07157521c114b9ad64bcbc2c048b1cf984c6,
+manifest b09ed81053f943d3eee401bec21448f3084aeb1edaf27267142141cc598032bd,
+inspection45bd60c716ccebb01b657fa0c73fd80211529bb8262cde83e6022d41554aa850.
+Path:2c-application-foundation-preparatory-readonly-review-fresh-first/.
+It supports fourth nine-lane producer evidence and narrowed BIO publication
+cause, with explicit oracle/domain limits; later full closure/publication and
+third/fourth consumers are excluded. Only finding D.1 qualifies public retention
+wording to NonFatal, scheduled after frozen consumer captures finish. No broader
+ownership/client/final gate is closed. A completion addendum remains required.
+
+Minimal pure pinned ZIO/SBT shutdown reproduction terminates aggregate0: same
+source/build in both modes, no izumi dependency. Non-forked command marker1/exit0
+then Scope$State$Exited NoClassDefFoundError through ZombieClassLoader; forked
+marker1/exit0 and no such shutdown error. Thus a fork explicitly mitigates this
+finite consumer process boundary. It does not establish future in-process host/
+loader cleanup or eliminate SDK hooks/retention. Capture:
+2c-zio-sbt-shutdown-minimal-first/; draft public report:
+2c-zio-sbt-shutdown-investigation-first/DRAFT-REPORT.md. No issue is filed.
+Fourth consumer retains every positive assertion, adds matching Scala2.12 partial
+unification, forks JVM, and strengthens diagnostics to reject unhandled thread/
+classloading errors. This setup change is recorded explicitly; original third
+consumer remains failed. Fresh run:2c-application-published-consumers-fourth/.
+
+Fourth consumer has all213 semantic markers in all9 platform runs and all command
+process exits0, but driver1 correctly rejects one late Native2.12 Future callback.
+Its raw trace shows CallbackRunnable dispatch rejected from the fixture's four-
+worker ThreadPoolExecutor while Shutting down (active1), after the consumer marker
+and before executor-termination. JVM fork removes the previous classloading error;
+Scala2.12 partial unification permits compilation. Neither removes this separate
+fixture-context closure race. Positive assertions are not weakened or promoted
+into a clean whole-run pass. No production change is justified by this trace.
+Original capture:2c-application-published-consumers-fourth/2.12.21/run.log:807.
+Investigation now tests explicit callback quiescence before owned-context shutdown.
+
+A deterministic context-close model compiles0, fails plain runtime1 with the
+expected rejected child dispatch after Future completion, and passes tracked
+runtime0 with child completed/executor terminated. A held admitted callback
+completes the observed Future before dispatching its child; the correction joins
+admitted callback work before shutdown rather than assuming Future completion
+means callback quiescence. Frozen input hashes remain stable. Path:
+2c-consumer-context-closure-repro-first/. This models the observed failure shape;
+it is not a literal SDK-stack reproduction or a production correction.
+Fifth independent consumer now uses an explicit callback-counted test context on
+JVM/Native, then drains accepted work before closing its owned delegate; every
+positive oracle remains unchanged and strict diagnostic rejection retained.
+The new helper/adaptation is scratch-only under consumer namespace, never a
+production source copy. It does not prove absence of later work submitted by
+unjoined external sources. Path:2c-application-published-consumers-fifth/.
+
+Fifth independent application consumer completes driver0 and all three compiler
+processes0, each with three213-check platform markers. All positive assertion
+counts, actual activation/configuration/axis precedence, memoization, Cats/ZIO
+channel-loss finalization controls, Unicode round-trip checks, JVM file25 and
+JVM/Native blocking-admission controls remain intact. Strict rejection of late
+callback, classloading and unhandled-thread diagnostics passes. Scope includes
+explicit JVM process fork and scratch-only callback-counted owned-context drain;
+it does not establish in-process host or arbitrary external callback ownership.
+Path:2c-application-published-consumers-fifth/completion.json and per-lane raw logs.
+
+The first root classpath audit fails its strict all-izumi equality check: the
+pre-run207-pair publication freeze omitted the JVM-only Byte Buddy proxy module.
+This is an audit coverage gap, not an observed runtime failure or stale binary.
+Original driver/capture remain immutable:
+2c-application-published-consumers-root-audit-fifth.py and matching directory.
+A new audit preserves strict all-izumi equality and supplements each JVM lane
+with proxy JAR/POM and current producer-member proof. All15 proxy class/TASTy
+members match current compiled bytes (7 Scala3;4 each Scala2); those three pairs
+are verified and frozen at audit time, not claimed freshly published or included
+in the pre-run freeze. The fresh207 pairs retain their pre/post hashes.
+Second root audit terminates0:1630 frozen root inputs,21 consumer copies,
+9 actual update/logged classpaths,458 distinct JARs and2232 consumer binary
+entries checked/frozen. Each JVM has24 current izumi artifacts; JS/Native23.
+No producer-root classpath, production-source shadow, ScalaTest or Scalactic.
+Path:2c-application-published-consumers-root-audit-fifth-second/audit.json;
+new-driver provenance:2c-application-published-consumers-root-audit-fifth-second-driver-provenance.json. This bounded current
+application foundation passes; no fixed parent/final acceptance item is closed.
+
+Root reads supplementary consumer-setup preparatory note, verifying all23
+path/copy size/hash pairs. Report5bd8449e256900cf6ed49119f606c0ef187503437c9ee3296893ad65ca68f70e;
+manifest e0b405f75fdfa5d1130f70e3801952e7f8ceb7a71748798dd166e78aa44a7406;
+inspection77d6d60333026e189424460f7d4e1cdd3bf9efd4c3921654f26fa32ce7429b09.
+Path:2c-application-consumer-setup-preparatory-readonly-review-first/.
+Its excludes-fourth/fifth scope and explicit Scoped.shutdown uncertainty remain.
+
+After frozen consumer/audit completion, public application documentation qualifies
+first delivery and file-I/O/input-framing retention to NonFatal, matching the
+implementation and reviewer finding D.1. Source/fixture bytes are unchanged;
+exactly this one non-ledger documentation input differs from the1630-file freeze.
+Path:2c-application-foundation-doc-qualification-first.json. Source test results
+remain applicable; the corrected documentation requires completion review.
+
+Root directly reads bounded foundation completion addendum and inspection,
+verifying6479 manifest records over3796 unique preserved copies by size/hash.
+Report a2d446c02674c07497326e630999e0329ce26d0a85f326b9b323b3186195d057;
+schema1manifest9132fa14e4c6b057fbb4d95cca2af78ccdcce9cf036e31560ad073e486bac6a2;
+inspection bd38e04b113263d4db648a6e407f67d7ec391c7b622b71d4b6a310587ac9d711.
+Path:2c-application-foundation-completion-readonly-review-first/.
+Zero remaining inspection failures; no introduced production defect blocks this
+bounded source checkpoint. Reviewer independently checks nine raw runtime lanes,
+actual/frozen update/logged classpaths, all207 fresh plus3 supplemental pairs,
+458 distinct dependency hashes and2232 consumer namespace members. Producer-
+class equality preserves supplied audit-time provenance; the reviewer did not
+execute those audits/builds or claim to reread current compiled directories.
+Original first root-audit failure is root's direct tool observation, not a
+persisted terminal log the reviewer read. Historical failed consumer/setup
+captures remain failed; explicit fork/accounting mitigations retain their limits.
+
+All documentation qualifications are resolved: NonFatal delivery retention,
+writeFrame I/O versus readFrame I/O/framing retention, lazy readFrame validation
+rather than eager open, exact audit-provenance filename, and within-graph sharing
+rather than narrower memoization levels. Final public doc SHA
+f26273c2dccbcea162e17cdef5cbdb7d6b2557288ba07d568e46fd1b901db274;
+record:2c-application-foundation-doc-qualification-fourth.json. Prior doc-delta
+records remain preserved. This is the only non-ledger source-freeze difference;
+all production/test bytes remain the completed fourth producer/fifth consumer
+inputs. Reviewed ledger88c2f20816ab5b1bf2c582506a38978fb783b1be4f220c6a459769674517b3c8
+precedes this completion entry; both reviewed ledger variants are preserved.
+Root git diff --check returns0. The local commit containing this entry is the
+bounded application/framing foundation above predecessor d06823c774f0c3861e96173ba3192d5b8ae56d36;
+no push or parent/final acceptance completion is claimed. Launcher/host work,
+actual config-loader/user-extension application failures and final-head gates
+remain open and work continues.
+
+Prospective launcher contracts are extended with controlled input failure after
+execution entry, cancellation admission and held finalization. Same30 positive
+checks run against memory and actual files (60 total), independently compiled
+and terminated0 with unchanged frozen source/dependency inputs. Strengthened
+nine actual JVM child-process oracles also compile/run0, retaining original
+exit/framing/ID/stdout checks plus strict callback/classloading diagnostics and
+owned-child timeout cleanup. Paths:2c-launcher-draft-contracts-probe-second/
+and2c-launcher-draft-cli-probe-second/. These still use scratch prospective
+sources/frozen producer closure; no root or published launcher claim. Prepared
+2c-launcher-nine-lane-first.py is unexecuted and excluded from this checkpoint.
