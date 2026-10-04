@@ -4,14 +4,18 @@ import com.github.dockerjava.api.DockerClient
 import com.github.dockerjava.api.exception.NotFoundException
 import distage.ModuleDef
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
+import izumi.distage.docker.model.Docker.ContainerFile
 import izumi.distage.docker.model.{ContainerHook, DockerFailureException}
 import izumi.distage.testkit.docker.ContainerFilesTest.*
 import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.{AssertZIO, Spec2}
 import zio.{IO, Task, ZIO}
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.concurrent.atomic.AtomicReference
 import scala.jdk.CollectionConverters.*
+import scala.util.{Try, Using}
 
 final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
 
@@ -47,6 +51,31 @@ final class ContainerHooksTest extends Spec2[IO] with AssertZIO {
               _ <- removeTestContainers(client)
               containerId <- resource.copy(config = resource.config.copy(afterCreate = Seq(hook))).use(c => ZIO.succeed(c.id.name))
               _ <- assertIO(hook.observed.get().contains((containerId, "created")))
+            } yield ()
+          }.ensuring(removeTestContainers(client).orDie)
+    }
+
+    "run after `files` are copied" in {
+      (resource: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
+        val copiedPath = "/opt/distage/hooked.txt"
+        val sawCopiedFile = new AtomicReference[Option[Boolean]](None)
+        val hook = new ContainerHook {
+          override def reuseKey: String = "check-copied-file"
+          override def afterCreate(client: DockerClient, containerId: String): Unit = {
+            val found = Try(Using.resource(client.copyArchiveFromContainerCmd(containerId, copiedPath).exec())(_.read())).isSuccess
+            sawCopiedFile.set(Some(found))
+          }
+        }
+        ZIO
+          .scoped {
+            for {
+              _ <- removeTestContainers(client)
+              hostFile <- ZIO.acquireRelease(ZIO.attempt(Files.createTempFile("container-hooks", ".txt")))(p => ZIO.attempt(Files.deleteIfExists(p)).orDie)
+              _ <- ZIO.attempt(Files.write(hostFile, "copied".getBytes(StandardCharsets.UTF_8)))
+              _ <- resource
+                .copy(config = resource.config.copy(files = Seq(ContainerFile(hostFile, copiedPath)), afterCreate = Seq(hook)))
+                .use(_ => ZIO.unit)
+              _ <- assertIO(sawCopiedFile.get().contains(true))
             } yield ()
           }.ensuring(removeTestContainers(client).orDie)
     }

@@ -4,7 +4,6 @@ import distage.ModuleDef
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
-import izumi.distage.docker.ContainerHooks
 import izumi.distage.docker.model.Docker.{ContainerFile, DockerReusePolicy}
 import izumi.distage.docker.model.DockerFailureException
 import izumi.distage.testkit.docker.ContainerFilesTest.*
@@ -113,12 +112,10 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
             files <- hostFiles
             _ <- resource
               .copy(config =
-                resource.config.copy(afterCreate =
+                resource.config.copy(files =
                   Seq(
-                    ContainerHooks.copyFiles(
-                      ContainerFile(files.directory, copiedDirectory),
-                      ContainerFile(files.single, copiedFile),
-                    )
+                    ContainerFile(files.directory, copiedDirectory),
+                    ContainerFile(files.single, copiedFile),
                   )
                 )
               )
@@ -132,8 +129,8 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
         ZIO.scoped {
           for {
             files <- hostFiles
-            freshResult <- fresh.copy(config = fresh.config.copy(afterCreate = Seq(ContainerHooks.copyFiles(ContainerFile(files.missing, copiedFile))))).use(_ => ZIO.unit).either
-            reusedResult <- reused.copy(config = reused.config.copy(afterCreate = Seq(ContainerHooks.copyFiles(ContainerFile(files.missing, reusedFile))))).use(_ => ZIO.unit).either
+            freshResult <- fresh.copy(config = fresh.config.copy(files = Seq(ContainerFile(files.missing, copiedFile)))).use(_ => ZIO.unit).either
+            reusedResult <- reused.copy(config = reused.config.copy(files = Seq(ContainerFile(files.missing, reusedFile)))).use(_ => ZIO.unit).either
             _ <- ZIO.foreachDiscard(List(freshResult, reusedResult)) {
               result =>
                 assertIO(result.swap.exists {
@@ -153,7 +150,7 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
             invalid = List(ContainerFile(Paths.get(""), copiedFile), ContainerFile(files.single, "relative/single.txt"))
             _ <- ZIO.foreachDiscard(invalid) {
               file =>
-                resource.copy(config = resource.config.copy(afterCreate = Seq(ContainerHooks.copyFiles(file)))).use(_ => ZIO.unit).either.flatMap {
+                resource.copy(config = resource.config.copy(files = Seq(file))).use(_ => ZIO.unit).either.flatMap {
                   result => assertIO(result.swap.exists(_.isInstanceOf[DockerFailureException]))
                 }
             }
@@ -164,7 +161,7 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
     "reuse only containers created with identical files" in {
       (resource: ContainerResource[Task, RunningContainer.Tag], client: DockerClientWrapper[Task]) =>
         def withFile(path: Path): ContainerResource[Task, RunningContainer.Tag] = {
-          resource.copy(config = resource.config.copy(afterCreate = Seq(ContainerHooks.copyFiles(ContainerFile(path, reusedFile)))))
+          resource.copy(config = resource.config.copy(files = Seq(ContainerFile(path, reusedFile))))
         }
 
         val removeTestContainers = ZIO.attempt {

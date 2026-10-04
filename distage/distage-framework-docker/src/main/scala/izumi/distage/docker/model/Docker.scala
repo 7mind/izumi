@@ -167,9 +167,13 @@ object Docker {
     *
     * @param mounts   Host paths mounted to Volumes inside the docker container
     *
-    * @param afterCreate Hooks run in order after the container is created and before it is started, e.g.
-    *                 [[izumi.distage.docker.ContainerHooks.copyFiles]]. A container is reused only if it was created with
-    *                 hooks of identical reuse keys, compared by a digest label; see [[ContainerHook]].
+    * @param files    Files and directories this JVM reads and copies into the container after creating it and before starting it,
+    *                 so the container engine never needs access to the host path; the same as passing
+    *                 [[izumi.distage.docker.ContainerHooks.copyFiles]] as the first `afterCreate` hook.
+    *
+    * @param afterCreate Hooks run in order after the container is created and before it is started, after copying `files`.
+    *                 A container is reused only if it was created with hooks of identical reuse keys, `files` included,
+    *                 compared by a digest label; see [[ContainerHook]].
     *
     * @param autoPull Pull the image if it does not exists before starting the container.
     *                 default: true, should only be disabled if you absolutely must manage the image manually.
@@ -186,6 +190,7 @@ object Docker {
     cwd: Option[String] = None,
     user: Option[String] = None,
     mounts: Seq[Mount] = Seq.empty,
+    files: Seq[ContainerFile] = Seq.empty,
     afterCreate: Seq[ContainerHook] = Seq.empty,
     networks: Set[ContainerNetwork[?]] = Set.empty,
     reuse: DockerReusePolicy = DockerReusePolicy.ReuseEnabled,

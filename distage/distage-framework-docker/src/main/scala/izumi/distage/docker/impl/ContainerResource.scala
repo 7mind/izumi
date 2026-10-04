@@ -7,7 +7,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.G
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.impl.ContainerResource.PortDecl
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
-import izumi.distage.docker.model.{Docker, DockerFailureCause, DockerFailureException, DockerTimeoutException}
+import izumi.distage.docker.model.{ContainerHook, Docker, DockerFailureCause, DockerFailureException, DockerTimeoutException}
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
@@ -44,8 +44,12 @@ open class ContainerResource[F[_], Tag](
 
   import client.rawClient
 
+  protected lazy val afterCreateHooks: Seq[ContainerHook] = {
+    (if (config.files.isEmpty) Nil else List(new CopyFilesHook(config.files.toList))) ++ config.afterCreate
+  }
+
   protected lazy val hooksDigest: Option[String] = {
-    if (config.afterCreate.isEmpty) None else Some(IzHash.sha256(config.afterCreate.map(_.reuseKey).mkString("\n")))
+    if (afterCreateHooks.isEmpty) None else Some(IzHash.sha256(afterCreateHooks.map(_.reuseKey).mkString("\n")))
   }
 
   protected lazy val stableLabels: Map[String, String] = {
@@ -430,7 +434,7 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected def runAfterCreateHooks(containerId: String): Unit = {
-    config.afterCreate.foreach {
+    afterCreateHooks.foreach {
       hook =>
         logger.debug(s"Going to run after-create ${hook.toString -> "hook"} on ${containerId -> "id"}...")
         try {
