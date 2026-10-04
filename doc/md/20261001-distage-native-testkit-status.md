@@ -11963,3 +11963,118 @@ gates remain open. No acceptance item is waived or whole step completed.
 Exactly this ledger, HostReceipt.scala and HostReceiptTest.scala are eligible
 for local commit `Retain fork receipt publication failures`, parent
 `c7d7110262869ef55c844716309ad6248dd088e6`, after review reconciliation. No push.
+
+
+## 2026-10-04: published host correction and counted-fork regression, in progress
+
+The production publication-failure correction is committed locally at
+`50b7ed658b5e4ace4eefff6f7c69af87c39d0bbd`, parent
+`c7d7110262869ef55c844716309ad6248dd088e6`. Its frozen guard SHA256
+`5d0792b31bfd83852d0dad5da14c1d3ce0f2efe74c36554b10f2d36fc38c27d1`,
+completion `97216f8ec42b60fe53efc3c69fcacaa746651b4806537959f4bd498b2cd2ff6c`.
+Post-commit checks verify exactly three intended paths, 1,684 qualified sources,
+212 then-unchanged/pre-correction publication pairs and a clean index/worktree.
+Review root reconciliation SHA256
+`2cad8c44e28dafe23c1821b9164b989e56b0b64de246a25ae2b4d13be9545a78`;
+exact provenance-only ledger qualification
+`812abf01c5aaf722c1c47d6391903c1e31cd27b0818a78bf691c5f1aad8d2b9a`.
+No push.
+
+Items 2d.4/2d.11/2d.17/2d.22 remain in progress. Frozen
+`2d-host-publication-failure-publish-driver-first.py` publishes both SDK plugins
+on the recorded 50b head, preserving all 1,684 non-ledger source bytes. Commands
+are `++3.9.0`, `sbt-distage-testkit/publishLocal`, `++2.12.21`,
+`sbt-distage-testkit/publishLocal`. The SDK2 plugin stays on Scala3.8.4.
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-publish-driver-first.py
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-host-publication-failure-publish-first`
+returns actual0/driver0. Unlike the earlier integration publication capture,
+this driver writes the actual subprocess return before artifact inspection and
+raw log ends EXIT0. Exactly the two plugin pairs change; the other 210 pairs
+retain their qualified bytes. New plugin JAR member deltas are confined to the
+HostReceipt source's classes/TASTy and the manifest; the required failPublication
+symbol exists and no HostReceiptTest class is packaged. Completion SHA256
+`604ba2b5cb5b5454312e265c44d5bb1ad15b03027c2533a1746776a8e0d2607a`,
+212-pair publication `053cac2337c149e1ded877e1d59524f8217de9656bfa3b4327dabbc73771cd68`.
+
+Publication closure-first independently verifies all 61 non-manifest members of
+the two new plugin JARs against current compiler/resource outputs, with 1,684
+source/input hashes still equal to their publication copies. Other 210 pairs
+match their frozen predecessors. Changed-member closure SHA256
+`aec9e7eb9f66d23cff968f60e23fe7898198208fa57c9b09555358d9a697eb3a`,
+source qualification `58ffb1c9da763a40f0255dc66ecce24856051ff2cb6d75201490d19363d814d9`,
+completion `eb96e72417bb6ea465430e93cf77c7ef07d97c6093550acffdd0c746f9393562`.
+
+Published contract consumers compile only the current HostReceiptTest source
+in an isolated meta build, resolving production host/protocol classes from the
+published dependencies. No production host source is copied. Commands use
+`2d-host-publication-failure-consumer-driver-first.py --artifact-version
+1.3.0-SNAPSHOT --sbt-version <1.13.0|2.0.9> --evidence-dir
+/srv/nvme/tmp/izumi-impl/2d-host-publication-failure-consumer-<sdk1|sdk2>-first`.
+Both actual0/driver0, thirteen checks each, including both closed-store
+verification paths and preserved cause identity. SDK1 completion SHA256
+`6a454114c41f85b8518da8a256986b2655e77ed5a5fc73a4b14abb671b27feb8`,
+SDK2 `a08aa05917e56cb18f25be72a808bdc19b47a161389e38c6b0aeab358ef5612a`.
+These remain contract checks rather than actual publication-fault fork cases.
+Consumer root audit returns0 with 28 records/80 bound dependency JARs. Both
+logged dependency/full classpaths contain exactly the qualified owned plugin
+and protocol JARs. Boot libraries are excluded before inspection; full runtime
+replicas are not claimed. Audit SHA256
+`f5900d816e0b70e01253534d1d0a837fceaf008adfd68272fc42a92dd802c29b`.
+
+Current-published-artifact fork commands:
+`python3 -B test-fixtures/host-sharing-consumer/verify-counted-forks.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version <1.13.0|2.0.9>
+--scala-version 3.9.0 2.13.18 2.12.21 --evidence-dir
+/srv/nvme/tmp/izumi-impl/2d-host-publication-failure-counted-<sdk1|sdk2>-first`.
+All six SDK/Scala lanes complete actual0/driver0 with baseline/death/recovery/
+repeat in one SBT process per lane. The controlled halt0 occurs after all fifteen
+physical bodies and paired resource release, before complete SDK delivery. Every
+death task is rejected as incomplete; subsequent normal commands execute with
+fresh resources and receipt directories without settings reapplication. Six
+lanes produce 360 physical bodies, 270 positive XML cases, 24 distinct paired
+lifetimes/receipt directories. SDK1 aggregate SHA256
+`1e46cb98e8a1f28f36a2325ee8454ef35062a863cff62695bf0dfb8f9ba8a7af`,
+SDK2 `eadd8535cee3145950e5017364f35132dfc2b11d86004cb28688984f8c7db20d`.
+This regresses the existing counted-fork protocol with current plugin artifacts;
+it does not exercise a closed-store publication fault in an actual fork.
+
+Counted root audit-second returns0 with 809 records/208 bound dependency JARs,
+reconciling exact body/XML/resource/process/directory identities and qualified
+owned classpath artifacts. SHA256
+`6e438867dc4654f28c82f420298d54c473a83d86d98840082b6c93922c0ce919`.
+First checker rejects the SDK1/Scala2.12 logged boot-library path omitted from its
+bound resolution set; it never reads that library and is not a runtime failure.
+The second checker records and excludes it before inspecting filesystem bytes,
+plus four boot-library metadata paths. No managed-metadata alias is observed;
+the second auditor's scope sentence speculating about one is corrected by a
+separate qualification without rewriting executed evidence or replaying targets.
+Boot byte equality/full replicas remain unverified. Qualification SHA256
+`f2de445d616c80aa167291a517f2a320ece8248085e1885f84052ec5a20f4335`.
+
+The bounded read-only review reports no blocking finding. Report SHA256
+`3261c89c9b31a6b62206a21104f331ff117865dbc65b9a1ff97d9442676ca97a`,
+schema1 manifest `7e59351f53c51355754f13871f9998af584d44f2b521072335d13d56b782a186`,
+inspection `02476752d6f59f2b7d7d59471e456a564c359eef7c64b36ef83cb0371764f83c`.
+The reviewer directly checks 3 repository/322 evidence records, 848 predicates,
+26 published contract checks and the two Scala3.9 fork lanes: 120 bodies,
+90 positive XML cases, eight lifetimes/directories and two expected death
+rejections. All six lanes, the 1,684-source inventory, all 212 publication pairs
+and the wider 80/208 bound-JAR inventories retain root-audit provenance.
+Root reads the complete report and reconciles all 325 original/copy hash-size
+pairs and three review artifacts before this provenance-only stamp. Reconciliation
+SHA256 `cdddd391e13145381c175ab1ba8b610d517f66ec4121e0855469641d724b6390`.
+
+The publication writer carries unchanged prior rows: six inherited
+changedFromPreceding flags refer to historical changes. Current changedPairs
+and before/after digests identify exactly two current plugin changes. The initial
+reviewer predicate counted historical flags and failed; its corrected predicate
+passes. This is a reviewer-checker failure, not a target publication failure,
+and the executed publication record is not rewritten. A separate exact-delta
+qualification records this sole replacement of reviewed ledger bytes.
+
+Global acknowledgement production integration, structured run errors, broad
+cache/history/fault/cancellation/logger drain and every final gate remain open.
+No acceptance item is narrowed or waived, whole step completed or push made.
+Only this ledger is eligible for local checkpoint commit `Verify published
+receipt failure retention` at parent
+`50b7ed658b5e4ace4eefff6f7c69af87c39d0bbd` after review reconciliation.
