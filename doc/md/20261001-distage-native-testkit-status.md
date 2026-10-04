@@ -70,27 +70,27 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.7 | in progress | Actual application axis override/filter precedence, memoization overrides and within-graph resource sharing pass all nine producer and audited published-consumer lanes below; full application/host and final evaluation remain open. |
 | 2c.8 | in progress | Real ConfigLoader/module-provider application controls now pass eighteen public-boundary checks on all nine producer and audited published-consumer lanes below, with Planning diagnostics and reconciled failed outcomes. Full clients and final evaluation remain open. |
 | 2c.9 | in progress | Schema-4 protocol: 186 checks per producer lane; typed/framed application and real JVM file contracts pass audited published consumers below. Standalone/host transports and final evaluation remain open. |
-| 2d.1 | not started | No evaluation point passed yet. |
+| 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | not started | No evaluation point passed yet. |
-| 2d.3 | not started | No evaluation point passed yet. |
+| 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
 | 2d.4 | in progress | Target-only JVM baseline verifies exact body/JUnit identities in 72 host cases below; remaining host/selection/failure domains and final evaluation stay open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
-| 2d.7 | not started | No evaluation point passed yet. |
+| 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
 | 2d.10 | not started | No evaluation point passed yet. |
 | 2d.11 | in progress | Permanent plain/DI sharing fixture passes 72 actual host cases below; the complete runner fixture inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
-| 2d.13 | not started | No evaluation point passed yet. |
-| 2d.14 | not started | No evaluation point passed yet. |
-| 2d.15 | not started | No evaluation point passed yet. |
+| 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
+| 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
+| 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below; complete mixed-framework domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | not started | No evaluation point passed yet. |
 | 2d.18 | not started | No evaluation point passed yet. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
-| 2d.21 | not started | No evaluation point passed yet. |
+| 2d.21 | in progress | Initial plugin builds/publishes for pinned SBT1/2 hosts below; list/plan tasks, normalized arguments and final evaluation remain open. |
 | 2d.22 | not started | No evaluation point passed yet. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
@@ -9526,3 +9526,175 @@ separation. Public version-matched SBT 2 sources are downloaded under
 `2d-public-sbt-api-sources-first/`; they expose the public digest/filter keys and
 their implementation for inspection, without introducing a dependency on private
 SBT implementation APIs. All prior tested root/publication bytes remain frozen.
+
+### Continuation and stock digest diagnosis — 2026-10-04
+
+Preceding goal turn classification: progress. Commit
+`b1d47b36825ceb1a3472ef50ba6d197ebd21d6b5` contains the permanent host fixture
+and its verified 72-case checkpoint. Root postcommit record
+`2d-target-bootstrap-host-fixture-postcommit-first.json` observes a clean checkout
+and equality of all 1,645 tested non-ledger inputs. This continuation also starts
+with that same clean HEAD; the active objective and all fixed acceptance points
+remain unchanged.
+
+Immutable command
+`python3 /srv/nvme/tmp/izumi-impl/2d-real-di-stock-cache-repro-third.py` adds a
+different public constant to each concrete suite in test-only scratch copies.
+Actual SBT 2 exits 1 for the external-input rerun invariant as before, but the
+probe driver exits 1: five public suite digests remain identical, so its distinct
+stock digest prerequisite is not established. It stops before SBT 1. This
+falsifies the proposed constant distinction, without a production correction.
+The first and second reproductions retain their previously stated scope.
+
+Next immutable command
+`python3 /srv/nvme/tmp/izumi-impl/2d-real-di-stock-digest-inspection-first.py`
+is a read-only metadata diagnostic in a separate copied build. It observes
+compile analysis, public classpath metadata and stock digests. Inspection of
+version-matched private implementation code is diagnostic only; no production
+binding may depend on private SBT APIs. Parent and final gates remain open.
+
+### Initial production SBT bindings and custom configuration reproduction — 2026-10-04
+
+The second metadata inspection exits 0 after the first diagnostic build fails
+at definition time for a missing SBT 2 cache HashWriter. Adding `Def.uncached`
+to the diagnostic allows inspection. The actual compile analysis is MAnalysis;
+its classpath has analysis metadata, and product relations name all five suites.
+All five observed API bytecode hashes are 1277912521 with transitive hash 0;
+public stock digests remain equal. This observation does not establish why those
+hashes are equal. Fourth external-input probe repeats the public-constant trial
+with Scala 2.13.18 and also fails its distinct-digest precondition, stopping
+before SBT 1. No SDK correction is inferred.
+
+The new `sbt-distage-testkit` module is generated through
+`direnv exec . sh -c 'exec ./sbtgen.sc --js --native'`; hand changes to generated
+build files are not used. Shared policy/protocol code has separate narrow public
+SBT 1/2 bindings. Selected distage fingerprints get a conservative rerun decision
+on the stock quick path; inherited stock filtering remains for foreign suites.
+The binding registers the target framework and supplies bootstrap identities.
+It does not implement the complete application/normalized request contract.
+
+First producer compile fails on SBT 2's moved selection helper and configured
+wildcard syntax. The second producer uses public selection keys instead and
+builds/publishes both host variants successfully: Scala 3.8.4/SBT 2.0.9 and
+Scala 2.12.21/SBT 1.13.0. Executed command/log/source copies are under
+`2d-distage-plugin-producer-{first,second}/`. Initial publication audit observes
+an audit assumption failure: generated sbt.autoplugins is under resource_managed,
+not classes. Corrected immutable command
+`python3 /srv/nvme/tmp/izumi-impl/2d-distage-plugin-publication-audit-second.py`
+returns 0, verifies all binary code members against compiled classes plus actual
+generated plugin metadata, and checks both POMs. The only own dependency is the
+portable protocol; no ScalaTest dependencies occur. It rechecks 1,649 unchanged
+producer inputs and all 210 reused publication pairs. Audit SHA-256:
+`8ff13703c4c3c86e5ec4c18c478e6f92ed46f5735807475d6bde1d6c82d56151`.
+This audit precedes the custom-configuration correction below.
+
+New permanent process command
+`python3 test-fixtures/sbt-plugin-consumer/verify-matrix.py --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 --scala-version 3.9.0 2.13.18 2.12.21 --evidence-dir /srv/nvme/tmp/izumi-impl/2d-distage-plugin-consumer-third`
+retains first/second immutable variants separately. First fails at a fixture
+Tests.Exclude argument type and has a marker-prefix count error. Second corrects
+those fixture defects and fails at SBT 2's removed colon command syntax. Third
+uses the named slash configuration and reproduces a production identity defect
+after thirteen passing Test cases: Integration/testOnly rejects duplicate
+bootstrap identities before body execution. These are partial captures, not a
+passed six-lane matrix.
+
+Read-only public option commands under
+`2d-distage-plugin-custom-options-repro-first/` return 0. They directly observe
+one Test framework identity option and two Integration identity options: inherited
+pluginConsumer/test and local pluginConsumer/it. This confirms the configuration
+inheritance cause before the fix. `withIdentity` now replaces complete bootstrap
+identity option sets for this framework, retaining other options, and then adds
+the current configuration's identity. It uses public TestOption/Tests.Argument
+APIs. The third producer build/publication is running with 1,652 frozen inputs;
+its fixed postconditions and a fresh consumer matrix still need verification.
+All fixed parent/final evaluation points remain open.
+
+### Published conservative SBT checkpoint: six lanes / ninety cases — 2026-10-04
+
+Third producer build finishes with actual process exit 0. Both corrected host
+artifacts compile and publish locally. Publication audit command
+`python3 /srv/nvme/tmp/izumi-impl/2d-distage-plugin-publication-audit-third.py`
+returns 0, matches all code members to compiled products and actual generated
+plugin metadata, validates both POM own-dependency/ScalaTest bounds, and confirms
+all 210 reused portable/JVM-proxy binary/POM pairs unchanged. It observes 1,652
+unchanged non-ledger inputs. Audit SHA-256:
+`a227b0a641166a796d3b2301da13e423998f165945db55feaafd6bfd97413894`.
+
+Fresh command
+`python3 test-fixtures/sbt-plugin-consumer/verify-matrix.py --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 --scala-version 3.9.0 2.13.18 2.12.21 --evidence-dir /srv/nvme/tmp/izumi-impl/2d-distage-plugin-consumer-fourth`
+finishes with driver exit 0 and all six actual SBT processes exit 0. Each lane
+has fifteen checked cases. Conservative repeat and external-input beta/gamma
+changes physically execute the selected distage bodies and acquire the current
+revision; foreign cache controls physically execute zero, while explicit foreign
+selection executes three. Wildcards, CLI exclusion, configured Tests.Exclude,
+forked requests and the custom Integration configuration retain exact body and
+JUnit identities. Integration now completes using its own identity. No full
+per-suite stock history or distinct-digest acceptance follows: the five observed
+SBT 2 digests remain equal on each compiler.
+
+Independent root command
+`python3 /srv/nvme/tmp/izumi-impl/2d-distage-plugin-consumer-root-audit-first.py`
+returns 0, checking all 1,652 producer inputs and fixture copies, all 212 published
+binary/POM pairs, twelve exact Test classpath/update-report reconciliations and
+fixture-only compiled namespaces. The 90-case captures contain 792 physical
+bodies matching 792 JUnit identities and 72 distinct paired served resource
+lifetimes. No failed/errored/skipped XML occurs. Empty foreign controls are
+observed by the executed physical-empty assertions; there are no separate
+empty-directory snapshots. Audit SHA-256:
+`aeb4b6b4c10eb0f6f2413d7673d11ee2f81be72987b8d5dd7abc17c5e07c3fc3`.
+Literal child argv/PIDs/runtime replicas, metadata classloader identity and
+negative timeout cleanup are not established by this audit.
+
+Preparatory review raises a source-level question: the policy collapses the
+inherited ordered filter sequence with exists. Immutable command
+`python3 /srv/nvme/tmp/izumi-impl/2d-distage-plugin-foreign-order-repro-first.py`
+records two real foreign suites under both stock and plugin SBT 2 for both
+explicit pattern orders. All four actual processes exit 0 with six physical
+bodies each. Both stock and plugin Runner.tasks arrays are B,A for both requests.
+The driver exits 1 because its assumption that stock task arrays follow pattern
+order is false. Root reads the four actual completions/logs and preserves
+`root-interpretation.json`. No target-order regression is reproduced and no
+speculative policy patch is made. The public filter-sequence compatibility
+question remains open; these checks do not complete 2d.13.
+
+The reviewer also qualifies a fixture documentation statement. After the
+runtime/source audits, only sbt-plugin-consumer/README.md changes to say the
+deadline signals its owned process group and waits for the launched SBT process.
+It does not claim every descendant is reaped. This documentation correction
+changes no executed driver, producer or fixture code. The 1,651 remaining
+non-ledger tested inputs retain their frozen bytes; current documentation is
+separately inspected. No additional runtime checks are justified by that wording
+change. Parent and final gates remain open, and no push occurs.
+
+The root audit's import of the tracked Python fixture creates a local __pycache__
+file. Its exact generated file/directory are removed and the fixture-specific
+cache path is ignored. This adds a second non-runtime input difference after the
+successful captures: .gitignore, alongside the README wording correction above.
+Current production/build/driver/fixture bytes remain unchanged (1,650 of the
+1,652 frozen non-ledger inputs). The earlier sole-README qualification record
+predates this cleanup; final precommit/postcommit records include both explicit
+non-runtime exceptions. No unrelated ignore entry or generated file is altered.
+
+Preparatory review is root-read and hash-verified:
+`2d-distage-plugin-preparatory-readonly-review-first/PREPARATORY-REVIEW.md`
+SHA-256 `911c6e4a926fc54cf98c352f12823044e356654577f74ec57c0aab6889a133da`;
+manifest `a5da6bd1d91a7da77a936ce4a246ff57d9c3b7f90ca7e60d6afa2f1091bdb8cd`;
+inspection `5a4fd70ff1f0a56e0fd62b26aeb3fb81cc275af81feb9511f6cd0cb77ed01781`.
+All 57 inspected immutable copies match their recorded sizes/hashes. The report
+independently inspects fourteen source/build/fixture paths, both frozen plugin
+JAR/POM member sets, the first corrected raw lane and aggregate completion
+metadata. Its remaining five raw lanes and root audit figures are explicitly
+parent-reported, not independent runtime observations. Root's separate audit
+above establishes those domains. D1 remains open and D2 is resolved in current
+documentation. Root direct record:
+`2d-distage-plugin-preparatory-root-verification-first.json`.
+
+Precommit qualification
+`2d-distage-plugin-precommit-input-qualification-second.json` rechecks all frozen
+inputs and explicitly accepts only the README/.gitignore non-runtime differences.
+The local commit containing this entry is above
+`b1d47b36825ceb1a3472ef50ba6d197ebd21d6b5`. It contains the new narrow public SBT
+bindings, generated build integration, permanent consumer driver, documentation
+and ledger. This is a verified initial-policy checkpoint, not completion of 2d,
+any O requirement or final evaluation. Exact resulting SHA and postconditions
+are recorded after commit. No push.

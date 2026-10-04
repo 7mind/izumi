@@ -579,6 +579,7 @@ object Izumi {
       )
 
       final lazy val izumi_deps = ArtifactId("sbt-izumi-deps")
+      final lazy val distage_testkit = ArtifactId("sbt-distage-testkit")
     }
 
   }
@@ -1163,6 +1164,21 @@ object Izumi {
   final lazy val sbtplugins = Aggregate(
     name = Projects.sbtplugins.id,
     artifacts = Seq(
+      Artifact(
+        name = Projects.sbtplugins.distage_testkit,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.testProtocol in Scope.Compile.jvm),
+        settings = Projects.sbtplugins.settings ++ Seq(
+          "crossScalaVersions" := Seq("3.8.4", "2.12.21"),
+          "scalaVersion" := "crossScalaVersions.value.head".raw,
+          "sbtVersion" in SettingScope.Raw("pluginCrossBuild") := """{ scalaBinaryVersion.value match { case "2.12" => "1.13.0"; case "3" => "2.0.9"; case other => sys.error("Unsupported distage plugin Scala version: " + other) } }""".raw,
+          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+        ),
+        plugins = Plugins(
+          enabled = Seq.empty,
+          disabled = Seq(Plugin("ScoverageSbtPlugin")),
+        ),
+      ),
       Artifact(
         name = Projects.sbtplugins.izumi_deps,
         libs = Seq.empty,
