@@ -23,10 +23,12 @@ import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
+import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 open class ContainerResource[F[_], Tag](
@@ -42,12 +44,17 @@ open class ContainerResource[F[_], Tag](
 
   import client.rawClient
 
+  protected lazy val fileArchives: Seq[ContainerFileArchive] = config.files.map(ContainerFileArchive.make)
+
+  protected lazy val filesDigest: Option[String] = ContainerFileArchive.digest(fileArchives)
+
   protected lazy val stableLabels: Map[String, String] = {
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       DockerConst.Labels.dependencies -> deps.map(_.id.name).toList.sorted.mkString(";"),
     )
-    reuseLabel ++ client.labels ++ config.userTags
+    val filesLabel = filesDigest.map(DockerConst.Labels.filesDigest -> _).toMap
+    reuseLabel ++ filesLabel ++ client.labels ++ config.userTags
   }
 
   protected def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
@@ -256,6 +263,7 @@ open class ContainerResource[F[_], Tag](
               val cInspection = rawClient.inspectContainerCmd(id).exec()
               val cNetworks = cInspection.getNetworkSettings.getNetworks.asScala.keys.toList
               val missingNetworks = config.networks.filterNot(n => cNetworks.contains(n.name))
+              val cFilesDigest = Option(cInspection.getConfig.getLabels).flatMap(labels => Option(labels.get(DockerConst.Labels.filesDigest)))
               val name = cInspection.getName
               mapContainerPorts(cInspection) match {
                 case Left(value) =>
@@ -263,6 +271,9 @@ open class ContainerResource[F[_], Tag](
                   Seq.empty
                 case _ if missingNetworks.nonEmpty =>
                   logger.info(s"Container $name:$id is missing required networks $missingNetworks so will not be reused")
+                  Seq.empty
+                case _ if cFilesDigest != filesDigest =>
+                  logger.info(s"Container $name:$id has copied files with $cFilesDigest instead of $filesDigest so will not be reused")
                   Seq.empty
 
                 case Right(value) =>
@@ -374,6 +385,8 @@ open class ContainerResource[F[_], Tag](
         logger.debug(s"Going to create container from image `$imageName`...")
         val res = createContainerCmd.exec()
 
+        copyFiles(res.getId)
+
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
         rawClient.startContainerCmd(res.getId).exec()
 
@@ -414,6 +427,33 @@ open class ContainerResource[F[_], Tag](
       }
       result <- await(out)
     } yield result
+  }
+
+  protected def copyFiles(containerId: String): Unit = {
+    fileArchives.foreach {
+      archive =>
+        logger.debug(s"Going to copy ${archive.file.hostPath -> "hostPath"} to ${archive.file.containerPath -> "containerPath"} in ${containerId -> "id"}...")
+        try {
+          rawClient
+            .copyArchiveToContainerCmd(containerId)
+            .withRemotePath(ContainerFileArchive.extractionRoot)
+            .withTarInputStream(new ByteArrayInputStream(archive.archive))
+            .exec()
+        } catch {
+          case NonFatal(t) =>
+            val failure = DockerFailureException(
+              s"Cannot copy `${archive.file.hostPath}` to `${archive.file.containerPath}` in container $containerId: $t",
+              DockerFailureCause.Throwed(t),
+              t,
+            )
+            try {
+              rawClient.removeContainerCmd(containerId).withForce(true).exec()
+            } catch {
+              case NonFatal(removal) => failure.addSuppressed(removal)
+            }
+            throw failure
+        }
+    }
   }
 
   protected def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {

@@ -10,6 +10,7 @@ import izumi.fundamentals.platform.integration.PortCheck.HostPortPair
 import pureconfig.ConfigReader
 
 import java.net.{Inet4Address, Inet6Address, InetAddress}
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success, Try}
@@ -166,6 +167,12 @@ object Docker {
     *
     * @param mounts   Host paths mounted to Volumes inside the docker container
     *
+    * @param files    Files and directories this JVM reads and copies into the container after creating it and before starting it,
+    *                 so the container engine never needs access to the host path. Copies are owned by root, world-readable,
+    *                 and executable only when the source file is; modification times are not preserved.
+    *                 A container is reused only if it was created with identical files (content, container paths and executable bits),
+    *                 compared by a digest label.
+    *
     * @param autoPull Pull the image if it does not exists before starting the container.
     *                 default: true, should only be disabled if you absolutely must manage the image manually.
     */
@@ -181,6 +188,7 @@ object Docker {
     cwd: Option[String] = None,
     user: Option[String] = None,
     mounts: Seq[Mount] = Seq.empty,
+    files: Seq[ContainerFile] = Seq.empty,
     networks: Set[ContainerNetwork[?]] = Set.empty,
     reuse: DockerReusePolicy = DockerReusePolicy.ReuseEnabled,
     autoRemove: Boolean = true,
@@ -292,6 +300,11 @@ object Docker {
     containerPath: String,
     noCopy: Boolean = false,
     readOnly: Boolean = false,
+  )
+
+  final case class ContainerFile(
+    hostPath: Path,
+    containerPath: String,
   )
 
   final case class UnmappedPorts(
