@@ -12710,6 +12710,75 @@ distage suites`, parent df99ee8a8a98fd6f4670c328c7e51f8a61deb0fa. No push.
 
 This conservative policy omits unjustified owned stock history; it does not
 establish tracked-closure success caching, remove preexisting entries or solve
-SDK1 status publication. General configuration/argument and multiproject
+SDK1 status publication, whose failed-cleanup timestamp counterexample is
+reproduced in the following handoff. General configuration/argument and multiproject
 ownership, global acknowledgement, full teardown/cancellation/drain and all
 final gates remain open. No acceptance item is narrowed, waived or done.
+
+## 2026-10-04: SDK1 timestamp counterexample and quota-pause handoff
+
+SDK2 source checkpoint is locally committed as
+`c22eaa06f5e91ba709ff75cb5f81ad9669a84fb4`. Its commit guard SHA256
+`01234c8f15edbcbd7eea5c5a6590758c7cf80b062fb85ca4bd9b0a3843849cd8`,
+completion `a42b8f3073bbe0a96d839ce966d2d9c5471dac6051461b2bf0e6efa5cbc40b43`.
+The guard qualifies the sole post-review provenance replacement, rehashes
+all1,685 source inputs/all212 publication pairs/current consumer and reviewer
+records before and after commit, and observes a clean worktree. No push.
+Current publication is9034f125e043106c3e48e4ef983fe065e691eca51dfb372dc99fdcccd43005e7;
+SDK1 plugin remains unchanged while SDK2 HostSettings carries the reviewed policy.
+
+Pinned SDK1.13.0 Defaults.scala and the already-preserved testing source JAR
+are read separately under `2d-sdk1-public-history-source-first`. Defaults uses
+a succeeded_tests file in the public test/streams cache directory; the private
+stock reporter writes successful timestamps during doComplete. Its implementation
+is source evidence, not a callable private API. Defaults SHA256
+`670fe650cf55015d40aee4aae504c10c4e966f4001078e658229c0fb70961ba5`,
+reporter `dfcbef29aedb0cb7437dd40b6bc92a3037ef7abadfc2795425fe237dadf110e0`.
+
+The first SDK1 fixture driver mistakenly uses the SDK2-only testFull key and
+fails at build loading, actual1/driver1, before runtime. Its unchanged capture
+is retained; failure qualification SHA256
+`564353a309e158c2f4cda2c43dfe74d02848ab0d6868f7a047e30939cc946f0d`.
+No cache reproduction is attributed to that attempt.
+
+Fresh command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk1-host-cleanup-history-repro-driver-second.py`
+uses the current published SDK1 plugin, target Scala2.12.21/JDK21, public
+Defaults.succeededFile and streams plus standard Properties parsing. It asserts
+exactly five owned definitions and initially empty timestamp history. The
+public full Test/test task rejects a real nested-directory cleanup obstruction
+after fifteen physical bodies/release, yet its stock timestamp file contains
+all five owned successes. The expected FAILED_TEARDOWN_CACHED_SUCCESS assertion
+is captured by the outer diagnostic harness. Explicit fixture-only repair is
+followed by conservative testQuick recovery and repeat in the same parent
+without settings reapplication. Actual0/driver0 reflects that expected-failure
+harness, not successful teardown. Forty-five exact bodies/positive XML cases,
+three fresh paired DI resources/observed child PIDs and removed directories.
+Completion SHA256
+`2281f430e06c743bc6081497eccc61cff3996256f2fb20d5717467f976253d15`.
+
+The first read-only root checker incorrectly assumes SDK2 artifact-URI objects;
+SDK1 update metadata stores URI strings. It fails after case checks but before
+artifact completion. Its executed file/partial capture remain unchanged.
+Fresh root audit-second returns0, preserving121 records and53 bound JARs across
+update configurations,24 owned published JARs. It checks the exact45 body/XML
+identities, three lifetimes/child PIDs/directories, original task cause, five
+positive timestamp values, empty initial file and source/publication identities.
+The51 declared Test JAR paths equal the logged external classpath set. Three
+boot artifact paths across configurations are excluded before filesystem reads
+or stats; their bytes remain unbound. No full runtime replica is claimed.
+Audit SHA256
+`fd04b7c5a4027eaf883ffa3569271b77cd3a6d43e57ac93f33022f612d9cbc79`.
+
+No SDK1 implementation change is made. Resume from this failing reproduction:
+design a public-API history finalization policy that excludes unjustified owned
+success while preserving foreign timestamps and original failures; verify
+fault/recovery/foreign controls before source integration. SDK2 arbitrary
+configuration/arguments, preexisting history, tracked closure, multiproject,
+global ACK, complete teardown/cancellation/drain and final-HEAD gates remain
+open. Native2311-test and assertion9-producer/9-consumer checkpoints remain
+historical pending final-HEAD checks. The approved factory migration is
+implemented, while fixed imports-only2b.10/O.1 remains waiting on owner.
+At the user's quota-pause request, finish local checkpoints and pause the
+existing goal; resume this same goal after quota refresh. No whole step or
+acceptance gate is marked complete and no item is narrowed or waived.
