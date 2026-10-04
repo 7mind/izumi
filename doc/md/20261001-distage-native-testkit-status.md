@@ -73,7 +73,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery and normal mixed forks pass six SDK/Scala combinations. Held foreign delivery reproduces SDK2 Output15 versus eighteen physical/XML cases in one registration order; complete delivery/task-exception/final evaluation stay open. |
+| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery and normal mixed forks pass six SDK/Scala combinations. Held foreign SDK2 Output15/18 omission is reproduced; public acknowledgement prototypes now pass bounded effective per-fork selection controls. Production/failure/final evaluation stay open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
@@ -11640,3 +11640,124 @@ check. No acceptance item is waived, whole step completed or branch pushed.
 Exactly this ledger, host-sharing README and tested prototype helper are eligible
 for local commit `Verify bounded SDK2 global-exit acknowledgement`, parent
 `f3c3f53d7461641f122d775dfafa8ca7bf2c236e`.
+
+## 2026-10-04: effective per-fork acknowledgement membership, in progress
+
+The preceding fixed-six-suite prototype checkpoint is local commit
+`3ae80602e6fc670dd98cdcf83f0a929aefd10b07`, parent
+`f3c3f53d7461641f122d775dfafa8ca7bf2c236e`. Its guard SHA256 is
+`74cdb049e57ffda65f709326998b55082deb174d3a96fbeb20e176bc422e4f5d`;
+postcommit completion records exact three paths, 1,683 qualified inputs,
+212 publication pairs and clean checkout, SHA256
+`a54abc9c22eb41c1867a122d58ff80b5e626742937c295a7e4f11acfaf69f9b1`.
+
+Items 2d.4/2d.13/2d.15/2d.22 remain in progress. The SDK2 prototype now obtains
+declared membership through public testGrouping and adds a per-fork Java option
+while preserving inherited ForkOptions. Public ordered selection predicates
+record only admitted suites after ordinary configured filters. Each child's
+shutdown hook and the host callback derive their expected set from that fork's
+declared/effective intersection. The Runner/Tasks still delegate production, and
+the original ForeignFramework source remains unchanged. This does not substitute
+SDK orchestration or use private APIs. No production compiler input changes.
+
+Seven controls cover normal all-suite execution, held all/partial selection,
+configured exclusion, repeated ordered patterns, two disjoint fork groups and
+a pure-foreign group within a mixed command. Each checks exact physical bodies,
+public SDK Output, positive XML, paired resources and cleaned command ownership.
+Frozen driver-second passes both framework orders on all three Scala versions:
+
+- `2d-dynamic-fork-membership-actual-second`: own-first/Scala3.9, actual0/driver0,
+  terminal SHA256 `5907f477bd4b863f9bd26ab7603e2d65aae4c846d159fbf3a3b322c8ceb25398`.
+- `actual-third`: own-first/Scala2.13.18 and2.12.21, both actual0/driver0,
+  terminal `71461dd33ed48dbd5f9b0865c97026adb0c2efa3debe2643e8b46db9a5f9221e`.
+- `actual-fourth`: foreign-first/all three compilers, all actual0/driver0,
+  terminal `ca864e9182ddf7922df1d49d0c5831dfe6cc9df4070ac07f49b86c136e0e9a9c`.
+
+Those six lanes reconcile 42 commands and 612 physical/SDK/XML cases. Further
+controls add an empty foreign fork group and a valid SuiteA request excluded by
+its user filter. SDK2 does not launch a child for an empty effective group. Its
+all-empty command has no listener init/completion or child/ACK, but records a
+fresh command directory through public execution arguments and a result-logger
+PID. Frozen driver-fifth passes nine controls on Scala3.9 in both orders:
+actual-ninth/tenth actual0/driver0, terminal SHA256 respectively
+`c48ace591e95a53bb4c1ce129dafc2fe50beb947471dfbf00ac49a99b5c22731`
+and `f8c708d62d221b7ca8004e8da7c51e3ae2929b2b9e99fc29ca08cdbb5fd419df`.
+
+The revised repository helper uses relative ROOT/shebang and requires SDK2.0.9.
+Each permanent replay runs the same nine controls on Scala3.9:
+
+`python3 -B test-fixtures/host-sharing-consumer/verify-global-exit-ack.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 --scala-version 3.9.0
+--framework-order own-first
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-dynamic-fork-membership-permanent-first`.
+
+The second uses foreign-first and permanent-second. Both actual0/driver0,
+terminal SHA256 `4599e7f20cb06de946fa4dcd85bf11da1a1081b1b021b87d7a93081607ea4bde`
+and `8682c88699eff42e7a07cf2dfb317de1b7befb3e9d4ceb5d89c206e0fe5de6dd`.
+
+All ten selected lanes reconcile 78 commands and 1,044 physical/SDK/positive XML
+cases: 834 DI, 210 foreign, 84 distinct paired resource identities, 78 distinct
+cleaned receipt directories and 94 active child PID records. The extra empty
+controls are verified on Scala3.9 only. Each lane shares its SBT PID without
+settings reapplication. Held observations prove the local fork's required bodies;
+another fork may execute later. Own-first records finished owned done and entered
+shutdown. Reverse records those states only for a pure-foreign group; otherwise
+owned done is entered but unfinished and shutdown has not begun. The child is
+alive with no host ACK/child-ready or returned held callback. Empty groups retain
+declarations but have none of those child or callback markers.
+
+Earlier failures are retained and excluded from the successful inventory.
+Actual-first fails SBT DSL loading because a helper class appears in build.sbt;
+no tests run. Driver-second moves it to project sources. Actual-fifth/sixth each
+complete eight commands/108 bodies but reject the ninth empty input in the
+fixture parser; their checker also assumes the wrong SDK2 target parent. Driver-
+fourth fixes parsing and captures the directory from public execution arguments.
+Actual-seventh/eighth complete eight commands, then SDK2 correctly rejects an
+unmatched Missing* pattern. Driver-fifth uses the existing SuiteA plus exclusion.
+No failed capture is overwritten, aggregate0 claimed or runtime replayed just to
+repair a post-runtime checker.
+
+Root audit-first freezes 4,427 records and 204 external JARs. It directly checks
+generated/original sources, unchanged foreign source, raw exits, all exact IDs,
+per-fork memberships/markers, held states, cleanup, logged/resolved Test classpaths
+and owned meta artifacts. It independently checks the older seven-control held
+fields rather than promoting them to the stronger nine-control predicate. One
+unbound .sbt/boot metadata library and full runtime replicas remain excluded.
+Current 212 published pairs retain their qualified bytes. Audit SHA256
+`d94bdbd8c30fe6cf4fcef6b1301083ed9bc71a7abb87af99035d8108ce7cf953`.
+Final qualification revises only helper/README among 1,683 prior inputs,
+SHA256 `cba437cf9e08cf35aea0d42b97126d69f1f3d4a1fb2a8d19f9a23fba358f97e4`;
+helper `cf070400993e60125a79ae7b3fd47505c656a2de637c8a9a37d221267bbf6eb2`.
+
+The bounded read-only review directly reconciles all ten lanes with no blocking
+finding in successful, disjoint membership controls. The larger artifact closure
+and qualification retain root provenance. Report SHA256
+`36edfd184c61459410c12b87419aa85139343244f4aa2039d46b65c6c7161e4b`,
+schema1 manifest `97142aeb3d65930a1d61e2cf323237624f21144a397e5f1414bbbebb5fb99b13`,
+inspection `c470886e741bd5adb79c6f8ae1140dfc1baf28acbc89f3fc50b4239fb852747f`.
+Root reads the complete report and checks all 4,095 original/copy hash-size
+records plus review artifacts before this append; returns0, SHA256
+`25f44d4336daf8eb66c5cbc077aba442847cfc25643f6d4013a55443e4d83a59`.
+
+A separate expected-failure probe tests the parent acknowledgement invariant.
+Frozen `2d-fork-ack-failure-driver-first.py` runs SDK2/Scala3.9/own-first, one
+all-suite command. The child receives the host group set then records its PID
+and halts0 before child-ready. The parent records the missing acknowledgement
+and throws. SBT nevertheless exits0 with eighteen successful SDK/XML cases;
+the prototype's post-runtime checker rejects the missing ready file. Diagnostic
+driver0 requires this defect, not product acceptance. Its completion SHA256 is
+`e6ca7e7ca9f3e84a5cc772ec84e0b2ff8333b19b9431dbebd91ad2bbca9fd5b5`.
+Pinned React.apply catches NonFatal listener errors without failing its promise,
+consistent with the observed swallowed invariant failure. All eighteen bodies
+and paired resource release completed; this probe does not claim those were
+incomplete. Production must retain acknowledgement failures for task-boundary
+verification: throwing from the listener alone is insufficient. This negative
+probe is separate from the review's successful-control verdict.
+
+Production integration, foreign-only commands, overlapping membership, cache/
+history, death/cancellation/fault handling and complete error/logger drain remain
+open. Temporary-file/atomic-move publication is used, but its paused-writer
+contract remains unverified. No item is waived, whole step completed or push made.
+Exactly this ledger, host-sharing README and tested helper revision are eligible
+for local commit `Verify effective per-fork acknowledgement membership`, parent
+`3ae80602e6fc670dd98cdcf83f0a929aefd10b07`.

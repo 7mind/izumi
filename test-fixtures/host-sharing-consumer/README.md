@@ -112,11 +112,14 @@ logger drain, all framework orders, cache history, failures or cancellation.
 
 `verify-global-exit-ack.py` is a public JVM prototype for the measured SBT2 held
 foreign-output omission. It forwards the production Runner/Tasks and installs
-a shutdown hook owned by the child's session. A public listener acknowledges
-the six selected suite groups and waits for the child to acknowledge that set
-before its final group callback returns. These prototype files are separate
-from the production owned-suite receipts. The original foreign framework stays
-unchanged; no SBT private API or orchestration is substituted.
+a shutdown hook owned by each child's session. Public `testGrouping` supplies
+the declared fork membership through `ForkOptions.runJVMOptions`; public ordered
+selection predicates record the effective admitted suites after configured
+filters. A public listener acknowledges each fork's selected groups and waits
+for its child to acknowledge that set before the final group callback returns.
+Prototype files are separate from the production owned-suite receipts. The
+original foreign framework stays unchanged; no SBT private API or orchestration
+is substituted.
 
 ```sh
 python3 -B test-fixtures/host-sharing-consumer/verify-global-exit-ack.py \
@@ -126,14 +129,23 @@ python3 -B test-fixtures/host-sharing-consumer/verify-global-exit-ack.py \
 ```
 
 Use a separate evidence directory for `--framework-order foreign-first`.
-Both registration orders pass normal/held controls on all three Scala versions,
-with eighteen physical, public SDK-output and positive XML cases per command.
-While held, the child is alive and has not acknowledged global completion. The
-own-first observation enters shutdown after owned done finishes; reverse order
-still waits in owned done. Both finish after the foreign callback is released.
+The controls cover all/partial selection, configured exclusion, repeated ordered
+patterns, two fork groups and a separate foreign-only group within a mixed
+command. Both framework orders pass those controls on all three Scala versions.
+An empty fork group and an entirely user-excluded selection additionally pass on
+Scala 3.9: they start no child and receive no acknowledgement. Each command checks
+physical identities, public SDK results, positive XML, fresh DI resources and
+command receipt cleanup. A held observation checks only its fork's required
+bodies; another fork may start later.
 
-The six-suite metadata is fixed fixture input within one fork. This is not the
-production implementation: effective selection/cache exclusions, per-fork group
-metadata, cancellation, premature death, cleanup faults and complete error/logger
-drain still need an implementation and checks. SBT1 uses a different completion
-handshake and is excluded from this prototype.
+While held, that fork's child is alive and has not acknowledged completion.
+Own-first enters shutdown after owned done finishes. Reverse order waits in owned
+done when that group includes owned suites; a foreign-only group has no owned
+tasks to await. Each finishes after the foreign callback is released.
+
+This is a prototype, with disjoint suite membership and stock SDK2 fork scheduling.
+Production integration, foreign-only commands, cache history, overlapping group
+membership, cancellation, premature death, cleanup faults and complete
+error/logger drain remain open. Files publish through a temporary file and atomic
+move; a paused-writer contract check is still outstanding. SBT1 uses a different
+completion handshake and is excluded from this prototype.
