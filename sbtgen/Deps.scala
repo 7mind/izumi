@@ -35,6 +35,7 @@ object Izumi {
     val scala_java_time = Version.VExpr("V.scala_java_time")
     val scalamock = Version.VExpr("V.scalamock")
     val docker_java = Version.VExpr("V.docker_java")
+    val commons_compress = Version.VExpr("V.commons_compress")
     val scalajs_java_securerandom = Version.VExpr("V.scalajs_java_securerandom")
     val scalajs_macrotask_executor = Version.VExpr("V.scalajs_macrotask_executor")
     val portable_scala_reflect = Version.VExpr("V.portable_scala_reflect")
@@ -159,6 +160,7 @@ object Izumi {
 
     val docker_java_core = Library("com.github.docker-java", "docker-java-core", V.docker_java, LibraryType.Invariant)
     val docker_java_transport_zerodep = Library("com.github.docker-java", "docker-java-transport-zerodep", V.docker_java, LibraryType.Invariant)
+    val commons_compress = Library("org.apache.commons", "commons-compress", V.commons_compress, LibraryType.Invariant)
 
     val javaXInject = Library("javax.inject", "javax.inject", "1", LibraryType.Invariant)
 
@@ -766,7 +768,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.docker,
-        libs = allMonadsTest ++ Seq(docker_java_core, docker_java_transport_zerodep).map(_ in Scope.Compile.jvm),
+        libs = allMonadsTest ++ Seq(docker_java_core, docker_java_transport_zerodep, commons_compress).map(_ in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.testkitScalatest in Scope.Test.all),
         platforms = Targets.jvm,

@@ -3429,7 +3429,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
       "com.github.docker-java" % "docker-java-core" % V.docker_java,
-      "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java
+      "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java,
+      "org.apache.commons" % "commons-compress" % V.commons_compress
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)

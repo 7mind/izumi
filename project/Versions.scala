@@ -42,6 +42,7 @@ object V {
   // good to drop - java
   val bytebuddy = "1.17.7"
   val docker_java = "3.6.0"
+  val commons_compress = "1.28.0"
 
   // microsite-only
   val doobie = "1.0.0-RC2"
