@@ -1,14 +1,22 @@
 package izumi.distage.sbt
 
+import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
+
 import sbt._
 import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SubclassFingerprint, SuiteSelector}
+
+import java.nio.file.{Files, Paths}
 
 object HostReceiptTest {
   private val name = HostSuiteName("fixture.OwnedSuite")
   private val empty = Tests.Output(TestResult.Passed, Map.empty, Nil)
 
   def main(arguments: Array[String]): Unit = {
-    require(arguments.isEmpty, "Receipt checks do not accept arguments")
+    require(arguments.length == 1, "Receipt checks require a new owned fixture directory")
+    val parent = Paths.get(arguments.head).toAbsolutePath
+    require(!Files.exists(parent), "Receipt fixture directory must be new")
+    val _ = Files.createDirectories(parent)
+    def owner(): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create(parent))
     check("reject a selected suite omitted by the target") {
       val receipt = new HostReceipt
       receipt.configure(Set(name))
@@ -103,31 +111,82 @@ object HostReceiptTest {
     }
 
     check("retain a newer admission when an earlier task aborts") {
-      val owner = new HostReceiptOwner
-      val first = owner.enter()
-      rejects(classOf[IllegalArgumentException]) { val _ = owner.enter(); () }
-      owner.consume(empty)
-      val second = owner.enter()
-      owner.abort(first)
-      assert(owner.receipt eq second.receipt)
-      owner.consume(empty)
-      owner.abort(second)
-      rejects(classOf[IllegalStateException]) { val _ = owner.receipt; () }
+      val current = owner()
+      val first = current.enter()
+      rejects(classOf[IllegalArgumentException]) { val _ = current.enter(); () }
+      current.consume(empty)
+      val second = current.enter()
+      require(first.store.directory != second.store.directory, "New admission reused an earlier directory")
+      current.abort(first)
+      assert(current.receipt eq second.receipt)
+      require(!Files.exists(first.store.directory) && Files.isDirectory(second.store.directory), "Earlier cleanup affected a newer admission")
+      current.consume(empty)
+      current.abort(second)
+      rejects(classOf[IllegalStateException]) { val _ = current.receipt; () }
     }
 
     check("rebind inherited selection observers to the current configuration") {
-      val inheritedOwner = new HostReceiptOwner
+      val inheritedOwner = owner()
       val inherited = new HostSelectionObserver(arguments => Seq(candidate => arguments.contains(candidate)), Set(name), inheritedOwner)
-      val owner = new HostReceiptOwner
-      owner.enter()
-      val listener = owner.receipt.configure(Set(name))
-      val selection = new HostSelectionObserver(inherited, Set(name), owner)(Seq(name.value))
+      val current = owner()
+      val generation = current.enter()
+      val listener = current.receipt.configure(Set(name))
+      val selection = new HostSelectionObserver(inherited, Set(name), current)(Seq(name.value))
       assert(!selection.head("fixture.ExcludedSuite"))
       assert(selection.head(name.value))
       listener.startGroup(name.value)
       listener.endGroup(name.value, TestResult.Passed)
-      owner.consume(output(new SuiteResult(TestResult.Passed, 0, 0, 0, 0, 0, 0, 0)))
+      current.consume(output(new SuiteResult(TestResult.Passed, 0, 0, 0, 0, 0, 0, 0)))
+      current.abort(generation)
     }
+
+    check("publish exact fork receipts only after completed host groups") {
+      val current = owner()
+      val generation = current.enter()
+      val reader = FileForkReceiptStore.open(generation.store.directory)
+      val listener = new HostForkReceiptListener(current.receipt.configure(Set(name)), current.receipt, generation.store)
+      val suite = ForkReceiptSuite(name.value)
+      current.receipt.expect(name)
+      listener.startGroup(name.value)
+      listener.testEvent(TestEvent(Seq(event(name, Status.Success))))
+      assert(reader.received(suite).isEmpty)
+      listener.endGroup(name.value, TestResult.Passed)
+      assert(reader.received(suite).contains(ForkReceiptSummary(1, ForkReceiptCounts(1, 0, 0, 0, 0, 0, 0))))
+      listener.startGroup(name.value)
+      listener.testEvent(TestEvent(Seq(event(name, Status.Error))))
+      listener.endGroup(name.value, TestResult.Error)
+      assert(reader.received(suite).contains(ForkReceiptSummary(2, ForkReceiptCounts(1, 0, 1, 0, 0, 0, 0))))
+      listener.startGroup("fixture.ForeignSuite")
+      listener.endGroup("fixture.ForeignSuite", TestResult.Passed)
+      assert(reader.received(ForkReceiptSuite("fixture.ForeignSuite")).isEmpty)
+      current.consume(output(new SuiteResult(TestResult.Error, 1, 0, 1, 0, 0, 0, 0)))
+      current.abort(generation)
+      require(!Files.exists(generation.store.directory), "Owned fork directory survived cleanup")
+    }
+
+    check("replace inherited fork options and listeners with current ownership") {
+      val first = owner()
+      val previous = first.enter()
+      val second = owner()
+      val current = second.enter()
+      val earlier = new HostForkReceiptListener(first.receipt.configure(Set.empty), first.receipt, previous.store)
+      val foreign = new TestsListener {
+        override def doInit(): Unit = ()
+        override def startGroup(name: String): Unit = ()
+        override def testEvent(event: TestEvent): Unit = ()
+        override def endGroup(name: String, cause: Throwable): Unit = ()
+        override def endGroup(name: String, result: TestResult): Unit = ()
+        override def doComplete(result: TestResult): Unit = ()
+      }
+      val inherited = Tests.Execution(Seq(Tests.Listeners(Seq(earlier, foreign)), Tests.Argument(DistageHostPolicy.framework, ForkReceiptArguments.HostDirectoryOption, previous.store.directory.toString)), true, Seq.empty)
+      val execution = HostReceiptPolicy.execution(inherited, Seq.empty, second, full = false)
+      val listeners = execution.options.collect { case Tests.Listeners(values) => values }.flatten
+      require(listeners.count(_.isInstanceOf[HostForkReceiptListener]) == 1 && listeners.contains(foreign) && !listeners.contains(earlier), "Inherited listeners were not rebound")
+      val directories = execution.options.collect { case Tests.Argument(Some(framework), values) if framework == DistageHostPolicy.framework => values }
+      require(directories == Seq(Seq(ForkReceiptArguments.HostDirectoryOption, current.store.directory.toString)), "Inherited receipt directory was retained")
+      first.abort(previous); second.abort(current)
+    }
+    Files.delete(parent)
   }
 
   private def check(name: String)(body: => Unit): Unit = {

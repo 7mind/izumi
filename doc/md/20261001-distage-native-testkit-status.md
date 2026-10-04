@@ -10911,3 +10911,170 @@ Only this ledger and the three tested protocol/wrapper sources are eligible for
 local commit `Count fork runner receipts and bracket task admission`, parent
 `53d7e22558894018739b1f7b50743f3e77f16958`; the commit guard verifies exact paths
 and tested bytes. No push or parent/final completion.
+
+### Production fork activation and command receipts — 2026-10-04
+
+The preceding leaf-wrapper checkpoint is
+`7d8e43e77dd0e8df3609b744f5cae7d30323c6f7`, parent
+`53d7e22558894018739b1f7b50743f3e77f16958`. Its exact four-path local commit
+returns0, with 1,674 qualified sources and a clean index/worktree at that point.
+`2d-counted-fork-runner-local-commit-first/completion.json` SHA256
+`a110aaf9fe04863eec3df28ae59456169fef678f0999663fe48b0d1e1ed2e2f5`;
+guard SHA256 `3ee121718e637710cf97b60b5a8afd1561ced128184d4ed9233fb7955e3bb3a4`.
+
+The production JVM Framework now separates request options from internal host
+receipt metadata. Only matching explicit remote fork activation enables the
+counted Runner; the in-process runner forwards immutable activation arguments
+without waiting. Invalid channels, duplicates, absent values and mismatching
+ownership fail explicitly. The child wait uses a named thirty-second receipt
+timeout and five-millisecond poll interval. This is a receipt wait bound, not an
+end-to-end shutdown/IO deadline.
+
+Each host command admission creates a fresh filesystem store beneath its scoped
+target directory. The host listener publishes cumulative group/seven-status
+counts after recording endGroup. Both HostSettings variants install command/
+configuration owners. Execution rebinds inherited receipt listeners and metadata
+while retaining other listeners. Matching-generation cleanup closes only its
+store; cleanup faults are attached as suppressed when a primary failure exists.
+That fault branch is implemented but not exercised by the controls below.
+
+Command: `python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-integration-contract-driver-first.py
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-fork-integration-contract-first`.
+Batch SBT/JDK21 bootstrap handshake controls pass on Scala3.9.0/2.13.18/2.12.21,
+then the SDK2 host contract passes twelve checks: actual0/driver0, three bootstrap
+markers plus twelve host markers, sourceStable true. Terminal SHA256
+`e035225d0e0c722c098c7059caa74867e7bda8e7bf92e22cc089451e9cc99584`.
+SDK1 copied-source contract-second uses batch SBT1.13.0/Scala2.12.21 Test/runMain,
+with the prior published portable protocol plus the current JVM receipt sources;
+actual0/driver0, twelve host markers, terminal SHA256
+`9d16e4aeea2e2080d72e6c8e63866ebac9746a105605319496fe2f2c1ef678c8`.
+First incorrectly used Compile/runMain with provided SBT classes absent from its
+runtime classpath: actual SBT0 but zero markers and ClassNotFoundException;
+its checker returns1. It supplies no positive evidence.
+
+The incremental publication command is retained in
+`2d-fork-integration-publish-first/commands.json`: on each pinned JVM compiler,
+protocol/base publishLocal, and the matching two plugin publishes. The raw log
+contains the completed publication commands. Its metadata writer then fails
+because its artifact snapshot mkdir omitted parents=True. The subprocess return
+value was not persisted before that exception: no actual publication SBT exit0
+or aggregate publication pass is asserted. Artifact state is verified separately.
+Canonical state-second freezes eight changed JAR/POM pairs and checks 204 others
+against their prior frozen bytes; terminal SHA256
+`5dfff1e9cefa84d4d146139e52233f2801c48084a0821dfe88f1831d39437510`.
+State-first omitted the exact `sbt-distage-testkit_sbt2_3` path from its checker;
+its failed record is preserved. No publication replay corrected these checkers.
+
+Root closure-first returns0, verifies all 1,677 current/frozen producer inputs,
+and checks every one of 1,176 non-manifest members in the eight changed JARs
+against current compiler/resource output. The 204 other JAR/POM pairs remain
+unchanged. Completion SHA256
+`e3dc13ac0fe00a092c174a397cf1b4fb0af3e90b0081f764a1de608a3239251a`;
+changed-publication SHA256
+`8db93da5ee04b5566dd8f013bc56130b56c9fbb9bcd2c330fea834bf0e952b26`;
+qualified sources SHA256
+`783650ceebcf01b192611701094233ebbe462b85b023d833d5ec2e7ab35ef51c`.
+Subsequent edits add the permanent fixture helper and its README instructions;
+the compiled production inputs remain unchanged.
+
+Actual production fork commands:
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-counted-fork-integration-actual-driver-second.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 --scala-version 3.9.0
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-counted-fork-integration-actual-second`.
+Both SDK processes0/driver0. The built-in Framework and published plugins run
+five DI suites: baseline, an exit-zero halt after fifteen physical bodies and
+resource release, then incremental recovery and repeat in the same SBT process
+without settings reapplication. Normal commands yield all fifteen exact positive
+XML cases; death commands produce the explicit incomplete-host-result failure
+and no suite XML. Each command has its own recorded receipt directory, absent
+after completion/abort. No fixture acknowledgement framework/listener publishes
+receipts; only the production listener does so.
+
+The Scala2 follow-ups use the same required arguments with their compiler values
+and fresh actual-third/fourth/fifth evidence directories. Third completes SDK2/
+Scala2.13, then exits1 on Scala2.12 because its generated process-record helper
+introduced a duplicate `val _`. This is a fixture compilation failure, preceding
+execution. Driver-third uses a named processReceipt and verifies the written
+file; fourth completes SDK2/2.12 and fifth completes SDK1/2.13+2.12, all actual0/
+driver0. No production input changes. Six positive combinations are therefore
+spread across the preserved captures, not attributed to the failed third
+aggregate. Capture terminal SHA256 values:
+second `515e8fb5ba9df1fa38eabda12f70fa9696052129d5b11870e771766b41710858`;
+third `d174de2403be376f7721fac7f076ed341380fd4ef35ebf9c8eb7e2447ed6c7d6`;
+fourth `5eb7e1629418ec8d798d76eb546b4301c1471e09a7ee1950c04b41a96e9804d6`;
+fifth `9b349220db0baffbe9282b711ceff438b5a3d5036f21eeb02594616b339ec643`.
+Actual-first stops before bodies: its observer assumed an unscoped target path;
+SDK2 uses scoped target/out/jvm/... . Its empty owned receipt parent is observed
+after abort. Driver-second obtains the target through scoped SBT settings.
+
+Independent runtime audit-second returns0. It reconciles all six completed
+combinations from raw inputs, resolved and logged test/meta classpaths, physical
+records and independently parsed XML: 360 bodies, 270 positive XML cases,
+24 fresh acquire/release pairs and 24 distinct cleaned receipt directories.
+It freezes 809 records and 212 external classpath JARs; exact artifact hashes
+match the qualified publication, without ScalaTest/Scalactic on target test
+classpaths. Audit SHA256
+`5556bee326b91e42eb4075788720bf0299fcaae3cec9ee7eed17b9ffa7ff2c0e`.
+Audit-first's mode matcher omitted the hyphen in after-release; its failure is
+retained and correcting it required no runtime replay.
+
+The bounded first read-only review directly inspects nine production/fixture
+sources, the three bootstrap and two host contract results, and both Scala3.9
+actual SDK lanes: 120 bodies, ninety positive XML cases, eight resource/directory
+lifetimes. It finds no blocker within that scope, retaining all listed limits.
+Report SHA256 `0dabfe5e1a177358f4c82ff7134dfabc7f8e82261bcf20bb2d837c12f1fb158b`,
+schema1 manifest `c64a61047774c87273f0561828ae51bf3612514038a344caa3dda8d206a4f35b`,
+inspection `7a54a0a3c183d65df536a7245ecef6059233fc885edd49d650aa538550c36a8c`.
+Root reads the complete report and verifies all 240 original/copy records,
+returning0; root verification SHA256
+`4230194d211664e07fb9563a69ad92ac455f9bb69198534d3041d24ae3e21cba`.
+The additional Scala2 and full source/compiler/classpath closure inventory
+retains root provenance.
+
+`test-fixtures/host-sharing-consumer/verify-counted-forks.py` now makes these
+controls reproducible from the repository. Its only code delta from executed
+driver-third resolves ROOT relative to the helper file. Command:
+`python3 -B test-fixtures/host-sharing-consumer/verify-counted-forks.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 --scala-version 3.9.0
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-counted-fork-integration-permanent-first`.
+The new permanent helper's own replay completes actual SBT0/driver0, with all
+four scenarios, fresh resources/directories and exact positive reports. Its
+terminal and enlarged independent audit are recorded below.
+
+This corrects measured loss of owned normal fork results in these scenarios and
+rejects the controlled exit-zero incomplete run. It does not claim a complete
+SDK worker/logger drain or full 2d acceptance. Held real host delivery, actual
+SDK task-error replacement, mixed frameworks, comprehensive history, cancellation,
+cleanup-fault injection, terminal publication invariants, missing-suite/run-level
+error protocols and all parent/final evaluation points remain open. No whole
+step, current Native/JS runtime validation or push is claimed.
+
+Permanent helper replay terminal SHA256
+`51b292ea71fff92e8931fdea2e3290c8f4940d1159c8f3759a65c9afeff19a52`.
+Root audit-third additionally reconciles that seventh process/control replay:
+420 total physical bodies, 315 positive XML cases and 28 distinct paired
+resources/cleaned receipt directories, 954 frozen records and 212 external JARs.
+Its six-combination base is unchanged. Audit SHA256
+`f1a9c7019bbc574390b43077ee89ec9e99132e2e981a2cc004e96cc59bbdfd2c`.
+Final qualification adds the tested helper and updates its README: 1,678 current/
+frozen inputs, SHA256
+`5e56e4b78ed98ea61a6b31b48a6a72310c2c81856fb42218309c82673259f5b4`.
+No compiled production byte changed during these additions.
+
+The bounded second review independently inspects the four positive Scala2
+lanes: 240 bodies, 180 positive XML cases and sixteen distinct paired resources/
+cleaned receipt directories. Combined with its first two-lane review this supports
+the six-combination checkpoint. It verifies the installed helper differs only
+in ROOT resolution; its runtime replay and large closure keep root provenance.
+Report SHA256 `2731feba2d662352dcca0cd0aa71ecc3a2a0a8fa150ea2e4defeb9f1503a32e2`,
+schema1 manifest `1c7a2b500a2fc1aa326090fe3cfbd7770e019a78eb7dd99ad0fec8857f411051`,
+inspection `aab6eff482bd3dbaf8ef30bc501e86c9668c64e772143cfced18907429ac3f99`.
+Root reads the complete report and verifies 399 original/copy records, returning0;
+root review verification SHA256
+`d2267112508d409341ac481f54c0657ced6c9ead63b6a733079cf3e22edbf50b`.
+
+Exactly this ledger, the seven integration/contract sources and the fixture
+README/helper are eligible for local commit `Acknowledge owned fork results through fresh host receipts`,
+parent `7d8e43e77dd0e8df3609b744f5cae7d30323c6f7`. The guard verifies the ten
+paths, tested producer/fixture bytes and all current publication pairs before
+commit. No push, whole step or final acceptance.

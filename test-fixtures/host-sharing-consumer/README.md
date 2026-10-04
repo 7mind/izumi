@@ -41,3 +41,24 @@ Good-Communication checks of actual host processes. This measurement fixture
 does not complete the SBT plugin, individual-test selection, incremental
 invalidation, streaming, multi-project/configuration or failure/recovery
 requirements. The production SBT integration still requires the distage plugin.
+
+`verify-counted-forks.py` uses the published distage plugin and built-in framework
+with five DI suites. Each SBT process runs a successful baseline, an exit-zero
+halt after all fifteen bodies and resource release, then incremental recovery
+and repeat without settings reapplication. The halt must produce an explicit
+host task failure. Positive runs require exact fifteen-case XML results. All
+four commands must use distinct receipt directories and clean them up.
+
+```sh
+python3 test-fixtures/host-sharing-consumer/verify-counted-forks.py \
+  --artifact-version 1.3.0-SNAPSHOT \
+  --sbt-version 2.0.9 1.13.0 \
+  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/counted-forks-example
+```
+
+Publish the current JVM protocol, base runner, both SBT plugins and their
+dependency closure first. Each run requires a new evidence directory. This
+fixture verifies owned fork completion and same-process command recovery;
+held delivery, SDK task-error replacement, mixed frameworks, comprehensive
+history, cancellation and cleanup faults require separate controls.

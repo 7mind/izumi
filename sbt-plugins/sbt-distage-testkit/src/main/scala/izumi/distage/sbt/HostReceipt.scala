@@ -1,5 +1,7 @@
 package izumi.distage.sbt
 
+import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
+
 import sbt._
 
 private[sbt] final case class HostSuiteName(value: String)
@@ -83,6 +85,15 @@ private[sbt] final class HostReceipt {
     completed = Some(completed.fold(result)(HostSuiteCounts.overall(_, result)))
   }
 
+  def forkSummary(name: HostSuiteName): Option[ForkReceiptSummary] = synchronized {
+    requireOpen()
+    if (owned.contains(name)) {
+      val counts = received.getOrElse(name, throw new IllegalStateException("Completed host group has no event counts"))
+      Some(ForkReceiptSummary(ends.getOrElse(name, throw new IllegalStateException("Host group has not completed")),
+        ForkReceiptCounts(counts.passed, counts.failed, counts.errors, counts.skipped, counts.ignored, counts.canceled, counts.pending)))
+    } else None
+  }
+
   def verifyCompletion(): Unit = synchronized {
     closed = true
     if (expected != starts.keySet || starts != ends || (expected.nonEmpty && completed.isEmpty) ||
@@ -106,19 +117,21 @@ private[sbt] final class HostReceipt {
   private def requireOpen(): Unit = require(!closed, "Host event emitted after receipt completion")
 }
 
-private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt)
+private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val store: FileForkReceiptStore)
 
-private[sbt] final class HostReceiptOwner {
+private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStore) {
   private var current = Option.empty[HostReceiptGeneration]
 
   def enter(): HostReceiptGeneration = synchronized {
     require(current.isEmpty, "Overlapping distage host task admission")
-    val generation = new HostReceiptGeneration(new HostReceipt)
+    val generation = new HostReceiptGeneration(new HostReceipt, createStore())
     current = Some(generation)
     generation
   }
 
   def receipt: HostReceipt = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).receipt }
+
+  def store: FileForkReceiptStore = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).store }
 
   def consume(output: Tests.Output): Unit = {
     val generation = synchronized {
@@ -132,21 +145,45 @@ private[sbt] final class HostReceiptOwner {
   def abort(generation: HostReceiptGeneration): Unit = {
     synchronized { if (current.contains(generation)) current = None }
     generation.receipt.close()
+    generation.store.close()
+  }
+
+  private def finish[A](generation: HostReceiptGeneration)(operation: => A): A = {
+    var original = Option.empty[Throwable]
+    try operation
+    catch { case cause: Throwable => original = Some(cause); throw cause }
+    finally {
+      try abort(generation)
+      catch {
+        case cause: Throwable => original match {
+          case Some(previous) => previous.addSuppressed(cause)
+          case None => throw cause
+        }
+      }
+    }
   }
 
   def input[A](task: Task[A]): Task[A] = sbt.std.TaskExtra.task { enter() }.flatMap { generation =>
     task.result.map { result =>
-      try result.toEither.fold(cause => throw cause, value => { generation.receipt.verifyCompletion(); value })
-      finally abort(generation)
+      finish(generation) { result.toEither.fold(cause => throw cause, value => { generation.receipt.verifyCompletion(); value }) }
     }
   }
 
   def output(task: Task[Tests.Output]): Task[Tests.Output] = sbt.std.TaskExtra.task { enter() }.flatMap { generation =>
     task.result.map { result =>
-      try result.toEither.fold(cause => throw cause, value => { consume(value); value })
-      finally abort(generation)
+      finish(generation) { result.toEither.fold(cause => throw cause, value => { consume(value); value }) }
     }
   }
+}
+
+private[sbt] final class HostForkReceiptListener(inherited: TestsListener, receipt: HostReceipt, store: FileForkReceiptStore) extends TestsListener {
+  override def doInit(): Unit = inherited.doInit()
+  override def startGroup(name: String): Unit = inherited.startGroup(name)
+  override def testEvent(event: TestEvent): Unit = inherited.testEvent(event)
+  override def endGroup(name: String, cause: Throwable): Unit = { inherited.endGroup(name, cause); publish(name) }
+  override def endGroup(name: String, result: TestResult): Unit = { inherited.endGroup(name, result); publish(name) }
+  override def doComplete(result: TestResult): Unit = inherited.doComplete(result)
+  private def publish(name: String): Unit = receipt.forkSummary(HostSuiteName(name)).foreach(summary => store.publish(ForkReceiptSuite(name), summary))
 }
 
 private[sbt] final class HostSelectionObserver(val inherited: Seq[String] => Seq[String => Boolean], names: Set[HostSuiteName], owner: HostReceiptOwner)
@@ -171,6 +208,8 @@ private[sbt] final class HostResultLogger(val inherited: TestResultLogger, owner
 private[sbt] object HostReceiptPolicy {
   val owner: SettingKey[HostReceiptOwner] = settingKey[HostReceiptOwner]("Distage host task receipt owner")
 
+  def ownerAt(parent: File): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create((parent / "distage-fork-receipts").toPath.toAbsolutePath))
+
   def names(definitions: Seq[TestDefinition]): Set[HostSuiteName] = definitions.filter(DistageHostPolicy.isDistage).map(value => HostSuiteName(value.name)).toSet
 
   def unobserved(selection: Seq[String] => Seq[String => Boolean]): Seq[String] => Seq[String => Boolean] = selection match {
@@ -181,21 +220,27 @@ private[sbt] object HostReceiptPolicy {
   def execution(inherited: Tests.Execution, definitions: Seq[TestDefinition], owner: HostReceiptOwner, full: Boolean): Tests.Execution = {
     val owned = names(definitions)
     val receipt = owner.receipt
-    val listener = receipt.configure(owned)
+    val listener = new HostForkReceiptListener(receipt.configure(owned), receipt, owner.store)
+    val inheritedOptions = inherited.options.flatMap {
+      case Tests.Listeners(listeners) => Some(Tests.Listeners(listeners.filterNot(_.isInstanceOf[HostForkReceiptListener])))
+      case Tests.Argument(Some(framework), values) if framework == DistageHostPolicy.framework && values.headOption.contains(ForkReceiptArguments.HostDirectoryOption) => None
+      case other => Some(other)
+    }
     val options = if (full) {
       def capture(filter: String => Boolean): String => Boolean = name => {
         val included = filter(name)
         if (included && owned.contains(HostSuiteName(name))) receipt.expect(HostSuiteName(name))
         included
       }
-      val wrapped = inherited.options.map {
+      val wrapped = inheritedOptions.map {
         case Tests.Filters(includes) => Tests.Filters(includes.map(capture))
         case other => other
       }
       if (wrapped.exists { case Tests.Filters(includes) => includes.nonEmpty; case _ => false }) wrapped
       else wrapped :+ Tests.Filters(Seq(capture(_ => true)))
-    } else inherited.options
-    inherited.copy(options = Tests.Listeners(Seq(listener)) +: options)
+    } else inheritedOptions
+    val directory = Tests.Argument(DistageHostPolicy.framework, ForkReceiptArguments.HostDirectoryOption, owner.store.directory.toString)
+    inherited.copy(options = Tests.Listeners(Seq(listener)) +: (options :+ directory))
   }
 
   def logger(inherited: TestResultLogger, owner: HostReceiptOwner): TestResultLogger = inherited match {

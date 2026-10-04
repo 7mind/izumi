@@ -21,7 +21,15 @@ final class Framework extends SbtFramework {
   override def name(): String = "distage"
   override def fingerprints(): Array[Fingerprint] = Array(fingerprint)
   override def runner(args: Array[String], remoteArgs: Array[String], testClassLoader: ClassLoader): Runner = {
-    new BootstrapRunner(args.clone(), remoteArgs.clone(), name => JvmSuiteLoader.load(name, testClassLoader), RequestArguments.parse(args.toVector).fold(error => throw new IllegalArgumentException(error.message), value => value))
+    val invocation = ForkReceiptArguments.parse(args.toVector, remoteArgs.toVector)
+    val request = RequestArguments.parse(invocation.arguments).fold(error => throw new IllegalArgumentException(error.message), value => value)
+    val runner = new BootstrapRunner(args.clone(), invocation.forwardedRemoteArguments.toArray, name => JvmSuiteLoader.load(name, testClassLoader), request)
+    if (invocation.forked) {
+      val TimeoutSeconds = 30L
+      val PollMillis = 5L
+      val directory = invocation.hostDirectory.getOrElse(throw new IllegalStateException("Fork receipt activation has no host ownership"))
+      new ForkReceiptRunner(runner, FileForkReceiptStore.open(directory), ForkReceiptWaitPolicy(TimeUnit.SECONDS.toNanos(TimeoutSeconds), PollMillis))
+    } else runner
   }
 }
 

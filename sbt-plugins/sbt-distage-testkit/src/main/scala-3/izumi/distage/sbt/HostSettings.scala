@@ -13,9 +13,9 @@ private[sbt] object HostSettings {
     testFrameworks ~= { frameworks => if (frameworks.contains(DistageHostPolicy.framework)) frameworks else frameworks :+ DistageHostPolicy.framework },
     distageCatalogueId := Def.uncached { DistageHostPolicy.catalogueId(definedTests.value) },
     testOptions := Def.uncached { DistageHostPolicy.withIdentity(testOptions.value, DistageHostPolicy.arguments(distageBuildId.value, distageTargetId.value, distageCatalogueId.value)) },
-    testSelected / HostReceiptPolicy.owner := new HostReceiptOwner,
-    testQuick / HostReceiptPolicy.owner := new HostReceiptOwner,
-    executeTests / HostReceiptPolicy.owner := new HostReceiptOwner,
+    testSelected / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
+    testQuick / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
+    executeTests / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
     testSelected / testFilter := Def.uncached { new HostSelectionObserver((testSelected / testFilter).value, HostReceiptPolicy.names(definedTests.value), (testSelected / HostReceiptPolicy.owner).value) },
     testQuick / testFilter := Def.uncached {
       val filter = DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testSelected / testFilter).value, streams.value.log)
