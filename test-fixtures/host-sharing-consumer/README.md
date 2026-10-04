@@ -109,3 +109,31 @@ framework's source and registration. A public result logger records and checks
 the SDK output before invoking the inherited logger. This bounded normal
 mixed-framework control does not establish held foreign delivery, a complete
 logger drain, all framework orders, cache history, failures or cancellation.
+
+`verify-global-exit-ack.py` is a public JVM prototype for the measured SBT2 held
+foreign-output omission. It forwards the production Runner/Tasks and installs
+a shutdown hook owned by the child's session. A public listener acknowledges
+the six selected suite groups and waits for the child to acknowledge that set
+before its final group callback returns. These prototype files are separate
+from the production owned-suite receipts. The original foreign framework stays
+unchanged; no SBT private API or orchestration is substituted.
+
+```sh
+python3 -B test-fixtures/host-sharing-consumer/verify-global-exit-ack.py \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 2.12.21 --framework-order own-first \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/global-exit-ack-example
+```
+
+Use a separate evidence directory for `--framework-order foreign-first`.
+Both registration orders pass normal/held controls on all three Scala versions,
+with eighteen physical, public SDK-output and positive XML cases per command.
+While held, the child is alive and has not acknowledged global completion. The
+own-first observation enters shutdown after owned done finishes; reverse order
+still waits in owned done. Both finish after the foreign callback is released.
+
+The six-suite metadata is fixed fixture input within one fork. This is not the
+production implementation: effective selection/cache exclusions, per-fork group
+metadata, cancellation, premature death, cleanup faults and complete error/logger
+drain still need an implementation and checks. SBT1 uses a different completion
+handshake and is excluded from this prototype.

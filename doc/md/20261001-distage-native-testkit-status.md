@@ -11547,3 +11547,96 @@ provenance append. `2d-sdk-held-batch-review-root-first.json` returns0, SHA256
 Exactly this ledger, diagnostic README and tested helper are eligible for local
 commit `Reproduce incomplete SDK output after held foreign delivery`, parent
 `e56b0e5cbe7d3736bbb8c00b37101c1e86dbd41e`. No push or full gate claim.
+
+## 2026-10-04: bounded SDK2 global-exit acknowledgement prototype, in progress
+
+The preceding diagnostic checkpoint is local commit
+`f3c3f53d7461641f122d775dfafa8ca7bf2c236e`, parent
+`e56b0e5cbe7d3736bbb8c00b37101c1e86dbd41e`. Its guard SHA256 is
+`9da13c60ad0732279110b4e404ac1c9eb324eb17c72a79ccdf649a2990a3b6bf`;
+`2d-sdk-held-batch-local-commit-first/completion.json` records exact three paths,
+1,682 qualified inputs, 212 unchanged publication pairs and a clean checkout,
+SHA256 `de7f06c97da37e252d99a774c2b9185ea87c4d5defd258ec022073dc0da07fb0`.
+
+Items 2d.4/2d.10/2d.15/2d.22 remain in progress. The measured held-foreign
+Output omission now has a bounded public SDK2 prototype, not a production
+correction. The forwarding framework delegates the published Runner and Tasks.
+Its child session owns a public JVM shutdown hook, which waits for a host file
+containing the six selected group identities, then records its acknowledgement.
+A public listener publishes that set in the last endGroup callback and waits
+for the child's acknowledgement before returning. The original ForeignFramework
+source is unchanged. No private SDK API or copied orchestration is used.
+
+Pinned SDK2 records each SuiteResult before calling endGroup. Consequently the
+last callback publishes only after all six results have accumulated, and its
+wait keeps the child from exiting until that set is observed. This source order
+explains the successful controls; no historical wire trace is claimed. SBT1 is
+excluded: its pre-exit Done/ACK exchange has a different ordering.
+
+Frozen exploratory driver-second is run with explicit artifact1.3.0-SNAPSHOT,
+SDK2.0.9, Scala3.9.0/2.13.18/2.12.21, framework order and fresh evidence paths:
+
+- `2d-mixed-global-exit-ack-actual-second`, own-first: all three actual process
+  exits and driver exit0; terminal SHA256
+  `4a8d176d11bc88fd50739a65c08fba61855e9ccfa6e4ce72fb8a3494c8ceda49`.
+- `2d-mixed-global-exit-ack-actual-third`, foreign-first: all three actual
+  process exits and driver exit0; terminal SHA256
+  `88c807a864c84b63ee99e682b1b5e69e085badf29f4f27a2c7bb16a77fe513d5`.
+
+These six lanes run normal/held pairs: twelve commands reconcile 216 physical,
+public SDK-output and positive XML cases, including 180 DI and 36 foreign bodies,
+twelve fresh paired DI resources and twelve distinct cleaned receipt directories.
+Each pair uses the same SBT process without settings reapplication. While held,
+all eighteen bodies and paired release exist and the child is alive, with no
+ready/global acknowledgement or returned foreign callback. Own-first records
+finished owned done and entered shutdown; reverse records owned done entered
+but unfinished, with no shutdown entry. Both finish after the driver opens the
+foreign callback gate. Final records agree on six group identities and child
+entry/ready PID, host return PID, callback return, doComplete and exact output.
+
+The repository helper adds only relative ROOT and a shebang. Its replay commands:
+
+`python3 -B test-fixtures/host-sharing-consumer/verify-global-exit-ack.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 --scala-version 3.9.0
+--framework-order own-first
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-mixed-global-exit-ack-permanent-first`.
+
+The second replay uses --framework-order foreign-first and permanent-second.
+Both actual process and driver exits0, terminal SHA256 respectively
+`ccb8f54c72a1ee29677100c804c4daaf3fd35bfcf4f2dfabc09d5fb3c470aa33`
+and `31b6a574f3684cac4a4cec01a7862e368c92c8c4364fdfd948b031978ac330b7`.
+All eight selected lanes reconcile 288 bodies, SDK cases and positive XML cases,
+240 DI/48 foreign, sixteen fresh paired resources and cleaned receipt directories.
+Pilot actual-first passes its runtime but lacks the explicit shutdown/alive
+observation fields; it is excluded from this stronger inventory.
+
+Root audit-first freezes 1,120 records and 204 external JARs, checking original
+and generated sources, unchanged foreign source, raw exits, exact IDs, held and
+shutdown states, logged/resolved Test classpaths and the owned meta artifacts.
+One unbound .sbt/boot library is excluded from metadata inspection. Full meta
+classpath/runtime-replica identity is not claimed. Current 212 published JAR/POM
+pairs retain their qualified bytes. Audit SHA256
+`4e476c8c143a5b8fd98ebce89ee442f82604fccdba4423bbd68d9af05b3f022b`.
+Final input qualification adds this helper/README: 1,683 inputs, no production
+compiler-input changes. Qualification SHA256
+`8830c6c32787a361a5eabb995f4b7b54673fcde4eab1a9df00d9703c20da4a67`;
+helper `bef05d76fdefac61ce5ed5208b54bb09c50e8d50be26334a0a6d32b8f723033f`.
+
+The read-only review directly reconciles all sixteen commands and finds no
+blocking finding within fixed-six-suite, one-fork, successful commands. Report
+SHA256 `2109f2c79b48aba74930d2d93d973daad94d631fa9fa1372d6b25b3635e7affe`,
+schema1 manifest `dffa49ee2b2ca89bae8ff561b4eb38b5a089a8b770c4d49ff1e1d77f857ab68b`,
+inspection `03a8a74651fd5a2bd53fb684be831e5427c92e32ee380abf81dd0eaebca1864b`.
+Root reads the complete report and checks all 1,234 original/copy hash-size
+records and five review artifacts before this ledger append. Root verification
+returns0, SHA256 `f37b18f0b14957e78bb2cfca8be5e059b350dcab0863b03ad8fac1dc97287df4`.
+The larger artifact inventory retains root provenance.
+
+Production integration still requires effective selection/cache exclusions,
+per-fork membership, multiple forks, failure/death/cancellation handling, cleanup
+faults and complete error/logger drain. Ordinary IO.write in this prototype does
+not establish atomic publication; a production primitive needs a paused-writer
+check. No acceptance item is waived, whole step completed or branch pushed.
+Exactly this ledger, host-sharing README and tested prototype helper are eligible
+for local commit `Verify bounded SDK2 global-exit acknowledgement`, parent
+`f3c3f53d7461641f122d775dfafa8ca7bf2c236e`.
