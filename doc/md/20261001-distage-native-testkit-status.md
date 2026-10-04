@@ -10440,3 +10440,106 @@ This new capture has not yet had a root terminal source/XML/classpath audit or
 its own independent review; no broader host-thread/cancellation/fork gate is
 claimed. It modifies only isolated fixture copies, no qualified repository
 source or published artifact.
+
+### Five-suite host task limits — 2026-10-04
+
+The preceding nineteen-path receipt sub-step is committed locally as
+`06c2e0dad80d67a511b1d6e52201a4316359cf69`, parent
+`9a3177eeaa3d0c8a9543528ee69033a712e3dd72`. Root verifies exactly those paths,
+guarded/current/committed byte equality, all 1,666 qualified sources and 212
+published pairs unchanged, and a clean index/worktree immediately after commit.
+Postcommit record `2d-public-receipt-production-postcommit-first.json` returns0,
+SHA256 `6c9a3d02a68b7aac48806874536b4e1a415d86dd34a3771e45a18e8186de175f`.
+This is postcommit byte verification, not another Native/assertion runtime.
+No whole step/final gate is done and no push occurred.
+
+The tested scratch control becomes the reusable
+`test-fixtures/sbt-plugin-consumer/verify-host-limits.py`, with a README command
+and required artifact/SDK/Scala/thread/evidence arguments. It transforms only
+isolated fixture copies: the two plain suites become compatible DI suites, and
+the physical verifier now treats all five as DI bodies. Public TestsListener
+instrumentation brackets host groups; global Tags.limitAll is one/two and
+parallelExecution is true. The first group end counts fifteen body files,
+while all five suite/test identity sets, successful XML and one shared paired
+resource lifetime are independently reconciled after each full/repeat command.
+No production source or dependency pin changes in this sub-step.
+
+Root qualification under `2d-five-suite-host-limits-input-qualification-first`
+returns0 with 1,667 sources. Only the fixture README changes relative to the
+previous qualified inventory, and the new driver is added. All 212 published
+JAR/POM pairs match their qualified frozen bytes. Source manifest SHA256
+`ebcc48a53d02d8b6c482c305d3f2c6d3c6c9339912dce749bcb5ae204ff02a38`;
+publication manifest remains
+`5babeb76d565d7e4f0cd01f892893826c3d8fdb8fba4200ac39e04e719b86b23`.
+This preterminal qualification is not itself a runtime result.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-host-limits.py \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 \
+  --scala-version 3.9.0 2.13.18 2.12.21 --host-threads 1 2 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2d-five-suite-host-limits-published-first
+```
+
+The driver and all twelve actual SDK processes return0, with no validator
+failure. All twenty-four full/repeat windows measure the configured maximum
+one/two simultaneous groups. Each first end follows only one/two group starts,
+with fifteen body files already present. This is an observed equality; the
+executed validator requires maximum between one and the configured limit,
+not that every limit-two schedule must attain two. Terminal metadata SHA256:
+`6763510828128ff238f1a8ae0997a8befa5cdf997061bb0a291a7bdd394ad797`.
+
+Pinned SDK source ordering connects the listener intervals to Task.execute:
+startGroup precedes runTest/testTask.execute, and endGroup follows its return.
+The SDK1 primary Central source archive is HTTP200, captured in
+`2d-five-suite-host-limits-sdk-source-first/provenance.json`; JAR SHA256
+`b11d9396a95a37742a70f27399ab65c90a7c90aa4b5f919bab216b2fb95cdfb9`,
+extracted TestFramework source SHA256
+`2d64fc45e3472f3f6d8b3b1949a2da093fa863f19820bad3c5c5652a7c4142a5`.
+SDK2 is extracted from the preceding official testing_3-2.0.9 source archive,
+SHA256 `1aaa1670dfe780ff23daf0a9d42b347cbc25c2953e06b1a7b617d39c1a54e66e`;
+its extracted source SHA256 is
+`5ca52f4af85c4183b0d37fef2d411460320f6e0c9d592890601474205e3f1f99`.
+These are read-only source inspections, not copied SDK orchestration.
+
+Root executes `python3 -B
+/srv/nvme/tmp/izumi-impl/2d-five-suite-host-limits-root-audit-first.py` and
+returns0 on the first attempt: 24 cases, exact 360 physical bodies and 360
+successful/non-skipped XML identities, and 24 globally distinct paired resource
+lifetimes serving every DI body. It rechecks all 1,667 source and 212 artifact
+hashes, every generated fixture input, twenty-four logged/update-report Test
+classpath sets, each meta-build's qualified plugin/protocol JARs, actual group
+timelines, and freezes source/log/update/body/XML/compiler-binary records.
+Each first end has fewer than five preceding starts and fifteen body files,
+with complete five-suite identity sets at completion. Audit SHA256:
+`7013cf200e2382a575c67aa7869ab808e124f898b6a906a052e2b06da0a2fa86`.
+Current/frozen byte equality supports the completed capture, not historical
+physical worker identities or child replicas.
+
+The new independent read-only reviewer directly checks all twelve terminal
+body/XML/resource/window controls and both stock SDK source orderings, finding
+no material blocker. It confirms the bounded absence of an all-suite-start
+barrier: the first returning host task has completed the selected fifteen-body
+group while the other three/four host execution brackets have not started.
+Physical worker identity, general scheduler fairness, forks, cancellation,
+multi-project aggregation and all-suite failure recovery are excluded. The
+root closure audit finished after its final handoff window and is explicitly
+excluded from the independent review; closure inventories retain root
+provenance. Root reads that report and verifies all 781 records/copies and
+unchanged originals (14 repository, 767 evidence) before the later ledger
+append. Review report SHA256
+`45ef6f089eb11aaa500df9ed0b194c5a31e78490db06e062f7b7f43aa3805b91`,
+schema1 manifest SHA256
+`2e8c92591b2fa261878bfce60078f467b1bd7b8bc07ab9e27c763886cd9bd09d`,
+inspection SHA256
+`aeaf2401b256606999a78a2e3052d81e5e6c0e4569b3f98da57f8cd3fbad6af1`;
+root verification-first returns0, SHA256
+`e857cdfa26e7d93a25491a4793e35c60290a61147b3bf007d4cde6669a20c7c9`.
+
+This is progress on the specified sharing/thread-limit subset of 2d.11 and
+source-backed scheduling evidence relevant to 2d.20. It closes no final item or
+whole step and establishes no cancellation/target-death/finalization-failure,
+fork/aggregate/classloader or complete history/terminal-ID gate. Only this
+ledger, the fixture README and reusable driver are eligible for the next local
+sub-step commit, subject `Verify five-suite sharing under SBT host task limits`,
+parent `06c2e0dad80d67a511b1d6e52201a4316359cf69`. The following postcommit
+record will carry its hash and verify exactly those three paths; no push.
