@@ -143,6 +143,26 @@ Own-first enters shutdown after owned done finishes. Reverse order waits in owne
 done when that group includes owned suites; a foreign-only group has no owned
 tasks to await. Each finishes after the foreign callback is released.
 
+The listener records a missing child acknowledgement before throwing. The public
+result task also checks that record and each active fork's child/host completion
+markers: SDK2 can swallow a listener exception while returning successful body
+results. `verify-ack-recovery.py` runs a baseline, a controlled `halt(0)` after
+host acknowledgement but before child-ready, and recovery in one SBT process:
+
+```sh
+python3 -B test-fixtures/host-sharing-consumer/verify-ack-recovery.py \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
+  --scala-version 3.9.0 --framework-order own-first \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/ack-recovery-example
+```
+
+Use another evidence directory for each Scala version or framework order. The
+fault command must return a failed public input-task result with
+`INCOMPLETE_DYNAMIC_FORK_ACKNOWLEDGEMENT`; the expected-failure harness then lets
+the batch continue to recovery. Its outer process exit zero records successful
+rejection and recovery, while all eighteen body outcomes remain successful.
+This does not provide a structured run-error or failed XML projection.
+
 This is a prototype, with disjoint suite membership and stock SDK2 fork scheduling.
 Production integration, foreign-only commands, cache history, overlapping group
 membership, cancellation, premature death, cleanup faults and complete

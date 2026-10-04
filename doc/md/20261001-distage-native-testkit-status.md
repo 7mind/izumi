@@ -73,7 +73,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery and normal mixed forks pass six SDK/Scala combinations. Held foreign SDK2 Output15/18 omission is reproduced; public acknowledgement prototypes now pass bounded effective per-fork selection controls. Production/failure/final evaluation stay open. |
+| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery and normal mixed forks pass six SDK/Scala combinations. Held foreign SDK2 Output15/18 omission is reproduced; public acknowledgement prototypes pass bounded effective per-fork selection controls and reject a retained ACK failure at the public task boundary, with same-session recovery. Production/structured-error/cache/final evaluation stay open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
@@ -11761,3 +11761,109 @@ contract remains unverified. No item is waived, whole step completed or push mad
 Exactly this ledger, host-sharing README and tested helper revision are eligible
 for local commit `Verify effective per-fork acknowledgement membership`, parent
 `3ae80602e6fc670dd98cdcf83f0a929aefd10b07`.
+
+
+## 2026-10-04: retained acknowledgement failure at the public task boundary, in progress
+
+Prior bounded membership commit is observed at
+`b4318430448ab3bebad1356b8afb5f6e6ceceafa`, parent
+`3ae80602e6fc670dd98cdcf83f0a929aefd10b07`. Its frozen local guard SHA256 is
+`9b3fcbd400908f74af75a51d8c01832458225ce72b55411ae95459d7f773e53a`,
+completion `cdb9843233854b6bcaf675d19b5737ed7f05c52328e5d03d9fd73a83d16b5184`.
+That post-commit capture verifies exactly the three intended paths, 1,683
+qualified inputs, unchanged 212 published pairs and a clean index/worktree.
+No push was performed.
+
+Items 2d.4/2d.11/2d.13/2d.15/2d.17/2d.22 remain in progress. The preceding
+halt-after-ACK probe reproduced an SDK2 listener exception being swallowed,
+with actual SBT0; its expected-defect driver0 was not product acceptance. The
+prototype now records a missing acknowledgement in its command-owned audit,
+then throws. A public TestResultLogger checks this record and all active fork
+child-ready/shutdown-enter/host-return markers before delegating. This closes
+the tested false-success path at the public task boundary without attributing
+failure to successful test bodies. The production HostReceiptOwner and its
+logger-replacement protection are unchanged; this prototype result is not a
+production correction or a cache/final-gate pass.
+
+Frozen `2d-fork-ack-boundary-driver-first.py` runs baseline, controlled fault
+and recovery with one SDK2 process on Scala3.9/own-first. Its child receives the
+host's selected-group acknowledgement, records its PID, and halts0 before
+child-ready. `verifyAckRejection` observes the public testSelected task's
+`.result`: Left Incomplete containing `INCOMPLETE_DYNAMIC_FORK_ACKNOWLEDGEMENT`
+is required; Right is a harness failure. The enclosing expected-failure task
+allows the batch to continue to recovery. Actual outer SBT0 therefore means
+that rejection and recovery were observed, not that the fault task succeeded.
+All three commands separately retain eighteen physical, public SDK and positive
+XML body outcomes, paired resource release and owned receipt cleanup. Recovery
+uses a fresh resource, receipt directory and child PID, with the same parent
+SBT PID and no settings reapplication.
+
+Canonical own-first captures and completion SHA256:
+
+- `2d-fork-ack-boundary-actual-first`, Scala3.9, actual0/driver0:
+  `c758ac68b09560fb5e72749306ee6a157a9c581511cf2a279467fa98dbf6f577`.
+- `...-actual-second`, Scala2.13, actual0/driver0:
+  `e296351cf3f23a60349b9def0d2a980498276a4ccc7952e3fba8004eef35b744`.
+- `...-actual-third`, Scala2.12, actual0/driver0:
+  `10db16dfca9bdcf16fe1c20bac26b17eac4e3c271950c099fe13bdc954fa2a8e`.
+
+The first driver manually injects the guard into a frozen b431 helper; its
+original helper bytes remain historical. The second frozen driver uses the
+revised repository helper. The root audit verifies the first recorded hash
+against its preserved copy and the b431 Git blob, not against current bytes.
+Generated fault framework source is identical in all seven controls below.
+
+The new permanent helper is verified with:
+`python3 -B test-fixtures/host-sharing-consumer/verify-ack-recovery.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 --scala-version 3.9.0
+--framework-order foreign-first --evidence-dir
+/srv/nvme/tmp/izumi-impl/2d-fork-ack-boundary-permanent-first`.
+Explicit analogous runs use Scala2.13.18/2.12.21 and fresh directories
+permanent-second/third. All actual0/driver0. Their SHA256 values are respectively
+`568c38a4d35a1f9f42c3262072ae8c430aa4015ae738141bdc196f659f9de911`,
+`edad6ecc33dd44bc994604b64460bc059c6e9a73df452d5df050452ce68d8e9e`,
+`60602aba85d008ecab3f468140756b82888788db99acc40798de343f2f8dfc2d`.
+The own-first/Scala3.9 helper replay in permanent-fourth returns actual0/driver0,
+SHA256 `2d8a2ae3a0a556d5e7cae0c232f012f15f71f7880c14c48ee09dde89e52ef47b`.
+These seven baseline/fault/recovery lanes give 21 commands, 378 body successes
+on all three surfaces, seven expected rejected tasks and fourteen healthy tasks.
+
+The revised ordinary helper also replays all nine dynamic controls on
+Scala3.9 in both orders. Commands retain the preceding helper's explicit
+arguments, substituting fresh normal-first/second directories and reverse/own
+order. Both actual0/driver0, completion SHA256
+`c4bda793162632e0bbfc46899c7fab5f55d00b6a278148d9af0eb24629f5e985` and
+`8a46cb8c55a532f8b49bae7743349c11e924b1d2ceeeae1e50fe4dbb44449524`.
+These eighteen healthy commands contribute another 216 exact body outcomes,
+including exclusions, partial/ordered selection, two forks, a foreign-only
+fork within a mixed command, empty group and entirely user-excluded selection.
+
+Root audit-first returns0 and freezes 2,502 records plus 204 external JARs.
+It directly checks all 39 commands/594 exact physical, SDK and positive XML body
+outcomes (489 DI/105 foreign), seven rejected tasks and 32 healthy tasks,
+39 fresh lifetimes/owned receipt directories and 41 active child PIDs. It checks
+original/generated sources, unchanged foreign source, marker ownership, raw
+exits, fault/recovery task distinction, resolved/logged Test classpaths and owned
+meta artifacts. One unbound .sbt/boot metadata library is excluded; complete
+runtime replicas are not claimed. All 212 published pairs retain their prior
+qualified bytes. Audit SHA256
+`2d293909b56b953d6aae25060955d47aa5fbd927e7d9c6527a2349c93fe80fbf`.
+Final non-ledger qualification freezes 1,684 inputs, SHA256
+`2ee50505d9f4741c4ed868fb3cde29b9fe12660d873bec07057619960e7cb33d`.
+Only the prototype helper/README revisions and new recovery helper change
+relative to the prior 1,683 inputs; production compiler inputs are unchanged.
+
+The bounded read-only review reports no blocking finding. Report SHA256
+`056141a1baa1d5039cf5433ae9a793f6af5a45f7747b20b48785f23f5e996c2d`,
+schema1 manifest `71d4711fc1739f799234b88e571b843d3fa26acc3e7f89158a6353432e944b31`,
+inspection `f2c28a39ead0b5d908e37e788e905bc7013be956e396c525151fb4989a0e13ed`.
+Root reads its complete report and verifies all 2,295 original/copy hash-size
+pairs plus review artifacts before this stamp. Larger inventories retain root
+provenance. Only this review-provenance stamp changes the reviewed ledger bytes;
+a separate qualification records both versions. Structured run-error/failed XML projection,
+logger replacement, cache/history, foreign-only commands, overlapping group
+membership, cleanup faults/cancellation and full production integration remain
+open. No acceptance item is narrowed or waived, whole step completed or push made.
+Exactly this ledger, host-sharing README and the two tested prototype helpers
+are eligible for local commit `Verify retained fork acknowledgement failures`,
+parent `b4318430448ab3bebad1356b8afb5f6e6ceceafa`, after review reconciliation.

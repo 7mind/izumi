@@ -141,7 +141,10 @@ Test / testListeners += {
         files.publish(group / "host-ack", expected.mkString("\n"))
         val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(HostWaitSeconds)
         while (!(group / "child-ready").isFile && System.nanoTime() < deadline) Thread.sleep(PollMillis)
-        require((group / "child-ready").isFile, "Per-fork child acknowledgement missing")
+        if (!(group / "child-ready").isFile) {
+          files.publish(files.root / "host.ack-invariant-failure", group.getName)
+          throw new IllegalStateException("Per-fork child acknowledgement missing")
+        }
         require(IO.read(group / "child-ready") == IO.read(group / "shutdown-enter"), "Child acknowledgement PID differs")
         files.publish(group / "host-return", ProcessHandle.current().pid().toString)
       }
@@ -163,6 +166,14 @@ Test / testSelected / testResultLogger := {
       files.publish(files.root / "host.result-counts", rows.mkString("\n"))
       files.publish(files.root / "host.result-parent-pid", ProcessHandle.current().pid().toString)
       require(output.events.keys.toVector.sorted == expected && output.events.values.forall(result => result.result == TestResult.Passed && result.passedCount == 3 && result.failureCount == 0 && result.errorCount == 0 && result.skippedCount == 0), "DYNAMIC_FORK_RESULT_SET_DIFFERS")
+      val groups = (files.root / "groups" * "group-*").get().filter(_.isDirectory)
+      val active = groups.filter(group => files.expected(group).nonEmpty)
+      val acknowledged = active.forall(group =>
+        (group / "child-ready").isFile && (group / "shutdown-enter").isFile &&
+        IO.read(group / "child-ready") == IO.read(group / "shutdown-enter") &&
+        (group / "host-return").isFile && IO.read(group / "host-return") == ProcessHandle.current().pid().toString
+      )
+      require(!(files.root / "host.ack-invariant-failure").exists() && acknowledged, "INCOMPLETE_DYNAMIC_FORK_ACKNOWLEDGEMENT")
       inherited.run(log, output, taskName)
     }
   }
