@@ -10818,3 +10818,96 @@ eligible for the next local sub-step commit, subject
 `48cb0406de32000d8a52da0035f264afbcaae94e`. Postcommit verification will check
 exactly those four paths and unchanged other qualified sources/publications;
 no push, whole step or final gate.
+
+### Counted target runner and admission correction — 2026-10-04
+
+The preceding four-path receipt primitive commit is
+`53d7e22558894018739b1f7b50743f3e77f16958`, parent
+`48cb0406de32000d8a52da0035f264afbcaae94e`. Its postcommit record returns0,
+verifies exactly its four guarded/current/committed paths, 1,672 qualified sources
+and 212 unchanged publication pairs, with a clean index/worktree at that point.
+`2d-counted-fork-receipt-postcommit-first.json` SHA256
+`dc0db4100f6a89c97390c1d3094c6b2ea4ffc72c109dbcf063372fd08b18e0b9`;
+precommit guard SHA256
+`826799c1be6b5a2651ff72d23cec835c5bd41ae4ab39ef132ab3ee3dcee3ef3f`.
+
+A JVM bootstrap-private Runner wrapper now records actual selected task groups
+and seven event status counts. Its done waits for exact host receipts after
+completion of selected tasks. Repeated done retains the result or original
+Throwable and invokes the delegate only once. A thrown Task.execute replaces
+buffered counts with one Error, modeling the behavior observed in both pinned
+SDK sources; these fixtures do not execute either SDK replacement path. Checked
+addition rejects count overflow. Framework and host plugin do not use the
+wrapper yet, so the reproduced fork defect remains uncorrected in production.
+
+The same contract runs against memory and an independently opened filesystem
+reader, including repeated groups, held receipt delivery, original fatal cause,
+omitted task rejection and repeated done. Third capture runs on JVM Scala
+3.9.0/2.13.18/2.12.21, actual SBT0/driver0 and six markers; terminal SHA256
+`fa9e3947504c3e2a210f7377724f4bd520b50ed3167ed64c0977b173382e2747`.
+First capture is retained as failed: a recursive fixture status accessor hung;
+compiler diagnostics and owned JVM thread dump identify that accessor. Only the
+verified owned process group received SIGTERM, actual143/driver1. No positive
+proof is attributed to it. Second passes the corrected Scala3-only contract.
+
+Bounded read-only review predicts an admission leak: metadata resolution after
+active-task admission occurs outside the finally that drains admission. First
+report SHA256 `69eee320701fdc9231395f6714f7de4b769945bdf2ef973073a841141ddfb5da`,
+manifest `5ab4f17ea0e80a7af19ba309e9057930518d61cc8a9a5b17d3825964b7ca7d0a`,
+inspection `5f2b9493ad7a895849930a4ec32bc4dc5d7d86822dfcb2b4ecb6fba6c9ab0722`.
+Root verifies all thirteen inspected copies; the subsequently changed wrapper's
+reviewed bytes match the immutable before-fix capture. Root verification SHA256
+`c23725823d11bbe2b628d905c6147e7f52a850556942042b05dd51267e70fa80`.
+
+Before the production correction, a selected task's metadata accessor switches
+to throwing an original LinkageError. Execute preserves that cause, but done
+fails the bounded completion assertion after the delegate has entered done:
+`FORK_RUNNER_METADATA_ADMISSION_LEAK`. The fixture interrupts/joins its waiter.
+`2d-counted-fork-runner-metadata-before-fix-first` actual SBT1/driver0 (expected
+counterexample), terminal SHA256
+`921b2c7f93f37c777d6e632d60e90b721cb53acc49b14b5b4a16d76d7c81d410`.
+Root reads the exact raw failure before changing production code.
+
+The correction resolves task metadata and constructs the event counter before
+admission; every operation after admission is now protected by its finally.
+The original execution cause is retained, and done terminates with explicit
+incomplete-selected-task rejection rather than waiting on leaked admission.
+Command: `python3 -B /srv/nvme/tmp/izumi-impl/2d-counted-fork-runner-regression-driver-first.py
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-counted-fork-runner-metadata-after-fix-first
+--mode positive`. This uses batch SBT/JDK21 on all three pinned JVM Scala lanes,
+then runs each memory/filesystem contract and metadata reproduction. Exact argv,
+frozen sources/driver and raw log are retained. Actual SBT0/driver0, nine success
+markers, sourceStable true; terminal SHA256
+`e402681a3eddd86147d3d53af10689a5a4a8fe93d523a331c7b3066d0b4afee3`.
+All six owned fixture directories are absent after execution.
+
+Root audit-fourth returns0, verifies 1,674 qualified sources and 212 unchanged
+publication pairs, and freezes 73 records including 21/19/19 wrapper/fixture
+compiled records. Audit SHA256
+`b1efe26a6a54f511f48080bc55cc9086f416bc07ff03f96fa32ede64cbdd2e6f`;
+qualification SHA256
+`4bb692e08ae7c7eefe58d2329b950b29f3700c347f9596393a43d26878baef7a`.
+Audit-first used a conventional module target path instead of configured
+`target/out/jvm/<version>/distage-test-runner`; third used a publication manifest
+key before checking its schema. Both failed checker records are preserved;
+correcting these checkers required no runtime replay. Second checks the earlier
+third capture; fourth checks the corrected current wrapper inputs.
+
+This is a leaf Bootstrap task wrapper checkpoint. Actual SDK execution,
+Framework activation, fresh host-generation receipt ownership, terminal
+publication lifecycle, full failure/cleanup, mixed-framework/history controls,
+new artifact publication and all parent/final evaluations remain open. No
+whole step, current Native/JS runtime validation or push is claimed.
+
+The bounded correction review directly verifies the before/after control and
+unchanged fixture/protocol inputs, with no discrepancy in its scoped evidence.
+Report SHA256 `533a21916b24c423880377af2f11dd90be920d26055f1ceec2d1d75d8210e7e0`,
+schema1 manifest `436829b1c6560d18f4e81efd2bcae1bc81cc356f9b1e2fa6f7f69d2bdb0fd9ed`,
+inspection `5377881e6b3f8a6980d72ad0b4d556d92e2ceff088d7d1025e5e0c9036822636`.
+Root reads the complete report and verifies fourteen current original/copy
+records; root correction-review verification SHA256
+`26329941bdbb3e2066eccc7f4a0fabc788c619c7394ed9d54114b02aa6ae7ec6`.
+Only this ledger and the three tested protocol/wrapper sources are eligible for
+local commit `Count fork runner receipts and bracket task admission`, parent
+`53d7e22558894018739b1f7b50743f3e77f16958`; the commit guard verifies exact paths
+and tested bytes. No push or parent/final completion.

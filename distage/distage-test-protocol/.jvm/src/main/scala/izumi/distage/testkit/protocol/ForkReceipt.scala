@@ -11,6 +11,11 @@ final case class ForkReceiptSuite(value: String) {
 
 final case class ForkReceiptCounts(success: Int, failure: Int, error: Int, skipped: Int, ignored: Int, canceled: Int, pending: Int) {
   require(Vector(success, failure, error, skipped, ignored, canceled, pending).forall(_ >= 0), "Negative fork receipt event count")
+
+  def +(other: ForkReceiptCounts): ForkReceiptCounts = ForkReceiptCounts(
+    Math.addExact(success, other.success), Math.addExact(failure, other.failure), Math.addExact(error, other.error),
+    Math.addExact(skipped, other.skipped), Math.addExact(ignored, other.ignored), Math.addExact(canceled, other.canceled), Math.addExact(pending, other.pending),
+  )
 }
 
 final case class ForkReceiptSummary(groups: Int, counts: ForkReceiptCounts) {
