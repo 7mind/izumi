@@ -29,7 +29,7 @@ class DistageTestsRegistry {
       val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestsRegistry](DebugProperties.`izumi.distage.testkit.debug`.name)
       debugLogger.log(s"Launching tests from $instance")
 
-      val allSuites: List[DistageScalatestTestSuiteRunner[AnyF]] = if (isSbt) {
+      val (allSuites, newSuites) = if (isSbt) {
         val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
           throw new RuntimeException(
             s"""Impossible: distage-testkit-scalatest attempted initialization before ScalaTest completed classpath discovery! in=$instance
@@ -47,11 +47,12 @@ class DistageTestsRegistry {
               Nil
             }
         }
-        debugLogger.log(s"Constructed ${freshSuites.size} discovered suites in the runner thread")
-        instance.asInstanceOf[DistageScalatestTestSuiteRunner[AnyF]] :: freshSuites
+        (instance.asInstanceOf[DistageScalatestTestSuiteRunner[AnyF]] :: freshSuites, freshSuites)
       } else {
-        currentInstantiatedSuites().map(_.suite)
+        (currentInstantiatedSuites().map(_.suite), Nil)
       }
+
+      debugLogger.log(s"Instantiated new suites ${newSuites.map(_.getClass.getName).toSet}")
 
       import izumi.fundamentals.platform.strings.IzString.toRichIterable
       debugLogger.log(s"found Suites (in $instance): ${allSuites.niceList()}")
