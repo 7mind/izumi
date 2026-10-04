@@ -211,6 +211,22 @@ object HostReceiptTest {
       }
     }
 
+    check("retry failed owned cleanup without clearing a newer admission") {
+      val current = owner()
+      val previous = current.enter()
+      val blocker = Files.createDirectory(previous.store.directory.resolve("fixture-blocker"))
+      rejects(classOf[IllegalArgumentException])(current.abort(previous))
+      rejects(classOf[IllegalStateException]) { val _ = current.receipt; () }
+      val generation = current.enter()
+      try {
+        Files.delete(blocker)
+        current.abort(previous)
+        assert(current.receipt eq generation.receipt)
+        require(!Files.exists(previous.store.directory) && Files.isDirectory(generation.store.directory), "Cleanup retry affected a newer admission")
+        current.consume(empty)
+      } finally current.abort(generation)
+    }
+
     Files.delete(parent)
   }
 

@@ -12078,3 +12078,113 @@ No acceptance item is narrowed or waived, whole step completed or push made.
 Only this ledger is eligible for local checkpoint commit `Verify published
 receipt failure retention` at parent
 `50b7ed658b5e4ace4eefff6f7c69af87c39d0bbd` after review reconciliation.
+
+
+## 2026-10-04: explicit cleanup retry after an owned filesystem fault, in progress
+
+Published host correction/counting regression evidence is committed locally at
+`86673e1d77d738412f59f8e111f4f092b33c4172`, parent
+`50b7ed658b5e4ace4eefff6f7c69af87c39d0bbd`. Guard SHA256
+`bbe22a126fe6aa94a8b8edb24ff0cdfce2762be2388e2d12849e8291bd645d7c`,
+completion `6b4dd8eabfc81db9462c79d1413be0ceb9ed7c3118d4a0c6fcc2b1d1a78c85f7`.
+Post-commit checks verify the sole ledger path, 1,684 qualified sources,
+212 qualified publication pairs, the 28/809 root records and 80/208 bound-JAR
+inventories, exact reviewed-ledger replacement and a clean index/worktree.
+Review-ledger qualification SHA256
+`6558749de6aa0c7decf3f985968c184cefd9dec414e1b85ee3d0ecac30a64d56`.
+No production change since the recorded publication head50b, no push.
+
+Items 2d.11/2d.13 and cleanup portions of 2d.17/2d.18 remain in progress. A
+separate cleanup invariant is reproduced before changing production: a real
+unexpected nested directory makes FileForkReceiptStore.close fail immediately
+and close publication, but after that obstruction is explicitly removed,
+repeated close returns without removing the owned directory. Closing publication
+is being treated as successful cleanup. Frozen driver copies the original
+ForkReceipt source and the fail-first regression into an isolated Scala2.12.21
+build on SBT1.13.0/JDK21. Command:
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-driver-first.py
+--sbt-version 1.13.0 --scala-version 2.12.21 --expect-repro --evidence-dir
+/srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-repro-first`.
+ActualSBT1/diagnostic-driver0 requires the original cleanup exception and closed
+publication marker before `CLEANUP_RETRY_LEFT_OWNED_DIRECTORY`. It is a measured
+defect, not acceptance. The original source matches the 866 parent Git blob,
+SHA256 `0029a8fc96134348f30d6dbc5001b517698d3eda1a0a0d8e914545de682b4da0`.
+Repro completion SHA256
+`a17ef17caa130ff14d0676741b816e339b69f3fb8126aaf8d300a7d916e70396`.
+
+The four-line production diff separates closed publication from successful
+cleanup. close marks publication closed before filesystem operations and only
+marks cleanup finished after the owned directory is deleted. The original
+exception propagates; there is no automatic retry. An explicit later close
+retries cleanup while publication/read access through the owner remains closed.
+Successful repeated close remains idempotent. The fix does not recursively
+remove unexpected directories or silently accept a cleanup fault.
+
+The exact fail-first fixture now lives in ForkReceiptCleanupFixtures, SHA256
+`a8ff0de581d77fcd0ad4971b8af6e7ab62c043a6d6ad7343a2a7ab7341d1f8ea`.
+It uses a real filesystem obstruction, verifies failure and closed publication,
+repairs only its owned blocker, requires the directory absent after explicit
+retry and repeats close. Finally cleanup removes only known fixture residue.
+Its copied-source positive command uses the same driver without --expect-repro,
+with fresh evidence-dir `2d-fork-receipt-cleanup-retry-positive-first`,
+actual0/driver0, completion SHA256
+`58a91e1455b3e201a469588f69b823b3df9e651fd48bff6c33d0a84364b268ff`.
+This is Behavioral/Effectual/GoodCommunication regression coverage for concrete
+filesystem semantics; existing shared memory/filesystem contracts are retained.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-producer-driver-first.py`
+runs root distage-test-protocolJVM Test/runMain contracts, unicode/replacement
+regressions and cleanup retry on Scala3.8.4/2.13.18/2.12.21 through batch
+SBT2.0.9/JDK21. It then runs root SDK2 HostReceiptTest. Actual0/driver0:
+12 existing receipt contract markers, six unicode/replacement regression
+markers, six fault/retry markers and the then-current thirteen host checks.
+All owned fixture parents are removed. All 1,685 non-ledger inputs remain equal
+to their frozen bytes throughout that command. Completion SHA256
+`734f0602fb3b42ddd62e2bcbd56ae780fb74caf5ac9a8744b6d1cece1e8a8f71`.
+
+A subsequent HostReceiptTest check covers owner recovery after this concrete
+filesystem fault: abort closes the failed generation and releases admission;
+a fresh generation enters; explicit cleanup retry on the older generation
+removes only that directory and retains the newer owner. No host production
+change is needed. This test is the sole source change after the preceding
+three-lane producer command. Its earlier thirteen-check host evidence remains
+historical; current fourteen-check host commands follow:
+
+- `python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-sdk1-driver-first.py
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-sdk1-first`:
+  isolated current host/protocol sources, actual0/driver0, fourteen checks;
+  completion SHA256
+  `572d8b1cb2e88dcc61184abcec2fb9663c4c1e5a614693ea62ae21cf85cd33af`.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-sdk2-driver-first.py
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-sdk2-first`:
+  root plugin/current protocol on Scala3.8.4, actual0/driver0, fourteen checks;
+  completion SHA256
+  `794b059ab4bf8dde170c193a4beeb58c9dca4e61067324e8679c25e23d491df5`.
+
+Root audit freezes 59 records and directly verifies original Git-source
+identity, failed/positive predicate outputs, current two-SDK host checks, exact
+fixture identity and cleanup. Audit SHA256
+`4f200de89d0ec877e7e77d0e8ee4eb25d9784103764387534260e80adb9f3ef9`.
+Final qualification has 1,685 current non-ledger inputs, with only HostReceiptTest
+changed after the three-lane producer command, SHA256
+`79f731c7adc961c6cd3bceed41d7a2e5f7e6c66f30bece62a9ea985321f1ef56`.
+All 212 published pairs retain prior bytes and predate this protocol correction;
+current publication/forks are not claimed. No permission/disk-full fault,
+automatic retry, actual host-task cleanup fault or broad cancellation guarantee
+is established. Global ACK integration, structured errors, cache/history and
+all final gates remain open. No acceptance item is narrowed or waived, or
+whole step completed. The bounded read-only review reports no blocking finding.
+Report SHA256 `ca28c48711b74c8c151a40ba09a55df2ba09410fd9bf635e27b7ac664d6cf219`,
+schema1 manifest `55ae75508e5abe574ed76225c47b8d233f2c5ff884855616578cb2477fb8b2c7`,
+inspection `9db7810a2e75350657f98d05df979ff9bbd5149157891d824506fda33a8efcad`.
+The reviewer directly inspects 5 repository/68 evidence inputs with 235 checks;
+the 1,685-source inventory, 59 root records, owned-parent removal and 212 unchanged
+publication pairs retain root provenance. Root reads the complete report and
+reconciles all 73 original/copy hash-size pairs and six recorded review artifacts
+before this sole provenance stamp. Root reconciliation SHA256
+`88ad13f41e9691e6992b2061ed5de838d4c61e9fc00fe172934382b7971934dc`.
+A separate exact-delta qualification records this sole replacement of reviewed
+ledger bytes. Exactly this ledger, ForkReceipt.scala,
+ForkReceiptCleanupFixtures.scala and HostReceiptTest.scala are eligible for local
+source checkpoint `Retry owned receipt cleanup after failure` at parent
+`86673e1d77d738412f59f8e111f4f092b33c4172` after reconciliation. No push.

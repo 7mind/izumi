@@ -34,6 +34,7 @@ trait ForkReceiptStore extends ForkReceiptReader {
 final class FileForkReceiptStore private (val directory: Path) extends ForkReceiptStore {
   private final val SchemaVersion = "1"
   private var closed = false
+  private var cleaned = false
 
   override def publish(suite: ForkReceiptSuite, summary: ForkReceiptSummary): Unit = synchronized {
     requireOpen()
@@ -60,7 +61,7 @@ final class FileForkReceiptStore private (val directory: Path) extends ForkRecei
   }
 
   override def close(): Unit = synchronized {
-    if (!closed) {
+    if (!cleaned) {
       closed = true
       val entries = Files.list(directory)
       try {
@@ -72,6 +73,7 @@ final class FileForkReceiptStore private (val directory: Path) extends ForkRecei
         }
       } finally entries.close()
       Files.delete(directory)
+      cleaned = true
     }
   }
 
