@@ -4,7 +4,6 @@ import izumi.fundamentals.platform.IzPlatformSyntax
 import izumi.fundamentals.platform.strings.impl.*
 
 import scala.annotation.nowarn
-import scala.collection.compat.*
 import scala.language.implicitConversions
 
 @nowarn("msg=[Uu]nused import")

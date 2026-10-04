@@ -6,7 +6,6 @@ import izumi.distage.model.reflection.DIKey
 import izumi.distage.provisioning.TraversalState.Current.{CannotProgress, Done, Step}
 import izumi.fundamentals.graphs.struct.AdjacencyPredList
 
-import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
@@ -50,10 +49,7 @@ final class TraversalState(
 
   def status(): Map[DIKey, OpStatus] = _status.toMap
 
-  @nowarn("msg=[Uu]nused import")
   def next(finished: List[TimedFinalResult.Success], issues: List[TimedFinalResult.Failure]): TraversalState = {
-    import scala.collection.compat._
-
     val nextPreds = preds.without(finished.iterator.map(_.key).toSet)
 
     val broken = issues.map(_.key).toSet

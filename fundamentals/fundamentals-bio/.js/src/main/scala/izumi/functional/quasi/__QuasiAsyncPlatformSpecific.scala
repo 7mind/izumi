@@ -2,7 +2,6 @@ package izumi.functional.quasi
 
 import izumi.fundamentals.platform.functional.Identity
 
-import scala.collection.compat.*
 import scala.concurrent.Future
 
 private[quasi] object __QuasiAsyncPlatformSpecific {

@@ -2,15 +2,11 @@ package izumi.fundamentals.graphs.tools.random
 
 import izumi.fundamentals.graphs.struct.AdjacencyPredList
 
-import scala.annotation.nowarn
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.Random
 
-@nowarn("msg=[Uu]nused import")
 object RandomGraph {
-  import scala.collection.compat._
-
   def makeDG[N: Generator: ClassTag](nodes: Int, maxEdges: Int, random: Random = Random): AdjacencyPredList[N] = {
     assert(nodes > 0)
     assert(maxEdges > 0)

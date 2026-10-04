@@ -5,14 +5,11 @@ import izumi.distage.model.provisioning.Provision.ProvisionImmutable
 import izumi.distage.model.references.IdentifiedRef
 import izumi.distage.model.reflection.DIKey
 
-import scala.annotation.nowarn
 import scala.collection.{Map, Seq, immutable, mutable}
 
 trait Provision[+F[_]] {
   /**
     * This is an ordered collection!
-    *
-    * @note There is a [[scala.collection.SeqMap]] interface in Scala 2.13 but we need to stick to generic one because of 2.12
     */
   def instances: Map[DIKey, Any]
   def imports: Map[DIKey, Any]
@@ -24,9 +21,7 @@ trait Provision[+F[_]] {
     instances.get(key).orElse(imports.get(key))
   }
 
-  @nowarn("msg=[Uu]nused import")
   def enumerate: immutable.Seq[IdentifiedRef] = {
-    import scala.collection.compat.*
     instances.map { case (k, v) => IdentifiedRef(k, v) }.to(scala.collection.immutable.Seq)
   }
   def index: immutable.Map[DIKey, Any] = {
@@ -51,9 +46,7 @@ object Provision {
     override lazy val enumerate: immutable.Seq[IdentifiedRef] = super.enumerate
     override lazy val index: immutable.Map[DIKey, Any] = super.index
 
-    @nowarn("msg=[Uu]nused import")
     override def narrow(allRequiredKeys: Set[DIKey]): ProvisionImmutable[F] = {
-      import scala.collection.compat.*
       ProvisionImmutable(
         instancesImpl.filter(kv => allRequiredKeys.contains(kv._1)), // 2.13 compat
         imports.view.filterKeys(allRequiredKeys.contains).toMap, // 2.13 compat

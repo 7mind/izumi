@@ -1,6 +1,5 @@
 package izumi.distage.model.plan.repr
 
-import scala.annotation.nowarn
 import izumi.distage.model.reflection.*
 import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.platform.strings.IzConsoleColors
@@ -26,9 +25,7 @@ class KeyMinimizer(
     styled(base, c.MAGENTA)
   }
 
-  @nowarn("msg=[Uu]nused import")
   private val index: Map[String, Int] = {
-    import scala.collection.compat._
     allKeys.iterator
       .flatMap(extract)
       .map(name => name.split('.').last -> name)

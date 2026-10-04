@@ -3,7 +3,6 @@ package izumi.fundamentals.collections
 import izumi.fundamentals.collections.impl.{IzIterable, IzTraversables}
 import izumi.fundamentals.platform.IzPlatformSyntax
 
-import scala.collection.compat.*
 import scala.language.implicitConversions
 
 trait IzCollections extends IzPlatformSyntax {

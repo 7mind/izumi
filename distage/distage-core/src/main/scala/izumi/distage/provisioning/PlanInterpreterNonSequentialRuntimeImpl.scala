@@ -23,8 +23,7 @@ import izumi.fundamentals.platform.integration.ResourceCheck
 import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
-import scala.annotation.nowarn
-import scala.collection.compat.immutable.ArraySeq
+import scala.collection.immutable.ArraySeq
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class PlanInterpreterNonSequentialRuntimeImpl(
@@ -67,10 +66,7 @@ class PlanInterpreterNonSequentialRuntimeImpl(
 
     val ctx: ProvisionMutable[F] = new ProvisionMutable[F](plan, parentContext, privateBindings)
 
-    @nowarn("msg=[Uu]nused import")
     def run(state: TraversalState, integrationPaths: Set[DIKey]): F[Either[TraversalState, Either[FailedProvisionInternal[F], LocatorDefaultImpl[F]]]] = {
-      import scala.collection.compat.*
-
       state.current match {
         case TraversalState.Current.Step(steps) =>
           val ops = prioritize(steps.map(plan.plan.meta.nodes(_)), integrationPaths)

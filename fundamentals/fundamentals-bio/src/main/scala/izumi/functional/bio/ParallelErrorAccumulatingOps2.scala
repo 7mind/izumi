@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import scala.collection.compat.*
+import scala.collection.Factory
 
 trait ParallelErrorAccumulatingOps2[F[+_, +_]] extends Parallel2[F] {
   def InnerF: Error2[F]

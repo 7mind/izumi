@@ -3,12 +3,7 @@ package izumi.distage.framework.model
 import izumi.distage.model.definition.Axis
 import izumi.distage.model.definition.Axis.AxisChoice
 
-import scala.annotation.nowarn
-
-@nowarn("msg=[Uu]nused import")
 final case class ActivationInfo(availableChoices: Map[Axis, Set[AxisChoice]]) extends AnyVal {
-  import scala.collection.compat._
-
   override def toString: String = {
     s"{available.activations: $formattedChoices }"
   }

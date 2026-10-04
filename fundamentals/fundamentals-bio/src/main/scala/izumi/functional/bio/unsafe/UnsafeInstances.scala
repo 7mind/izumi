@@ -5,7 +5,7 @@ import izumi.functional.bio.{Error2, Parallel2, ParallelErrorAccumulatingOps2}
 import izumi.functional.quasi.QuasiAsync
 import izumi.fundamentals.platform.functional.Identity
 
-import scala.collection.compat.{Factory, IterableOnce}
+import scala.collection.Factory
 
 object UnsafeInstances {
 

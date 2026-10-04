@@ -5,7 +5,7 @@ package izumi.fundamentals.collections.nonempty
 import scala.collection.{Iterable, Seq, mutable}
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.reflect.ClassTag
-import scala.collection.compat.*
+import scala.collection.Factory
 import scala.language.implicitConversions
 
 // Can't be a LinearSeq[T] because Builder would be able to create an empty one.

@@ -347,17 +347,6 @@ object Injector extends InjectorFactory {
   }
 
   /**
-    * Create a new default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
-    *
-    * Use `apply[F]()` variant to specify a different effect type
-    *
-    * @note this method exists only because of Scala 2.12's sub-par implicit handling:
-    *       2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
-    *       is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
-    */
-  override def apply(): Injector[Identity] = apply[Identity]()
-
-  /**
     * Create a new injector inheriting configuration, hooks and the object graph from a previous injection.
     *
     * @tparam F the effect type to use for effect and resource bindings and the result of [[izumi.distage.model.Injector#produce]]
@@ -427,8 +416,6 @@ object Injector extends InjectorFactory {
     ): Injector[F] = {
       bootstrap(this, bootstrapBase, defaultBootstrapActivation ++ bootstrapActivation, parent, bootstrapOverrides, locatorPrivacy, bootstrapRootsMode)
     }
-
-    override final def apply(): Injector[Identity] = apply[Identity]()
 
     override final def inherit[F[_]: QuasiIO: TagK](parent: Locator): Injector[F] = {
       new InjectorDefaultImpl(this, parent, definition.Module.empty)

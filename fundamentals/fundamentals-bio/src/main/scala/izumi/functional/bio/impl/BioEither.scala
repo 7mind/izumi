@@ -2,7 +2,7 @@ package izumi.functional.bio.impl
 
 import izumi.functional.bio.Error2
 
-import scala.collection.compat.*
+import scala.collection.Factory
 import scala.util.Try
 import scala.util.control.NonFatal
 

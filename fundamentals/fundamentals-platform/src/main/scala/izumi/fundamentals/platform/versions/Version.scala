@@ -2,12 +2,11 @@ package izumi.fundamentals.platform.versions
 
 import izumi.fundamentals.collections.nonempty.NEList
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 import scala.util.Try
 
 sealed trait Version
 
-@nowarn("msg=Iterables are not guaranteed to have a consistent order")
 object Version {
   final case class Canonical(components: NEList[Int], qualifiers: List[String]) extends Version {
     def toSemver: Option[Semver] = {
@@ -95,10 +94,7 @@ object Version {
       }
 
       private def compareComponents(x: NEList[Int], y: NEList[Int]): Int = {
-        // not available on 2.12
-        // Ordering.Implicits.seqOrdering[Seq, Int].compare(x.toList, y.toList)
-
-        Ordering[Iterable[Int]].compare(x.toIterable, y.toIterable)
+        Ordering.Implicits.seqOrdering[Seq, Int].compare(x.toList, y.toList)
       }
 
       @tailrec

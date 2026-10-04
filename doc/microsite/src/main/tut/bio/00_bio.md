@@ -45,15 +45,6 @@ libraryDependencies += "io.7mind.izumi" %% "fundamentals-bio" % "$izumi.version$
 @@@
 
 
-If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
-
-```scala
-// REQUIRED options for Scala 2.12
-scalacOptions += "-Ypartial-unification"
-scalacOptions += "-Xsource:2.13" // either this
-// scalacOptions += "-Xsource:3" // or this
-```
-
 Most likely you’ll also need to add [Kind Projector](https://github.com/typelevel/kind-projector) plugin:
 
 ```scala

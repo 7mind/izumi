@@ -3,7 +3,6 @@ package izumi.fundamentals.graphs.tools.cycles
 import izumi.fundamentals.graphs.struct.AdjacencyList
 import izumi.fundamentals.graphs.tools.cycles.LoopDetector.Cycles
 
-import scala.annotation.nowarn
 import scala.collection.mutable
 
 // TODO: this class is not required for distage
@@ -16,10 +15,7 @@ trait LoopDetector {
   }
 }
 
-@nowarn("msg=[Uu]nused import")
 object LoopDetector {
-  import scala.collection.compat._
-
   final case class Loop[T](loop: Seq[T]) extends AnyVal
 
   final case class Cycles[T](node: T, loops: Seq[Loop[T]])

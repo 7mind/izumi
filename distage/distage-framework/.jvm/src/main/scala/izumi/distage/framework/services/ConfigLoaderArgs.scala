@@ -6,7 +6,6 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 
 import java.io.File
-import scala.annotation.nowarn
 
 final case class ConfigLoaderArgs(
   global: Option[File],
@@ -15,13 +14,10 @@ final case class ConfigLoaderArgs(
 
 object ConfigLoaderArgs {
 
-  @nowarn("msg=[uU]nused import")
   def fromRoleArgs(
     parameters: RoleAppArgs,
     rolesInfo: RolesInfo,
   ): ConfigLoaderArgs = {
-    import scala.collection.compat.*
-
     val specifiedRoleConfigs: Map[String, Option[File]] = parameters.roles.iterator
       .map(roleParams => roleParams.role -> roleParams.roleParameters.findValue(RoleAppMain.Options.configParam).asFile)
       .toMap

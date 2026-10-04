@@ -104,8 +104,6 @@ abstract class GenericSemigraphTraverse[Err](
     effectType: SafeType,
     bindings: ModuleBase,
   ): Set[PlanIssue] = {
-    import scala.collection.compat.*
-
     @inline def go(visited: Set[DIKey], current: Set[(DIKey, DIKey)], currentActivation: Set[AxisPoint]): RecursionResult = RecursionResult(current.iterator.map {
       case (key, dependee) =>
         if (visited.contains(key) || allVisited.contains((key, currentActivation))) {

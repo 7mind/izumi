@@ -2,7 +2,7 @@ package izumi.fundamentals.collections.nonempty
 
 // shameless copypaste from Scalactic
 
-import scala.collection.compat.*
+import scala.collection.Factory
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.{Iterable, Seq, mutable}
 import scala.language.implicitConversions
@@ -1227,8 +1227,6 @@ final class NEList[+T] private (val toList: List[T]) extends AnyVal {
     * @return the sum of all elements
     */
   def sum[U >: T](implicit num: Numeric[U]): U = toList.sum(num)
-
-  // import scala.collection.compat._
 
   /**
     * Converts this <code>NEList</code> into a collection of type <code>Col</code> by copying all elements.

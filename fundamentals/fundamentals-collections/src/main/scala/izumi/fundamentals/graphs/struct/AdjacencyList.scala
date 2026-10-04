@@ -1,6 +1,5 @@
 package izumi.fundamentals.graphs.struct
 
-import scala.collection.compat.*
 import scala.collection.mutable
 
 sealed trait AdjacencyList[N] {

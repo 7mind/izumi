@@ -3,11 +3,9 @@ package izumi.logstage
 import cats.effect.kernel.Sync
 import izumi.functional.bio.{IO2, SyncSafe1, SyncSafe2}
 import izumi.fundamentals.platform.language.Quirks.*
-import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import izumi.logstage.ImplicitsTest.Suspend2
 import izumi.logstage.api.IzLogger
 import logstage.{LogIO, LogIO2}
-import org.scalatest.exceptions.TestFailedException
 import org.scalatest.wordspec.AnyWordSpec
 
 class ImplicitsTest extends AnyWordSpec {
@@ -21,17 +19,11 @@ class ImplicitsTest extends AnyWordSpec {
     logIO[cats.effect.IO]
   }
 
-  "progression test: can't create LogIO from covariant F/Sync even when annotated (FIXED in 2.13, but not in 2.12 -Xsource:2.13)" in {
-    def test() = {
-      assertCompiles("""
-        def logIOC[F[+_]: Sync]: LogIO[F] = LogIO.fromLogger[F](IzLogger())
-        logIOC[cats.effect.IO]
-      """)
-    }
-    IzScala.scalaRelease match {
-      case _: ScalaRelease.`2_12` => intercept[TestFailedException](test())
-      case _ => test()
-    }
+  "create LogIO from covariant F/Sync when annotated" in {
+    assertCompiles("""
+      def logIOC[F[+_]: Sync]: LogIO[F] = LogIO.fromLogger[F](IzLogger())
+      logIOC[cats.effect.IO]
+    """)
   }
 
   "create LogIO2 from BIO" in {

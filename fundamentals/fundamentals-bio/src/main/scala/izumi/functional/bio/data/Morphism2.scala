@@ -2,12 +2,6 @@ package izumi.functional.bio.data
 
 import scala.language.implicitConversions
 
-/**
-  * @note if you're using Scala 2.12 and getting "no such method" or implicit-related errors when interacting with Morphism2,
-  * you must enable `-Xsource:2.13` or `-Xsource:3` compiler option.
-  *
-  * BIO does not work without `-Xsource:2.13` or `-Xsource:3` option on 2.12.
-  */
 object Morphism2 {
   private[data] type Morphism2[-F[_, _], +G[_, _]] = Morphism3[λ[(R, E, A) => F[E, A]], λ[(R, E, A) => G[E, A]]]
 

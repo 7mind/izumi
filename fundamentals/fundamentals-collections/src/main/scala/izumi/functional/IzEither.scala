@@ -3,7 +3,7 @@ package izumi.functional
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.IzPlatformSyntax
 
-import scala.collection.compat.*
+import scala.collection.Factory
 import scala.language.implicitConversions
 
 trait IzEither extends IzPlatformSyntax {
@@ -121,13 +121,7 @@ object IzEither extends IzEither {
 
   final class EitherTo[ColR[x] <: IterableOnce[x], L, R](private val col: Either[L, ColR[R]]) extends AnyVal {
     def to[CC](buildR: Factory[R, CC]): Either[L, CC] = {
-      // just col.map(_.to(buildR)) doesn't work on 2.12
-      col.map {
-        r =>
-          val b = buildR.newBuilder
-          b ++= r.iterator
-          b.result()
-      }
+      col.map(_.iterator.to(buildR))
     }
   }
 

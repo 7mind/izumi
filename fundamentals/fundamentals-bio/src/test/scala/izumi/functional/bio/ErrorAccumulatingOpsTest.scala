@@ -4,7 +4,7 @@ import izumi.functional.bio.impl.MiniBIO
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.annotation.{nowarn, unused}
+import scala.annotation.unused
 
 final class ErrorAccumulatingOpsTestEither extends ErrorAccumulatingOpsTest[Either] {
   override implicit def F: Error2[Either] = Root.BIOEither
@@ -23,9 +23,8 @@ final class ErrorAccumulatingOpsTestMiniBIO extends ErrorAccumulatingOpsTest[Min
   }
 }
 
-@nowarn("msg=[Uu]nused import")
 abstract class ErrorAccumulatingOpsTest[F[+_, +_]] extends AnyWordSpec {
-  import scala.collection.compat.*
+  import scala.collection.Factory
 
   type BuilderFail
   type IzType

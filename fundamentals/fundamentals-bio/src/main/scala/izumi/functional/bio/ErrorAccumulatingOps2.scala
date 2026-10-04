@@ -2,9 +2,8 @@ package izumi.functional.bio
 
 import izumi.fundamentals.collections.nonempty.NEList
 
-import scala.collection.compat.*
-import scala.collection.compat.immutable.LazyList
-import scala.collection.compat.immutable.LazyList.#::
+import scala.collection.Factory
+import scala.collection.immutable.LazyList.#::
 import scala.collection.immutable.Queue
 
 trait ErrorAccumulatingOps2[F[+_, +_]] { F: Error2[F] =>

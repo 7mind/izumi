@@ -18,14 +18,10 @@ import izumi.fundamentals.graphs.WeakEdge
 import izumi.fundamentals.graphs.struct.AdjacencyList
 import izumi.fundamentals.graphs.tools.gc.Tracer
 
-import scala.annotation.nowarn
-
-@nowarn("msg=[Uu]nused import")
 class GraphQueries(
   bindingTranslator: BindingTranslator
 ) {
 
-  import scala.collection.compat.*
   final def isIgnoredActivation(excludedActivations: Set[NESet[AxisPoint]], activation: Set[AxisPoint]): Boolean = {
     excludedActivations.exists(_ subsetOf activation)
   }

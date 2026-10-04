@@ -3,7 +3,6 @@ package izumi.functional.bio.test
 import izumi.functional.bio.{BlockingIO2, Clock1, Clock2, Clock3, Entropy1, Entropy2, Entropy3, SyncSafe1, SyncSafe2, SyncSafe3}
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.annotation.nowarn
 import scala.annotation.unchecked.uncheckedVariance
 
 final class ArityConversionTest extends AnyWordSpec with PlatformDependentTestBase {
@@ -134,7 +133,6 @@ final class ArityConversionTest extends AnyWordSpec with PlatformDependentTestBa
     override def syncSafe[A](unexceptionalEff: => A): EitherR[Any, Nothing, A] = _ => Right(unexceptionalEff)
   }
   implicit val clockEitherRX: Clock3[EitherRX] = Clock1.Standard.asInstanceOf[Clock3[EitherRX]]
-  @nowarn("msg=CanBuildFrom")
   implicit val entropyEitherRX: Entropy3[EitherRX] = Entropy1.Standard.asInstanceOf[Entropy3[EitherRX]]
 
   type EitherX[+E, +A] >: Either[E @uncheckedVariance, A @uncheckedVariance]
@@ -142,7 +140,6 @@ final class ArityConversionTest extends AnyWordSpec with PlatformDependentTestBa
     override def syncSafe[A](unexceptionalEff: => A): EitherX[Nothing, A] = Right(unexceptionalEff)
   }
   implicit val clockEitherX: Clock2[EitherX] = Clock1.Standard.asInstanceOf[Clock2[EitherX]]
-  @nowarn("msg=CanBuildFrom")
   implicit val entropyEitherX: Entropy2[EitherX] = Entropy1.Standard.asInstanceOf[Entropy2[EitherX]]
 
 }

@@ -60,14 +60,6 @@ If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to
 scalacOptions += "-Yretain-trees"
 ```
 
-If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
-
-```scala
-// REQUIRED options for Scala 2.12
-scalacOptions += "-Ypartial-unification"
-scalacOptions += "-Xsource:3" // or at least "-Xsource:2.13"
-```
-
 Additionally, all source examples in this document use [underscore syntax for type lambdas](https://docs.scala-lang.org/scala3/guides/migration/plugin-kind-projector.html) which you can enable with the following options:
 
 @@@vars

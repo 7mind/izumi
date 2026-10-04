@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections.impl
 
-import scala.collection.compat.*
+import scala.collection.BuildFrom
 import scala.collection.mutable
 
 final class IzIterable[A, Repr[X] <: Iterable[X]](private val xs: Repr[A]) extends AnyVal {

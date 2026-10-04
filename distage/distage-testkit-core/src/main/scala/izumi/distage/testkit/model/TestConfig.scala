@@ -10,8 +10,7 @@ import izumi.distage.testkit.model.TestConfig.{AxisDIKeys, Parallelism, Priority
 import izumi.distage.testkit.runner.impl.services.BootstrapFactory
 import izumi.logstage.api.Log
 
-import scala.annotation.nowarn
-import scala.collection.compat.immutable.ArraySeq
+import scala.collection.immutable.ArraySeq
 import scala.language.implicitConversions
 
 /**
@@ -195,9 +194,7 @@ object TestConfig extends TestConfigPlatformSpecific {
     @inline implicit def fromAxisDIKeys[A](set: A)(implicit toAxisDIKeys: A => AxisDIKeys): PriorityAxisDIKeys =
       PriorityAxisDIKeys(Map(MaxLevel -> toAxisDIKeys(set)))
 
-    @nowarn("msg=[Uu]nused import")
     @inline implicit def fromPriorityAxisDIKeys[A](map: Map[Int, A])(implicit toAxisDIKeys: A => AxisDIKeys): PriorityAxisDIKeys = {
-      import scala.collection.compat.*
       PriorityAxisDIKeys(map.view.mapValues(toAxisDIKeys).toMap)
     }
   }

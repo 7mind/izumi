@@ -7,7 +7,6 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import java.util.concurrent.{ConcurrentHashMap, Executors}
-import scala.collection.compat.*
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 

@@ -2,7 +2,7 @@ package izumi.fundamentals.collections.nonempty
 
 // shameless copypaste from Scalactic
 
-import scala.collection.compat.*
+import scala.collection.Factory
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag

@@ -10,7 +10,6 @@ object Izumi {
   object V {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
     val sbtgen = Version.VExpr("V.sbtgen")
-    val collection_compat = Version.VExpr("V.collection_compat")
     val kind_projector = Version.VExpr("V.kind_projector")
     val scalatest = Version.VExpr("V.scalatest")
     val scalatestplus_scalacheck = Version.VExpr("V.scalatestplus_scalacheck")
@@ -26,7 +25,6 @@ object Izumi {
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
     val pureconfig = Version.VExpr("V.pureconfig")
-    val pureconfig_212 = Version.VExpr("V.pureconfig_212")
     val magnolia = Version.VExpr("V.magnolia")
     val jawn = Version.VExpr("V.jawn")
     val doobie = Version.VExpr("V.doobie")
@@ -67,9 +65,8 @@ object Izumi {
   object Deps {
     final val izumi_reflect = Library("dev.zio", "izumi-reflect", V.izumi_reflect, LibraryType.Auto)
 
-    final val collection_compat = Library("org.scala-lang.modules", "scala-collection-compat", V.collection_compat, LibraryType.Auto)
     final val scalatest_all = Seq(
-      // repeat `scalatest` dependencies, but exclude `scalatest-expectations`(2.13) and `scalatest_refspec`(sjs1_2.12)
+      // repeat `scalatest` dependencies, but exclude `scalatest-expectations`(2.13) and `scalatest_refspec`(sjs1_2.13)
       // because they're missing in `3.3.0-alpha.2` release
       Library("org.scalatest", "scalatest-core", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-diagrams", V.scalatest, LibraryType.Auto),
@@ -105,12 +102,8 @@ object Izumi {
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto)
     final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto)
 
-    // FIXME: remove after dropping Scala 2.12
-    // pureconfig 0.17.9+ dropped Scala 2.12 support, so we need version-conditional deps
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto)
-    final val pureconfig_core_212 = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig_212, LibraryType.Auto)
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
-    final val pureconfig_magnolia_212 = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig_212, LibraryType.Auto)
     final val magnolia = Library("com.softwaremill.magnolia1_2", "magnolia", V.magnolia, LibraryType.Auto)
 
     final val zio_core = Library("dev.zio", "zio", V.zio, LibraryType.Auto)
@@ -237,9 +230,7 @@ object Izumi {
   }
 
   object Targets {
-    // switch order to use 2.12 in IDEA
-//    val targetScala3 = Seq(scala212, scala213, scala300)
-    val targetScala3 = Seq(scala300, scala213, scala212)
+    val targetScala3 = Seq(scala300, scala213)
 
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
@@ -414,61 +405,55 @@ object Izumi {
         )
       }
 
-      final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
-        "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
-        // sbt 2.0.5+ closes the adhoc test ClassLoader once the test task completes. The ZIO and
-        // cats-effect runtimes keep their worker threads alive past that point (ZIO's global
-        // `Runtime.default` scheduler cannot be shut down at all), so the next class load on any of
-        // them fails and the JVM drowns in `LinkageError`s with no sbt-level error: CI produced
-        // 6351 of them from a run whose suites had all passed. Keeping the loader open leaks the
-        // threads instead, which is the lesser evil until ZIO can close its scheduler, see
-        // https://github.com/zio/zio/issues/10019 and https://github.com/zio/zio/pull/10926.
-        "closeClassLoaders" := false,
-        "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), None) :=
-            withJvmRelease(
-              (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ scala2Wconf)
-                .filterNot(_ ==  ("-Ywarn-unused:_": Const))
-            ),
-          SettingKey(Some(scala213), None) :=
-            withJvmRelease(
-              (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf
-            ),
-          SettingKey(Some(scala300), None) := scala3Options("3.9"),
-          SettingKey.Default := Const.EmptySeq,
-        ),
-        "scalacOptions" -= "-Wconf:any:warning",
-        "scalacOptions" += "-Wconf:cat=deprecation:warning",
-        "scalacOptions" += "-Wconf:msg=legacy-binding:silent",
-        "scalacOptions" += "-Wconf:msg=nowarn:silent",
-        "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
-        "scalacOptions" ++= Seq(
-          """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
-          """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
-        ),
-        "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), Some(true)) := Seq(
-            "-opt:l:inline",
-            "-opt-inline-from:izumi.**",
-          ),
-          SettingKey(Some(scala213), Some(true)) := Seq(
-            "-opt:l:inline",
-            "-opt-inline-from:izumi.**",
-          ),
-          SettingKey.Default := Const.EmptySeq,
-        ),
-        "scalacOptions" ++= Seq(
-          SettingKey(Some(scala213), None) := Seq(
-            // have to use Xsource:3 instead of Xsource:3-cross because the latter is not supported on 2.12
-            "-Xsource:3",
-            "-Xmigration",
-            "-Wconf:cat=scala3-migration:silent",
-            "-Wconf:cat=other-migration:silent",
-          ),
-          SettingKey.Default := Const.EmptySeq,
-        ),
-        "publishArtifact" in SettingScope.Raw("Test / packageDoc") := false,
+      val wconfOverrides = Seq[Const](
+        "-Wconf:cat=deprecation:warning",
+        "-Wconf:msg=legacy-binding:silent",
+        "-Wconf:msg=nowarn:silent",
       )
+
+      final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
+      "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
+      // sbt 2.0.5+ closes the adhoc test ClassLoader once the test task completes. The ZIO and
+      // cats-effect runtimes keep their worker threads alive past that point (ZIO's global
+      // `Runtime.default` scheduler cannot be shut down at all), so the next class load on any of
+      // them fails and the JVM drowns in `LinkageError`s with no sbt-level error: CI produced
+      // 6351 of them from a run whose suites had all passed. Keeping the loader open leaks the
+      // threads instead, which is the lesser evil until ZIO can close its scheduler, see
+      // https://github.com/zio/zio/issues/10019 and https://github.com/zio/zio/pull/10926.
+      "closeClassLoaders" := false,
+      "scalacOptions" ++= Seq(
+        SettingKey(Some(scala213), None) :=
+          withJvmRelease(
+            (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala213Options ++ Seq[Const]("-Wunused:-synthetics")).filterNot(_ == ("-Xsource:3-cross": Const)) ++ scala2Wconf
+          ),
+        SettingKey(Some(scala300), None) := scala3Options("3.9"),
+        SettingKey.Default := Const.EmptySeq,
+      ),
+      "scalacOptions" -= "-Wconf:any:warning",
+      "scalacOptions" ++= wconfOverrides,
+      "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
+      "scalacOptions" ++= Seq(
+        """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
+        """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
+      ),
+      "scalacOptions" ++= Seq(
+        SettingKey(Some(scala213), Some(true)) := Seq(
+          "-opt:l:inline",
+          "-opt-inline-from:izumi.**",
+        ),
+        SettingKey.Default := Const.EmptySeq,
+      ),
+      "scalacOptions" ++= Seq(
+        SettingKey(Some(scala213), None) := Seq(
+          "-Xsource:3",
+          "-Xmigration",
+          "-Wconf:cat=scala3-migration:silent",
+          "-Wconf:cat=other-migration:silent",
+        ),
+        SettingKey.Default := Const.EmptySeq,
+      ),
+      "publishArtifact" in SettingScope.Raw("Test / packageDoc") := false,
+    )
 
     }
 
@@ -484,7 +469,6 @@ object Izumi {
       final val functional = ArtifactId("fundamentals-functional")
       final val bio = ArtifactId("fundamentals-bio")
       final val orphans = ArtifactId("fundamentals-orphans")
-      final val literals = ArtifactId("fundamentals-literals")
 
       final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
 //      final val reflection = ArtifactId("fundamentals-reflection")
@@ -547,15 +531,28 @@ object Izumi {
         SettingDef.RawSettingDef(s"""crossScalaVersions := Seq("${sbt2PluginScala.value}", "${scala212.value}")"""),
         SettingDef.RawSettingDef("""scalaVersion := crossScalaVersions.value.head"""),
         "scalacOptions" ++= Seq(
-          SettingKey(Some(sbt2PluginScala), None) := root.scala3Options("3.8"),
+          SettingKey(Some(scala212), None) :=
+            withJvmRelease(
+              (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ root.scala2Wconf)
+                .filterNot(_ == ("-Ywarn-unused:_": Const))
+            ) ++ root.wconfOverrides,
+          SettingKey(Some(sbt2PluginScala), None) := root.scala3Options("3.8") ++ root.wconfOverrides,
+          SettingKey.Default := Const.EmptySeq,
+        ),
+        "scalacOptions" -= "-Wconf:any:warning",
+        "scalacOptions" ++= Seq(
+          SettingKey(Some(scala212), Some(true)) := Seq(
+            "-opt:l:inline",
+            "-opt-inline-from:izumi.**",
+          ),
           SettingKey.Default := Const.EmptySeq,
         ),
         SettingDef.RawSettingDef(s"""pluginCrossBuild / sbtVersion := {
-            scalaBinaryVersion.value match {
-              case "2.12" => "$sbt1PluginTarget"
-              case _ => "$sbt2PluginTarget"
-            }
-          }"""),
+          scalaBinaryVersion.value match {
+            case "2.12" => "$sbt1PluginTarget"
+            case _ => "$sbt2PluginTarget"
+          }
+        }"""),
       )
 
       final lazy val izumi_deps = ArtifactId("sbt-izumi-deps")
@@ -592,13 +589,6 @@ object Izumi {
         settings = Seq.empty,
       ),
       Artifact(
-        name = Projects.fundamentals.literals,
-        libs = Seq(
-          scala_reflect
-        ),
-        depends = Seq(Projects.fundamentals.basics),
-      ),
-      Artifact(
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq(Projects.fundamentals.basics),
@@ -611,7 +601,6 @@ object Izumi {
           scala3_compiler,
         ),
         depends = Seq(
-          Projects.fundamentals.literals,
           Projects.fundamentals.basics,
         ),
         settings = Seq.empty,
@@ -661,7 +650,7 @@ object Izumi {
         settings = Seq(
           //        workaround for:
           //        java.lang.RuntimeException: found version conflict(s) in library dependencies; some are suspected to be binary incompatible:
-          //          +- io.circe:circe-derivation_2.12:0.13.0-M5           (depends on 0.13.0)
+          //          +- io.circe:circe-derivation_2.13:0.13.0-M5           (depends on 0.13.0)
           "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}" % VersionScheme.Always""".raw,
           "libraryDependencySchemes" += s""""${circe_core.group}" %% "${circe_core.artifact}_sjs1" % VersionScheme.Always""".raw,
         ),
@@ -747,10 +736,8 @@ object Izumi {
       Artifact(
         name = Projects.distage.config,
         libs = Seq(
-          pureconfig_core in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala213, scala300)),
-          pureconfig_core_212 in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala212)),
+          pureconfig_core in Scope.Compile.jvm,
           pureconfig_magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala213)),
-          pureconfig_magnolia_212 in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala212)),
           magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.AllScala2),
         ) ++ Seq(
           circe_core in Scope.Compile.js,
@@ -819,12 +806,6 @@ object Izumi {
           Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
         platforms = Targets.cross,
-        settings = Seq(
-          // Ignore scala-xml version conflict between scoverage where scalatest requires scala-xml v2
-          // and scoverage requires scala-xml v1 on Scala 2.12,
-          // introduced when updating scoverage to 2.0.0 https://github.com/7mind/izumi/pull/1754
-          "libraryDependencySchemes" += """"org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always""".raw
-        ),
       ),
       Artifact(
         name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
@@ -1059,7 +1040,6 @@ object Izumi {
     ),
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All, ScalaVersionScope.AllScala2), compilerPlugin = true),
-      collection_compat in Scope.Compile.all,
     ) ++ scalatest_all.map(_ in Scope.Test.all),
     rootPlugins = Projects.root.plugins,
     globalPlugins = Projects.plugins,

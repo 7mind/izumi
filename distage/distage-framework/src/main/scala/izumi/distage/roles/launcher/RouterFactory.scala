@@ -7,18 +7,13 @@ import izumi.logstage.api.rendering.StringRenderingPolicy
 import logstage.circe.LogstageCirceRenderingPolicy
 import logstage.{ConfigurableLogRouter, ConsoleSink}
 
-import scala.annotation.nowarn
-
 trait RouterFactory {
   def createRouter(config: DeclarativeLoggerConfig, buffer: LogQueue): ConfigurableLogRouter
 }
 
 object RouterFactory {
   class RouterFactoryConsoleSinkImpl extends RouterFactory {
-    @nowarn("msg=[uU]nused import")
     override def createRouter(config: DeclarativeLoggerConfig, buffer: LogQueue): ConfigurableLogRouter = {
-      import scala.collection.compat.*
-
       val policy = config.format match {
         case LoggerFormat.Json => new LogstageCirceRenderingPolicy()
         case LoggerFormat.Text => new StringRenderingPolicy(config.rendering, None)

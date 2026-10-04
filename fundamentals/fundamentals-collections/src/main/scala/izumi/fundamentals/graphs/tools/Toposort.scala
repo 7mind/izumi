@@ -4,7 +4,7 @@ import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.ToposortError.InconsistentInput
 import izumi.fundamentals.graphs.struct.AdjacencyList
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 
 object Toposort {
 
@@ -12,10 +12,8 @@ object Toposort {
     cycleBreaking(predecessors.links, Seq.empty, break)
   }
 
-  @nowarn("msg=[Uu]nused import")
   @tailrec
   private def cycleBreaking[T](predecessors: Map[T, Set[T]], done: Seq[T], break: ToposortLoopBreaker[T]): Either[ToposortError[T], Seq[T]] = {
-    import scala.collection.compat._
     val (noPreds, hasPreds) = predecessors.partition(_._2.isEmpty)
 
     if (noPreds.isEmpty) {

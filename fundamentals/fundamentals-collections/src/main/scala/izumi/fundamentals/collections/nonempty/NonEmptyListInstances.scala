@@ -1,6 +1,6 @@
 package izumi.fundamentals.collections.nonempty
 
-import scala.collection.compat.Factory
+import scala.collection.Factory
 import scala.collection.mutable
 
 trait NEListInstances {

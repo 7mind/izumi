@@ -4,21 +4,18 @@ import izumi.fundamentals.collections.nonempty.{NEList, NEString}
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
-import scala.annotation.nowarn
 import scala.language.implicitConversions
 
 sealed trait LoggingTarget {
   def level: Log.Level
 }
 
-@nowarn("msg=[Uu]nused import")
 object LoggingTarget {
   case class Level(level: Log.Level) extends LoggingTarget
   case class Config(config: LoggerPathConfig) extends LoggingTarget {
     def level: Log.Level = config.level
   }
 
-  import scala.collection.compat.*
   implicit def fromLevel(level: Log.Level): LoggingTarget = Level(level)
   implicit def fromConfig(config: LoggerPathConfig): LoggingTarget = Config(config)
 

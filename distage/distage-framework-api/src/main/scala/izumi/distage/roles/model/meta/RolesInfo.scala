@@ -3,10 +3,8 @@ package izumi.distage.roles.model.meta
 import izumi.distage.model.reflection.DIKey
 import izumi.functional.Renderable
 
-import scala.collection.compat.immutable.ArraySeq
+import scala.collection.immutable.ArraySeq
 import izumi.fundamentals.platform.strings.IzString.*
-
-import scala.annotation.nowarn
 
 final case class RolesInfo(
   requiredComponents: Set[DIKey],
@@ -20,10 +18,8 @@ final case class RolesInfo(
 }
 
 object RolesInfo {
-  @nowarn("msg=[Uu]nused import")
   implicit val rolesInfoRenderable: Renderable[RolesInfo] = {
     roles =>
-      import scala.collection.compat._
 
       val requestedNames = roles.requiredRoleBindings.map(_.id)
       ArraySeq

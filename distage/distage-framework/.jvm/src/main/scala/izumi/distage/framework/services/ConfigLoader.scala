@@ -13,7 +13,6 @@ import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 import java.io.FileNotFoundException
-import scala.annotation.nowarn
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -54,7 +53,6 @@ trait ConfigLoader {
   final def map(f: AppConfig => AppConfig): ConfigLoader = (clue: String) => f(loadConfig(clue))
 }
 
-@nowarn("msg=[uU]nused import")
 object ConfigLoader {
   final class ConfigLoaderException(message: String, val failures: List[Throwable]) extends DIException(message)
 
@@ -66,8 +64,6 @@ object ConfigLoader {
     configLocation: ConfigLocationProvider,
     configArgs: ConfigLoaderArgs,
   ) extends ConfigLoader {
-    import scala.collection.compat.*
-
     protected def resourceClassLoader: ClassLoader = getClass.getClassLoader
 
     /** @throws ConfigLoaderException if configuration can't be loaded */
