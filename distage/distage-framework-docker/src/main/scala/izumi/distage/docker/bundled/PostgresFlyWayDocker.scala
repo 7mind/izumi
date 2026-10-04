@@ -16,7 +16,7 @@ import java.nio.file.Paths
   */
 object PostgresFlyWayDocker extends ContainerDef {
 
-  /** @param flyWaySqlPath directory with the migrations; `None` mounts the `sql` resource directory of the classpath */
+  /** @param flyWaySqlPath directory with the migrations; `None` copies the `sql` resource directory of the classpath into the container */
   final case class Cfg(
     flyWaySqlPath: Option[String] = None,
     user: String = "postgres",
