@@ -147,11 +147,21 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
         ZIO.scoped {
           for {
             files <- hostFiles
-            invalid = List(ContainerFile(Paths.get(""), copiedFile), ContainerFile(files.single, "relative/single.txt"))
+            invalid = List(
+              ContainerFile(Paths.get(""), copiedFile) -> "the host path is empty",
+              ContainerFile(files.single, "relative/single.txt") -> "the container path is not absolute",
+            )
             _ <- ZIO.foreachDiscard(invalid) {
-              file =>
+              case (file, reason) =>
                 resource.copy(config = resource.config.copy(files = Seq(file))).use(_ => ZIO.unit).either.flatMap {
-                  result => assertIO(result.swap.exists(_.isInstanceOf[DockerFailureException]))
+                  result =>
+                    assertIO(result.swap.exists {
+                      case failure: DockerFailureException =>
+                        failure.getCause.isInstanceOf[IllegalArgumentException] &&
+                        failure.getCause.getMessage.endsWith(reason) &&
+                        failure.getMessage.contains(s"`${file.containerPath}`")
+                      case _ => false
+                    })
                 }
             }
           } yield ()
