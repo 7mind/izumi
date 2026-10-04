@@ -73,14 +73,14 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | not started | No evaluation point passed yet. |
 | 2d.2 | not started | No evaluation point passed yet. |
 | 2d.3 | not started | No evaluation point passed yet. |
-| 2d.4 | not started | No evaluation point passed yet. |
+| 2d.4 | in progress | Target-only JVM baseline verifies exact body/JUnit identities in 72 host cases below; remaining host/selection/failure domains and final evaluation stay open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | not started | No evaluation point passed yet. |
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
 | 2d.10 | not started | No evaluation point passed yet. |
-| 2d.11 | not started | No evaluation point passed yet. |
+| 2d.11 | in progress | Permanent plain/DI sharing fixture passes 72 actual host cases below; the complete runner fixture inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | not started | No evaluation point passed yet. |
 | 2d.14 | not started | No evaluation point passed yet. |
@@ -89,7 +89,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.17 | not started | No evaluation point passed yet. |
 | 2d.18 | not started | No evaluation point passed yet. |
 | 2d.19 | not started | No evaluation point passed yet. |
-| 2d.20 | not started | No evaluation point passed yet. |
+| 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | not started | No evaluation point passed yet. |
 | 2d.22 | not started | No evaluation point passed yet. |
 | 2d.23 | not started | No evaluation point passed yet. |
@@ -9353,3 +9353,176 @@ requirements and final evaluation points remain open. No push. The next
 independent work measures actual SBT target-only bootstrap behavior with plain
 and DI suites, exact body/report sets and physical memoized resource lifetimes
 before deciding whether a host framework substitution is necessary.
+
+Planning test-only commit observed:
+`f7651051de03bb8e287576a728eb9f1fddc1e6be`.
+Post-commit `git status --short` is empty and all 1,638 tested non-ledger inputs
+retain their captured bytes. Record:
+`2c-application-planning-postcommit-first.json`. No push.
+
+### 2d target-only bootstrap: host baseline in progress — 2026-10-04
+
+This continuation makes progress through the verified planning-fixture local
+commit and a new real SBT host probe. Prepared fixture sources live outside the
+checkout and depend on unchanged published artifacts, with two plain suites,
+three DI suites, three equal display paths per suite, a scanned PluginDef and
+physical CREATE_NEW body/acquisition/release records. The planned twelve cases
+include full and selected runs, repeated commands, sequential/default scheduling,
+wildcards/exclusions, a separate foreign control framework, host thread limits
+one/two, and one/two explicit fork groups. The verifier compares exact body and
+JUnit identities and resource IDs; it preserves records before the next command.
+Target bootstrap only is registered except for the explicit foreign-framework
+control. There is no loadedTestFrameworks substitution or source override.
+
+Command `python3 /srv/nvme/tmp/izumi-impl/2d-target-bootstrap-baseline-first.py`
+returns 1 in its first SBT 2.0.9 / Scala 3.9 lane during fixture compilation:
+the new fixture build omitted distage's required `-Yretain-trees`. No body or
+runner case executed. This is a fixture configuration failure, not a reproduced
+production defect. First inputs/logs/driver remain unchanged. The second variant
+adds the documented `-Yretain-trees` and `-Xmax-inlines:64` compiler options;
+command `python3 /srv/nvme/tmp/izumi-impl/2d-target-bootstrap-baseline-second.py`
+is running. Required SBT versions remain 1.13.0 and 2.0.9 and required compilers
+remain 3.9.0, 2.13.18 and 2.12.21. No 2d matrix or final item is declared done.
+
+The second prototype matrix finishes with six actual SBT process exits 0,
+twelve cases each and stable 1,638 source inputs/reused 210 binary/POM pairs.
+Physical body/JUnit sets contain exactly 846 matching tests over 72 cases.
+There are 78 paired resource acquisition/release lifetimes, with fresh IDs
+between cases and distinct IDs for the two configured fork groups. No strict
+runtime callback/classloader/thread diagnostic occurs. Current measured sharing
+and reporting behavior gives no reason for loadedTestFrameworks substitution.
+This is a bounded subset of 2d.20, not its complete historical 0a domain.
+
+Root evidence audit command
+`python3 /srv/nvme/tmp/izumi-impl/2d-target-bootstrap-baseline-root-audit-third.py`
+returns 0. It reconciles 12 actual Test dependency/full classpaths with six
+version-specific update reports, rehashes 145 unique external JARs and validates
+every consumed own artifact against the prefrozen closure. Own class outputs
+contain fixture namespaces only. SBT 2's logged fixture JAR hash/size matches
+the actual JAR; SBT 1's empty Compile/classes entry is an observed absent
+fixture-local path, with no main sources. No literal child runtime replica
+identity, incremental safety, failure recovery or all-effect host proof follows.
+The first two immutable audit variants fail solely on evidence-processing
+assumptions: SBT 1 artifact URIs are strings rather than SBT 2's typed records,
+and SBT 1 lists the absent empty fixture Compile/classes directory. Their scripts,
+partial captures and separate `*-failure.json` records are retained unchanged.
+
+Preparatory review identifies an oracle gap in the executed prototype verifier:
+it checks failure/error XML but does not reject skipped XML. The successful root
+audit adds that explicit predicate and directly observes no skipped testcase in
+the 72 actual captures. No Framework regression is inferred. A new permanent
+`test-fixtures/host-sharing-consumer` installs the tested Scala fixtures and adds
+the stricter predicate to its verifier, preserving the earlier independent plain
+async framework-consumer project. Installation provenance:
+`2d-target-bootstrap-host-fixture-installation-first.json`.
+
+Fresh permanent-fixture command is running through the source/artifact guard:
+`python3 /srv/nvme/tmp/izumi-impl/2d-target-bootstrap-host-fixture-verification-first.py`.
+Its actual inner command is
+`python3 test-fixtures/host-sharing-consumer/verify-matrix.py --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 --scala-version 3.9.0 2.13.18 2.12.21 --evidence-dir /srv/nvme/tmp/izumi-impl/2d-target-bootstrap-host-fixture-matrix-first`.
+All 1,645 current non-ledger inputs are frozen, including seven new fixture files;
+production and generated-build inputs remain unchanged. Individual-test
+selection, incremental invalidation/no-op/changed arguments, multi-module/custom
+configuration and failure/cancellation recovery remain explicit gaps. The distage
+SBT plugin remains required production work. Parent and final gates stay open.
+
+Preparatory baseline review is root-read/hash-verified:
+`2d-target-bootstrap-baseline-preparatory-readonly-review-first/PREPARATORY-REVIEW.md`
+SHA-256 `e2bd92dbaa51e4bafc749395b056af9daa0d44433e3351e6ed4aa2056bd0bcfe`;
+manifest `1439e5786af1b42fbe9cfdcb73b42329eebc28bbb0643f542fc7fe94ae21ce2c`;
+inspection `3810e950a92ec0569170621e2ce5a3e623d0826aa1e200bbf5f6e2ee0cfe637f`.
+All 22 rows/15 unique preserved copies match their sizes/hashes. The report's
+source assessment and F1 are bounded; its aggregate metadata observations do
+not themselves establish actual runtime/classpath results. Root direct check:
+`2d-target-bootstrap-baseline-preparatory-root-verification-first.json`.
+
+Fresh permanent-fixture verification finishes with actual six process exits 0
+and all 72 stronger-verifier cases, unchanged 1,645 non-ledger inputs and 210
+prefrozen binary/POM pairs. The root audit
+`python3 /srv/nvme/tmp/izumi-impl/2d-target-bootstrap-host-fixture-root-audit-first.py`
+also returns 0: 12 exact Test dependency/full classpath/update comparisons,
+145 distinct external JARs, every own artifact equal to the reused publication,
+and own compiled fixture namespaces only. All 846 physical bodies match 846
+JUnit identities with no failure, error or skipped nodes. All 78 served resource
+UUIDs have paired acquisition/release records and are distinct between cases;
+the explicit two-group fork retains separate sharing IDs. Source installation
+and captured copies remain applicable. No producer republishing or new whole
+compiled-directory comparison is claimed for this test-only addition.
+
+The second prototype's weaker verifier remains historical evidence; the fresh
+installed verifier explicitly rejects skipped XML. F1 therefore has a concrete
+source correction and a new executed positive domain, with no production
+Framework regression inferred. Neither verifier currently puts a timeout around
+the complete SBT process; its successful terminal results prove these positive
+cases completed, not that future negative/deadlock fixtures are bounded. The
+later failure/recovery harness must own process termination and reaping.
+Exact executed driver hashes are preserved in
+`2d-target-bootstrap-host-driver-provenance-first.json`. A bounded completion
+review of the permanent fixture and actual captures is running. Root non-ledger
+inputs stay frozen through review/commit; all fixed parent/final gates stay open.
+
+### Target-only host sharing: verified fixture checkpoint — 2026-10-04
+
+Completion addendum is root-read and hash-verified:
+`2d-target-bootstrap-host-fixture-completion-readonly-review-first/COMPLETION-ADDENDUM.md`
+SHA-256 `e35b6c4a86fb0499a3fbdeeffd6b903b6df5f9e29bf68594f5bd3efd0525936c`;
+manifest `4f71d4e04fbdf0e7e184b3af55c861d713a4eed62be2e5e4029c6894436d2d1b`;
+inspection `90f6afffac78c17482c7301176151b048fe7f5c23d8ae661521bf75894d597f5`.
+Root independently rechecks all 7,276 manifest rows and preserved copies by
+size/hash, reads the complete addendum/inspection and confirms no unresolved
+direct check failure. All 1,645 tested non-ledger inputs still match. Record:
+`2d-target-bootstrap-host-fixture-root-completion-verification-first.json`.
+
+The separate review directly reconciles six successful parent SBT processes,
+72 cases, 846 matching physical/XML identities, 282 XML files with no failed,
+errored or skipped result, 78 fresh paired resource lifetimes and 12 versioned
+classpath/update comparisons. It checks 30 actual lane source/build copies,
+128 compiled fixture entries and 145 external JARs against the reused publication.
+F1 is resolved for the newly executed permanent verifier. Reviewed ledger
+`3c193949b7c5ca57921af28bfd0143c85a95584e810338bc81cdf258c8e60840`
+precedes this completion entry.
+
+The reviewer preserves a failed XML-proxy inspection separately: fork-case
+sun.java.command properties describe the parent SBT launcher, so that field
+cannot establish child argv, process count or replica identity. Configured fork
+groups and physical sharing results remain verified; literal child identity
+does not follow. Future target-death/recovery fixtures must record the target
+process directly. No Framework correction is inferred from that proxy failure.
+
+The local commit containing this entry is above
+`f7651051de03bb8e287576a728eb9f1fddc1e6be`. It adds the permanent process fixture
+and ledger only; existing async/plain fixture and production/generated-build
+sources remain unchanged. No push and no parent/O/final completion. Independent
+work has meanwhile begun on actual stock incremental invalidation below.
+
+### Real scanned-plugin external input: stock cache reproduction — 2026-10-04
+
+Commands `python3 /srv/nvme/tmp/izumi-impl/2d-real-di-stock-cache-repro-first.py`
+and the immutable `...-second.py` use the published production closure with new
+test-only copies. A real scanned PluginDef acquisition reads an owned external
+UTF-8 file and embeds its revision in the served resource ID. Both SDKs first
+execute/report 15 bodies and materialize one alpha resource, then perform a
+physically checked zero-body incremental no-op. Changing only the external file
+to beta leaves SBT 2 `test` and SBT 1 `testQuick` executing zero bodies and zero
+resources. The subsequent full-group body invariant fails with actual process
+exit 1 on each SDK. No production policy change has been made.
+
+First reproduction metadata is not accepted: the SDK log omitted the expected
+requirement text, leaving its diagnostic check unresolved. The second probe
+adds explicit invariant diagnostics and returns driver 0 after verifying both
+expected process failures for the right reason. Raw output includes
+`REAL_DI_RERUN_INVARIANT_FAILURE expected=15 actual=0`. Root reads the terminal
+logs/completions and physical record domain; interpretation record:
+`2d-real-di-stock-cache-root-interpretation-first.json`. The complete-group
+oracle asks for 15; at least the nine affected DI bodies must rerun, and observed
+zero violates either criterion. This does not prescribe invalidating plain
+suites as the only possible policy.
+
+The SBT 2 public digest observation after the initial compile/run shows five
+identical digests. Thus this probe does not meet 2d.11's distinct-stock-digest
+precondition and is not its completed incremental fixture. That additional
+observation needs investigation rather than assuming correct per-suite cache
+separation. Public version-matched SBT 2 sources are downloaded under
+`2d-public-sbt-api-sources-first/`; they expose the public digest/filter keys and
+their implementation for inspection, without introducing a dependency on private
+SBT implementation APIs. All prior tested root/publication bytes remain frozen.
