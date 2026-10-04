@@ -87,7 +87,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions. Foreign bodies execute exactly once in both measured held registration orders, while SDK2 omits their Output in the own-first order. Complete mixed delivery/result domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission now prevents owned stock success publication in three-Scala published consumers:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. SDK1, tracked closure, complete teardown/failure domain and final evaluation remain open. |
+| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission now prevents owned stock success publication in three-Scala published consumers:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. SDK1 scratch task-boundary omission passes198 body/XML cases and36 actual history-I/O fault cases below, but failed finalization still leaves five owned timestamps; production SDK1, tracked closure, complete teardown/failure domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
@@ -12782,3 +12782,113 @@ implemented, while fixed imports-only2b.10/O.1 remains waiting on owner.
 At the user's quota-pause request, finish local checkpoints and pause the
 existing goal; resume this same goal after quota refresh. No whole step or
 acceptance gate is marked complete and no item is narrowed or waived.
+
+## 2026-10-05: SDK1 history prototype and quota-pause handoff
+
+Production source remains at `438f60399808b00800b8b040806d9c23265d1121`,
+including the preceding SDK2 correction. No SDK1 production change is made.
+The previously reproduced five-success timestamp counterexample is retained
+and independently rehashed. The following evidence establishes a scratch
+prototype's limits; it does not close 2d.5 or 2d.18.
+
+The fixture-only HistoryBoundary helper transforms public input/output task
+graphs through Task.result, running history finalization after the inherited
+task result. It loads the public Defaults.succeededFile Properties file and
+atomically replaces it after removing fixture-owned suite names. When no owned
+entry exists, it leaves the file unchanged. A failed finalizer rejects an
+otherwise successful task; when the original task also fails, that original
+Incomplete remains the cause and the history failure is suppressed. Production
+classification by actual framework fingerprints remains unimplemented.
+
+The first prototype fails at build loading because a TaskKey value binding
+returns Task[Tests.Output] instead of Tests.Output: actual1/driver1, zero bodies.
+Failure qualification SHA256
+`078d07b35b03a1692af6cc1d19a1df030c20d241b64c5c5913f770ad47df3472`.
+Fresh prototype-second uses toSettingKey task transformation and completes
+actual0/driver0 with 66 bodies/XML cases on Scala2.12.21; completion SHA256
+`344a7ef05ef500d9026d8fe372978b2d7a99672d63ed1a7e4147f4b744347585`.
+That preliminary run is retained without attributing the later independent
+matrix audit to it.
+
+Commands from the project environment, using the existing direnv/JDK21 setup:
+
+| Command under `/srv/nvme/tmp/izumi-impl/` | Observed result |
+| --- | --- |
+| `python3 -B 2d-sdk1-history-boundary-prototype-driver-third.py --scala-version 3.9.0` | actual0/driver0;66 bodies and matching positive XML cases;4 paired DI lifetimes. |
+| `python3 -B 2d-sdk1-history-boundary-prototype-driver-third.py --scala-version 2.13.18` | actual0/driver0;66 bodies and matching positive XML cases;4 paired DI lifetimes. |
+| `python3 -B 2d-sdk1-history-boundary-prototype-driver-third.py --scala-version 2.12.21` | actual0/driver0;66 bodies and matching positive XML cases;4 paired DI lifetimes. |
+| `python3 -B 2d-sdk1-history-boundary-io-fault-driver-second.py --scala-version 2.12.21` | actual0/driver0;36 bodies and matching positive XML cases;2 paired DI lifetimes; both expected public task failures retained. |
+| `python3 -B 2d-sdk1-history-boundary-checkpoint-root-first.py` | exit0; four captures,565 records and205 distinct bound JARs independently frozen and checked. |
+| `python3 -B 2d-sdk1-history-boundary-quota-handoff-guard-first.py` | exit0; clean source HEAD,1685 source identities,212 binary/POM pairs and both negative/current prototype audit inventories rechecked. |
+
+Each third prototype lane uses SBT 1.13.0 and one parent without settings
+reapplication. Its body counts are foreign execution 3, cached foreign no-op 0,
+full cleanup fault 18, input cleanup fault 15, conservative recovery 15 and
+repeat 15. Both cleanup faults reject their public tasks; their diagnostic
+outer harness succeeds. Owned timestamps are absent at each checked command
+boundary. The exact foreign timestamp remains equal across the no-op and,
+after its next execution, across input fault/recovery/repeat. Each lane has
+four distinct paired DI resources/observed owned child PIDs and five removed
+receipt directories; foreign child identity is not observed.
+
+The IO-fault fixture moves the stock history file to an exact owned backup and
+places an empty directory at its old leaf after listener completion. Actual
+FileNotFoundException with `Is a directory` rejects the task even though its
+18 bodies/XML cases succeeded. A second 18-case command also fails owned
+receipt cleanup and retains that original cause with exactly one suppressed
+history failure. Both history obstructions are explicitly repaired; both
+receipt directories are removed. The restored history still contains all five
+owned and one foreign positive timestamps. Thus post-task omission does not
+prevent failure-persistence when history finalization itself fails, and stock
+entries also exist transiently before healthy finalization. Complete
+failure-persistence prevention, concurrency, cancellation, process death,
+late-event handling and teardown remain open.
+
+The first IO-fault attempt fails at build loading because two val _ definitions
+share one Scala2 block, actual1/driver1, zero bodies. Its diagnostic driver then
+reads absent case files and produces no completion.json. That attempt is
+retained; qualification SHA256
+`3c5797f990279e703985292e4fbc7a1ef4cd06218a25999a44ff44be0715b66f`.
+The fresh second driver names and checks both filesystem mutation results and
+guards failed runs before case inspection. No production defect is attributed
+to the first attempt.
+
+Third prototype helper SHA256
+`325a17669bf5cd45c32c19795ab41e184f1267fd9b3a27ca809317c250e48a43`.
+Completion SHA256 values in Scala3/2.13/2.12 order:
+`656c3ae48786737b2c4cfc13c85cdf416ee2cdb93b5c5e4a4463e08b746a6e46`,
+`bb480ce092b7adc9f318807971f1ee57c6764fd78a9f5f1b773007f45c634c32`,
+`79d395468bab13de1fe92632f899b6bfdc82b3bfa648cb97351ba25f2ebe7ded`.
+IO-fault completion SHA256
+`de87cd4501758f8a2c8f79f5e7548d71ac6467baa80fec2f2d0bfb8993206864`.
+Root audit `2d-sdk1-history-boundary-checkpoint-root-first/audit.json` SHA256
+`d59e8080045cd51b2a1eee4749def9dd1ca948d3f6a1fe81ffd2e172141ba7ac`.
+It reconciles exactly 234 body/XML identities, generated prefix versus complete
+input hashes, the unchanged published SDK1 plugin and owned dependency JARs.
+Bound JAR counts across update configurations are 102/56/53 for the prototype
+lanes and 53 for the IO-fault lane; declared Test sets are 49/51/51 and 51, each
+equal to the logged external classpath set. Three boot paths in each Scala2.12
+capture are excluded before filesystem inspection; their bytes remain unbound.
+No full runtime replica is claimed.
+
+Handoff guard `2d-sdk1-history-boundary-quota-handoff-guard-first/guard.json`
+SHA256 `61ae69b1f59797230a46e7ab22bbd6cf7d2819ccad3045a0b6914fac18416b91`.
+The local ledger-only commit containing this entry records this verified
+checkpoint; postcommit identity/result is retained in that directory's
+completion.json. No push is run and no whole step is marked done.
+
+Resume by resolving the SDK1 failure-persistence limitation before selecting a
+production history policy. Keep the published counterexample and these
+foreign/cause-preservation controls, then verify a production correction using
+actual fingerprints and fresh published consumers. SDK2 global completion,
+tracked history, arbitrary configurations/arguments, multiproject, immutable
+terminal/error reporting and cancellation/drain remain open. The Native
+2,311-case checkpoint at `69f89c7e79d2dba22df05a421931bf286ebde559` and assertion
+transport's nine producer/nine published-consumer checkpoint at
+`980946193247a8c0d6d0193a4487413d7000d8af` remain historical pending final-HEAD
+evaluation. Released interop-cats 23.1.0.14 is already used. The approved loader
+factory migration remains implemented;
+the fixed imports-only compatibility requirement remains unmet for migrated
+custom hooks. At the user's renewed quota-pause request, pause the existing
+goal after this local checkpoint and resume it after quota refresh. All fixed
+acceptance items and owner decisions remain intact.
