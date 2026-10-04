@@ -3,7 +3,7 @@ package izumi.distage.docker.bundled
 import distage.{Functoid, Id, Lifecycle, ModuleDef, TagK}
 import izumi.distage.docker.model.Docker.{ContainerFile, DockerPort, DockerReusePolicy}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
-import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
+import izumi.distage.docker.{ContainerDef, ContainerHooks, ContainerNetworkDef}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.MaterializedResource
@@ -75,7 +75,7 @@ object PostgresFlyWayDocker extends ContainerDef {
         "baseline",
         "migrate",
       ),
-      files = Seq(ContainerFile(migrations.directory.path, "/flyway/sql")),
+      afterCreate = Seq(ContainerHooks.copyFiles(ContainerFile(migrations.directory.path, "/flyway/sql"))),
     )
 
     override def config: Config = Config(

@@ -14,7 +14,7 @@ object DockerConst {
 
     final val dependencies = "distage.dependencies"
 
-    final val filesDigest = "distage.files.digest"
+    final val hooksDigest = "distage.hooks.digest"
   }
 
   object State {

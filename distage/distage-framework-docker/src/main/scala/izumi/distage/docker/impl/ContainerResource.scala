@@ -16,6 +16,7 @@ import izumi.functional.Value
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.collections.nonempty.NEList
+import izumi.fundamentals.platform.crypto.IzHash
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -23,7 +24,6 @@ import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
-import java.io.ByteArrayInputStream
 import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
 import scala.concurrent.duration.*
@@ -44,17 +44,17 @@ open class ContainerResource[F[_], Tag](
 
   import client.rawClient
 
-  protected lazy val fileArchives: Seq[ContainerFileArchive] = config.files.map(ContainerFileArchive.make)
-
-  protected lazy val filesDigest: Option[String] = ContainerFileArchive.digest(fileArchives)
+  protected lazy val hooksDigest: Option[String] = {
+    if (config.afterCreate.isEmpty) None else Some(IzHash.sha256(config.afterCreate.map(_.reuseKey).mkString("\n")))
+  }
 
   protected lazy val stableLabels: Map[String, String] = {
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       DockerConst.Labels.dependencies -> deps.map(_.id.name).toList.sorted.mkString(";"),
     )
-    val filesLabel = filesDigest.map(DockerConst.Labels.filesDigest -> _).toMap
-    reuseLabel ++ filesLabel ++ client.labels ++ config.userTags
+    val hooksLabel = hooksDigest.map(DockerConst.Labels.hooksDigest -> _).toMap
+    reuseLabel ++ hooksLabel ++ client.labels ++ config.userTags
   }
 
   protected def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
@@ -263,7 +263,7 @@ open class ContainerResource[F[_], Tag](
               val cInspection = rawClient.inspectContainerCmd(id).exec()
               val cNetworks = cInspection.getNetworkSettings.getNetworks.asScala.keys.toList
               val missingNetworks = config.networks.filterNot(n => cNetworks.contains(n.name))
-              val cFilesDigest = Option(cInspection.getConfig.getLabels).flatMap(labels => Option(labels.get(DockerConst.Labels.filesDigest)))
+              val cHooksDigest = Option(cInspection.getConfig.getLabels).flatMap(labels => Option(labels.get(DockerConst.Labels.hooksDigest)))
               val name = cInspection.getName
               mapContainerPorts(cInspection) match {
                 case Left(value) =>
@@ -272,8 +272,8 @@ open class ContainerResource[F[_], Tag](
                 case _ if missingNetworks.nonEmpty =>
                   logger.info(s"Container $name:$id is missing required networks $missingNetworks so will not be reused")
                   Seq.empty
-                case _ if cFilesDigest != filesDigest =>
-                  logger.info(s"Container $name:$id has copied files with $cFilesDigest instead of $filesDigest so will not be reused")
+                case _ if cHooksDigest != hooksDigest =>
+                  logger.info(s"Container $name:$id was created with after-create hooks $cHooksDigest instead of $hooksDigest so will not be reused")
                   Seq.empty
 
                 case Right(value) =>
@@ -385,7 +385,7 @@ open class ContainerResource[F[_], Tag](
         logger.debug(s"Going to create container from image `$imageName`...")
         val res = createContainerCmd.exec()
 
-        copyFiles(res.getId)
+        runAfterCreateHooks(res.getId)
 
         logger.debug(s"Going to start container ${res.getId -> "id"}...")
         rawClient.startContainerCmd(res.getId).exec()
@@ -429,20 +429,16 @@ open class ContainerResource[F[_], Tag](
     } yield result
   }
 
-  protected def copyFiles(containerId: String): Unit = {
-    fileArchives.foreach {
-      archive =>
-        logger.debug(s"Going to copy ${archive.file.hostPath -> "hostPath"} to ${archive.file.containerPath -> "containerPath"} in ${containerId -> "id"}...")
+  protected def runAfterCreateHooks(containerId: String): Unit = {
+    config.afterCreate.foreach {
+      hook =>
+        logger.debug(s"Going to run after-create ${hook.toString -> "hook"} on ${containerId -> "id"}...")
         try {
-          rawClient
-            .copyArchiveToContainerCmd(containerId)
-            .withRemotePath(ContainerFileArchive.extractionRoot)
-            .withTarInputStream(new ByteArrayInputStream(archive.archive))
-            .exec()
+          hook.afterCreate(rawClient, containerId)
         } catch {
           case NonFatal(t) =>
             val failure = DockerFailureException(
-              s"Cannot copy `${archive.file.hostPath}` to `${archive.file.containerPath}` in container $containerId: $t",
+              s"After-create hook $hook failed on container $containerId: $t",
               DockerFailureCause.Throwed(t),
               t,
             )
