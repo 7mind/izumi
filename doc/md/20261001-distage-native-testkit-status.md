@@ -87,7 +87,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions. Foreign bodies execute exactly once in both measured held registration orders, while SDK2 omits their Output in the own-first order. Complete mixed delivery/result domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. A current published SBT2/Scala3.9 actual host cleanup failure is rejected, but five stock suite-success cache entries are reproduced after that failed command; conservative same-session recovery executes. Cache correction, complete teardown/failure domain and final evaluation remain open. |
+| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. A current published SBT2/Scala3.9 actual host cleanup failure is rejected, but five stock suite-success cache entries are reproduced after that failed command; conservative same-session recovery executes. Public cache-store probes pass the bounded three-Scala SDK2 copied-source matrix; production integration, complete teardown/failure domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
@@ -12301,3 +12301,141 @@ drain and every final gate remain open. No acceptance item is narrowed or waived
 no whole step completed. Only this ledger is eligible for local evidence
 checkpoint `Record published cleanup and failed-teardown cache evidence` at
 parent `3d0146e36ad2276ce8247932ac8ae6b14371a60d`. No push.
+
+## 2026-10-04: public SDK2 cache-store omission probes, in progress
+
+Parent evidence checkpoint b06f15ee35403f37858a03615c652e6e5c5c505a is local and
+changes only this ledger. Its guard SHA256
+`d0db9dca19052dd445dbec7dd912a4856eb3b7643e7137c16e43b24241f8effb`,
+completion `1c8ad0997280711147ef0371c420a6d321288335835df127abc47c6e996006ff`.
+Production source remains 3d0146e36; current qualified publication remains
+`f5b35712b88e28a743138c9efd31344ac3c7a66d8df223b5ff3e114316262494`.
+The failed-teardown five-entry production counterexample remains unfixed.
+
+Pinned public SDK2 sources are separately downloaded, including
+`https://raw.githubusercontent.com/sbt/sbt/v2.0.9/main-settings/src/main/scala/sbt/Def.scala`
+and `main/src/main/scala/sbt/Keys.scala`, under
+`/srv/nvme/tmp/izumi-impl/2d-sdk2-public-cache-keys-first/` with URL/hash/size
+records. Def.cacheConfiguration is an initialized task expression, not a scoped
+key. The first scratch attempt assigns it as a key and fails at build loading,
+actual1/driver1, before tests; completion SHA256
+`18770dd8937c753920f9c6e19116e8fbcaa3fabac82df805b89f70020c753571`.
+It is not a successful runtime probe. Cache backend configuration is available
+through public Global/cacheStores; sources for its standard installation and
+BasicKeys are recorded separately under `2d-sdk2-public-cache-install-first`.
+No private SDK class is used as an API.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-no-suite-cache-prototype-driver-second.py`
+creates a new isolated SDK2/Scala3.9 forked fixture and compiles a meta-level
+public ActionCacheStore adapter. It computes the five owned suite action digests
+through public ActionCache.exists and a digest-capture store, with empty
+framework arguments. It omits action metadata publication for those untracked
+own suites, retaining delegated blob and foreign/unrelated operations. Stock
+listeners remain unwrapped. One explicit fixture configuration task registers
+these inputs before three commands. No production adapter is changed.
+
+The real full-command owned cleanup fault is rejected, and public history
+lookups remain empty before/after, including no names in the after file (only
+LF). Explicit owned fixture repair is followed by incremental recovery/repeat
+in one parent process, without settings reapplication. Actual0/driver0; 45 exact
+physical bodies and positive XML cases, three paired fresh DI resources/child
+PIDs/receipt directories, fifteen own metadata omissions. Completion SHA256
+`1db4cb2921cf459d02b253b802014c300aaa71c814b272b265402a5ef49a4f72`.
+Root audit returns0: 121 preserved records, 103 bound Test dependency JARs,
+24 owned published JARs; SHA256
+`dc22af6fce8e04131b57f1f406f20aa26b25f7acac3a71e5c0f0d3100c42568a`.
+Boot paths are excluded before inspection; no full runtime replica is inferred.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-no-suite-cache-prototype-driver-third.py`
+adds a real foreign framework and a second, explicit
+`--memoization enabled` argument key. An explicit fixture configuration task
+registers both known argument variants for the five owned suites. Six stock
+suite digests are asserted distinct. The foreign empty-argument command executes
+three bodies and creates only the empty key; a new-argument foreign command
+executes three bodies and creates its separate key; repeating that key is a
+verified zero-body/zero-XML no-op. Its preexisting two keys remain after a real
+owned input-command cleanup failure. Neither owned argument key caches success
+after that failure; own incremental recovery/repeat run conservatively. The
+five owned completions per command are the only fifteen omitted metadata puts.
+
+Actual0/driver0; 51 exact body/XML cases, three fresh paired DI resources/child
+PIDs and five recorded fresh removed receipt directories. Foreign child PIDs
+are not recorded. Completion SHA256
+`285785f5983792dd93fe7c85a8939f1c2e003e03870b457b7b168bddaa9d4868`.
+Root audit returns0 with 135 records, 103 bound Test dependency JARs and 24 owned
+published JARs; SHA256
+`b34d344f917d26b094373d1aee442ac72fb673215a858c4d61f5b79b17965f1e`.
+This verifies two manually configured argument variants, not arbitrary request
+argument/configuration ownership or a production integration.
+
+The fourth automatic-registration scratch attempt wraps public testFilter
+functions. Two foreign commands pass, but the cached foreign testQuick control
+then fails with `Distage host task has no active receipt`. The added anonymous
+wrapper conceals our HostSelectionObserver from HostReceiptPolicy.unobserved;
+conservative testQuick selection therefore reaches the inactive testSelected
+owner. This rejects that proposed composition before the owned cleanup fault
+or recovery. Actual1/driver1; completion SHA256
+`9b19e1ed8a1b3a12fc3e5de002d1f47cb082a2a9936f0d8957d8577659877939`,
+failure qualification `e4624a18bfcd429cb2235747b16957c505d92ae18813882f18b2ca63ebf3fa27`.
+The completion's scope text describes intended success; its actual1/null counts
+are authoritative. Its written root-auditor draft and parameterized Scala2
+binding driver have not been executed and establish no check.
+
+The fresh fifth copied-source host prototype passes actual0/driver0. It relocates
+five current host source files into an isolated meta package and adds a required
+argument observation callback inside the known HostSelectionObserver, preserving
+typed unwrapping. Public input/full-execution hooks register the observed
+arguments without a manual configuration task. The real owned input cleanup
+fault is rejected with no owned success entries; foreign empty/explicit history
+and its cached no-op are retained. Mixed full recovery runs six suites/eighteen
+bodies and incremental repeat runs only the five owned suites/fifteen bodies.
+The three own-bearing commands plus two foreign controls reconcile 54 body/XML
+cases, three paired fresh DI resources/child PIDs and five recorded removed
+receipt directories. Completion SHA256
+`6e6c6d9c382e13e1c59a21553e4acec33e885f569830f1cdd92a1d332d45e617`.
+Root audit returns0: 157 records, 103 bound Test dependency JARs, 24 owned
+published JARs; SHA256
+`a185e96947863a241814b6608996c78378e8976b36fda99be8bd37c3046ef41e`.
+The copied-source classification is explicit: it is not a current published-host
+consumer or a production source correction.
+The Scala2 target lanes also pass actual0/driver0. Commands use
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk2-no-suite-cache-public-binding-driver-second.py
+--scala-version <2.13.18|2.12.21>` with new per-lane builds, sources and captures.
+Both retain the same source prototype and SBT2.0.9/Scala3.8.4 meta compiler.
+Scala2.13.18 completion SHA256
+`6e6c6d9c382e13e1c59a21553e4acec33e885f569830f1cdd92a1d332d45e617`; root audit0, 157 records/57 bound Test JARs,
+SHA256 `b30bb4978e9e9ef3b4c8c91b783ca76bbeae58dc9567b4e67eb13e4e8f6a2a60`.
+Scala2.12.21 completion SHA256
+`6e6c6d9c382e13e1c59a21553e4acec33e885f569830f1cdd92a1d332d45e617`; root audit0, 157 records/56 bound Test JARs,
+SHA256 `eacd157767f5cac09875a60c2f602eefb4404a33dbb6eb9cb42d4eee74655145`.
+The automatic three-target-compiler matrix reconciles 162 physical bodies and
+162 XML cases, nine distinct paired DI resources/observed child PIDs, three
+parent processes and fifteen distinct recorded removed receipt directories.
+Foreign child identities remain unobserved. Aggregate root record SHA256
+`eba6aefd3c3e6b3c9ad5f60e7d75d6ece0e9b91153a1f9815383d97b85bb2310`. This does not establish SDK1 or production integration.
+
+These probes cover bounded SDK2 fixtures; the automatic copied-source matrix
+runs all three target Scala compilers. The current production cache counterexample,
+production automatic binding, SDK1 behavior, arbitrary arguments and
+configuration/closure history, store faults, global ACK, full teardown/cancellation
+and final gates remain open. Omitting unjustified cache publication for untracked
+inputs does not establish tracked-closure cached skips or complete per-suite
+history. No acceptance item is narrowed, waived or marked done. The bounded
+read-only review reports no substantive checkpoint blocker. Report SHA256
+`aa3bbf5706ba5fbaa00404b2d02a6e2a5ff379f1910af12a1103ea1182c321a8`,
+schema1 manifest `4118beceb5d4cf9645279f2c5e1211ed31d310d23fd7c02f44345b6ee66b8754`,
+inspection `8f014384dc1fdcd3d75a01223e2ef6d3e8acdd57f8d5b46f20d8fcb936f2b694`.
+Direct review preserves six repository/638 evidence inputs and passes 1,481
+checks plus all 1,288 original/copy file postchecks. Two initial reviewer PID
+schema assumptions are retained and corrected against the actual resource-ID/tab/
+child-PID writer. Root reads the full report and reconciles all 644 original/copy
+hash-size pairs and nine recorded review artifacts before this sole stamp.
+Root reconciliation SHA256
+`a0f5df2267e20ff79c7a69b9fc1167a6ebf6f3e716ba055bab2202b4323d01bb`.
+Full 1,685-source/212-pair/JAR inventories retain root provenance; root pre-review
+qualification SHA256
+`4d5090e1345cd59ba9f38c04b22da8a3a432c0d87066bebb6ae98efb90e8bb17`.
+A separate exact-delta qualification records this sole provenance replacement.
+Only this ledger is eligible for local evidence checkpoint
+`Record public SDK2 cache-store probes` at parent
+`b06f15ee35403f37858a03615c652e6e5c5c505a`. No push.
