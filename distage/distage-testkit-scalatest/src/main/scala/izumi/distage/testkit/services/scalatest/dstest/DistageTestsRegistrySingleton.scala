@@ -29,32 +29,29 @@ class DistageTestsRegistry {
       val debugLogger: TrivialLogger = TrivialLogger.make[DistageTestsRegistry](DebugProperties.`izumi.distage.testkit.debug`.name)
       debugLogger.log(s"Launching tests from $instance")
 
-      val instantiatedClassNames = currentInstantiatedSuites().map(_.suite.getClass.getName)
-      val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
-        if (isSbt) {
+      val allSuites: List[DistageScalatestTestSuiteRunner[AnyF]] = if (isSbt) {
+        val discoveredClassNames: Set[String] = Runner.discoveredSuites.getOrElse {
           throw new RuntimeException(
             s"""Impossible: distage-testkit-scalatest attempted initialization before ScalaTest completed classpath discovery! in=$instance
                |
                |Please report this as a bug to https://github.com/7mind/izumi/issues""".stripMargin
           )
-        } else {
-          Set.empty[String]
         }
+        val suiteClass = classOf[DistageScalatestTestSuiteRunner[F]]
+        val freshSuites = (discoveredClassNames - instance.getClass.getName).toList.sorted.flatMap {
+          clsName =>
+            val clazz = __ClassReflectionPlatformSpecific.clazzForName(clsName)
+            if (__ClassReflectionPlatformSpecific.subclassOf(clazz, suiteClass)) {
+              List(__ClassReflectionPlatformSpecific.newInstance(clazz).asInstanceOf[DistageScalatestTestSuiteRunner[AnyF]])
+            } else {
+              Nil
+            }
+        }
+        debugLogger.log(s"Constructed ${freshSuites.size} discovered suites in the runner thread")
+        instance.asInstanceOf[DistageScalatestTestSuiteRunner[AnyF]] :: freshSuites
+      } else {
+        currentInstantiatedSuites().map(_.suite)
       }
-      val suiteClass = classOf[DistageScalatestTestSuiteRunner[F]]
-
-      (discoveredClassNames -- instantiatedClassNames).foreach {
-        clsName =>
-          val clazz = __ClassReflectionPlatformSpecific.clazzForName(clsName)
-          if (__ClassReflectionPlatformSpecific.subclassOf(clazz, suiteClass)) {
-            // instantiate tests to make them register themselves
-            __ClassReflectionPlatformSpecific.newInstance(clazz)
-          }
-      }
-
-      val allSuites = currentInstantiatedSuites().map(_.suite)
-
-      debugLogger.log(s"Instantiated new suites ${allSuites.map(_.getClass.getName).toSet -- instantiatedClassNames}")
 
       import izumi.fundamentals.platform.strings.IzString.toRichIterable
       debugLogger.log(s"found Suites (in $instance): ${allSuites.niceList()}")
