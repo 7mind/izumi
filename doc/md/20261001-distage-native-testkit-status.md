@@ -71,16 +71,16 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.8 | in progress | Real ConfigLoader/module-provider application controls now pass eighteen public-boundary checks on all nine producer and audited published-consumer lanes below, with Planning diagnostics and reconciled failed outcomes. Full clients and final evaluation remain open. |
 | 2c.9 | in progress | Schema-4 protocol: 186 checks per producer lane; typed/framed application and real JVM file contracts pass audited published consumers below. Standalone/host transports and final evaluation remain open. |
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
-| 2d.2 | not started | No evaluation point passed yet. |
+| 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Target-only JVM baseline verifies exact body/JUnit identities in 72 host cases below; remaining host/selection/failure domains and final evaluation stay open. |
+| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below; normal SDK2 notification loss, remaining failure/terminal domains and final evaluation stay open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
-| 2d.10 | in progress | Real SBT2 forked selection-error and generic held-listener controls below reproduce successful command results despite error events/XML. Correction and final evaluation remain open. |
-| 2d.11 | in progress | Permanent sharing/plugin fixtures pass 174 published host cases below; distinct stock digests, complete failure/input inventory and final evaluation stay open. |
+| 2d.10 | in progress | Receipt guard rejects omissions, inconsistent fork results and recorded target death. Generic exit-zero false success and normal SDK2 notification loss remain reproduced; complete preservation/recovery and final evaluation stay open. |
+| 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Bounded fork-death/recovery prototypes pass both SDKs; expanded normal baselines fail. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
@@ -10543,3 +10543,150 @@ ledger, the fixture README and reusable driver are eligible for the next local
 sub-step commit, subject `Verify five-suite sharing under SBT host task limits`,
 parent `06c2e0dad80d67a511b1d6e52201a4316359cf69`. The following postcommit
 record will carry its hash and verify exactly those three paths; no push.
+
+### Exit-zero target death and notification acknowledgement — 2026-10-04
+
+The preceding host-limit fixture commit is
+`5d28753bc1e54eac72618c001adeb3e337d9e06b`, parent
+`06c2e0dad80d67a511b1d6e52201a4316359cf69`. Root postcommit verification
+returns0 for exactly three guarded/current/committed paths, 1,667 qualified
+sources and 212 unchanged publication pairs, with a clean index/worktree then.
+Record `2d-five-suite-host-limits-postcommit-first.json` SHA256
+`caf1f8a9753c2748c157cbf73e5b55d1a509d90c8fa15bd05c80603ac5b4d845`;
+precommit manifest `f542fcc35f6ee05a54c0774a60d9bd2a38bd521c0ad707184ade692c9b36339c`.
+The late independent host-limit addendum agrees with its earlier direct
+twelve-lane/twenty-four-window inspection and attributes the additional closure
+inventories to root. Root reads it and verifies its three originals/copies:
+`2d-five-suite-host-limits-readonly-addendum-root-verification-first.json`
+returns0, SHA256
+`911efab0f02a98aa0fe8eeae3748491864d661778ca6d508cc498d6552f5601d`.
+No whole step or final gate is done; no push.
+
+Scratch commands `python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-target-death-first.py`
+and `.../2d-fork-target-death-second.py` both return0, with both actual SDK
+processes0, on Scala3.9/JDK21 and the qualified published artifacts. Five
+compatible DI suites execute fifteen bodies and release their one shared
+resource before an exit-zero halt in the test JVM. The receipt guard rejects
+the missing suite completions. Baseline, death, recovery and repeat resource
+identities are globally distinct and paired. First changes javaOptions and
+reapplies settings between commands, so it does not establish same-owner
+recovery. Second toggles only the owned input file, logs the same SBT PID
+before/after, and observes no settings reapplication between death and two
+successful incremental commands. Each successful command reconciles fifteen
+bodies and fifteen successful XML cases. These are bounded controls, not the
+complete recovery gate. Their completion SHAs are respectively
+`9863a281fc53bf8732367c474ff56e50f25411a5cab751d713922bde370c5729`
+and `3b7f361a3e30c5298de370676e79417f68313252a193a90ef50d550e5039830b`.
+
+`python3 -B .../2d-fork-target-death-stock-third.py` returns0 and requires the
+reproduced stock SBT2 defect: its target-bootstrap-only testFull returns success
+after the same fifteen-body/released-resource/exit-zero death, with no XML.
+There is deliberately no host plugin in this control, although its Test
+dependency closure contains the same twenty-four qualified izumi JARs. It
+establishes no stock incremental recovery. Completion SHA256
+`5619bc6ff8098e37f03f6ea3bc9f5da26bdf5236631aae3eebbc4658f7b1a079`.
+
+The attempted reusable recovery driver adds physical target PID records and
+requests both SDKs/all three Scala versions. Its first two actual processes
+both fail1 in the normal SBT2/Scala3.9 baseline, before the controlled death.
+Each executes all fifteen bodies and pairs one resource, but only one suite's
+three successful cases reach XML. First receives SuiteC while the returned SDK
+map is empty Passed; second receives/returns only SuiteB while overall is
+Passed. The guard correctly rejects the incomplete selected five-suite set.
+First outer driver additionally raises FileNotFoundError by trying to read a
+death capture that was never created. Second corrects only that driver failure
+recording and returns1 with its actual subprocess1. Both failed captures remain
+under `2d-fork-target-death-published-first/second`; first root failure record
+SHA256 `3b2eaac9a647a55aca2a95d290fd7a602bcc53c0768f24d76f84f17618c822ec`,
+second terminal SHA256
+`7c94570d54a203bb5004afa68b8f226d0ade751ff7e4a931a1cf348d5c596213`.
+The prospective driver is preserved as
+`2d-fork-target-death-prospective-driver-second.py` and withdrawn from the
+repository; its README advertisement is reverted. It is not a verified fixture
+or eligible code for this commit. Exact historical wire ordering was not captured.
+
+The new permanent public diagnostic has no distage dependency or plugin:
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-exit-zero.py \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2d-exit-zero-minimal-published-second
+```
+
+It and both actual SBT2/Scala3.9/JDK21 processes return0. Normal returns from
+Task.execute with fifteen target Success callbacks and fifteen exact successful
+JUnit identities. Halt writes fifteen receipts after EventHandler.handle
+returns, then calls Runtime.halt(0) before Task.execute returns; SBT's doComplete
+is Passed, no host group/testEvent is observed, and there is no XML. Target PID
+differs from SBT and matches its halt marker. Driver0 requires this false-success
+reproduction; it is not passing product acceptance. Terminal SHA256
+`df7108fb061400375ee025a176a14214a0c551930aadfb7a12af1c267c714073`.
+Scratch first and permanent first also pass their two controls; their metadata
+overstates wire absence, corrected after review in the canonical second driver.
+Observed host absence is kept separate from the pinned worker source inference:
+group publication occurs after Task.execute returns. No wire trace is claimed.
+
+Pinned ForkTests.React.notifyExit treats exit0 as promise success without a
+completed RPC response. ForkTests snapshots accumulated results, then closes the
+channel before unregistering. WorkerExchange's common monitor drains an already
+entered callback; it does not establish that unread queued IPC notifications
+were processed. Tracker searches restricted to github.com/sbt/sbt/issues did
+not return an exact matching report; they do not establish global absence.
+The fixture README is a minimal unfiled report. No issue or message is published.
+
+`python3 -B .../2d-fork-notification-ack-prototype-first-executed.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0
+--scala-version 3.9.0 --evidence-dir
+/srv/nvme/tmp/izumi-impl/2d-fork-notification-ack-prototype-first` returns0,
+with both actual SDK processes0. An isolated forwarding Framework's done waits
+for public endGroup acknowledgements of its five selected suites. All fifteen
+body/report identities and fresh paired resources survive baseline/recovery/
+repeat, and controlled death still fails. This proves a bounded public seam,
+not production correction: actual fork mode, selected subset/counts, cancellation,
+foreign-framework/log queues, argument/history and lifecycle behavior need
+further verification. No production acknowledgement code is implemented.
+
+Root executes `python3 -B
+/srv/nvme/tmp/izumi-impl/2d-exit-zero-root-audit-fourth.py`, exit0, SHA256
+`6a338fc5ba96b7b598c96a7d9451ff08adbf2b412053a1c3c325178dc5346b3f`.
+It separately audits thirty-four diagnostic/prototype/failed-baseline cases:
+420 physical DI bodies, 90 generic sent Success callbacks, 336 successful XML
+cases, and 28 globally distinct paired DI resources. These totals include the
+two failed baselines with only three XML cases each and the zero-XML death
+controls; they are not an aggregate product pass. It freezes 1,303 input/log/
+body/XML/compiler records and 49 external JARs, checks twenty-six logged/update
+classpath sets, qualified meta-build plugins where present, and all 1,669
+current/frozen qualified sources plus 212 publication pairs. The three earlier
+auditor failures were an untagged precompile own-JAR URI, mistaking a DI Test
+closure for host-plugin presence in the stock control, and an incorrect SBT2
+scoped XML directory. Their failed captures/records remain; no product rerun was
+used to correct those checker errors.
+
+Qualification-third explicitly adds the worker README omitted from the prior
+source inventory and captures the corrected canonical driver. Input manifest
+SHA256 `44dd19636aadbcba6cd2c574e9d60975cb4128978d294daea261b60ff499ba5b`;
+publication manifest remains
+`5babeb76d565d7e4f0cd01f892893826c3d8fdb8fba4200ac39e04e719b86b23`.
+Earlier inventories are unchanged. This sub-step progresses 2d.10/2d.11/2d.22
+and retains the missing-terminal/error-report gap of 2d.2. No production fix,
+whole step, final acceptance, current Native/assertion runtime or push is claimed.
+
+Independent read-only review finds no material blocker for the corrected
+diagnostic. It directly reconciles 300 DI bodies, 90 generic callback receipts,
+246 XML cases and 20 fresh paired resources, including the failed controls;
+the larger closure inventories retain root provenance. Report SHA256
+`f1146dbb895e9809e86c25a2434e4f05e4a465b7047de526be3f37ca3ed3e089`,
+schema1 manifest `40921bb616bb54a201cdd953c2b5a550b9e2a7663802ca05c92bebf3ac040362`,
+inspection `fa19e24a0c0c26b8a3d125933e4eed09ae98d64e65849163cfb2983a75f5f10b`.
+Root reads the report and verifies all 763 original/copy records (6 repository,
+757 evidence), returning0; `2d-exit-zero-readonly-root-verification-first.json`
+SHA256 `e40dd6db5516730235affb42437a1724e4ab72d309b9cdc14132b914a30e2f1a`.
+The review requires explicit fork-only remote arguments, fresh command ownership,
+actual selected event counts, bounded failure/cleanup, held delivery and mixed
+framework/history controls before production acknowledgement integration. It
+does not close those requirements or the parent/final gates.
+
+Only this ledger, the worker fixture README and `verify-exit-zero.py` are eligible
+for the next local sub-step commit, subject
+`Verify exit-zero fork death without a completed SBT run`, parent
+`5d28753bc1e54eac72618c001adeb3e337d9e06b`. The postcommit record will verify
+exactly those three paths and unchanged qualified sources/publications; no push.

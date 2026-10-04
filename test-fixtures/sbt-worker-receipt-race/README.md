@@ -57,3 +57,44 @@ while the public testOnly command succeeds with zero reported errors. A direct
 CLI replay preserves the contradiction without a fixture result wrapper. Those
 captures are referenced in the ledger. Production correction and the complete
 runner acceptance gate remain open; this reproduction changes no SBT pin.
+
+`verify-exit-zero.py` isolates a second incomplete-success case. Its generic
+framework delivers fifteen `Success` events to the target's public EventHandler,
+writing one physical receipt after each call returns. The normal control returns
+from Task.execute; the death control calls Runtime.halt(0) before that return.
+Both execute in a JVM distinct from SBT, with no distage dependency or plugin.
+
+| SBT 2.0.9 control | Target Success receipts | Actual test/process exit | JUnit cases |
+| --- | --- | --- | --- |
+| Task returns normally | 15 | 0 | 15 |
+| Target halts before task completion | 15 | 0 | 0 |
+
+The second row must be a failed incomplete run. A zero process exit code does
+not establish task or run completion. The receipts establish delivery to the
+target's EventHandler; the fork worker buffers events until Task.execute returns,
+so this control does not claim that the host received those callbacks. The host
+doComplete result is Passed, without any group/event notification in the halt
+case. The driver returns0 only when it reproduces this false success and the
+matching successful normal control.
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-exit-zero.py \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-exit-zero-example
+```
+
+In the pinned source, React.notifyExit resolves the response promise on exit0
+without requiring a completed JSON-RPC response. ForkTests then snapshots the
+accumulated results and closes the worker channel before unregistering its
+listener. Unregistering shares a monitor with a currently executing callback;
+it does not establish that queued, unread IPC notifications were processed.
+That distinction also matters for the separate recorded normal DI baseline
+failures. Their exact historical wire ordering was not captured.
+
+This remains an unfiled upstream report. Tracker searches on 2026-10-04 for
+`fork tests exit zero EOF success incomplete`, `"ForkTests" "Passed"`
+and `"System.exit(0)" test`, restricted to `site:github.com/sbt/sbt/issues`,
+did not identify an exact matching report in the returned
+results; they do not prove that no existing report exists. The project's host
+receipt guard rejects the recorded incomplete DI results. A public completion
+acknowledgement prototype passes two bounded JVM controls; a production
+correction and the complete recovery/reporting gates remain open.
