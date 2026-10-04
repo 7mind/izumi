@@ -79,7 +79,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
-| 2d.10 | not started | No evaluation point passed yet. |
+| 2d.10 | in progress | Real SBT2 forked selection-error and generic held-listener controls below reproduce successful command results despite error events/XML. Correction and final evaluation remain open. |
 | 2d.11 | in progress | Permanent sharing/plugin fixtures pass 174 published host cases below; distinct stock digests, complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
@@ -91,7 +91,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below; full terminal/failure domain and final evaluation remain open. |
+| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below; expanded forked failure control exposes an SDK2 result/XML contradiction below. Correction, full terminal/failure domain and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -9968,3 +9968,195 @@ claimed to have run at the not-yet-created commit. No push, parent-step
 completion or final evaluation is claimed. Next independent work installs and
 verifies the prepared separate-source/distinct-marker fixture and makes its
 public stock-digest precondition a failing oracle before incremental cases.
+
+### Distinct stock digests and real host request overrides — 2026-10-04
+
+Preceding goal turn classification: progress. Local commit
+`9b02b020c84b7e42fd5a8edfb47bde962176e7d1` contains the verified normalized
+request/list/plan checkpoint above predecessor
+`8abe2e61987b0eb8dbe2ca2488df623f14303f8c`. Root inline postcommit verification
+returns0 and records a clean checkout, exact equality of all 1,657 qualified
+non-ledger inputs in the commit/current worktree, the twenty intended committed
+paths, and all 212 published pairs unchanged. Record:
+`2d-request-inspection-postcommit-first.json`. This continuation starts from
+that same observed clean HEAD. Tests/publication ran before that commit;
+postcommit source equality is not a new final-HEAD build claim.
+
+The prepared separate-source/distinct-marker fixture patch is now installed
+after reading it and rechecking the prior three successful public stock-digest
+probes. The permanent driver adds a public SBT2 precondition task before any
+body/incremental command and rejects missing/aliased digests. Its fail-first
+negative control, positive current-layout checks, real host activation/filter
+controls and fresh frozen consumer matrix remain to execute. Production code,
+generated build files, versions and published artifacts are not changed by
+this fixture installation. No acceptance item is marked done or waived.
+
+Command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-stock-digest-precondition-negative-first.py`
+returns driver0 for the expected actual SBT exit1 on SDK2.0.9, rejecting the original same-file
+suite layout: `Stock suite digests are not distinct`. The queued body phase is
+not reached and no physical body executes. All 212 published pairs remain
+unchanged. This is a failing oracle control, not a passing host matrix.
+
+The first real-host axis pilot,
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-real-host-axis-request-pilot-first.py`,
+returns driver1/actual SBT exit1. Its selected plan rejects `repo:dummy` as an unknown
+activation choice, before resources or bodies. Reading TestEnvironmentFactory
+and ActivationChoicesExtractor confirms the available choices come from binding
+axis tags plus explicitly allowed unused choices; the original plugin declares
+no tagged bindings. This does not reproduce a production resolver defect.
+
+The fixture now declares actual production/dummy repository resource bindings.
+Its default production and overridden dummy resources retain their binding name
+in recorded IDs; the plugin consumer additionally retains the external revision.
+Command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-real-host-axis-request-pilot-second.py`
+returns driver0/actual SBT exit0. In-process and forked selected plans each retain the
+exact individual ID, normalized dummy override/matching filter and disabled
+memoization. Both body requests execute exactly one body with one paired dummy
+resource lifetime. Inspection requests execute no body or resource.
+
+The first axis-filter helper pilot returns driver1/actual SBT exit1 during build
+compilation: SBT2's public Result.Inc is not an unqualified Inc type. No runtime
+filter check is claimed from it. Inspecting the pinned SDK1/2 Result class APIs
+shows the shared public toEither operation. The corrected command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-real-host-axis-filter-pilot-second.py`
+returns driver0/actual SBT exit0. Its input helper captures the failing public
+Test/testOnly task result as data, requires exactly one SuiteC synthetic error
+with `Selection matched no tests` and no physical body/resource records, then
+allows the queued same-process whole-suite request to execute three bodies with
+one paired production lifetime. The same sequence passes with Test/fork=true.
+The successful enclosing SBT process is not a claim that the rejected inner
+test task passed.
+
+The permanent driver incorporates these controls without changing production,
+generator or version inputs. Inline qualification freezes 1,662 non-ledger
+sources in `2d-axis-digest-consumer-input-qualification-first/inputs.json`;
+exceptions from the preceding consumer are exactly five existing fixture/docs
+paths plus five new concrete suite files. All 212 published pairs match the
+preceding audited bytes. The fresh command is
+`python3 -B test-fixtures/sbt-plugin-consumer/verify-matrix.py --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 --scala-version 3.9.0 2.13.18 2.12.21 --evidence-dir /srv/nvme/tmp/izumi-impl/2d-axis-digest-plugin-consumers-first`.
+It is running with 33 cases per lane, 198 predicted; aggregate body/report and
+lifetime counts are not yet terminal observations. Read-only review is running.
+The latest owner reply authorizes the already-recorded session-aware factory API
+choice; fixed import-only 2b.10 is not waived or marked done by that reply.
+
+The first expanded consumer is terminal, driver1/actual SBT exit1 in its first
+SDK2.0.9/Scala3.9 lane. Twenty-two preceding case markers complete, including
+five distinct stock digests before any body phase. The fork-rejected-filter
+helper correctly stops on `A filter matching no tests did not fail`: its inner
+public testOnly task returns a successful Result and prints Total0/Errors0,
+while the actual SuiteC XML contains exactly one synthetic selection error and
+the physical audit directory is empty. Later missing markers are unexecuted
+fallout, not separately reproduced failures. The remaining five compiler/SDK
+lanes do not run. The predicted 198 cases are not a successful checkpoint; the
+prepared root auditor for that matrix is not executed against this failed
+capture. The fixture candidate remains uncommitted pending correction.
+
+A shorter direct public CLI control in
+`2d-fork-selection-summary-repro-first/` reports the error and exits1 correctly.
+Command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-selection-summary-repro-second.py`
+replays the original prefix and invokes the final negative request directly
+through testOnly, without the fixture's result wrapper. It observes actual SBT
+exit0, Total0/Errors0 and the same one-error XML. Therefore result wrapping is
+not necessary for the contradiction; neither control isolates the exact
+preceding-history trigger.
+
+Preparatory read-only review is terminal and root-read:
+`2d-axis-digest-preparatory-readonly-review-first/PREPARATORY-REVIEW.md` SHA256
+`8b99df37cf4ae760ae18784be917cb027f24d18f624103730c59def094e31c35`,
+schema1 manifest SHA256
+`4a49d34ea6868fe557a971baac5e2d674b3906d07fc0e1f6f117f1a71de6965d`,
+inspection SHA256
+`4676d0894415a4865d8a7a031bc676c2da3d01429ddf35c371af466ad71eacf1`.
+Root parses its entire inspection and verifies all 378 reviewed path/hash/size
+records (35 repository, 343 evidence), with no original-path changes at that
+verification point. Record: `2d-axis-digest-preparatory-root-verification-second.json`.
+The first inline root check verified every copy, then incorrectly expected one
+historical ledger difference; it observes zero and exits1. The corrected check
+returns0 and records that oracle correction. Review finding R1 retains the
+matrix failure; T1 identifies a narrower XML predicate than the complete error
+domain. No production correction or 198-case success is approved. SDK-only
+runtime controls were excluded from this preparatory review.
+
+Pinned official SDK2.0.9 source JARs are captured in
+`2d-fork-selection-sdk2-source-first/`. Reading ForkTests.React,
+WorkerExchange/WorkerProxy and WorkerMain identifies a falsifiable race: process
+exit can complete the task's promise before the notification receiver finishes
+updating the results map. A snapshot taken then can say Passed with no events.
+This source assessment alone is not runtime causation evidence. Tracker searches
+on the official SBT repository do not find a matching issue in returned results;
+the SDK-only fixture README is a draft upstream report, not an automatically
+filed issue. No SBT pin, private SDK implementation or production code is changed.
+
+The first scratch SDK-only probe retains fast actual exit1/Error/XML errors1
+and held actual exit0/Passed/XML errors1. Its driver incorrectly requires the
+numeric Total0 line, whereas that framework's nonempty done summary makes SBT
+print a no-tests summary; driver1 is retained as an oracle failure. The permanent
+command
+`python3 -B test-fixtures/sbt-worker-receipt-race/verify-reproduction.py --evidence-dir /srv/nvme/tmp/izumi-impl/2d-sdk-worker-receipt-race-reproduction-second`
+returns driver0 with actual SDK2 fast1/held0 and SDK1 fast1/held1. Every control
+retains one intentional Error event and one XML error. Only SDK2 held receives
+doComplete(Passed) and a successful no-tests result. The enclosing await-latch
+task lets the delayed event/XML finish before inspection. No distage dependency,
+plugin or private SDK replacement is involved.
+
+Named timing constants are installed before the fresh replay of that command
+with evidence directory `2d-sdk-worker-receipt-race-reproduction-third`.
+It also returns driver0 with the same four actual exits/results and error XMLs.
+This tests a controlled worker/event-receipt race in SDK2.0.9 and its immediate
+and SDK1.13.0 controls. It does not isolate every history-dependent trigger in
+the original distage sequence. Driver0 deliberately requires the reproduced
+defect; it is not product acceptance success. Root byte/classpath/report auditing
+and a separate terminal read-only review are next actions. The draft report and
+reproduction may be committed as a verified diagnostic sub-step; the failing
+198-case fixture candidate is not included in that diagnostic commit. All
+parent/final gates remain open; no push.
+
+Root diagnostic command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-sdk-worker-receipt-race-root-audit-third.py`
+returns0. It verifies the current/frozen tested reproduction source, all four
+exact build/CLI inputs and exits, eight logged Test dependency/full-classpath
+comparisons against actual SDK update reports, three external runtime JARs with
+no distage/ScalaTest dependency or root producer path, forty fixture-only class/
+TASTy files, current own JAR member equality, and all four single-error XMLs.
+The held SDK2 Error group is followed by doComplete(Passed); the other three
+Error groups finish as Error. All 1,662 qualified non-ledger candidate inputs
+and all 212 published pairs remain unchanged. The audit freezes 83 records.
+`audit.json` SHA256 is
+`0903214d208194bb1559d4ed20bd9539b406dd69b66f4311387e0ee5ee1c6a6d`;
+third runtime `completion.json` SHA256 is
+`cdb973911677e9f7a1dd10942ebb65c3aba879e4099d703f3271a8c2978a51bc`.
+The first root diagnostic audit exits1 on a false assumption that every SDK2
+own virtual JAR entry has a logged digest; the second exits1 on a false
+assumption that SDK1 XML reports live beside the Scala products. Both partial
+captures are retained. The third checks the directly observed SDK formats and
+directories and completes the same required comparisons, rather than excluding
+the mismatching lanes. This is a diagnostic audit, not a 198-case matrix or
+literal child-classpath replica proof. Separate terminal read-only review is
+running before the diagnostic local commit.
+
+The separate terminal read-only review is complete and root-read under
+`2d-sdk-worker-receipt-race-terminal-readonly-review-first/`:
+`REVIEW.md` SHA256
+`958735c4e9f2a858e3ce635e830a19c5ae9d3e3cefa89840830739e61d32297b`,
+schema1 `INPUT-MANIFEST.json` SHA256
+`96d9ed9ef705f88ccf270b63bb0761f6ec3316e2eed0a43841fffe1658146f2c`,
+and `inspection.json` SHA256
+`682c4c9598ad64ae3e16e1de49281d7fe545f2449d10e9af7c1502ddeb95a4b6`.
+Root parses the complete inspection and verifies all 185 path/hash/size records
+(3 repository, 182 evidence), both reviewed copies and unchanged originals.
+The verification returns0 and is recorded in
+`2d-sdk-worker-receipt-race-terminal-root-verification-first.json`, SHA256
+`8821c440fd8cf7e9635aa4185838efd179b382bf042fba8c853c09d103cdbb53`.
+The review independently reconciles the four raw outcomes/XMLs, eight logged/
+update classpath comparisons, forty fixture binaries and 83 root-audit records;
+the complete 1,662/212 inventory totals retain root-audit provenance. Its first
+checker incorrectly requires identical second/third build literals; the retained
+corrected checker verifies the exact named ten-second timeout delta instead.
+It finds no blocking diagnostic finding. Watcher timing, literal historical child
+replica equality and the original history-dependent trigger are not established.
+Only the ledger and two SDK-only diagnostic files are eligible for this local
+commit; all ten expanded host-fixture paths stay excluded. No production
+correction, 198-case success or parent/final completion is claimed; no push.
