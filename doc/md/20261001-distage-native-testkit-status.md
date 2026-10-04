@@ -87,7 +87,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions. Foreign bodies execute exactly once in both measured held registration orders, while SDK2 omits their Output in the own-first order. Complete mixed delivery/result domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error after body success; actual-host teardown/cache failure cases and final evaluation remain open. |
+| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. A current published SBT2/Scala3.9 actual host cleanup failure is rejected, but five stock suite-success cache entries are reproduced after that failed command; conservative same-session recovery executes. Cache correction, complete teardown/failure domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
@@ -12188,3 +12188,116 @@ ledger bytes. Exactly this ledger, ForkReceipt.scala,
 ForkReceiptCleanupFixtures.scala and HostReceiptTest.scala are eligible for local
 source checkpoint `Retry owned receipt cleanup after failure` at parent
 `86673e1d77d738412f59f8e111f4f092b33c4172` after reconciliation. No push.
+
+
+## 2026-10-04: published cleanup correction and failed-teardown cache counterexample, in progress
+
+The source correction is committed locally at
+`3d0146e36ad2276ce8247932ac8ae6b14371a60d`, parent
+`86673e1d77d738412f59f8e111f4f092b33c4172`. Guard SHA256
+`828fb13158cc47d39e5224a71fd43b14b5a04280e00b3c95984334feacb90c04`,
+completion `2d7bf7d672b1c3d1e048bee2209d988d3d3add40684dc1cbcff9726347aca708`.
+The guard verifies exactly four intended paths, 1,685 qualified non-ledger
+inputs, the then-unchanged 212 pairs and clean index/worktree after commit.
+Review-ledger qualification SHA256
+`94679d5acc08ed5e8947c36c658a4013fe1faf355e02e0956b06113f80454daa`.
+No push.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-publish-driver-first.py
+--expected-head 3d0146e36ad2276ce8247932ac8ae6b14371a60d --evidence-dir
+/srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-publish-first`
+runs distage-test-protocolJVM publishLocal on Scala3.8.4/2.13.18/2.12.21 through
+batch SBT2/JDK21. Actual0 is recorded before artifact inspection; driver0,
+1,685 source/input bytes stable. Exactly three JVM protocol pairs change, with
+ForkReceipt source member/manifest deltas, required cleaned field and no fixture
+classes packaged. Other209 pairs, including both current SDK plugins, retain
+qualified bytes. Per-row changedFromPreceding flags now refer to this current
+comparison. Completion SHA256
+`69ebdcbd6dced9356f2d09845a50efbf917cc60b9617056bee2b2cfc7eb1ecba`,
+212-pair publication `f5b35712b88e28a743138c9efd31344ac3c7a66d8df223b5ff3e114316262494`.
+Independent closure verifies all 744 non-manifest payload members against
+compiler/resource outputs and all source/input copies. Changed-publication
+SHA256 `91994dbf2b5f1407e9086279ada6a6448c0f21c09e3e7d053232daadfa2a9456`,
+source qualification `ba1f03b8016158f89fddf8d10f214a82f889df1c8a1a945c58ea6acc87d75118`,
+closure completion `a5a583e1b5ad87041b2038a785798e9c61521690efafef547f603f61da5308d8`.
+
+Published commands use `2d-fork-receipt-cleanup-retry-consumer-driver-first.py
+--artifact-version 1.3.0-SNAPSHOT --sbt-version <1.13.0|2.0.9> --evidence-dir
+/srv/nvme/tmp/izumi-impl/2d-fork-receipt-cleanup-retry-consumer-<sdk1|sdk2>-first`.
+Only current HostReceiptTest is copied/compiled in the meta build; production
+host/protocol types resolve from published dependencies. Both actual0/driver0,
+fourteen checks, including failed cleanup/retry preserving newer ownership.
+SDK1 completion SHA256
+`dbcbf83acfe2f01d8d9b02a8df8306df224e2e3229b30a1b6e84ed176003ad4c`,
+SDK2 `af67187978687f944f0f9eb01c9f7d709f6b7d49ab61be2e74cd32a46b58a71b`.
+Current test source SHA256
+`d29ad6eb19bd2f0ebb221813a6049cb4d3fed65849ab6551fdf0dbb357f6a358`.
+Root consumer audit returns0: 28 records, 80 bound dependency JARs, 28 host
+checks, exact owned plugin/protocol dependency and logged full classpaths.
+Boot paths are excluded before inspection; no full runtime replica is claimed.
+Audit SHA256 `38277f3830a2f1b984a8df3a93e04ec573c6b394c09d77384f2489f9470a1ee8`.
+
+Item 2d.18 remains in progress with a new actual-host cache counterexample.
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-host-cleanup-cache-repro-driver-first.py`
+creates a fresh isolated Scala3.9/SBT2.0.9/JDK21 forked five-DI-suite build using
+current published artifacts. Before execution, all five stock suite digests are
+distinct and public ActionCache.exists reports zero successes in the owned
+fresh cache. A public listener creates only a fixture-owned nested directory in
+the command receipt directory. All fifteen bodies and paired DI resource release
+complete; the public testFull task then fails with the expected owned cleanup
+invariant exception. A subsequent public cache lookup finds all five suite
+success entries. inspectFailedHistory therefore fails with
+`FAILED_TEARDOWN_CACHED_SUCCESS`; the expected-failure harness requires that
+failure and continues. This is diagnostic actual0/driver0, not acceptance of
+failed-run caching. No production cache correction is implemented.
+
+After explicit fixture-only obstruction/residue repair, incremental recovery
+and repeat execute with the conservative policy in the same parent process,
+without settings reapplication. Three commands produce 45 exact physical bodies,
+45 positive XML cases, three distinct paired resources, child PIDs and receipt
+directories. The failing command's positive body/XML results do not imply whole
+command success. Completion SHA256
+`6027bf01543410e11b14a3147c92f2453c6d0f8bdce4bfcdac1df743e711bd5c`.
+The conservative policy prevents these stock entries from skipping DI work;
+it does not satisfy the fixed requirement to prevent success caching after
+failed finalization.
+
+Root cache audit-third returns0 with 117 records/103 bound Test dependency JARs,
+24 owned published Test JARs, exact body/XML/resource/process/directory identities
+and before/after public cache states. SHA256
+`e300f0ff95c83cf62921280945e8f5a7027305ef617000c6b022dd71c2599ca7`.
+The first checker mistakenly treats a transformed build-prefix digest as the
+final appended build digest; commands.inputs separately qualifies that final
+file. The second checker incorrectly expects literal backslash-n separators;
+byte inspection observes actual LF (byte10). An initial third-generator draft
+also fails its incorrect source-escape predicate before producing a checker.
+These checker/generator failures are retained and are not successful commands.
+The corrected third audit checks the exact prefix/final boundaries and LF
+serialization without modifying executed target evidence or replaying targets.
+
+Pinned SDK2 source records Passed suite success in TestStatusReporter.endGroup,
+before HostReceiptOwner final cleanup. That reporter is private[sbt], and the
+input-command source sets framework arguments by its concrete type. Neither
+private reporter access nor a listener substitution that bypasses that argument
+contract is used. Public cache-store APIs are being investigated separately.
+
+The bounded read-only review supports this ledger-only checkpoint. Report
+SHA256 `d2468252230600de3e13ad190db85a4a95b0219c24792539ddf27f48dcce9ebc`,
+schema1 manifest `869ea00d2203225afe1eedde3cb358cf096d1e1279338f339f0b263c151d1d13`,
+inspection `000df80a19ee98b1500dd4b262505292254b813e52e98be9343d7f21f31b989d`.
+Direct review preserves four repository/148 evidence inputs and passes 1,151
+checks. Root reads the complete report and reconciles all 152 original/copy
+hash-size pairs and eight recorded review artifacts before this sole stamp.
+Root reconciliation SHA256
+`34c75359078fb14bd0cabb4e2e9b6e6584404f6bd3b9fc92371abd51af79e036`.
+Its first checker and immediate type diagnostic incorrectly apply len to the
+numeric directInputRecords field; both fail before any stamp. The corrected
+root checker uses the recorded integer and passes without target replay.
+Full source/publication and dependency inventories retain root provenance.
+A separate exact-delta qualification records this provenance-only replacement.
+The wider SDK/Scala actual-host failure matrix, production cache correction,
+global ACK integration, structured run-error projection, cancellation/logger
+drain and every final gate remain open. No acceptance item is narrowed or waived,
+no whole step completed. Only this ledger is eligible for local evidence
+checkpoint `Record published cleanup and failed-teardown cache evidence` at
+parent `3d0146e36ad2276ce8247932ac8ae6b14371a60d`. No push.
