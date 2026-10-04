@@ -197,7 +197,7 @@ bash sbtgen.sc "${ARGS[@]}"
 
 # action: test
 
-Run tests and binary compatibility checks
+Run tests
 
 ```bash
 soft action.gen retain.action.check-sbtgen-staleness
