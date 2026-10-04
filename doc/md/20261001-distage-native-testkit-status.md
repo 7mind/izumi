@@ -73,7 +73,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery forks pass six SDK/Scala combinations; SDK2 task-exception reporting, remaining failure/terminal domains and final evaluation stay open. |
+| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery and normal mixed forks pass six SDK/Scala combinations. Held foreign delivery reproduces SDK2 Output15 versus eighteen physical/XML cases in one registration order; complete delivery/task-exception/final evaluation stay open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
@@ -84,7 +84,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
-| 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions with exact body/SDK-output/XML identities and same-session repeats. Held foreign delivery, remaining mixed-framework domains and final evaluation remain open. |
+| 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions. Foreign bodies execute exactly once in both measured held registration orders, while SDK2 omits their Output in the own-first order. Complete mixed delivery/result domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error after body success; actual-host teardown/cache failure cases and final evaluation remain open. |
@@ -11405,3 +11405,145 @@ Exactly this ledger, fixture README and tested helper are eligible for local
 commit `Verify normal mixed-framework forks on both SDKs`, parent
 `83528df3c7fad79b28eef00dd9733f99e6d622d6`. No dependency upgrade,
 production correction, private SDK replacement, goal completion or push is claimed.
+
+
+## 2026-10-04: held foreign delivery and immutable SDK Output mismatch (2d.4/13/15/17/22, in progress)
+
+The preceding normal mixed checkpoint was committed locally as
+`e56b0e5cbe7d3736bbb8c00b37101c1e86dbd41e`, parent
+`83528df3c7fad79b28eef00dd9733f99e6d622d6`. Its postcommit record checks
+exactly three paths, 1,681 qualified inputs, 212 unchanged publication pairs
+and a clean index/worktree at that point. Record
+`2d-mixed-fork-local-commit-second/completion.json`, SHA256
+`21f3b7f75d3ec4de8344ec77e3d901bfee7ea302953a0c0aada3747ac8be22fa`.
+The first precommit checker assumed publication.files instead of the actual
+publication.artifacts schema and failed before committing; the corrected guard
+required no runtime replay. Its failed completion remains separately captured.
+
+A public host listener now gates only the original foreign suite's three-success
+batch. Five DI suites and that unchanged foreign framework execute eighteen
+bodies. Normal baselines in each SBT process produce all eighteen SDK-output/XML
+cases. Held commands clear explicitly scoped Test/target XML first, retain
+physical/DI audits and check public Tests.Output after invoking callbacks.
+
+With the completion control registered before the foreign framework, SBT2
+returns only the five owned suite results: fifteen SDK cases versus eighteen
+physical/fresh XML cases. The exact-result guard makes the command fail with
+MIXED_FORK_RESULT_SET_DIFFERS. The foreign callback has returned, doComplete
+reports Passed, and all six XML reports are present when the result logger runs.
+The held observation already has all five counted owned receipts and completed
+owned Runner.done. This establishes a SDK-output reconciliation defect, not
+parent command completion while the callback is held: no parent Output or
+process completion was observed before the driver opened the gate.
+
+Reverse registration preserves all eighteen results on SBT2. At the held
+observation its owned Runner.done has entered but not finished; it completes
+after release. Both SBT1 orders preserve all eighteen results. The observed
+registration controls do not establish every possible runtime framework order.
+No fixture listener writes the production acknowledgement files.
+
+Frozen mixed driver-third commands require explicit artifact1.3.0-SNAPSHOT,
+SDK/compiler lists, --framework-order and fresh evidence directories:
+
+- `2d-held-foreign-actual-second`: SDK2/Scala3.9 own-first runtime exits1,
+  then driver-second's post-runtime validator fails with TypeError because its
+  observed directory shadows the owned-suite list. No aggregate0 is claimed.
+  Root independently reads the preserved raw runtime, eighteen body/XML cases,
+  fifteen SDK cases and callback-completion markers without replay.
+- `2d-held-foreign-actual-third`: SDK1/Scala3.9 own-first actual0/driver0,
+  terminal SHA256 `08db6a17864663d176503a382911e79cdcf2ec81f5fa4371197cb964f8ac71ce`.
+- `2d-held-foreign-actual-fourth`: both SDKs/Scala3.9 foreign-first actual0,
+  driver0, terminal SHA256
+  `20ccf57a3eb8c3092712017af92a2481fc884432cf7fd98e057b957ad8771d0e`.
+
+Direct runtime reconciliation of second/third returns0 in
+`2d-held-foreign-runtime-root-first/audit.json`, SHA256
+`60f69274abc34dd5134a668a0ee2d88e8d4208a603c31087f50d1e18483f5ffd`.
+Exploratory actual-first has the same SDK2 Output omission, but its stricter
+pre-allow Output predicate is false; driver0 validates the capture, not a
+positive defect predicate or acceptance. Terminal SHA256
+`6ae6465035c4a44f8fbc624c78c842aaf4ac9a2eb280e675284ae4415f66eb91`.
+
+The reduced public test-interface fixture needs no distage dependency or plugin.
+One framework emits two three-body groups. Its child done waits for the first
+host group only; the host holds the second group for an explicit driver gate.
+The logger records output after second-group completion and doComplete, then
+checks exact results. Four independent controls on Scala3.9/JDK21 give:
+
+| SDK | Second callback | Bodies / fresh XML | SDK Output cases | Actual process exit |
+| --- | --- | --- | --- | --- |
+| 2.0.9 | normal | 6 / 6 | 6 | 0 |
+| 2.0.9 | held | 6 / 6 | 3 | 1, public exact-result guard |
+| 1.13.0 | normal | 6 / 6 | 6 | 0 |
+| 1.13.0 | held | 6 / 6 | 6 | 0 |
+
+Frozen `2d-sdk-held-batch-driver-second.py` runs all four, driver0 in
+`2d-sdk-held-batch-generic-third`, terminal SHA256
+`d19326dfcff509eb4c7495ce8f3d300f573df9ba58adbef6109451432042403e`.
+The permanent helper makes literals readable, uses relative ROOT/shebang and
+names the Scala wait/poll constants. Its replay command:
+
+`python3 -B test-fixtures/sbt-worker-receipt-race/verify-held-batch.py
+--evidence-dir /srv/nvme/tmp/izumi-impl/2d-sdk-held-batch-permanent-first`.
+
+Both SDKs reproduce the table, driver0, terminal SHA256
+`2f3218ec6c1e87efbc75c18bf85599b71d84748a59082425219a4f3525897eb5`.
+Driver0 requires the SDK2 defect and is not product acceptance. Earlier generic
+first cannot start direnv after the shell PATH changes; no runtime is attributed.
+Existing store binaries restore the command PATH without installing anything.
+Generic-second executes six normal bodies/XML cases, but its child.done file
+write is also attempted by the main Runner.done and fails with FileAlreadyExists.
+Driver-second records child completion only for a PID distinct from SBT. The
+generic-second failed terminal SHA256 is
+`ddae309e62da7628333053ef5d2cf9b2e554fac5047e2aece9a72ebe0b03f962`.
+No failed capture is overwritten or classified as product success.
+
+Root audit-first checks eight generic controls and four mixed baseline/held
+pairs: sixteen commands, 192 physical/fresh XML cases, 183 public SDK cases,
+eight fresh paired DI lifetimes and cleaned owned receipt directories. It freezes
+849 records and 121 external JARs, checking generated sources, unchanged foreign
+source, callbacks, exact identities and resolved update classpaths. Four unbound
+.sbt/boot library paths (110 metadata occurrences) are deliberately excluded;
+no complete meta/runtime-replica inventory is claimed. Failure commands do not
+reach their post-test classpath logging tasks. Current 212 publication pairs
+retain their qualified bytes. `2d-sdk-held-batch-root-audit-first/audit.json`
+SHA256 `0e0a3f12462dac19a0b19f0c3b67a57c725dfa1d6ea2e5a0e9b18acb341033f5`.
+
+Pinned WorkerProxy.watch calls notifyExit independently of the notification
+monitor. React resolves its promise on exit0; mainTestTask copies resultsAcc
+before its finally/unregister operation obtains that monitor. This source order
+is consistent with a stale immutable Output after the held callback finishes;
+it is an inference, without a historical wire trace. The examined ForkTests
+caller offers no WorkerConnection setting; WorkerExchange chooses IPC by JDK
+support. No private SDK override, unsupported JDK or production correction is
+used. Tracker searches on 2026-10-04 for WorkerExchange test races, notifyExit
+tests and forked 2.0.9 results return no identified exact matching issue among
+their results. The existing README is an unfiled draft, not an issue submission.
+
+Final source qualification adds this tested diagnostic helper/README to prior
+inputs: 1,682 total, no production compiler-input changes.
+`2d-sdk-held-batch-final-inputs-first/qualified-sources.json` SHA256
+`5eacd5ab337d00e36d7fa4492ce22a7e048d2f9702e6db5d9d56964bcde554be`;
+helper SHA256 `e117653de0403168600d5aac634425ed66ba0d08052bac7c594e43d5dddbd337`.
+Owned counted completion does not prove foreign or complete logger drain. Full
+mixed reporting, actual SDK2 task-exception reporting, history, cancellation,
+cleanup faults and final SDK/platform evaluations remain open. No acceptance
+item is waived, whole step completed, dependency changed or branch pushed.
+
+The bounded read-only review directly reconciles all sixteen command captures,
+including the expected failures, finding no material blocker in the diagnostic.
+Its source inspection retains the immutable-snapshot explanation as inference.
+Large root artifact/publication inventories retain root provenance, with four
+unbound boot libraries explicitly excluded. Report SHA256
+`58ec6fad0b77b96ec3e4399675c044db204168ef91d4074c9b3aef6d0032be69`,
+schema1 manifest `0ad04d3e1f96cf89e01b61512fbca827d22e8f219727d4d8468843dc706c1be9`,
+inspection `cd382b7a2da8a0a2e70c1018d669f514ecd262c20862ae43d0bb23bd9ee8f451`.
+The reviewer's first order-insensitive receipt predicate fails; its preserved
+replacement distinguishes five own-first receipts from zero reverse-order
+receipts. This checker correction requires no target replay. Root reads the
+complete report and verifies all 724 original/copy hash-size records before this
+provenance append. `2d-sdk-held-batch-review-root-first.json` returns0, SHA256
+`0b31326029710e7b2eb2352fdd29b7b9ddeeec2e0e3aba86bb31b223785ffa82`.
+Exactly this ledger, diagnostic README and tested helper are eligible for local
+commit `Reproduce incomplete SDK output after held foreign delivery`, parent
+`e56b0e5cbe7d3736bbb8c00b37101c1e86dbd41e`. No push or full gate claim.

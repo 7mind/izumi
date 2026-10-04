@@ -129,11 +129,60 @@ addresses an escaping LinkageError in TestRunner; the pinned fork worker has the
 separate notification ordering described above. This reproduction remains an
 unfiled draft report, with no SDK upgrade or private SDK replacement.
 
+`verify-held-batch.py` reproduces an incomplete SDK result after the host
+listener has returned. One generic framework executes two three-body suites;
+its child `Runner.done` waits for the first host group only. The host listener
+either returns immediately or holds the second group until the driver releases
+it. The result logger records public `Tests.Output` after the second callback,
+group completion and `doComplete`, then rejects an incomplete result.
+
+| SDK | Second callback | Executed / fresh XML cases | Public SDK result cases | Actual process exit |
+| --- | --- | --- | --- | --- |
+| SBT2.0.9 | immediate | 6 / 6 | 6 | 0 |
+| SBT2.0.9 | held | 6 / 6 | 3 | 1, exact-result guard |
+| SBT1.13.0 | immediate | 6 / 6 | 6 | 0 |
+| SBT1.13.0 | held | 6 / 6 | 6 | 0 |
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-held-batch.py \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-held-batch-example
+```
+
+Driver0 requires all four controls, including the SDK2 mismatch; it is not
+product acceptance. There is no distage dependency or plugin. The six target
+body files use CREATE_NEW and identify a JVM distinct from SBT. Each independent
+build starts with fresh reports. The frozen held observation precedes gate
+release; it does not claim that the parent command finished while held.
+
+The published-distage mixed control observes the same boundary with an unchanged
+foreign framework. Registering the distage completion control before the foreign
+framework gives eighteen physical/XML cases and fifteen SDK result cases on
+SBT2; reversing registration gives all eighteen. Both SBT1 orders give all
+eighteen. These four observed controls do not establish every possible framework
+order. Distage acknowledgements cover its five owned suites; they do not
+acknowledge the foreign framework's later batch.
+
+The pinned source is consistent with the retained result snapshot: the worker
+watcher calls React.notifyExit independently of the notification monitor, and
+mainTestTask copies resultsAcc immediately after its promise completes.
+Unregistering subsequently waits for the held callback's monitor, so later XML
+and callbacks can complete without changing that earlier immutable Output.
+This is an inference from source and the controlled observations, not a wire
+trace of the historical race. The examined WorkerExchange path chooses IPC
+from JDK support and exposes no transport setting to its ForkTests caller.
+No private transport override or production correction is included.
+
+Tracker searches on 2026-10-04 for WorkerExchange test races, notifyExit tests
+and forked 2.0.9 results did not identify an exact matching report among the
+returned results; they do not prove that no report exists. This remains an
+unfiled upstream draft and leaves the mixed delivery/result acceptance open.
+
 This remains an unfiled upstream report. Tracker searches on 2026-10-04 for
 `fork tests exit zero EOF success incomplete`, `"ForkTests" "Passed"`
 and `"System.exit(0)" test`, restricted to `site:github.com/sbt/sbt/issues`,
 did not identify an exact matching report in the returned
 results; they do not prove that no existing report exists. The project's host
-receipt guard rejects the recorded incomplete DI results. A public completion
-acknowledgement prototype passes two bounded JVM controls; a production
-correction and the complete recovery/reporting gates remain open.
+receipt guard rejects the recorded incomplete DI results. Its production
+counted acknowledgement protocol passes bounded normal, worker-death, recovery
+and held owned-delivery controls. Full mixed delivery and failure/reporting
+acceptance remain open.
