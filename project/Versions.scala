@@ -11,7 +11,7 @@ object V {
   val scalatestplus_scalacheck = "3.3.0.0-alpha.2"
 
   val cats = "2.13.0"
-  val cats_effect = "3.6.3"
+  val cats_effect = "3.6.4"
 
   val discipline = "1.7.0"
   val discipline_scalatest = "2.3.0"
