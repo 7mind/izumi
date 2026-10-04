@@ -56,7 +56,30 @@ characters before UTF-8 transport. During `writeFrame`, the file adapter retains
 During `readFrame`, it retains a `NonFatal` I/O or framing failure. Subsequent
 frame operations cannot silently resume after a partial frame. Closing a channel is idempotent and later operations fail.
 
+`ApplicationLauncher.run` consumes a finite framed command source with an
+explicit catalogue of suite factories. The first command establishes the run
+identity. All commands use the same application and selection rules; a `NonFatal` input
+failure requests cancellation and waits for accepted commands and finalization
+before returning the original input error. The caller owns the source, output
+and execution context. Empty input and cancellation alone cannot report success.
+Discovery and planning can succeed without an execution outcome.
+
+The JVM entry point accepts:
+
+```text
+StandaloneLauncher <build-id> <target-id> <catalogue-id> <commands.jsonl> <output.jsonl> <suite-class>...
+```
+
+Each named suite must implement `TestSuite` and have a public no-argument
+constructor. The launcher creates factories for this explicit catalogue and
+does not scan the classpath. Requests and overrides remain schema-4 messages in
+the command file. The output file must not exist. Successful inspection or
+execution returns exit 0; inspected planning failures, rejection, failed or
+cancelled execution, and `NonFatal` input or output errors return a nonzero exit. The launcher owns its files and execution
+context and closes them before exiting. Scala.js and Native entry points can
+supply their explicit factories and channels to the portable launcher API.
+
 Test output still goes to ordinary stdout. Protocol clients read their explicit
 channel, decode each complete frame and require the terminal application
-outcome before reporting success. A standalone launcher and host adapters are
-still pending; those clients must use this same command and selection contract.
+outcome before reporting execution success. These file channels consume finite
+inputs; live streaming channels and host adapters remain pending.

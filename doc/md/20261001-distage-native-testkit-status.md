@@ -68,7 +68,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.5 | in progress | Application revalidates stale build/target/catalogue and explicit empty selection in all nine producer and audited published-consumer lanes below; CLI/saved clients and final evaluation remain open. |
 | 2c.6 | in progress | Structured ID collision and repeated application identity controls pass all nine producer and audited published-consumer lanes below; complete clients and final evaluation remain open. |
 | 2c.7 | in progress | Actual application axis override/filter precedence, memoization overrides and within-graph resource sharing pass all nine producer and audited published-consumer lanes below; full application/host and final evaluation remain open. |
-| 2c.8 | in progress | Application retains a model-provider planning-extension failure separately from test failures on JVM; actual config-loader/extension application proofs and final evaluation remain open. |
+| 2c.8 | in progress | Application and finite launcher retain model-provider inspection failures below; prospective real ConfigLoader/module-provider controls pass eighteen public-boundary checks on one published JVM lane. Root installation, all-nine proofs, clients and final evaluation stay open. |
 | 2c.9 | in progress | Schema-4 protocol: 186 checks per producer lane; typed/framed application and real JVM file contracts pass audited published consumers below. Standalone/host transports and final evaluation remain open. |
 | 2d.1 | not started | No evaluation point passed yet. |
 | 2d.2 | not started | No evaluation point passed yet. |
@@ -133,7 +133,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.13 | in progress | Four spec entry points run on the base provider contract in six JVM/JS lanes below; common plugin/framework/IDE integration and final evaluation outstanding. |
 | O.14 | in progress | Five test projects retain original packages, source variants and supported platforms below; final evaluation outstanding. |
 | O.15 | not started | No evaluation point passed yet. |
-| O.16 | not started | No evaluation point passed yet. |
+| O.16 | in progress | Portable finite launcher and JVM explicit-file CLI pass nine producer lanes below; published consumers, remaining platform/host launchers and final evaluation stay open. |
 | O.17 | in progress | Declarative registration and arbitrary-constructor side-effect boundary documented; no-resource front-end discovery verified below; final evaluation outstanding. |
 | O.18 | in progress | Provider-owned loader factories and bootstrap controls pass below, including opaque/warmed-worker request reconstruction, distinct owner caches, retained creation failures and held-creator concurrency. Caller-owned prebuilt state/incompatible policies, complete custom-hook audit and final evaluation outstanding. |
 | O.19 | in progress | Typed application command layer, portable framed memory and explicit JVM file channels pass all nine producer/audited published-consumer lanes below; full application/CLI/host semantics and final evaluation remain open. |
@@ -142,7 +142,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.22 | not started | No evaluation point passed yet. |
 | O.23 | not started | No evaluation point passed yet. |
 | O.24 | not started | No evaluation point passed yet. |
-| O.25 | not started | No evaluation point passed yet. |
+| O.25 | in progress | Finite launcher takes explicit suite factories; JVM CLI uses explicit named no-argument factories, with ten actual child processes per compiler below. Published/current host/final evaluation stays open. |
 | O.26 | in progress | No evaluation point passed yet. |
 | O.27 | in progress | No evaluation point passed yet. |
 | O.28 | not started | No evaluation point passed yet. |
@@ -155,7 +155,7 @@ head. The spike reports are design evidence, not implementation verification.
 | O.35 | not started | No evaluation point passed yet. |
 | O.36 | in progress | Scala 3.9 verification below; gate remains outstanding. |
 | O.37 | in progress | No evaluation point passed yet. |
-| O.38 | not started | No evaluation point passed yet. |
+| O.38 | in progress | Sessions, resolution, plans and application commands use typed models; JSON encoding occurs at portable protocol/frame boundaries below. Full host and final evaluation stay open. |
 
 ## 2026-10-02: step 1a part 1, in progress
 
@@ -9205,3 +9205,105 @@ owned-child timeout cleanup. Paths:2c-launcher-draft-contracts-probe-second/
 and2c-launcher-draft-cli-probe-second/. These still use scratch prospective
 sources/frozen producer closure; no root or published launcher claim. Prepared
 2c-launcher-nine-lane-first.py is unexecuted and excluded from this checkpoint.
+
+Bounded foundation commit is observed as f4fc3084f675d30fc7635dffa5bddb989d866eaf.
+Post-commit git status --short is empty; rechecked all1630 frozen inputs: only
+qualified public doc differs, no tested production/fixture byte drift. No push.
+
+Next bounded slice installs portable ApplicationLauncher and JVM StandaloneLauncher
+from verified prospective sources, plus shared memory/file input-failure/drain
+contracts and nine actual child-JVM CLI controls. Installation provenance:
+2c-launcher-installation-first.json. Application code is byte-identical to its
+prospective probes; the shared fixture advertises its two auxiliary input cases
+and positive input-drain marker. Base producer now includes30 launcher controls;
+real JVM file contract includes those same30 (expected total55). Standalone
+process fixture runs separately under explicit Test/fork so child classpaths are
+actual independent JVM classpaths. Platform/client/final gates remain open.
+Command:python3 /srv/nvme/tmp/izumi-impl/2c-launcher-nine-lane-first.py.
+Driver freezes source inputs, cleans all four Native projects per compiler,
+retains existing protocol/base/core/higher oracles and strengthens classloading/
+unhandled-thread diagnostics. Root all-nine results and current published-only
+launcher execution remain pending. Source edits now freeze until completion.
+
+First root launcher producer completes all9: driver0/all compiler processes0,
+base798/797 per platform, protocol186, core143/103/118, higher621/498/498,
+JVM file55 and nine real child-CLI cases per compiler. Strict diagnostics and
+frozen source inputs pass. Path:2c-launcher-nine-lane-first/. This applies to its
+pre-correction source snapshot; a subsequently reproduced launcher defect below
+prevents promoting it into a current whole-slice pass or publishing that source.
+
+Scratch public-API application planning-failure probe compiles0 but first/second
+runtime1 because the oracle incorrectly expects every extension failure to be a
+Rejected message. Diagnostic-only second capture shows the actual module-provider
+hook executes once with no user acquisition/body: Planned.inspection.failures
+contains the original Planning diagnostic, and execution result failures retain
+Planning rather than Test. No production correction is justified by that oracle.
+The corrected third probe compiles/runs0 with16 unchanged positive obligations
+about resource/hook boundaries, original diagnosis, correlation, retained failure
+snapshot and separation of phases, using each supported response form. It borrows
+only49 frozen published JVM dependencies, with no root production source shadow.
+Paths:2c-application-planning-failure-probe-first/second/third/; none claims all9,
+root installation or final2c.8 completion. Those prospective oracles remain outside
+checkout while this launcher slice is verified.
+
+A separate actual-producer reproduction establishes the launcher defect:
+PlanInspection contains one valid Planning failure and no execution outcome,
+but ApplicationLauncher returns successful=true. Compilation0/runtime1 fails
+for that exact expected reason. Path:2c-launcher-planning-result-repro-second/.
+First setup capture failed before compilation because captured child CLI classpath
+contains already-deleted SBT bg-jobs directories; it is preserved, not a defect
+reproduction. Second uses the current compiled base module plus48 unchanged
+frozen published dependencies. No publication-only or all-platform claim.
+
+Correction: a Planned response contributes success only when its retained
+inspection.failures is empty; earlier rejection/failure remains unsuccessful.
+Original byte-identical minimal reproduction now compiles/runs0 and observes
+successful=false, same original planning diagnostic and absent execution outcome.
+Class-load log confirms the fixed launcher/observer comes from the freshly
+compiled source variant ahead of unchanged frozen pre-fix producer classes.
+Path:2c-launcher-planning-result-replay-first/. This bounded override is explicit,
+not a published consumer or replacement for the failed original reproduction.
+Permanent shared memory/file regression adds4 positive planning-inspection
+controls; actual child-CLI adds failed planning inspection with nonzero exit and
+structured diagnostic. Expected current matrix base802/801, file59, CLI10.
+
+Root source freezes again for fresh corrected nine-lane producer:
+python3 /srv/nvme/tmp/izumi-impl/2c-launcher-nine-lane-second.py.
+Guarded publication/consumer drivers are prepared but unexecuted. They include
+all210 own binary/POM pairs, original positive controls plus corrected inspection,
+and explicit JVM proxy coverage before consumer execution. Current root all9 and
+published launcher results remain pending; no parent/final acceptance is closed.
+
+Corrected second producer completes driver0/all compiler processes0 with stable
+1634 frozen source inputs, no strict diagnostic failures: base802 per platform
+on Scala3/2.13 and801 on2.12; protocol186, core143/103/118,
+higher621JVM/498JS+Native remain intact. Same34 portable launcher controls pass
+memory/file (JVM file total59). Each compiler's10 actual child-JVM cases verify
+success, inspection, failed-plan nonzero exit, test failure, stale/unknown saved
+requests, cancellation and empty input, with structured frames and separate
+stdout. Path:2c-launcher-nine-lane-second/. Root current launcher bounded producer
+passes, but publication/independent consumer and completion review are pending.
+Next command:python3 /srv/nvme/tmp/izumi-impl/2c-launcher-runtime-closure-publication-first.py.
+This new publication explicitly includes23 portable modules across9 lanes plus
+the JVM-only proxy on3 compilers (210 pairs) before consumer freezing. No source
+edit is allowed while publication/consumer captures run; ledger stays excluded.
+
+Publication progress: actual Scala3 and2.13 processes finish0 with unchanged source inputs;2.12 is running. The explicit protocol production pin remains3.8.4 for all Scala3 platform variants, as required by2a.1/O.12 and already recorded above. This does not mean the protocol was produced by3.9 in a3.9 runner/consumer lane. The prepared artifact auditor now checks the actual producer compiler from every package path, requiring3.8.4 only for those three protocol artifacts and the lane compiler for all other artifacts. No project version is changed. Preparatory reviewer notes the launcher catches NonFatal input errors; the public input-failure cleanup statement will be qualified after frozen captures finish. No additional production correction is inferred from excluded exception categories.
+
+Preparatory launcher review is root-read and hash-verified:2c-launcher-preparatory-readonly-review-first/PREPARATORY-REVIEW.md SHA256 831d8685192250a799d410a2b10d12942331e9c4ef9006e58a0841eb3c8b653f, INPUT-MANIFEST.json SHA256 df9a80435b234d8d236bc23f097987eec5694f41b2e517632270df571056ec26, inspection.json SHA256 361f8f547a800366a17348d685a2a4b484df9efc05741162668107801d49903b. Root independently verifies661 manifest rows/309 unique preserved copies by size/hash and reads the report/source/inspection findings. D1 awaits the agreed doc-only qualification after frozen captures. Review excludes running publication, future published consumers, and parent/final gates. Lifetime, simultaneous independent errors and actual-DI launcher-input cleanup remain explicit proof limits; no new reproduced production defect is asserted.
+
+Current launcher publication completes0 on all3 compiler processes with unchanged1634 inputs. Root artifact audit command:python3 /srv/nvme/tmp/izumi-impl/2c-launcher-runtime-closure-artifact-audit-first.py exits0;210 binary/POM pairs and75,777 binary entries match current producer classes/packages byte-for-byte (manifest timestamps alone normalized where needed). Audit SHA256364ea5ace9b1c15e152a95f6058f6374d84d9cead6ee216ce517e090c61d5279. Actual compiler distribution:67 Scala3.9 modules,3 protocol3.8.4,70 eachScala2.13/2.12. JVM proxy is explicitly included/frozen before consumer execution. Next running command:python3 /srv/nvme/tmp/izumi-impl/2c-launcher-published-consumers-first.py; no consumer result or parent/final closure yet.
+
+Stronger prospective actual-DI planning oracles pass in2c-application-planning-failure-probe-sixth/:compile0/runtime0,18 checks with49 frozen published JVM runtime JARs/no production override, unchanged4 sources/56 combined runtime+compiler dependency records. Root reads the completion/logs and rehashes all inputs. New controls require Failed selected outcomes, no cancellation/run-level failures, exact selected-ID and TestCompleted/Finished/outcome reconciliation, contiguous zero-based sequence. Labels distinguish ConfigLoader.loadConfig reads from makeModuleProvider calls; they do not assert every BootstrapFactory hook ran once. Fourth variant fails compilation because this agent omitted Event sequence patterns; fifth compiles0/runtime1 because this agent assumed sequence starts at1. Existing RunSession/ApplicationFixtures establish0, and sixth changes only that erroneous sequence-start oracle. All failed captures remain immutable; none establishes a production defect. New root-drafts-second are prospective test-only package adaptations, and root all-nine execution stays pending.
+
+Current launcher independent consumer completes driver0 and all3 actual SBT processes0, with247 positive shared checks on each JVM/JS/Native lane, JVM file59 and10 actual independent child-CLI cases per compiler. Required activation/configuration, memoization, Cats/ZIO delivery-loss, memory/file, input-drain and blocking controls remain intact; strict callback/classloading/unhandled-thread diagnostics are absent. Command:python3 /srv/nvme/tmp/izumi-impl/2c-launcher-published-consumers-first.py. Root audit command:python3 /srv/nvme/tmp/izumi-impl/2c-launcher-published-consumers-root-audit-first.py exits0:1634 frozen sources,23 test-oracle/runtime copy records,9 actual update/logged-classpath equalities,458 unique JARs,2692 compiled consumer namespace binaries. All own artifacts match the fresh prefrozen210 set, exactly24JVM/23JS+Native per compiler, including the JVM proxy. No root producer class directory, production source shadow, ScalaTest or Scalactic occurs in those classpaths/compiled consumer namespaces. Runtime/compiler boundary mitigation remains explicit: JVM fork plus admitted-callback accounting in the consumer helper does not establish unjoined external submissions or in-process host/SDK shutdown safety.
+
+Delivery driver hashes are preserved in2c-launcher-delivery-driver-provenance-first.json. After all captures/audits end, public launcher cleanup/CLI error prose is qualified to NonFatal. Root verifies this is the sole non-ledger delta among all1634 frozen inputs; production/test source bytes match every current producer/publication/consumer capture. Record:2c-launcher-doc-qualification-first.json; current docSHA2569c69214d0ed2cf07848d1054087e782dae2a7954e7ff79ba8f21e72f41897897. git diff --check returns0. Separate reviewer completion addendum is requested, pending; parent2c/O/host/final gates stay open.
+
+The new launcher CLI children are real processes with captured argv, structured frames, stdout/stderr and parent-enforced exit/timeout checks. Their historical SBT bg-jobs classpath JAR replicas were not prefrozen and are removed when SBT finishes. Actual Compile/update classpaths and their original/frozen published artifacts have byte provenance; literal equality of the already-removed child replicas cannot be checked. Do not conflate those two boundaries. This is a provenance limitation, not an observed execution failure or reason to patch production. Parent/final host/CLI gates remain open.
+
+The separate planning preparatory report is root-read/hash-verified:2c-application-planning-fixtures-readonly-review-first/PREPARATORY-REVIEW.md SHA25660bb35e3eaad929e69a39f9ad1dea72c3744481a4922d652e3441d68f85c3b04, INPUT-MANIFEST.json SHA256ffb8260ddf15a9abc1cf69158fd431054daafe40d9948982dc4df5aa10a289d1, inspection.json SHA256a91c1433eca6488100027f9ea37514fc5646dd82b971f89cbce27493c3c92094. Root verifies115 manifest rows/96 unique preserved copies by size/hash. Report supports16 original and18 strengthened single-JVM controls, with explicit configuration-read/module-provider counter limits, no physical config parser/default fallback/bootstrap-wide hook proof, and no all-nine/final2c.8 completion. Next prospective18-check root-drafts-second and installation-first.py are unexecuted until this launcher bounded commit.
+
+Bounded launcher completion addendum is root-read and hash-verified:2c-launcher-completion-readonly-review-first/COMPLETION-ADDENDUM.md SHA256ffdd0fd29aea47b7f3794b558f9e66df87fe6b0416982c3ce69cd262d4046702; INPUT-MANIFEST.json SHA2566a2af6598b4b4e4210f8347b0edb21dcbda05b5e69fb158b3165d55c18684b33; inspection.json SHA256cc8492dc2d8ebb2e467f4471b4806c936171531400b5f6ce3225debcb9bab01e. Root independently rechecks7472 manifest rows/4116 unique preserved copies by size/hash, reads the complete addendum and structured inspection, and confirms no direct check failures. Reviewer independently checks current/frozen210 JAR/POM pairs and75,777 frozen member identities,9 resolved/logged/update closures,23 source/copy adaptations,2692 consumer binaries and30 actual child outcome/frame captures. D1 is resolved; historical child-runtime replica byte equality remains unverified and is not claimed. Reviewed ledgeraf656b324e1906b9e88daaf059d6e689c6721a7c039e4f430fd52282ce146e60 precedes this completion entry.
+
+2026-10-04 bounded finite-launcher local commit containing this entry is above foundation predecessorf4fc3084f675d30fc7635dffa5bddb989d866eaf, with current all-nine producer/published consumers and explicit ten-case JVM CLI outcomes per compiler. No push, parent-step completion or final evaluation is claimed. Next work installs only the prepared public-DI planning failure fixtures and runs their corrected18 positive controls across all9 root lanes; unchanged production/build bytes permit explicit reuse of the newly prefrozen210 publication closure for new test-only consumers. Work continues.

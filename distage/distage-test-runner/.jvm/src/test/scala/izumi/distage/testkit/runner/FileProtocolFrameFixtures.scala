@@ -16,7 +16,7 @@ object FileProtocolFrameFixtures {
       checks.incrementAndGet()
       require(condition, message)
     }
-    FramedChannelFixtures.run(() => new FileChannel, "file", context, verify).map { _ =>
+    FramedChannelFixtures.run(() => new FileChannel, "file", context, verify).flatMap(_ => ApplicationLauncherFixtures.run(() => new FileChannel, "file", context, verify)).map { _ =>
       val directory = Files.createTempDirectory("izumi-frame-boundaries-")
       val path = directory.resolve("channel.jsonl")
       try {
