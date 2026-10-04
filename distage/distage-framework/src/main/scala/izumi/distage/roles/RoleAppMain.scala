@@ -1,6 +1,5 @@
 package izumi.distage.roles
 
-import scala.annotation.nowarn
 import distage.Injector
 import izumi.distage.framework.services.ModuleProvider
 import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer, RoleCheckableApp}
@@ -24,7 +23,7 @@ import izumi.logstage.distage.LogIO2Module
 import izumi.reflect.{TagK, TagKK}
 
 import java.util.concurrent.atomic.AtomicReference
-import scala.annotation.unused
+import scala.annotation.{nowarn, unused}
 
 /**
   * Create a launcher for role-based applications by extending this in a top-level object
