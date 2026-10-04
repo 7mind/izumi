@@ -8,6 +8,16 @@ creates a physical record with CREATE_NEW. The verifier compares exact body
 identities, resource IDs and JUnit identities, rejecting failure, error and
 skipped reports. Records are preserved before the next request.
 
+The plugin declares production and dummy repository bindings. The default
+activation selects production; resource IDs identify the selected binding so
+the plugin consumer can verify activation overrides through physical records.
+
+The concrete suites use separate source files and distinct marker methods so
+SBT 2 can produce distinguishable stock suite digests. Marker methods are fixture
+inputs to static history; test bodies and the resource-sharing contract are
+unchanged. The plugin consumer checks the distinct-digest precondition before
+its incremental cases.
+
 Twelve cases cover full/explicit selection, repeated requests in one process,
 sequential/default scheduling, wildcards, exclusions, a separate foreign control
 framework, host thread limits one/two, and forked selection/full/two-group runs.

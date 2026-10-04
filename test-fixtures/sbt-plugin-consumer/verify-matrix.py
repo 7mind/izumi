@@ -89,13 +89,59 @@ lazy val pluginConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.
 '''
 
 
+REJECTED_FILTER_CONTROL = r'''
+val verifyRejectedAxisFilter = inputKey[Unit]("Verify an empty activation filter fails before provisioning")
+verifyRejectedAxisFilter := {
+  val parsed = spaceDelimited("case").parsed
+  require(parsed.size == 1, "Expected one rejected filter case")
+  val result = (Test / testOnly).toTask(" *SuiteC -- --axis-filter \"{\\\"axis\\\":\\\"repo\\\",\\\"value\\\":\\\"dummy\\\"}\"").result.value
+  require(result.toEither.isLeft, "A filter matching no tests did not fail")
+  val audit = file(sys.props("izumi.fixture.audit-root"))
+  require((audit * "*").get().isEmpty, "Rejected filter acquired resources or executed bodies")
+  val reports = (target.value / "test-reports" * "*.xml").get()
+  require(reports.size == 1, "Rejected filter must retain one suite error report")
+  val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(reports.head)
+  val cases = document.getElementsByTagName("testcase")
+  val errors = document.getElementsByTagName("error")
+  require(cases.getLength == 1 && errors.getLength == 1, "Rejected filter suite error count differs")
+  require(Seq("failure", "skipped").forall(name => document.getElementsByTagName(name).getLength == 0), "Rejected filter has an unexpected outcome")
+  require(cases.item(0).asInstanceOf[org.w3c.dom.Element].getAttribute("classname") == "izumi.fixtures.host.SuiteC", "Rejected filter suite identity differs")
+  require(cases.item(0).asInstanceOf[org.w3c.dom.Element].getAttribute("name") == "(It is not a test it is a sbt.testing.SuiteSelector)", "Rejected filter suite selector differs")
+  require(errors.item(0).getTextContent.contains("Selection matched no tests"), "Rejected filter failed for an unexpected reason")
+  val capture = file(sys.props("izumi.fixture.captures")) / parsed.head
+  require(!capture.exists(), "Rejected filter capture must be new")
+  IO.copyDirectory(audit, capture / "body-audit")
+  IO.copyDirectory(target.value / "test-reports", capture / "test-reports")
+  streams.value.log.info("PLUGIN_REJECTED_FILTER_OK case=" + parsed.head + " bodies=0 reported=1 errors=1 acquired=0 released=0")
+}
+'''
+
+
+SBT2_DIGEST_CONTROL = '''
+val verifyDistinctStockDigests = taskKey[Unit]("Verify the stock incremental fixture precondition")
+verifyDistinctStockDigests := Def.uncached {
+  val names = Vector("SuiteA", "SuiteB", "SuiteC", "SuiteD", "SuiteE").map("izumi.fixtures.host." + _)
+  val digests = (Test / definedTestDigests).value
+  require(names.forall(digests.contains), "A stock suite digest is missing")
+  val distinct = names.map(name => digests(name).toString).distinct.size
+  require(distinct == names.size, "Stock suite digests are not distinct")
+  streams.value.log.info("PLUGIN_STOCK_DIGESTS_OK suites=" + names.size + " distinct=" + distinct)
+}
+'''
+
+
 def commands(sbt_version):
     quick = "test" if sbt_version == "2.0.9" else "testQuick"
     full = "testFull" if sbt_version == "2.0.9" else "test"
     sequence, expected = ["clean"], []
+    if sbt_version == "2.0.9":
+        sequence.extend(["verifyDistinctStockDigests", "show Test / definedTestDigests"])
     selected_id = dict(target="pluginConsumer/test", suite="izumi.fixtures.host.SuiteC", path=["equal display name", "should", "first"], variant=None)
     selected_json = json.dumps(selected_id, separators=(",", ":")).replace(" ", "\\u0020")
     selected_options = "--test-id " + json.dumps(selected_json) + " --memoization disabled"
+    axis = dict(axis="repo", value="dummy")
+    axis_json = json.dumps(json.dumps(axis, separators=(",", ":")))
+    selected_options += " --axis " + axis_json + " --axis-filter " + axis_json
 
     def case(name, command, labels, acquisitions, revision):
         sequence.extend(["prepareFixture " + name, command])
@@ -103,7 +149,7 @@ def commands(sbt_version):
             sequence.append(f"verifyFixture {name} {acquisitions} {labels}")
         else:
             sequence.append("verifyNoRun " + name)
-        expected.append(dict(case=name, kind="full", labels=labels.split(), acquisitions=acquisitions, revision=revision))
+        expected.append(dict(case=name, kind="full", labels=labels.split(), acquisitions=acquisitions, revision=revision, repo="prod"))
 
     def inspect(name, operation, options, count, target):
         fork_sentinel = target == "pluginConsumer/inspection"
@@ -113,22 +159,26 @@ def commands(sbt_version):
         sequence.extend([operation + (" " + options if options else ""), "verifyNoRun " + name])
         ids = ([dict(target=target, suite="izumi.fixtures.host.ForkSentinelSuite", path=["must not execute"], variant=None)] if fork_sentinel else
                [selected_id] if options else [dict(target=target, suite="izumi.fixtures.host." + suite, path=["equal display name", "should", leaf], variant=None) for suite in ALL_SUITES.split() for leaf in ["first", "second", "third"]])
-        expected.append(dict(case=name, kind="inspection", labels=[], acquisitions=0, revision="alpha", operation="planned" if "distagePlan" in operation else "resolved", testCount=count, target=target, selected=bool(options), expectedIds=ids, forkSentinel=fork_sentinel))
+        expected.append(dict(case=name, kind="inspection", labels=[], acquisitions=0, revision="alpha", operation="planned" if "distagePlan" in operation else "resolved", testCount=count, target=target, selected=bool(options), expectedIds=ids, forkSentinel=fork_sentinel, expectedAxis=axis if options else None))
 
     def selected(name, command, revision):
         sequence.extend(["prepareFixture " + name, command + " -- " + selected_options, "verifySelectedFixture " + name])
-        expected.append(dict(case=name, kind="selected", labels=["SuiteC"], acquisitions=1, revision=revision))
+        expected.append(dict(case=name, kind="selected", labels=["SuiteC"], acquisitions=1, revision=revision, repo="dummy"))
+
+    def rejected_filter(name, revision):
+        sequence.extend(["prepareFixture " + name, "verifyRejectedAxisFilter " + name])
+        expected.append(dict(case=name, kind="rejected-filter", labels=[], acquisitions=0, revision=revision))
 
     inspect("list", "Test / distageList", "", 15, "pluginConsumer/test")
     inspect("plan", "Test / distagePlan", "", 15, "pluginConsumer/test")
     inspect("selected-plan", "Test / distagePlan", selected_options, 1, "pluginConsumer/test")
     selected("individual", "testOnly *SuiteC", "alpha")
     case("after-individual", quick + " *SuiteC", "SuiteC", 1, "alpha")
+    rejected_filter("rejected-filter", "alpha")
+    case("after-rejected-filter", quick + " *SuiteC", "SuiteC", 1, "alpha")
     case("memoization-disabled", "testOnly *SuiteC -- --memoization disabled", "SuiteC", 3, "alpha")
 
     case("full", full, ALL_SUITES + " ForeignSuite", 1, "alpha")
-    if sbt_version == "2.0.9":
-        sequence.append("show Test / definedTestDigests")
     case("conservative-repeat", quick, ALL_SUITES, 1, "alpha")
     sequence.append("changeExternalInput beta")
     case("changed-input", quick, ALL_SUITES, 1, "beta")
@@ -146,6 +196,8 @@ def commands(sbt_version):
     inspect("fork-selected-plan", "Test / distagePlan", selected_options, 1, "pluginConsumer/test")
     selected("fork-individual", "testOnly *SuiteC", "beta")
     case("fork-after-individual", quick + " *SuiteC", "SuiteC", 1, "beta")
+    rejected_filter("fork-rejected-filter", "beta")
+    case("fork-after-rejected-filter", quick + " *SuiteC", "SuiteC", 1, "beta")
     case("fork-full", full, ALL_SUITES + " ForeignSuite", 1, "beta")
     case("fork-selected", quick + " *SuiteC *SuiteD", "SuiteC SuiteD", 1, "beta")
     sequence.append("changeExternalInput gamma")
@@ -196,11 +248,11 @@ def main():
                 if source.name == "build.sbt":
                     start = text.index("Test / testFrameworks :=")
                     end = text.index("Test / javaOptions +=", start)
-                    text = text[:start] + text[end:] + CONTROLS
+                    text = text[:start] + text[end:] + CONTROLS + REJECTED_FILTER_CONTROL + (SBT2_DIGEST_CONTROL if sbt_version == "2.0.9" else "")
                 elif source.name == "FixturePlugin.scala":
-                    before = 'new SharedResource(UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))'
+                    before = 'new SharedResource(repo + "-" + UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))'
                     assert text.count(before) == 1
-                    text = text.replace(before, 'new SharedResource(new String(Files.readAllBytes(Paths.get(sys.props("izumi.fixture.external-input"))), StandardCharsets.UTF_8).trim + "-" + UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))')
+                    text = text.replace(before, 'new SharedResource(new String(Files.readAllBytes(Paths.get(sys.props("izumi.fixture.external-input"))), StandardCharsets.UTF_8).trim + "-" + repo + "-" + UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))')
                 target.write_text(text)
             (build / "project").mkdir()
             (build / "project/build.properties").write_text("sbt.version=" + sbt_version + "\n")
@@ -237,14 +289,15 @@ def main():
             failures = []
             for row in expected:
                 name, labels = row["case"], row["labels"]
-                marker = (f"PLUGIN_SELECTED_OK case={name} bodies=1 reported=1 acquired=1 released=1" if row["kind"] == "selected" else
+                marker = (f"PLUGIN_REJECTED_FILTER_OK case={name} bodies=0 reported=1 errors=1 acquired=0 released=0" if row["kind"] == "rejected-filter" else
+                          f"PLUGIN_SELECTED_OK case={name} bodies=1 reported=1 acquired=1 released=1" if row["kind"] == "selected" else
                           f"TARGET_BOOTSTRAP_HOST_OK case={name} suites={len(labels)} bodies={len(labels) * 3} reported={len(labels) * 3} acquired={row['acquisitions']} released={row['acquisitions']}"
                           if labels else "PLUGIN_STOCK_NOOP_OK case=" + name)
                 if raw.count(marker + "\n") != 1:
                     failures.append("Missing unique case marker: " + marker)
                 if row["acquisitions"]:
                     records = list((lane / "cases" / name / "body-audit").glob("*.acquire"))
-                    if len(records) != row["acquisitions"] or any(not record.read_text().startswith(row["revision"] + "-") for record in records):
+                    if len(records) != row["acquisitions"] or any(not record.read_text().startswith(row["revision"] + "-" + row["repo"] + "-") for record in records):
                         failures.append("DI acquisition did not consume current external input: " + name)
                 if row["kind"] == "inspection":
                     start = raw.find("TARGET_BOOTSTRAP_PREPARED case=" + name + "\n")
@@ -266,6 +319,11 @@ def main():
                         failures.append("Inspection exact identity set differs: " + name)
                     if row["selected"] and any(test["settings"]["memoization"] for test in selection["tests"]):
                         failures.append("Inspection selected ID or effective memoization differs: " + name)
+                    if row["selected"]:
+                        axis = row["expectedAxis"]
+                        overrides = selection["request"]["overrides"]
+                        if overrides["axes"] != [axis] or overrides["axisFilters"] != [axis] or any(axis not in test["settings"]["axes"] for test in selection["tests"]):
+                            failures.append("Inspection activation override/filter differs: " + name)
                     if message["kind"] == "planned" and message["plan"]["inspection"]["failures"]:
                         failures.append("Positive inspection contains planning failures: " + name)
                     if row["forkSentinel"]:
@@ -281,6 +339,11 @@ def main():
             for row in rows:
                 assert hashlib.sha256(Path(row["path"]).read_bytes()).hexdigest() == row["sha256"]
             digests = re.findall(r'(izumi\.fixtures\.host\.Suite[A-E]) -> (sha256-[a-f0-9]+/[0-9]+)', raw)
+            if sbt_version == "2.0.9" and (len(digests) != 5 or len(set(d for _, d in digests)) != 5 or raw.count("PLUGIN_STOCK_DIGESTS_OK suites=5 distinct=5\n") != 1):
+                failures.append("Distinct stock suite digest precondition was not established before execution")
+            if sbt_version == "2.0.9" and "PLUGIN_STOCK_DIGESTS_OK suites=5 distinct=5\n" in raw and "TARGET_BOOTSTRAP_PREPARED case=list\n" in raw:
+                if raw.index("PLUGIN_STOCK_DIGESTS_OK suites=5 distinct=5\n") > raw.index("TARGET_BOOTSTRAP_PREPARED case=list\n"):
+                    failures.append("Stock suite digest precondition ran after a fixture case")
             outcome = dict(sbt=sbt_version, scala=scala_version, actualExit=code, expectedCases=len(expected), validationFailures=failures,
                            stockDigestPairs=digests, distinctStockSuiteDigests=len(digests) == 5 and len(set(d for _, d in digests)) == 5)
             (lane / "completion.json").write_text(json.dumps(outcome, indent=2) + "\n")

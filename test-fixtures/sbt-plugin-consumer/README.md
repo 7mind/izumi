@@ -8,12 +8,19 @@ materialize the latest input, while a separate foreign framework retains stock
 cache skips. Body IDs, served resource IDs, paired lifetimes and JUnit identities
 are checked after each run. Configuration filters and a custom test configuration
 exercise the same public plugin settings.
+SBT 2 verifies five distinct public stock suite digests before running these
+cases; a missing or aliased digest fails the fixture.
 
 Additional controls inspect exact IDs without body execution or acquisition,
 select one DI body through framework JSON arguments, and verify the subsequent
 incremental request still runs the whole suite. Disabling memoization gives
 three distinct paired lifetimes. Inspection and individual selection also run
 with forks and the custom configuration. Empty cases retain directory snapshots.
+The selected body overrides the repository axis to dummy and supplies a matching
+filter; its recorded resource ID must identify the dummy binding. A dummy filter
+against the default production activation must produce one suite error and no
+body or resource records. The next incremental command in the same SBT process
+must execute the whole suite, both in process and with forks.
 An inspection-only configuration supplies a constructor sentinel through its
 Java options. Its list/plan child PIDs must differ from SBT's PID, where the
 sentinel is explicitly absent.
@@ -31,6 +38,6 @@ python3 test-fixtures/sbt-plugin-consumer/verify-matrix.py \
 These are Behavioral-Active, Effectual, Good-Communication tests of real SBT
 processes. A lane deadline signals its owned process group and waits for the
 launched SBT process. This
-fixture does not prove the complete incremental-input model, distinct stock
-suite digests, the complete activation/input domain, multi-project aggregation or
-failure/cancellation recovery.
+fixture does not prove the complete incremental-input model, the complete
+activation/input domain, multi-project aggregation or
+resource-failure/cancellation recovery.

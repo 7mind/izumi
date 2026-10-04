@@ -13,6 +13,14 @@ distage framework. User patterns, configured test options and exclusions still
 apply; the log entry is a cache decision, not an execution record. Other
 frameworks keep their inherited incremental filter.
 
+Host receipts check selected distage suite names, group completion and the SDK's
+overall result before an input task succeeds. The wrapped result logger also
+compares all seven per-suite status counts with SBT's returned output. These
+checks reject the reproduced SBT 2 fork-result snapshot race; they do not repair
+the SDK. Replacing the scoped result logger preserves completion validation but
+removes that additional output-map comparison. Receipt owners are separate for
+selected, quick and full tasks in each enabled configuration.
+
 For another test configuration, install
 `inConfig(configuration)(Defaults.testSettings ++ distageTestSettings)`.
 `distageBuildId` and `distageTargetId` can override the default identities.

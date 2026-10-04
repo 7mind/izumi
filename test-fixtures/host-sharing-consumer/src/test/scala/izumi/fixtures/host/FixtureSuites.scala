@@ -40,8 +40,3 @@ abstract class DIFixtureSuite extends SpecIdentity {
 }
 
 final class SharedResource(val id: String, val directory: Path)
-final class SuiteA extends PlainFixtureSuite
-final class SuiteB extends PlainFixtureSuite
-final class SuiteC extends DIFixtureSuite
-final class SuiteD extends DIFixtureSuite
-final class SuiteE extends DIFixtureSuite

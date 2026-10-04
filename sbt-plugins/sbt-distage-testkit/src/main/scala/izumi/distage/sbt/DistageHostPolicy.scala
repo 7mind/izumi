@@ -60,8 +60,8 @@ private[sbt] object DistageHostPolicy {
   ): Seq[String] => Seq[String => Boolean] = {
     val owned = definitions.filter(isDistage).map(_.name).toSet
     arguments => {
-      val selected = selection(arguments.takeWhile(_ != "--"))
-      val stock = inherited(arguments)
+      val selected = HostReceiptPolicy.unobserved(selection)(arguments.takeWhile(_ != "--"))
+      val stock = HostReceiptPolicy.unobserved(inherited)(arguments)
       val rerun = owned.filter(name => selected.exists(_(name)))
       rerun.toVector.sorted.foreach { name =>
         log.info("DISTAGE_CACHE_DECISION suite=" + name + " decision=rerun reason=untracked-input-closure")

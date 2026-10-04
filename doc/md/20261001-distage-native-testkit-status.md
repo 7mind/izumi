@@ -10160,3 +10160,283 @@ replica equality and the original history-dependent trigger are not established.
 Only the ledger and two SDK-only diagnostic files are eligible for this local
 commit; all ten expanded host-fixture paths stay excluded. No production
 correction, 198-case success or parent/final completion is claimed; no push.
+
+### Public host receipt reconciliation — 2026-10-04
+
+Preceding goal turn classification: progress. The verified SDK-only diagnostic
+sub-step is committed locally as `9a3177eeaa3d0c8a9543528ee69033a712e3dd72`,
+parent `9b02b020c84b7e42fd5a8edfb47bde962176e7d1`. Root postcommit verification
+returns0 and checks exactly the intended three paths, their guarded/committed/
+current byte equality, all 1,662 qualified candidate sources and 212 published
+pairs unchanged, and the ten expanded host-fixture paths retained uncommitted.
+The index is clean; the whole worktree is not. Record:
+`2d-sdk-worker-receipt-race-diagnostic-postcommit-first.json`, SHA256
+`738d32b2d38b819b5cfc1feb76950bf704e730e2c5204c3048256a01bf04019e`.
+These are source/artifact equality checks after earlier runtime executions,
+not a new final-HEAD build or production correction.
+
+Current pinned SDK sources identify public task-valued testListeners and
+setting-valued testResultLogger. Stock SDK2 input tests log only after group
+tasks finish; the worker listener unregister drains the held notification after
+the premature output snapshot. A scratch public-key receipt-versus-output
+experiment is therefore running with command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-public-receipt-reconciliation-pilot-first.py`.
+It has separate unguarded/guarded held, immediate, SDK1 and repeated-command
+controls. No production guard is installed; terminal runtime evidence and an
+independent bounded design review remain to complete. Any successful guard
+would be a disclosed host mitigation, not a correction of the SDK worker race
+or proof of complete selected-suite/terminal-run coverage.
+
+The experiment above is now terminal. The following attempts are retained under
+`/srv/nvme/tmp/izumi-impl/2d-public-receipt-reconciliation-pilot-{suffix}/`;
+each command is `python3 -B
+/srv/nvme/tmp/izumi-impl/2d-public-receipt-reconciliation-pilot-{suffix}.py`.
+Their captured commands, exact source copies, raw SDK logs, XML and completion
+records distinguish the driver's exit from each SDK process exit.
+
+| Suffix | Driver exit | Observed result and limit |
+| --- | --- | --- |
+| first | 1 | Unguarded SDK2 held-error control returns0; guarded build does not load because its receipt type is unavailable to build.sbt. |
+| second | 0 | Four SDK controls return `[0,1,1,1]`: unguarded SDK2 held error is false success, guarded held error rejects, ordinary immediate and SDK1 failures persist. Recovery replaces settings/owner and is not continuous-owner recovery proof. |
+| third | 1 | Initial controls remain valid; recovery does not load because its helper import is missing. |
+| fourth | 0 | SDK2 continuous-owner serial recovery passes without settings reapplication. Direct method controls reproduce old cleanup erasing a later admission and status-count aliasing. |
+| fifth | 1 | SDK2 rejects the unavailable `InputKey.inputTaskValue` API at compilation. |
+| sixth | 0 | Public SDK2 `set0`/`value`/`mapTask` boundary executes; failure-message checks and serial recovery pass. This candidate still has the old owner representation. |
+| seventh | 1 | SDK1 rejects SDK2's `set0`/`value` APIs at compilation. |
+| eighth | 0 | Public SDK1 `set`/`inputTaskValue` adapter executes; serial recovery passes. This candidate still has the old owner representation. |
+| ninth | 0 | SDK2 generation-specific abort, atomic consume, seven status counts, active upstream-failure ownership and exact Throwable identity controls pass. Selected-suite/group coverage is still absent. |
+| tenth | 1 | SDK2 build does not load because a mixed `+:`/`++` expression lacks parentheses. |
+| eleventh | 1 | The guard rejects a received group error with a Passed SDK header; an obsolete driver diagnostic predicate rejects the new correct diagnostic. |
+| twelfth | 1 | SDK2 selected/group controls and ordinary unmatched/excluded/filtered selections pass; SDK1 does not compile because a lambda parameter type is missing. |
+| thirteenth | 1 | SDK2 rejects private `TaskKey.set0`; no production adapter uses it. |
+| fourteenth | 1 | SDK1 runtime returns0 with the public adapter and controls, but the driver counts a compiler-quoted marker as a second runtime marker. |
+| fifteenth | 0 | SDK2 public `TaskKey.toSettingKey`/`taskValue` and `Task.result.map` adapters pass selected omission, empty/exclusion, upstream failure, serial recovery, direct-output and full-task controls. |
+| sixteenth | 0 | SDK1 equivalent public adapters and controls pass with runtime-anchored markers. Its full `test` returns Unit, unlike SDK2's output-valued `testFull`. |
+
+The last two prototypes establish public binding routes and their explicit
+controls. Their generic framework projections and accumulated XML copies do not
+establish DI body execution, child classpath replicas, production fingerprint
+ownership or complete run termination. The separate stock omission command
+`python3 -B
+/srv/nvme/tmp/izumi-impl/2d-public-receipt-selected-omission-reproduction-first.py`
+returns0 as a diagnostic: both unguarded SDK processes return0 and produce no XML
+when an owned framework drops `OmittedSuite` from `Runner.tasks`. Comparing two
+empty result sets alone cannot prove that a selected suite completed.
+
+Bounded read-only design and terminal reviews are preserved in
+`2d-public-receipt-reconciliation-readonly-design-first`,
+`2d-public-receipt-reconciliation-terminal-readonly-review-first` and
+`...-second`. Root directly checks their reports, parsed inspections and all
+reviewed copy/original hashes: 32 design records, then 119 and 53 terminal
+records. Root terminal verification record is
+`2d-public-receipt-reconciliation-terminal-root-verification-first.json`, SHA256
+`d1da5faa8f353f3f2ba3cedb6366aaa5727b7f922b2989ec66ca8af62183f66a`.
+Those source freezes precede the following production corrections and retain
+that applicability boundary.
+
+Production now owns a typed receipt per selected, quick and direct/full task in
+each enabled project/configuration. Admission creates an identity generation;
+consume detaches it before verification/delegation; abort clears only that
+generation and closes its receipt. Public InputKey adapters preserve inherited
+parsers/tasks, and the public TaskKey adapter wraps inherited `executeTests`.
+Ordered-filter observation records selected owned suite names after stock
+exclusions/ordinary filters. Listener receipts record group starts/ends, the SDK
+completion result, and all seven per-suite status counts. They retain scalar
+metadata rather than host Events or Throwables. This field representation does
+not establish physical classloader reclamation.
+
+The expanded fixture now has distinct public stock digests for five suites,
+real Prod/Dummy repository bindings, a selected individual ID with an activation
+override/filter, and a nonmatching-filter error followed by whole-suite recovery
+in the same process, both in process and forked. The driver also rejects extra
+failure/skipped XML and checks the exact SuiteSelector name. A root diagnostic
+in `2d-negative-filter-xml-oracle-reproduction-first` first demonstrates that
+the previous literal predicate accepted an injected extra failure node; the
+original XML SHA256 is
+`78ff851d23ad782662bbe8caf022cb0340d5fbc78f6ce5e6bb18a798440c9917`.
+No successful prior 198-case outcome is inferred from the earlier failed run.
+
+Production compile/publish commands use `direnv exec` with `$JDK21`, SBT server,
+batch mode and `-J-Xmx8G`, running `sbt-distage-testkit / compile` and
+`publishLocal`, then `++ 2.12.21` and both commands again. Captures
+`2d-public-receipt-plugin-compile-first` and `...-second` return0. Consumer-first
+returns1 after 27 first-lane cases: Integration selection invokes an inherited
+Test receipt owner. Recursive unwrapping of known selection observers corrects
+that reproduced failure. Consumer-second likewise returns1 after 27 cases:
+an inherited result logger consumes an inactive Test owner after the current
+owner was already consumed. Recursive unwrapping of known logger wrappers
+corrects that reproduced double consumption. The five other lanes did not run
+in either failed capture.
+
+`2d-public-receipt-plugin-tests-first` returns1 at fixture compilation because
+the plugin deliberately excludes ScalaTest. Its replacement standalone check
+object adds no dependency. Compile-third returns0 and explicitly runs
+`sbt-distage-testkit / Test / runMain izumi.distage.sbt.HostReceiptTest` before
+each publication: eight anchored checks per pinned compiler, sixteen total.
+This is direct metadata/method verification, not execution by a ScalaTest runner.
+
+The third read-only review finds F1: replacing the exact scoped result logger
+removes the input route's only validation, so successful cleanup discards an
+unconsumed receipt. The command
+`python3 -B
+/srv/nvme/tmp/izumi-impl/2d-public-receipt-custom-logger-reproduction-first.py`
+returns0 only because this counterexample is reproduced. Its five actual SDK
+exits are `[1,0,0,0,0]`: SDK2 default guarded omission rejects; custom omission
+incorrectly succeeds on SDK2 and SDK1; normal custom success works on each.
+There is no fresh SDK1 default-logger omission control. Its framework's one
+Success projection is not evaluation of the deliberately failing suite body.
+
+Input-task success now validates selected names, balanced group completion and
+the SDK completion header independently of the logger. Default wrapped loggers
+add receipt-versus-output comparison of all seven counts. Replacing a scoped
+logger retains input completion validation while removing that additional
+output-map comparison; the README states this limit. Compile-fourth returns0
+with ten anchored checks per compiler, twenty total. The fresh command
+`python3 -B
+/srv/nvme/tmp/izumi-impl/2d-public-receipt-custom-logger-correction-second.py`
+returns0 with actual SDK exits `[1,1,0,1,0]`: both custom omissions now reject
+with `Incomplete distage host completion`, and both normal custom success
+projections remain successful. Default SDK2 omission rejects at the result
+comparison. Each normal control has one passing generic XML testcase; omitted
+controls have no XML and no projection. This proves the reproduced F1 routes,
+not arbitrary custom collaborators or the complete terminal handshake.
+
+The third reviewer withdraws its earlier ordinary late-foreign-callback concern
+for the pinned SDK2 path: `WorkerExchange.notifyListeners` and unregister use
+the same monitor; the held invocation drains before task return and receipt
+consumption. The stale snapshot is taken before that drain and remains the
+separately reproduced SDK defect. Arbitrary asynchronous custom callbacks are
+not proved safe by this source observation. Root checks all 172 reviewed copies
+(12 repository, 160 evidence), with 169 originals unchanged and the later
+HostReceipt, permanent checks and README explicitly excluded. Records:
+`2d-public-receipt-reconciliation-terminal-readonly-review-third/REVIEW.md`
+SHA256 `4debb61d9248ccf497a0e88a65c86c5a7bfe98ea8176acb845ce02b42f38e914`,
+manifest SHA256
+`6684046622b48136d4113a1aaa6fb614f5f1fe4df2a424089fde312b06891bad`,
+inspection SHA256
+`fcde3e816b98c63421aa9d09b4915b94a59c7a05da62234d934ae2e2c0bbccfc`;
+root verification-third SHA256
+`ea5ca67af103d9c1e73675198a49314f6a97d908c62e19c1c0e578596745170f`.
+That old review does not approve the later correction by inference.
+
+The final expanded consumer command is:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-matrix.py \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 \
+  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2d-public-receipt-plugin-consumers-third
+```
+
+Driver and all six actual SDK process exits are0, 33 verified cases per lane,
+198 total, with no validator failure. Root separately executes
+`python3 -B
+/srv/nvme/tmp/izumi-impl/2d-public-receipt-consumer-root-audit-fourth.py` and
+returns0. Exact captured body IDs and successful JUnit sets agree: 894 bodies,
+906 reported cases including twelve expected selection-error cases, 126 distinct
+paired lifetimes, 54 body/resource-free inspection cases, and twelve physical
+stock no-ops. Three SDK2 lanes establish five distinct stock suite digests before
+execution. Root verifies twelve logged/update-report classpath comparisons,
+all consumed project JAR hashes, each meta-build's qualified plugin/protocol
+JARs, frozen source equality, fixture compiler binaries, inspection schema4 IDs
+and the configured child/parent sentinel PIDs. JUnit errors have exact pinned
+SDK-specific fork wrappers. Literal historical child classpath replica equality
+and complete activation/input domain are not established. Audit SHA256:
+`1746813bc438319f7f36272838ca932ca9b0a49e7d07b76609237bfdd39a7bb3`.
+Root auditor attempts first/second/third retain nonzero exits from incorrect
+metadata-path, meta-closure cardinality and unwrapped-error-message assumptions;
+the terminal fourth corrects those checker assumptions, not production code.
+
+Root separately executes `python3 -B
+/srv/nvme/tmp/izumi-impl/2d-public-receipt-boundary-root-audit-third.py`, returns0,
+and reconciles compile-fourth's stable eight inputs/twenty anchored checks,
+the five custom-logger controls, ten logged/update-report classpath comparisons,
+qualified plugin/protocol JARs and exact XML/source/command copies. SDK2 own
+virtual references emitted before compilation have no log hash: root resolves
+and freezes their terminal JARs without claiming an original logged digest.
+Its first/second checker failures retain the incorrect all-tokens-have-hashes
+assumption and the incorrect custom logger marker. Terminal audit SHA256:
+`606d35097e6989cd11fa9bcbcb9db7f2207394778b0baa660d28bffe8d6ada55`.
+
+`python3 -B
+/srv/nvme/tmp/izumi-impl/2d-public-receipt-input-qualification-second.py`
+returns0: 1,666 qualified sources, 212 published pairs, 76,040 non-manifest
+members; only the two plugin JARs changed, all POMs and the other 210 pairs remain
+unchanged. New plugin class/TASTy members equal compiler outputs; generated
+resources retain their previously resolved physical mappings. The first
+qualification attempt returns1 because it incorrectly expects the generated
+`sbt/sbt.autoplugins` resource beneath a class directory; its partial capture is
+preserved. Terminal qualified manifests have SHA256
+`bd0cc11841502cb506343801bbb809695b7cc383d4c4dd186fea03728908d0bd`
+and `5babeb76d565d7e4f0cd01f892893826c3d8fdb8fba4200ac39e04e719b86b23`.
+After both consumers and audits, root again verifies all qualified sources,
+current/frozen JARs/POMs and all 76,040 member hashes, including the changed
+plugin members against physical compiler outputs. This returns0 in
+`2d-public-receipt-terminal-input-guard-first.json`, SHA256
+`bfc89b1089442bb853358844899344ff2d4dcfb70d0ad6d88596a19938d95c6b`.
+These are postexecution byte checks, not a new Native/assertion final-HEAD run.
+
+The user's release notice is rechecked against
+`https://github.com/zio/interop-cats/releases/tag/v23.1.0.14`; its release notes
+state all modules are cross-built for Native0.5. `project/Versions.scala:21`
+already pins 23.1.0.14 and the generator/build refer to that pin. The preceding
+Native release/publication/runtime evidence remains applicable; this is no
+longer an external blocker and no dependency change is needed here.
+
+This verified sub-step remains progress on 2d.2–4/7–8/10–11/13–18/21–23 and
+O.20/O.21, not closure of any final item or whole step. Independent full
+selected-suite/RunCompleted reconciliation, cancellation/killed-target failure,
+concurrent/aggregated host lifetime, classloader reclamation and history
+acceptance remain open; a SDK guard can reject only after earlier stock history
+side effects have happened. The SDK recorder itself is not repaired. Factory
+migration approval remains implemented while fixed imports-only 2b.10/O.1 stays
+waiting on owner. No acceptance/owner decision is narrowed and no push occurs.
+Only the ledger, receipt policy/adapters/permanent checks/plugin README and ten
+expanded fixture paths are candidates for the next verified local commit.
+
+The fourth read-only review is terminal and finds no material blocker for this
+bounded checkpoint. It independently reconciles the 198-case body and report
+identity sets, 126 distinct lifetimes, 54 empty inspections and twelve stock
+no-ops, all twelve logged/update closure sets, both custom-logger omission
+corrections, and the current compile-fourth sources/twenty metadata checks.
+It directly compares eleven qualified plugin/protocol JAR/POM pairs and 4,174
+members; full 1,666/212/76,040 closure retains root terminal-guard provenance.
+It explicitly excludes later ledger appends and does not approve their wording.
+Its initial checker assumptions are retained separately rather than silently
+reclassified as successful executions. `verifyCompletion` does not override a
+user logger's ordinary policy for a completed, internally consistent Error or
+Failed result. Arbitrary custom logger failure preservation and 2d.18/22 remain
+open; no speculative correction is warranted by an unclaimed contract.
+
+Review-fourth `REVIEW.md` SHA256
+`3a2c4df602812d25994f0a46314bd1c25657fa0d263e77ef70a463d0db1bdd19`,
+schema1 manifest SHA256
+`135cc07ae7d1b7a798bb8c04d565dd6cafd0805206ad18825f87dfc3db19d0af`,
+inspection SHA256
+`96338ed280797aa60a9f5e4219c2cda1d38d272749b5cd3b0235366b0d48f63e`.
+Root directly reads the report and verifies all 1,634 reviewed records/copies,
+10 repository plus 1,624 evidence. All 1,633 non-ledger originals remain
+unchanged; the historical ledger copy is preserved and its later append is the
+only excluded original. Root verification-fourth returns0, SHA256
+`75daa7b503b91d56311850cabd40669bcf71f2ae0a5bceec0192d732b4d9616b`.
+The local commit subject for these nineteen paths is
+`Reject incomplete SBT test receipts across public task boundaries`, parent
+`9a3177eeaa3d0c8a9543528ee69033a712e3dd72`; its hash/postcondition will be
+recorded after the commit, without treating commit metadata as a fresh runtime
+execution. No whole step/final acceptance item is done and no push occurs.
+
+Independent next-gate work continues while that review completes. Command
+`python3 -B /srv/nvme/tmp/izumi-impl/2d-five-suite-host-limits-first.py`
+returns0 with four actual SDK exits0: SBT2.0.9 and SBT1.13.0, each with global
+host-task limits one and two, parallelExecution true, Scala3.9/JDK21, in process.
+Each full/repeat command physically executes/reports all fifteen bodies from
+five compatible DI suites sharing one acquired/released resource; repeats use
+fresh resources. The listener's first group return observes all fifteen body
+files, and measured simultaneous host groups equal the configured one/two
+limit. That bounds the no-all-suite-start-barrier claim to these real controls.
+The driver freezes its bytes with SHA256
+`b2a9235e8a5abf5bfc50f2eaad0424e5fd7530172f2c8d9eb20f9714d592f5db`.
+This new capture has not yet had a root terminal source/XML/classpath audit or
+its own independent review; no broader host-thread/cancellation/fork gate is
+claimed. It modifies only isolated fixture copies, no qualified repository
+source or published artifact.

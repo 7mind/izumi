@@ -13,7 +13,22 @@ private[sbt] object HostSettings {
     testFrameworks ~= { frameworks => if (frameworks.contains(DistageHostPolicy.framework)) frameworks else frameworks :+ DistageHostPolicy.framework },
     distageCatalogueId := DistageHostPolicy.catalogueId(definedTests.value),
     testOptions := DistageHostPolicy.withIdentity(testOptions.value, DistageHostPolicy.arguments(distageBuildId.value, distageTargetId.value, distageCatalogueId.value)),
-    testQuick / testFilter := DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testOnly / testFilter).value, streams.value.log),
+    testOnly / HostReceiptPolicy.owner := new HostReceiptOwner,
+    testQuick / HostReceiptPolicy.owner := new HostReceiptOwner,
+    executeTests / HostReceiptPolicy.owner := new HostReceiptOwner,
+    testOnly / testFilter := new HostSelectionObserver((testOnly / testFilter).value, HostReceiptPolicy.names(definedTests.value), (testOnly / HostReceiptPolicy.owner).value),
+    testQuick / testFilter := {
+      val filter = DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testOnly / testFilter).value, streams.value.log)
+      new HostSelectionObserver(filter, HostReceiptPolicy.names(definedTests.value), (testQuick / HostReceiptPolicy.owner).value)
+    },
+    testOnly / testExecution := HostReceiptPolicy.execution((testOnly / testExecution).value, definedTests.value, (testOnly / HostReceiptPolicy.owner).value, full = false),
+    testQuick / testExecution := HostReceiptPolicy.execution((testQuick / testExecution).value, definedTests.value, (testQuick / HostReceiptPolicy.owner).value, full = false),
+    test / testExecution := HostReceiptPolicy.execution((test / testExecution).value, definedTests.value, (executeTests / HostReceiptPolicy.owner).value, full = true),
+    testOnly / testResultLogger := HostReceiptPolicy.logger((testOnly / testResultLogger).value, (testOnly / HostReceiptPolicy.owner).value),
+    testQuick / testResultLogger := HostReceiptPolicy.logger((testQuick / testResultLogger).value, (testQuick / HostReceiptPolicy.owner).value),
+    HostTaskBoundary.input(testOnly, testOnly / HostReceiptPolicy.owner),
+    HostTaskBoundary.input(testQuick, testQuick / HostReceiptPolicy.owner),
+    HostTaskBoundary.output(executeTests, executeTests / HostReceiptPolicy.owner),
     distageList := {
       val options = spaceDelimited("distage request options").parsed
       val identities = DistageHostPolicy.arguments(distageBuildId.value, distageTargetId.value, distageCatalogueId.value)
