@@ -373,11 +373,6 @@ if [[ ! -f "$SONATYPE_SECRET" ]] ; then
   exit 1
 fi
 
-SBT1_PLUGIN_PUBLISH=()
-if [[ "${sys.axis.scala_version}" == "3" ]]; then
-  SBT1_PLUGIN_PUBLISH=("++ 2.12 sbt-izumi-deps/publishSigned")
-fi
-
 if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
   sbt --server -batch -no-colors -v \
       --java-home "$JAVA_HOME" \
@@ -386,7 +381,6 @@ if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
       "$VERSION_COMMAND clean" \
       "$VERSION_COMMAND package" \
       "$VERSION_COMMAND publishSigned" \
-      "${SBT1_PLUGIN_PUBLISH[@]}" \
       "sonaUpload" \
       "sonaRelease"
 else
@@ -396,7 +390,6 @@ else
       "show credentials" \
       "$VERSION_COMMAND clean" \
       "$VERSION_COMMAND package" \
-      "$VERSION_COMMAND publishSigned" \
-      "${SBT1_PLUGIN_PUBLISH[@]}"
+      "$VERSION_COMMAND publishSigned"
 fi
 ```

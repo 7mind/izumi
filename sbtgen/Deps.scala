@@ -169,9 +169,9 @@ object Izumi {
   import Deps._
 
   // DON'T REMOVE, these variables are read from CI build (build.sh)
-  final val scala212 = ScalaVersion("2.12.21")
   final val scala213 = ScalaVersion("2.13.18")
   final val scala300 = ScalaVersion("3.9.0")
+  final val scalaSbt2Plugin = ScalaVersion("3.8.4")
 
   object Groups {
     final val fundamentals = Set(Group("fundamentals"))
@@ -248,7 +248,7 @@ object Izumi {
 
     private val jvmPlatformSbt = PlatformEnv(
       platform = Platform.Jvm,
-      language = Seq(scala212),
+      language = Seq(scalaSbt2Plugin),
       settings = Seq(
         "coverageEnabled" := false
       ),
@@ -521,38 +521,19 @@ object Izumi {
       final val id = ArtifactId("sbt-plugins")
       final val basePath = Seq("sbt-plugins")
 
-      final val sbt1PluginTarget = "1.9.0"
       final val sbt2PluginTarget = "2.0.9"
-      final val sbt2PluginScala = ScalaVersion("3.8.4")
 
       final val settings = Seq(
         "sbtPlugin" := true,
         "sbtPluginPublishLegacyMavenStyle" := false,
-        SettingDef.RawSettingDef(s"""crossScalaVersions := Seq("${sbt2PluginScala.value}", "${scala212.value}")"""),
+        SettingDef.RawSettingDef(s"""crossScalaVersions := Seq("${scalaSbt2Plugin.value}")"""),
         SettingDef.RawSettingDef("""scalaVersion := crossScalaVersions.value.head"""),
         "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), None) :=
-            withJvmRelease(
-              (Seq[Const]("-Wconf:any:error") ++ Defaults.Scala212Options ++ root.scala2Wconf)
-                .filterNot(_ == ("-Ywarn-unused:_": Const))
-            ) ++ root.wconfOverrides,
-          SettingKey(Some(sbt2PluginScala), None) := root.scala3Options("3.8") ++ root.wconfOverrides,
+          SettingKey(Some(scalaSbt2Plugin), None) := root.scala3Options("3.8") ++ root.wconfOverrides,
           SettingKey.Default := Const.EmptySeq,
         ),
         "scalacOptions" -= "-Wconf:any:warning",
-        "scalacOptions" ++= Seq(
-          SettingKey(Some(scala212), Some(true)) := Seq(
-            "-opt:l:inline",
-            "-opt-inline-from:izumi.**",
-          ),
-          SettingKey.Default := Const.EmptySeq,
-        ),
-        SettingDef.RawSettingDef(s"""pluginCrossBuild / sbtVersion := {
-          scalaBinaryVersion.value match {
-            case "2.12" => "$sbt1PluginTarget"
-            case _ => "$sbt2PluginTarget"
-          }
-        }"""),
+        SettingDef.RawSettingDef(s"""pluginCrossBuild / sbtVersion := "$sbt2PluginTarget""""),
       )
 
       final lazy val izumi_deps = ArtifactId("sbt-izumi-deps")

@@ -5378,62 +5378,9 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
     Test / packageDoc / publishArtifact := false,
     sbtPlugin := true,
     sbtPluginPublishLegacyMavenStyle := false,
-    crossScalaVersions := Seq("3.8.4", "2.12.21"),
+    crossScalaVersions := Seq("3.8.4"),
     scalaVersion := crossScalaVersions.value.head,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.21") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-language:higherKinds",
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        "-Ypartial-unification",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17",
-        "-Wconf:cat=deprecation:warning",
-        "-Wconf:msg=legacy-binding:silent",
-        "-Wconf:msg=nowarn:silent"
-      )
       case (_, "3.8.4") => Seq(
         "-source:3.8",
         "-Xkind-projector:underscores",
@@ -5474,19 +5421,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
       case (_, _) => Seq.empty
     } },
     scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.21") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    pluginCrossBuild / sbtVersion := {
-              scalaBinaryVersion.value match {
-                case "2.12" => "1.9.0"
-                case _ => "2.0.9"
-              }
-            },
+    pluginCrossBuild / sbtVersion := "2.0.9",
     withBuildInfo("izumi.sbt.deps", "Izumi"),
     SettingKey[Boolean]("ide-skip-project") := true
   )
