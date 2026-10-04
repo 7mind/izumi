@@ -171,8 +171,9 @@ object Docker {
     *                 default: true, should only be disabled if you absolutely must manage the image manually.
     *
     * @param files    Files and directories this JVM reads and copies into the container after creating it and before starting it,
-    *                 so the container engine never needs access to the host path; the same as passing
-    *                 [[izumi.distage.docker.ContainerHooks.copyFiles]] as the first `afterCreate` hook.
+    *                 before the `afterCreate` hooks, so the container engine never needs access to the host path.
+    *                 Copies are owned by root, world-readable, and executable only when the source file is;
+    *                 modification times are not preserved.
     *
     * @param afterCreate Hooks run in order after the container is created and before it is started, after copying `files`.
     *                 A container is reused only if it was created with hooks of identical reuse keys, `files` included,
