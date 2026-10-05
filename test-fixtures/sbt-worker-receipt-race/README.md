@@ -275,3 +275,24 @@ python3 -B test-fixtures/sbt-worker-receipt-race/verify-exit-capture.py \
   --jdk17-home "$JDK17" --jdk21-home "$JDK21" --jdk25-home "$JDK25" \
   --evidence-dir /srv/nvme/tmp/izumi-impl/exit-capture-example
 ```
+
+`verify-input-composition.py` checks earlier custom input initializers through
+public SBT settings. Separate stock and adapted projects run `testQuick`,
+`testSelected`, and `testOnly` in one SBT2 session. Each command executes three
+physical bodies and two chained custom hooks. An earlier initializer that would
+throw is replaced by a later definition and must never execute. This regression
+fixture detects the previous adapter's loss of custom hooks when it substituted
+the SDK's default input template. It retains command arguments, frozen source
+hashes, body receipts, hook order and the actual process result.
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-input-composition.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --plugin-version 1.3.0-M5-SNAPSHOT --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/input-composition-example
+```
+
+Repeat with Scala2.13.18 and a new evidence directory. The separate plugin version
+also permits testing a candidate plugin against unchanged published libraries.
+These controls cover initializer composition; complete host compatibility remains
+subject to the acceptance checklist.

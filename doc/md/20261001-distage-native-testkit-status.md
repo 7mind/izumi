@@ -97,7 +97,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
-| 2d.11 | in progress | Post-rebase publication passes190 SBT2 controls on Scala2.13/3; a subsequent unchanged-production batch passes24 in-process foreign grouping controls. History, multi-project/configuration, concurrent host windows, exits, omission, task errors and standard/legacy JUnit layouts are covered below. Complete failure/input inventory and final evaluation stay open. |
+| 2d.11 | in progress | The corrected input-initializer publication passes226 SBT2 controls on Scala2.13/3 below:190 prior controls,24 in-process grouping controls and12 input-composition controls. History, multi-project/configuration, concurrent host windows, exits, omission, task errors and standard/legacy JUnit layouts are covered. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
@@ -106,7 +106,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.17 | in progress | Bootstrap50,18 task checks,20 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
-| 2d.20 | in progress | The ledger records measured needs for public framework/task wrapping and public SDK stock-input setting templates: omitted selected definitions, SDK task-Throwable loss and custom result loggers seeing overwritten group maps. Current190 controls pass. Whole historical0a domain, custom input-initializer composition and final evaluation remain open. |
+| 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
 | 2d.22 | in progress | Current body/JUnit controls retain normal mixed/held delivery, omissions and owned/foreign task Errors. Repeated fork groups retain all six outcomes in custom Output and one XML file; equal-total foreign status swaps reject. Premature exits reject after sibling drain. Complete callback/cancellation/finalization domains and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
@@ -14599,3 +14599,90 @@ No whole step or final item is marked done. Remaining host compatibility,
 failure/cancellation, streaming, production JS/Native hosts, coverage, migration
 and final acceptance reviews remain open. IDE work remains excluded; no push or
 PR was made.
+
+
+## 2026-10-05: preserve earlier SBT input initializers, 226 controls
+
+Commit: the commit containing this entry, parent
+`ad7cf5d401ad3fd51aa26c6ad72e2e63cad93ea4`.
+The preceding runtime checkpoint's post-commit proof confirms unchanged library
+inputs and a clean worktree. This checkpoint changes one production source:
+HostTaskBoundary.scala. No library, target bootstrap or agent source changes.
+
+The new specified-contract fixture installs a custom testOnly initializer before
+the distage settings in one project and in a separate stock control project.
+Both projects use the same foreign framework and selected suite.
+After correcting fixture setup errors, both supported compilers reproduce the
+same defect: stock runs three exact SuiteA bodies and its hook once; the adapter
+runs the same three bodies but drops the hook. The verifier exits1 on the adapted
+control after the stock control passes. Body and hook captures establish the
+failure independently of SBT's reported totals. Captures are under
+`/srv/nvme/tmp/izumi-impl/sbt2-input-composition-fourth-{3.9,2.13}/`.
+Reproduction audit SHA256:
+`e381246855d73eebfe51627ef7f6902a517c1ff719555ffc37391e8ca7227431`.
+Earlier first/second/third captures fail during fixture setup or baseline
+discovery and do not reproduce this defect.
+
+The correction reads the preceding input definitions from the public loaded
+project settings instead of substituting Defaults.testTasks. It rewrites the
+result-logger reference on those definitions, preserves definitive replacements,
+and binds self-references to each preceding InputTask before adding the existing
+receipt boundary. Checked existential casts remain confined to TestResult input
+keys. Missing inherited definitions or ambiguous boundaries reject immediately.
+No private SBT class, copied orchestration, global registry or load hook is added.
+
+Public loaded-project access is first verified in an isolated SDK probe. Pinned
+SDK source provenance is under `sbt2-input-composition-sdk-source/sources.json`;
+the relevant public APIs are
+[Project](https://github.com/sbt/sbt/blob/v2.0.9/main-settings/src/main/scala/sbt/Project.scala),
+[InputTask](https://github.com/sbt/sbt/blob/v2.0.9/main-settings/src/main/scala/sbt/InputTask.scala)
+and [scoped keys](https://github.com/sbt/sbt/blob/v2.0.9/main-settings/src/main/scala/sbt/Structure.scala).
+The production path uses settings initialization, not the probe's load hook.
+
+The final fixture checks testOnly, testSelected and testQuick in stock and adapted
+projects. Each command runs three bodies and two ordered, chained hooks. An
+overridden initializer would throw if evaluated and must stay unevaluated.
+Both compilers pass these12 controls against a separately versioned candidate,
+leaving the qualified baseline publication intact. Candidate qualification matches
+all86 compiled class/TASTy payloads and all10 production sources. The earlier
+qualified baseline is preserved under `sbt2-input-composition-baseline-publication`.
+
+The first final producer attempt exits1 because the requested XML-check parent
+directory was not created. Its log is retained and it does not establish a
+production failure. The corrected producer creates that parent, runs the21 shared
+memory/filesystem XML checks,20 receipt checks and18 task checks, then publishes
+the plugin at the ordinary `1.3.0-M5-SNAPSHOT` version. Actual exit0; source inputs
+remain unchanged. Exact argv, source hashes and results are under
+`sbt2-input-composition-producer-second/`.
+
+One frozen-input batch then runs all16 consumer drivers, at most three SBT
+processes concurrently:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-input-composition-regression-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-input-composition-regression-audit.py
+```
+
+Every driver and actual SBT process exits0. The226 command controls comprise the
+preceding190 controls,24 in-process foreign grouping controls across both XML
+layouts, and12 input-composition controls. The independent audit checks exact
+body identities, composed hook order, per-suite Output/XML and retained failure
+causes; all input-composition bodies use one host process per lane. Sources,
+drivers and published artifacts remain frozen throughout. Records are under
+`sbt2-input-composition-regression-first/`; audit SHA256:
+`1106bc5e9529db127f05730cfaba7059816ba01eb22ee7a83c55859168e8675f`.
+
+The qualified plugin JAR SHA256 is
+`d5157a2b25dbcb9a79b62f74f8f6e1e6d848fa1dd2615758d30d896d3203ad59`.
+Binary comparison with the preserved baseline finds only the HostTaskBoundary
+class, companion class and TASTy payload changed; all other83 compiled payloads
+are identical. Target Java classes remain class version61.0. Record:
+`sbt2-input-composition-binary-delta.json`. Library source inputs remain identical
+to the completed six-lane runtime checkpoint; those runtime commands are not
+rerun for this host-only correction.
+
+This closes the reproduced earlier-hook loss and adds bounded initializer
+composition evidence. No whole step or final item is marked done. Complete host
+input/failure/cancellation domains, streaming, production JS/Native hosts,
+coverage, migration and final reviews remain open. IDE work remains excluded.
+No push or PR was made.
