@@ -26,6 +26,24 @@ CONTROLS = '''
 val changeExternalInput = inputKey[Unit]("Change the owned untracked DI input")
 val verifyNoRun = inputKey[Unit]("Verify a physical stock incremental no-op")
 val verifyInspectionParent = inputKey[Unit]("Verify the inspection fork sentinel is absent from the SBT process")
+val changeScannedImplementation = taskKey[Unit]("Edit an implementation reached only through plugin scanning")
+val changeSuiteClass = taskKey[Unit]("Edit a suite class before incremental execution")
+changeScannedImplementation := {
+  val source = baseDirectory.value / "src/test/scala/izumi/fixtures/host/FixturePlugin.scala"
+  val before = "private def implementationRevision: String = " + '"' + "one" + '"'
+  val text = IO.read(source)
+  require(text.split(java.util.regex.Pattern.quote(before),-1).length == 2,"Scanned implementation edit precondition differs")
+  IO.write(source,text.replace(before,before.replace("one","two")))
+  streams.value.log.info("PLUGIN_HISTORY_EDIT_OK kind=scanned-implementation revision=two")
+}
+changeSuiteClass := {
+  val source = baseDirectory.value / "src/test/scala/izumi/fixtures/host/SuiteC.scala"
+  val before = "def marker3: Int = 3"
+  val text = IO.read(source)
+  require(text.split(java.util.regex.Pattern.quote(before),-1).length == 2,"Suite edit precondition differs")
+  IO.write(source,text.replace(before,"def marker3: Int = 4"))
+  streams.value.log.info("PLUGIN_HISTORY_EDIT_OK kind=suite-class revision=4")
+}
 verifyInspectionParent := {
   val parsed = spaceDelimited("case").parsed
   require(parsed.size == 1, "Expected one inspection case name")
@@ -125,7 +143,27 @@ verifyDistinctStockDigests := Def.uncached {
   require(names.forall(digests.contains), "A stock suite digest is missing")
   val distinct = names.map(name => digests(name).toString).distinct.size
   require(distinct == names.size, "Stock suite digests are not distinct")
+  val history = target.value / "history-digest-baseline"
+  IO.createDirectory(history)
+  (names :+ "izumi.fixtures.host.ForeignSuite").foreach { name => IO.write(history / name,digests(name).toString) }
   streams.value.log.info("PLUGIN_STOCK_DIGESTS_OK suites=" + names.size + " distinct=" + distinct)
+}
+val verifyScannedImplementationDigests = taskKey[Unit]("Confirm the edited plugin implementation is outside the stock suite digest closure")
+verifyScannedImplementationDigests := Def.uncached {
+  val history = target.value / "history-digest-baseline"
+  val digests = (Test / definedTestDigests).value
+  val baselines = (history * "*").get()
+  require(baselines.map(_.name).toSet == (Test / definedTests).value.map(_.name).toSet,"Stock history baseline catalogue differs")
+  baselines.foreach { baseline => require(digests(baseline.name).toString == IO.read(baseline),"Scanned implementation changed a stock suite digest: " + baseline.name) }
+  streams.value.log.info("PLUGIN_SCANNED_DIGESTS_UNCHANGED_OK")
+}
+val verifyChangedSuiteDigest = taskKey[Unit]("Confirm the edited suite invalidates its distinct stock digest")
+verifyChangedSuiteDigest := Def.uncached {
+  val history = target.value / "history-digest-baseline"
+  val digests = (Test / definedTestDigests).value
+  require(digests("izumi.fixtures.host.SuiteC").toString != IO.read(history / "izumi.fixtures.host.SuiteC"),"Suite class edit did not change its stock digest")
+  require(digests("izumi.fixtures.host.ForeignSuite").toString == IO.read(history / "izumi.fixtures.host.ForeignSuite"),"Suite class edit changed the foreign stock digest")
+  streams.value.log.info("PLUGIN_CHANGED_SUITE_DIGEST_OK")
 }
 '''
 
@@ -142,6 +180,7 @@ def commands(sbt_version):
     axis = dict(axis="repo", value="dummy")
     axis_json = json.dumps(json.dumps(axis, separators=(",", ":")))
     selected_options += " --axis " + axis_json + " --axis-filter " + axis_json
+    implementation = "one"
 
     def case(name, command, labels, acquisitions, revision):
         sequence.extend(["prepareFixture " + name, command])
@@ -149,7 +188,7 @@ def commands(sbt_version):
             sequence.append(f"verifyFixture {name} {acquisitions} {labels}")
         else:
             sequence.append("verifyNoRun " + name)
-        expected.append(dict(case=name, kind="full", labels=labels.split(), acquisitions=acquisitions, revision=revision, repo="prod"))
+        expected.append(dict(case=name, kind="full", labels=labels.split(), acquisitions=acquisitions, revision=revision, repo="prod", implementation=implementation))
 
     def inspect(name, operation, options, count, target):
         fork_sentinel = target == "pluginConsumer/inspection"
@@ -163,7 +202,7 @@ def commands(sbt_version):
 
     def selected(name, command, revision):
         sequence.extend(["prepareFixture " + name, command + " -- " + selected_options, "verifySelectedFixture " + name])
-        expected.append(dict(case=name, kind="selected", labels=["SuiteC"], acquisitions=1, revision=revision, repo="dummy"))
+        expected.append(dict(case=name, kind="selected", labels=["SuiteC"], acquisitions=1, revision=revision, repo="dummy", implementation=implementation))
 
     def rejected_filter(name, revision):
         sequence.extend(["prepareFixture " + name, "verifyRejectedAxisFilter " + name])
@@ -180,8 +219,23 @@ def commands(sbt_version):
 
     case("full", full, ALL_SUITES + " ForeignSuite", 1, "alpha")
     case("conservative-repeat", quick, ALL_SUITES, 1, "alpha")
+    selected("quick-individual", "testQuick *SuiteC", "alpha")
+    case("quick-after-individual", "testQuick *SuiteC", "SuiteC", 1, "alpha")
+    case("quick-memoization-disabled", "testQuick *SuiteC -- --memoization disabled", "SuiteC", 3, "alpha")
+    case("quick-activation", "testQuick *SuiteC -- --axis " + axis_json, "SuiteC", 1, "alpha")
+    expected[-1]["repo"] = "dummy"
+    case("quick-after-partial", "testQuick", ALL_SUITES, 1, "alpha")
     sequence.append("changeExternalInput beta")
     case("changed-input", quick, ALL_SUITES, 1, "beta")
+    sequence.append("changeExternalInput delta")
+    case("quick-changed-input", "testQuick", ALL_SUITES, 1, "delta")
+    sequence.extend(["changeExternalInput beta", "changeScannedImplementation", "verifyScannedImplementationDigests"])
+    implementation = "two"
+    case("quick-scanned-implementation", "testQuick", ALL_SUITES, 1, "beta")
+    case("test-scanned-implementation", quick, ALL_SUITES, 1, "beta")
+    sequence.extend(["changeSuiteClass", "verifyChangedSuiteDigest"])
+    case("quick-changed-suite", "testQuick", ALL_SUITES, 1, "beta")
+    case("test-changed-suite", quick, ALL_SUITES, 1, "beta")
     case("selected", quick + " *SuiteC *SuiteD", "SuiteC SuiteD", 1, "beta")
     case("wildcard", quick + " *SuiteD", "SuiteD", 1, "beta")
     case("excluded", quick + " *Suite* -*SuiteC", "SuiteA SuiteB SuiteD SuiteE", 1, "beta")
@@ -252,7 +306,8 @@ def main():
                 elif source.name == "FixturePlugin.scala":
                     before = 'new SharedResource(repo + "-" + UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))'
                     assert text.count(before) == 1
-                    text = text.replace(before, 'new SharedResource(new String(Files.readAllBytes(Paths.get(sys.props("izumi.fixture.external-input"))), StandardCharsets.UTF_8).trim + "-" + repo + "-" + UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))')
+                    text = text.replace(before, 'new SharedResource(new String(Files.readAllBytes(Paths.get(sys.props("izumi.fixture.external-input"))), StandardCharsets.UTF_8).trim + "-" + repo + "-" + implementationRevision + "-" + UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))')
+                    text = text.replace('  private def resource(repo: String)', '  private def implementationRevision: String = "one"\n\n  private def resource(repo: String)')
                 target.write_text(text)
             (build / "project").mkdir()
             (build / "project/build.properties").write_text("sbt.version=" + sbt_version + "\n")
@@ -297,8 +352,9 @@ def main():
                     failures.append("Missing unique case marker: " + marker)
                 if row["acquisitions"]:
                     records = list((lane / "cases" / name / "body-audit").glob("*.acquire"))
-                    if len(records) != row["acquisitions"] or any(not record.read_text().startswith(row["revision"] + "-" + row["repo"] + "-") for record in records):
-                        failures.append("DI acquisition did not consume current external input: " + name)
+                    prefix = row["revision"] + "-" + row["repo"] + "-" + row["implementation"] + "-"
+                    if len(records) != row["acquisitions"] or any(not record.read_text().startswith(prefix) for record in records):
+                        failures.append("DI acquisition did not consume current external input and scanned implementation: " + name)
                 if row["kind"] == "inspection":
                     start = raw.find("TARGET_BOOTSTRAP_PREPARED case=" + name + "\n")
                     end = raw.find("PLUGIN_STOCK_NOOP_OK case=" + name + "\n", start)
@@ -336,6 +392,9 @@ def main():
                     failures.append("Unexpected runtime diagnostic: " + diagnostic)
             if "DISTAGE_CACHE_DECISION suite=izumi.fixtures.host.SuiteC decision=rerun reason=untracked-input-closure" not in raw:
                 failures.append("Explicit conservative cache decision missing")
+            history_markers = ["PLUGIN_HISTORY_EDIT_OK kind=scanned-implementation revision=two", "PLUGIN_SCANNED_DIGESTS_UNCHANGED_OK", "PLUGIN_HISTORY_EDIT_OK kind=suite-class revision=4", "PLUGIN_CHANGED_SUITE_DIGEST_OK"]
+            for marker in history_markers:
+                if raw.count(marker + "\n") != 1: failures.append("Missing unique history evidence: " + marker)
             for row in rows:
                 assert hashlib.sha256(Path(row["path"]).read_bytes()).hexdigest() == row["sha256"]
             digests = re.findall(r'(izumi\.fixtures\.host\.Suite[A-E]) -> (sha256-[a-f0-9]+/[0-9]+)', raw)
@@ -345,7 +404,7 @@ def main():
                 if raw.index("PLUGIN_STOCK_DIGESTS_OK suites=5 distinct=5\n") > raw.index("TARGET_BOOTSTRAP_PREPARED case=list\n"):
                     failures.append("Stock suite digest precondition ran after a fixture case")
             outcome = dict(sbt=sbt_version, scala=scala_version, actualExit=code, expectedCases=len(expected), validationFailures=failures,
-                           stockDigestPairs=digests, distinctStockSuiteDigests=len(digests) == 5 and len(set(d for _, d in digests)) == 5)
+                           stockDigestPairs=digests, distinctStockSuiteDigests=len(digests) == 5 and len(set(d for _, d in digests)) == 5, historyMarkers=history_markers)
             (lane / "completion.json").write_text(json.dumps(outcome, indent=2) + "\n")
             outcomes.append(outcome)
             print(json.dumps(outcome), flush=True)

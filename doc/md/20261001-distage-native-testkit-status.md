@@ -83,10 +83,10 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | The preceding SBT2/Scala2.13+3 full/selected/repeat/quick checks pass, including the15 owned quick cases and the foreign stock skip. The current exit-agent correction separately passes selected/grouped and mixed repeat controls. Earlier SDK1/Scala2.12 matrices are historical. Complete stock-contract and final evaluation remain open. |
 | 2d.4 | in progress | The current fork agent preserves six-case held foreign Output on both supported compilers. Serial groups and mixed repeat controls pass. Overlapping-suite SDK map/JUnit replacement is rejected rather than restored; the reproduced early System.exit(0) deadlock is corrected and recovery verified. Complete reporting, history and final evaluation remain open. |
-| 2d.5 | not started | No evaluation point passed yet. |
-| 2d.6 | not started | No evaluation point passed yet. |
+| 2d.5 | in progress | The current86-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns and changed suite/scanned-implementation digests on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
+| 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
-| 2d.8 | not started | No evaluation point passed yet. |
+| 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | not started | No evaluation point passed yet. |
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
 | 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Production counted normal/death/recovery controls pass both SDKs on all three Scala versions. SDK2 task-exception reporting, complete failure/input inventory and final evaluation stay open. |
@@ -13585,3 +13585,53 @@ not restored. Complete target terminal records, SDK task-exception reporting,
 history/configuration/cancellation contracts, JS/Native host transport,
 coverage, IntelliJ and final migration remain open. The goal stays active;
 no push or PR was made.
+
+
+## 2026-10-05: combined SBT2 history/input batch (2d.3/5/6/7/8/11/14/21, in progress)
+
+Evaluation point: the commit containing this entry, parent
+`3550f1db0c3ad20f1529c2480f8779b1eb158dc9`. Production artifacts are unchanged
+from the preceding verified exit correction. The owner requested larger
+validation batches; the consumer matrix now runs43 scenarios per compiler,
+including ten additional history/input scenarios in the existing session.
+
+Command:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-matrix.py \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-history-batch-first
+```
+
+Observed: driver exit0, both real SBT processes exit0, all86 case checks pass.
+Each compiler captures43 scenarios,249 physical bodies and33 paired DI
+lifetimes. Exact generated commands, frozen sources, digests, body/resource
+receipts and XML remain in that directory. Completion SHA256
+`f7c954b62700910493bb943a5589cd7b499308517abf11a57b77b4bff8c3e30a`.
+This was one combined matrix run, with no failing/repeated intermediate batch.
+
+The scanned implementation edit is consumed by acquisition: resource IDs change
+from implementation revision `one` to `two`. Its edit leaves all six public
+stock suite digests unchanged, establishing that the implementation is outside
+that digest closure. Both `test` and `testQuick` nevertheless rerun the five
+owned suites, execute15 bodies and consume revision `two`. A subsequent suite
+class edit changes SuiteC's stock digest while preserving the foreign digest;
+both incremental commands execute the expected15 owned bodies. The initial
+five owned suite digests are independently distinct on each compiler.
+
+The additional quick controls cover an individual selected ID followed by its
+complete suite, disabled memoization with three paired lifetimes, dummy-axis
+activation, the complete suite set after a partial run, and a changed external
+UTF-8 input actually consumed during acquisition. Existing foreign stock
+no-ops/explicit runs, user exclusion, forked partial/recovery/inspection,
+Integration configuration and constructor-only inspection controls continue
+in the same batch. Both rejected activation filters retain their expected
+suite error reports and resource-free recovery behavior.
+
+Items2d.5/6/8 are now in progress, with concrete current checkpoint evidence.
+No final gate or full step is marked done. The matrix does not establish
+multi-project aggregation, full failure/cancellation/reporting domains, all
+selection-reason records, or the final platform/JDK matrix. Published-artifact
+qualification remains the preceding three-pair refresh; no additional
+publication or revalidation of unchanged portable artifacts was performed.
