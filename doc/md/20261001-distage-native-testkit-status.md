@@ -89,18 +89,18 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
-| 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Production counted normal/death/recovery controls pass both SDKs on all three Scala versions. SDK2 task-exception reporting, complete failure/input inventory and final evaluation stay open. |
+| 2d.11 | in progress | Current supported-lane batch passes162 SBT2 controls on Scala2.13/3: history, multi-project/configuration, concurrent host windows, exits, mapped-task omission and owned task-exception reports/recovery. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign framework payloads pass current mixed fork and held-delivery controls on Scala2.13/3. The startup agent restores the held batch and rejects premature exits without wrapping foreign events. The preceding quick check preserves the foreign history skip. Overlap reporting, complete mixed domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap50 and14 public task-completion checks cover serialized handlers, original event/throwable identities, late callback rejection and terminal publication after descendant tasks. Current host batches pass; complete streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap50 and16 public task-completion checks cover serialized handlers, original event/throwable identities, late callback rejection, task exception projection and terminal publication after descendant tasks. Current host batches pass; complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Current omitted-suite reproduction establishes the measured need for a public loaded-framework task wrapper in process; target-only code has lost the original selected definition. The ledger records the substitution and150 bounded current command controls. Complete historical0a domain and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current body/JUnit controls preserve normal mixed and held delivery; selected-suite omission produces a visible Error and reconciled target terminal records. Premature exits remain rejected after sibling drain, and the agent passes29 JDK17/21/25 controls. SDK task-exception and overlap reporting, complete structured failures and final evaluation remain open. |
+| 2d.22 | in progress | Current body/JUnit controls preserve normal mixed and held delivery; selected-suite omission and owned task exceptions produce visible Errors with reconciled target terminal records. Premature exits remain rejected after sibling drain, and the agent passes29 JDK17/21/25 controls. Foreign task-exception and overlap reporting, complete structured failures and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -13896,3 +13896,123 @@ Unchanged JS/Native lanes and unrelated artifacts were not rerun or recatalogued
 All parent/final items remain in progress. SDK task-exception and overlapping
 suite reporting, streaming/cancellation and actual JS/Native host integration
 remain open. No full step or goal completion, push or PR is claimed.
+
+
+## 2026-10-05: forwarding task ownership and owned SDK task-exception reports (2d.2/4/11/17/22, in progress)
+
+Evaluation point: the commit containing this entry, parent `6d85f400f`.
+The preceding checkpoint's14 changed paths and clean worktree were verified
+against that commit; record `sbt2-target-terminal-local-commit-first` under
+`/srv/nvme/tmp/izumi-impl` has the full SHA and path list. This entry adds two
+reproduced corrections, then validates them together with the host regressions.
+
+First, an otherwise transparent forwarding framework wraps each returned Task.
+The fork agent previously normalised both its inner runner and outer runner;
+three completed suite groups therefore produce six target records and double
+target counts despite nine bodies and nine correct XML cases. The stock
+command fails the target receipt guard. This actual failed reproduction is
+`sbt2-target-forwarding-repro-first`, with the six copied records and raw
+completion error. The agent now normalises only the outermost public
+Runner.tasks invocation, matching its exact public return/argument descriptor.
+StackWalker determines nesting without mutable global or thread-local state.
+Both compiler replay lanes pass twelve normal/omission/recovery controls in
+`sbt2-target-forwarding-verification-first`, terminal SHA256
+`118976cfabf340dab6928fc30db19c16f8d7cb1d7f8260b1498cd6e93f998f9a`.
+
+Second, another public Task forwarder delegates the actual DI runner and then
+throws LinkageError from SuiteC after its body group completes. Every command
+executes all nine selected bodies and pairs one shared acquire/release. Before
+the correction, neither in-process nor forked commands produce SuiteC's XML
+outcome or public Output. In process the SDK logs a JUnit listener null-selector
+exception; forked commands retain the original ForkError but lose the selected
+suite's error report. Other suite reports vary with SDK parallel scheduling.
+The original cause is present in both rejected child results, and immediate
+same-session recovery succeeds with new resources.
+
+Twelve expected-defect controls, with both real SBT processes exiting0 around
+captured negative child task results, are in
+`sbt2-target-task-failure-repro-second`, terminal SHA256
+`2b7000fc4961608a8ef490d739533a8f57b25814669d86c8ab37973eda4a9348`.
+Repro-first incorrectly expected an in-process replacement error and is retained
+as a failed verifier capture; its raw output already shows the absent SuiteC
+report and null-selector exception. Repro-second checks the observed missing
+SuiteC outcome, while preserving the actual set of other completed reports.
+The producer was paused before publication until both reproduction lanes
+finished; `artifact-at-completion.json` records the unchanged preceding plugin.
+
+The owned task boundary now reifies a delegate task Throwable as an ordinary
+Error event with a valid SuiteSelector and the original Throwable. Previously
+delivered successes remain present, and the target record retains the delegate's
+failed return. An exception while delivering the delegate's events to the SDK
+EventHandler still propagates with its original identity; it is not sent back
+into that failed handler. Publication
+failures also propagate. This change uses public test-interface contracts and
+adds no private SDK transformation. Foreign framework task arrays remain
+untouched; their separate SDK task-Throwable defect is not corrected here.
+
+Producer build exact argv/input hashes are in
+`sbt2-target-task-failure-build-first/commands.json`:
+
+```sh
+direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"' build \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.target.TaskCompletenessTest /srv/nvme/tmp/izumi-impl/sbt2-target-task-failure-build-first/completion-checks' \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostReceiptTest /srv/nvme/tmp/izumi-impl/sbt2-target-task-failure-build-first/receipt-checks' \
+  'sbt-distage-testkit/publishLocal'
+```
+
+Actual exit0: sixteen shared real-filesystem/memory task checks and all eighteen
+host receipt checks pass. New checks retain the original Success event and
+LinkageError object, a valid error selector, no returned descendants and exact
+Success/Error counts with a failed task terminal record. The preceding callback
+failure identity checks still pass. Only the changed plugin is republished.
+
+The seven independent drivers form one batch, with three isolated build
+processes at a time; exact argv and driver hashes are recorded in
+`sbt2-target-task-failure-regression-first/commands.json`. All seven drivers and
+all underlying SBT processes exit0. The new task-failure driver's command is:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-task-failure.py \
+  --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 2.13.18 \
+  --expected-task-report error \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-target-task-failure-regression-first/task-failure
+```
+
+Its twelve cases have108 physical bodies,112 XML cases and12 fresh paired DI
+lifetimes. Four negative commands now report all nine body outcomes plus one
+SuiteC error with the original failure marker. Public Output agrees with XML.
+Each command has exactly three copied target terminal records, with the actual
+target PID; the four failed SuiteC records have Success3/Error1 and a failed
+return, while D/E each have Success3 and normal returns. Four following commands
+run all nine bodies with fresh resources in the same SBT sessions. All six fork
+PIDs are distinct and have exited before capture. The corrected forwarding
+omission driver also passes twelve cases with36 exact target records.
+
+The combined batch passes162 controls:94 history cases,20 multi-project cases
+with80 context checks,8 concurrent-event/host-limit commands,16 foreign grouping
+and premature-exit controls,12 forwarding omission controls and12 task-failure
+controls. The independent audit counts1,290 physical bodies,1,290 XML cases and
+130 unique paired DI lifetimes. Equal grand totals do not establish complete
+reporting: known overlapping/premature-exit negative controls still lose reports,
+while launch/axis/omission/task errors add outcomes without new physical bodies.
+The individual fixture predicates and captures establish the stated results.
+
+The newly packaged agent also passes all29 exit-origin/commit/abort controls
+on JDK17/21/25 in `sbt2-target-task-failure-exit-capture-first`. The current SDK
+batch retains held sibling drain, premature-exit rejection and same-session
+recovery. Independent audit `sbt2-target-task-failure-audit-first/completion.json`,
+SHA256 `96c82e73a5bb0e9b64e537ffae404e0d2c7a36c0650af158d217febde57ffa46`,
+links all eight positive completion sources and independently verifies unchanged
+production inputs and the34 boundary-check markers.
+
+The refreshed plugin's62 class/TASTy payloads match compiled outputs; its source
+JAR matches the agent/task sources and its18 target Java classes are version61.0.
+The obsolete MissingEvent class is absent. Plugin JAR SHA256:
+`4554ea6557d5d893bbe9cb8ae7a7ee76ce31fb90792a2bbcff7869d667e648dd`.
+Bounded record:
+`sbt2-target-task-failure-regression-first/qualified-publication.json`.
+The unchanged kernel/protocol and JS/Native lanes were not republished or rerun.
+
+No whole step or final item is marked done. Foreign task exceptions, overlapping
+suite aggregation/reporting, complete failure/cancellation domains, streaming,
+actual JS/Native hosts and later steps remain open. No push or PR was made.

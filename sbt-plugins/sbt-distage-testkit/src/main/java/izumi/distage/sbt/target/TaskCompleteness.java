@@ -5,6 +5,7 @@ import sbt.testing.EventHandler;
 import sbt.testing.Fingerprint;
 import sbt.testing.Logger;
 import sbt.testing.OptionalThrowable;
+import sbt.testing.Runner;
 import sbt.testing.Selector;
 import sbt.testing.Status;
 import sbt.testing.SubclassFingerprint;
@@ -30,8 +31,15 @@ public final class TaskCompleteness {
     private static final String FILE_PREFIX = "target-";
     private static final String FILE_SUFFIX = ".terminal";
     private static final String SCHEMA_VERSION = "1";
+    private static final String RUNNER_TASKS_DESCRIPTOR = "([Lsbt/testing/TaskDef;)[Lsbt/testing/Task;";
 
     private TaskCompleteness() {}
+
+    public static boolean isOutermostRunnerTasks() {
+        return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(frames -> frames
+            .filter(frame -> frame.getMethodName().equals("tasks") && frame.getDescriptor().equals(RUNNER_TASKS_DESCRIPTOR) && Runner.class.isAssignableFrom(frame.getDeclaringClass()))
+            .limit(2).count() == 1);
+    }
 
     public record SuiteName(String value) {
         public SuiteName {
@@ -192,13 +200,23 @@ public final class TaskCompleteness {
             }
             CountingHandler counter = new CountingHandler(handler, completion);
             Throwable original = null;
+            boolean projected = false;
             try { return completion.children(delegate.execute(counter, loggers)); }
-            catch (Throwable cause) { original = cause; completion.failed(); throw cause; }
+            catch (Throwable cause) {
+                original = cause;
+                completion.failed();
+                if (counter.callbackFailed()) throw cause;
+                try { counter.handle(new FailureEvent(delegate.taskDef(), cause)); }
+                catch (Throwable delivery) { cause.addSuppressed(delivery); throw cause; }
+                projected = true;
+                return new Task[0];
+            }
             finally {
                 counter.close();
                 try { completion.finish(); }
                 catch (Throwable publication) {
                     if (original == null) throw publication;
+                    if (projected) { publication.addSuppressed(original); throw publication; }
                     original.addSuppressed(publication);
                 }
             }
@@ -209,6 +227,7 @@ public final class TaskCompleteness {
         private final EventHandler delegate;
         private final CompletionScope completion;
         private boolean closed;
+        private boolean callbackFailed;
 
         private CountingHandler(EventHandler delegate, CompletionScope completion) {
             this.delegate = Objects.requireNonNull(delegate, "Missing target event handler");
@@ -218,10 +237,13 @@ public final class TaskCompleteness {
         @Override
         public synchronized void handle(Event event) {
             if (closed) throw new IllegalStateException("Event emitted after target task terminal");
-            delegate.handle(event);
-            completion.record(event.status());
+            try {
+                delegate.handle(event);
+                completion.record(event.status());
+            } catch (Throwable cause) { callbackFailed = true; throw cause; }
         }
 
+        private synchronized boolean callbackFailed() { return callbackFailed; }
         private synchronized void close() { closed = true; }
     }
 
@@ -231,17 +253,17 @@ public final class TaskCompleteness {
         @Override public TaskDef taskDef() { return definition; }
         @Override public String[] tags() { return new String[0]; }
         @Override public Task[] execute(EventHandler handler, Logger[] loggers) {
-            handler.handle(new MissingEvent(definition));
+            handler.handle(new FailureEvent(definition, new IllegalStateException("Selected target suite has no terminal task: " + definition.fullyQualifiedName())));
             return new Task[0];
         }
     }
 
-    private static final class MissingEvent implements Event {
+    private static final class FailureEvent implements Event {
         private final TaskDef definition;
         private final OptionalThrowable failure;
-        private MissingEvent(TaskDef definition) {
+        private FailureEvent(TaskDef definition, Throwable cause) {
             this.definition = definition;
-            this.failure = new OptionalThrowable(new IllegalStateException("Selected target suite has no terminal task: " + definition.fullyQualifiedName()));
+            this.failure = new OptionalThrowable(cause);
         }
         @Override public String fullyQualifiedName() { return definition.fullyQualifiedName(); }
         @Override public Fingerprint fingerprint() { return definition.fingerprint(); }

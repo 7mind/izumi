@@ -109,6 +109,17 @@ public final class TaskCompletenessTest {
         require(!failedStore.completed().get(0).returnedNormally() && failedStore.completed().get(0).counts().success() == 0, "Callback failure was a successful terminal");
         ok(mode, "callback throwable identity and failed terminal");
 
+        TaskCompleteness.CompletionStore thrownStore = factory.create("task-throwable");
+        LinkageError taskFailure = new LinkageError("original target task failure");
+        List<Event> taskEvents = new ArrayList<>();
+        Task thrown = task(left, h -> { h.handle(leftEvent); throw taskFailure; });
+        Task[] afterFailure = TaskCompleteness.normalise(new TaskDef[]{left}, new Task[]{thrown}, thrownStore)[0].execute(taskEvents::add, NO_LOGGERS);
+        require(afterFailure.length == 0 && taskEvents.size() == 2 && taskEvents.get(0) == leftEvent, "Task failure discarded buffered successes");
+        Event terminalError = taskEvents.get(1);
+        require(terminalError.status() == Status.Error && terminalError.selector() instanceof SuiteSelector && terminalError.throwable().get() == taskFailure, "Task failure lost its selector or original Throwable");
+        require(!thrownStore.completed().get(0).returnedNormally() && thrownStore.completed().get(0).counts().equals(new TaskCompleteness.Counts(1,0,1,0,0,0,0)), "Task failure terminal counts differ");
+        ok(mode, "task Throwable becomes a visible suite error with original events and cause");
+
         TaskCompleteness.CompletionStore concurrentStore = factory.create("concurrent");
         AtomicInteger active = new AtomicInteger();
         AtomicInteger maximum = new AtomicInteger();

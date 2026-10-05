@@ -26,6 +26,7 @@ import static net.bytebuddy.matcher.ElementMatchers.isInterface;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.none;
 import static net.bytebuddy.matcher.ElementMatchers.not;
+import static net.bytebuddy.matcher.ElementMatchers.returns;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 public final class ForkCompletionAgent extends Thread {
@@ -88,7 +89,7 @@ public final class ForkCompletionAgent extends Thread {
             .with(new CompletionListener(agent))
             .type(hasSuperType(named("sbt.testing.Runner")).and(not(isInterface())))
             .transform((builder, type, loader, module, domain) -> builder
-                .visit(Advice.to(RunnerTasks.class).on(named("tasks").and(takesArguments(TaskDef[].class)))))
+                .visit(Advice.to(RunnerTasks.class).on(named("tasks").and(takesArguments(TaskDef[].class)).and(returns(Task[].class)))))
             .installOn(instrumentation);
     }
 
@@ -172,8 +173,10 @@ public final class ForkCompletionAgent extends Thread {
     public static final class RunnerTasks {
         @Advice.OnMethodExit
         public static void exit(@Advice.Argument(0) TaskDef[] definitions, @Advice.Return(readOnly = false) Task[] tasks) {
-            Path directory = Paths.get(java.util.Objects.requireNonNull(System.getProperty(DIRECTORY_PROPERTY), "Missing target command ownership"));
-            tasks = TaskCompleteness.normalise(definitions, tasks, new TaskCompleteness.FileCompletionStore(directory));
+            if (TaskCompleteness.isOutermostRunnerTasks()) {
+                Path directory = Paths.get(java.util.Objects.requireNonNull(System.getProperty(DIRECTORY_PROPERTY), "Missing target command ownership"));
+                tasks = TaskCompleteness.normalise(definitions, tasks, new TaskCompleteness.FileCompletionStore(directory));
+            }
         }
     }
 
