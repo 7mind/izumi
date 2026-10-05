@@ -13283,3 +13283,13 @@ Output-map verification; completion validation remains. The tracker was observed
 paused; official OpenAI documentation confirms that the owner's `/goal resume`
 command restores automatic continuation. No available agent tool can set active.
 No whole step is marked done and no push is performed.
+
+### Mixed-delivery guard commit checkpoint
+
+Local code commit `d34c33820a09d5a495035105e3af7660d51cd554`, parent
+`37eb7be5561371c08d20e4e1095ece21d313fccb`, contains the exact six
+reviewed paths above. The checkout is clean after that commit, and its three
+qualified code/test/driver inputs retain their recorded bytes.
+`mixed-delivery-guard-local-commit-first/commit.json` freezes the five nonledger
+changed-file hashes. This following ledger-only stamp changes no tested input;
+no push, whole-step acceptance or goal completion is claimed.
