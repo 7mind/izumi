@@ -107,7 +107,41 @@ object HostReceiptTest {
       listener.startGroup(foreign.value)
       listener.testEvent(TestEvent(Seq(event(foreign, Status.Error))))
       listener.endGroup(foreign.value, TestResult.Error)
-      receipt.verify(Tests.Output(TestResult.Error, Map(foreign.value -> SuiteResult.Error), Nil))
+      receipt.verify(Tests.Output(TestResult.Error, Map(foreign.value -> new SuiteResult(TestResult.Error, 0, 0, 1, 0, 0, 0, 0)), Nil))
+    }
+
+    check("reject truncated SDK output after foreign framework delivery") {
+      val receipt = new HostReceipt
+      val listener = receipt.configure(Set(name))
+      val foreign = HostSuiteName("fixture.ForeignSuite")
+      receipt.expect(name)
+      Seq(name, foreign).foreach { suite =>
+        listener.startGroup(suite.value)
+        listener.testEvent(TestEvent(Seq(event(suite, Status.Success))))
+        listener.endGroup(suite.value, TestResult.Passed)
+      }
+      listener.doComplete(TestResult.Passed)
+      rejects(classOf[MessageOnlyException])(receipt.verify(output(new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0))))
+    }
+
+    check("validate foreign completion when the result logger is replaced") {
+      val receipt = new HostReceipt
+      val listener = receipt.configure(Set.empty)
+      val foreign = HostSuiteName("fixture.ForeignSuite")
+      listener.startGroup(foreign.value)
+      listener.testEvent(TestEvent(Seq(event(foreign, Status.Success))))
+      listener.doComplete(TestResult.Passed)
+      rejects(classOf[MessageOnlyException])(receipt.verifyCompletion())
+    }
+
+    check("preserve foreign event identities that differ from their group") {
+      val receipt = new HostReceipt
+      val listener = receipt.configure(Set.empty)
+      val foreign = HostSuiteName("fixture.ForeignSuite")
+      listener.startGroup(foreign.value)
+      listener.testEvent(TestEvent(Seq(event(HostSuiteName("fixture.NestedSuite"), Status.Success))))
+      listener.endGroup(foreign.value, TestResult.Passed)
+      receipt.verify(Tests.Output(TestResult.Passed, Map(foreign.value -> new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)), Nil))
     }
 
     check("retain a newer admission when an earlier task aborts") {
@@ -159,7 +193,7 @@ object HostReceiptTest {
       listener.startGroup("fixture.ForeignSuite")
       listener.endGroup("fixture.ForeignSuite", TestResult.Passed)
       assert(reader.received(ForkReceiptSuite("fixture.ForeignSuite")).isEmpty)
-      current.consume(output(new SuiteResult(TestResult.Error, 1, 0, 1, 0, 0, 0, 0)))
+      current.consume(Tests.Output(TestResult.Error, Map(name.value -> new SuiteResult(TestResult.Error, 1, 0, 1, 0, 0, 0, 0), "fixture.ForeignSuite" -> new SuiteResult(TestResult.Passed, 0, 0, 0, 0, 0, 0, 0)), Nil))
       current.abort(generation)
       require(!Files.exists(generation.store.directory), "Owned fork directory survived cleanup")
     }

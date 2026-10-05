@@ -82,25 +82,25 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Published 198-case plugin matrix and twelve five-suite host-limit lanes reconcile body/JUnit identities below. Counted normal/death/recovery and normal mixed forks pass six SDK/Scala combinations. Held foreign SDK2 Output15/18 omission is reproduced; public acknowledgement prototypes pass bounded effective per-fork selection controls and reject a retained ACK failure at the public task boundary, with same-session recovery. Production/structured-error/cache/final evaluation stay open. |
+| 2d.4 | in progress | Historical plugin/host-limit matrices remain below. Current SBT2/Scala2.13+3 published checks reconcile normal mixed forks and in-process runs; the production guard now rejects a truncated foreign Output after callback completion, with same-session recovery. Full global acknowledgement, structured errors, history and final evaluation remain open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
-| 2d.10 | in progress | Receipt guard rejects omissions, inconsistent fork results and recorded target death. Generic exit-zero false success and normal SDK2 notification loss remain reproduced; complete preservation/recovery and final evaluation stay open. |
+| 2d.10 | in progress | Receipt guards reject owned omissions, inconsistent fork results and recorded target death. The current published plugin also rejects SDK2 foreign Output truncation on Scala2.13/3, followed by explicit same-session recovery. Generic exit-zero false success, restoration of mixed delivery, complete failure/recovery and final evaluation remain open. |
 | 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Production counted normal/death/recovery controls pass both SDKs on all three Scala versions. SDK2 task-exception reporting, complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
-| 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions. Foreign bodies execute exactly once in both measured held registration orders, while SDK2 omits their Output in the own-first order. Complete mixed delivery/result domain and final evaluation remain open. |
+| 2d.15 | in progress | Historical foreign execution/cache and registration-order controls remain below. Current SBT2/Scala2.13+3 normal fork and in-process checks preserve the original foreign framework; production all-framework group/aggregate guards reject truncated SDK output without changing foreign events. Complete mixed delivery/result domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below. Counted normal fork controls correct the recorded omission, while real SDK2 Task.execute exceptions still lack structured group/completion reporting. Full terminal/failure domain and final evaluation remain open. |
+| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below. Current production guards reconcile all framework groups and aggregate statuses, retaining exact per-distage-suite counts. SDK2 Task.execute exceptions and truncated-output rejection still need structured terminal/error reporting. Full terminal/failure domain and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -13196,3 +13196,90 @@ This subsequent ledger-only stamp leaves every compiled input and tested driver
 unchanged. No branch is pushed, acceptance item completed, or goal completion
 claimed. A post-check still observes the goal tracker's paused state; no available
 goal tool can set it active, and no replacement goal is created.
+
+
+## 2026-10-05: reject truncated mixed-framework host output, in progress
+
+This verified sub-step is based on local HEAD
+`37eb7be5561371c08d20e4e1095ece21d313fccb`. Items 2d.4/2d.10/2d.15/2d.22
+remain in progress. The production guard previously accounted for distage
+callbacks only, so a complete owned result could hide omitted foreign output.
+It now tracks every framework's group admission/completion and seven aggregate
+status counts. Owned suite selection and exact owned per-suite counts remain
+separate. Foreign frameworks and event identities are unchanged; foreign event
+FQNs need not equal their containing host group. This rejects incomplete output;
+it does not restore the omitted SDK batch or provide a global fork ACK.
+
+All paths below are under `/srv/nvme/tmp/izumi-impl/`.
+
+- Fail first: `mixed-delivery-guard-before-first/run.log`, actual exit1, after
+  eight existing checks. The new regression required a MessageOnlyException
+  when SDK output omitted a delivered foreign suite, but observed no exception.
+  Exact pre-fix production/test sources and command are frozen in that directory.
+  `completion.json` SHA256
+  `202ae8b54ba0b70b1fd942f30cbb85fe9bea64618e74f42526e51b614e150c46`.
+- After: `direnv exec . sbt --server -java-home "$JDK21" -batch -J-Xmx6G
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostReceiptTest
+  /srv/nvme/tmp/izumi-impl/mixed-delivery-guard-after-first/receipts"
+  sbt-distage-testkit/publishLocal` returns0. All17 host checks pass, including
+  truncation rejection, foreign completion with a replaced logger, preserved
+  foreign group/event identities and existing receipt/lifecycle checks.
+- Published command: `python3 -B
+  test-fixtures/sbt-worker-receipt-race/verify-plugin-delivery.py
+  --artifact-version 1.3.0-SNAPSHOT --scala-version <3.9.0|2.13.18>
+  --evidence-dir <new path>`. The unchanged generic foreign framework runs normal,
+  held and recovery controls in one SBT2 session per compiler. After the held
+  callback returns, the production `testOnly.result` is Left Incomplete containing
+  `Incomplete distage host result`; the wrapper observes that failed task and
+  proceeds to recovery. Each lane has18 physical/positive XML cases, three fresh
+  worker PIDs and removed receipt directories. The held run has six physical/XML
+  cases and three SDK Output cases. Scala3 second completion SHA256
+  `1c212d94cc746de5c3164857809f5e20649c00795d07890032672b690f29f518`;
+  Scala2.13 first
+  `9cc2b0410fb9e1129b7ba5c251987e611fc946486fbe02cf75ae988df77c5f9a`.
+- The first Scala3 consumer driver waits for rejection before opening its callback
+  gate. SBT unregisters its listener after callback return, so the fixture times
+  out and fails its callback-return assertion. Its actual/driver1 capture is
+  retained as `mixed-delivery-guard-published-scala3-first`, SHA256
+  `37db797933d54c93025a5706626d199dcc7af50d91030001035eaf8f9d15d254`.
+  Corrected fresh controls open the gate after a frozen five-second held
+  observation. No production change follows that fixture failure.
+- Normal mixed fork regression: `verify-mixed-forks.py --artifact-version
+  1.3.0-SNAPSHOT --sbt-version 2.0.9 --scala-version 3.9.0 2.13.18
+  --evidence-dir /srv/nvme/tmp/izumi-impl/mixed-delivery-guard-normal-mixed-first`
+  returns0. Four commands reconcile72 bodies, SDK cases and XML cases, four
+  fresh paired DI lifetimes and receipt cleanup. Completion SHA256
+  `8abd2dbcfbc28816552fde04b3ba702ad18a5e4999279cd17a7c1b385cd29746`.
+- In-process regression: `python3 -B mixed-delivery-inprocess-driver-first.py
+  --scala-version <3.9.0|2.13.18> --evidence-dir <new path>` returns actual/driver0
+  on both compilers. Each runs public `testFull`, `testOnly` and repeat with the
+  published plugin and original foreign framework:54 bodies/XML cases,36
+  independently captured input Output cases and three fresh paired DI resources.
+  Full Output is checked by the production boundary but is not independently
+  captured by this driver. Scala3 first completion SHA256
+  `72190a6cd86a881c2b1719f68f17fcd4027d5136b7a1f19698b13dbd41f7b074`;
+  Scala2.13 first
+  `7937bea29446b8e4902dc8754f7f7849d85f2c6f062c03c6e929a4fb90f76c9a`.
+- Publication audit: `python3 -B mixed-delivery-publication-audit-second.py`
+  returns0. Only the SBT2 plugin changes in the current154 JAR/POM catalogue;
+  the other153 pairs retain prior qualified bytes. The37 nonmanifest plugin
+  payloads match compiled products or the generated `sbt/sbt.autoplugins`
+  descriptor. The first inline audit incorrectly expects that descriptor under
+  `classes`, and fails before writing a publication manifest; its frozen JAR/POM
+  remain in `mixed-delivery-guard-publication-first`. The corrected audit uses
+  the observed `resource_managed/main` path. Current publication SHA256
+  `18ec54d1295a40196ee93cd8e5124029745f4ab4ae0a6b7b0895ba42ecfd86a3`;
+  completion `33ae21592f9c3e7c2d6ae9712ec3b0dc4119502d42972c93b76d9a5276164281`.
+  Current plugin JAR SHA256
+  `2f7f25a830a641933e3b0de9e4cf787caf84ec08e9f889ecc726675821bb8ac7`.
+
+The change uses public TestsListener/Tests.Output boundaries and no copied or
+private SDK orchestration. Python AST parsing and `git diff --check` pass. This
+bounded check does not establish complete per-foreign-suite outcome identity,
+terminal-record/error projection, global ACK, callback drain, cancellation,
+foreign history, tracked closure, JS/Native host transport, coverage, IDE,
+migration or final acceptance. Replacing the scoped result logger still removes
+Output-map verification; completion validation remains. The tracker was observed
+paused; official OpenAI documentation confirms that the owner's `/goal resume`
+command restores automatic continuation. No available agent tool can set active.
+No whole step is marked done and no push is performed.

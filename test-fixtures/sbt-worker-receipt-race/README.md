@@ -4,9 +4,10 @@ Current drivers run SBT 2 only. Recorded SBT 1 outcomes below are historical
 controls from before the 2026-10-05 support decision.
 
 This is a draft upstream defect report and an independent process reproduction,
-using only the public test-interface Framework and SBT TestsListener APIs. It has
-no distage dependency, plugin or private SDK replacement. Do not publish the
-report automatically.
+using only the public test-interface Framework and SBT TestsListener APIs. The
+upstream reproductions have no distage dependency, plugin or private SDK
+replacement. A separate published-plugin verification is described below. Do
+not publish the report automatically.
 
 The framework emits exactly one intentional Error event. A host listener either
 returns immediately or holds event processing for 1,200 ms. Both callbacks must
@@ -189,3 +190,24 @@ receipt guard rejects the recorded incomplete DI results. Its production
 counted acknowledgement protocol passes bounded normal, worker-death, recovery
 and held owned-delivery controls. Full mixed delivery and failure/reporting
 acceptance remain open.
+
+`verify-plugin-delivery.py` exercises the published distage plugin against the
+unchanged generic framework from `verify-held-batch.py`. In one SBT 2 session,
+it runs a normal control, holds the second batch to reproduce truncated output,
+and runs a normal recovery. The production guard must reject the held command
+through the public `testOnly.result` boundary after the callback returns. Each
+command executes exactly six bodies in a fresh worker and creates six positive
+XML cases; the incomplete command returns only three cases in `Tests.Output`.
+The driver checks those sets, command rejection, recovery and receipt cleanup.
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-plugin-delivery.py \
+  --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/plugin-delivery-example
+```
+
+Repeat with `--scala-version 2.13.18` and a new evidence directory. This verifies
+rejection of incomplete SDK output; it does not restore the missing batch or
+close global acknowledgement, callback drain, foreign history or structured
+run-error reporting. The independent upstream reproductions above continue to
+run without the distage plugin.

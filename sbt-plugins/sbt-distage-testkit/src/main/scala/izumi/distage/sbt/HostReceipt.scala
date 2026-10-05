@@ -33,6 +33,7 @@ private[sbt] final class HostReceipt {
   private var starts = Map.empty[HostSuiteName, Int]
   private var ends = Map.empty[HostSuiteName, Int]
   private var received = Map.empty[HostSuiteName, HostSuiteCounts]
+  private var delivered = HostSuiteCounts.empty
   private var completed = Option.empty[TestResult]
   private var publicationFailure = Option.empty[Throwable]
   private var closed = false
@@ -58,14 +59,15 @@ private[sbt] final class HostReceipt {
 
   private def start(name: HostSuiteName): Unit = synchronized {
     requireOpen()
+    starts = starts.updated(name, starts.getOrElse(name, 0) + 1)
     if (owned.contains(name)) {
-      starts = starts.updated(name, starts.getOrElse(name, 0) + 1)
       if (!received.contains(name)) received = received.updated(name, HostSuiteCounts.empty)
     }
   }
 
   private def record(event: TestEvent): Unit = synchronized {
     requireOpen()
+    delivered = delivered + HostSuiteCounts.from(SuiteResult(event.detail))
     event.detail.groupBy(detail => HostSuiteName(detail.fullyQualifiedName())).foreach { case (name, details) =>
       if (owned.contains(name)) {
         val counts = HostSuiteCounts.from(SuiteResult(details))
@@ -76,8 +78,9 @@ private[sbt] final class HostReceipt {
 
   private def end(name: HostSuiteName, result: TestResult): Unit = synchronized {
     requireOpen()
+    ends = ends.updated(name, ends.getOrElse(name, 0) + 1)
+    delivered = delivered.copy(result = HostSuiteCounts.overall(delivered.result, result))
     if (owned.contains(name)) {
-      ends = ends.updated(name, ends.getOrElse(name, 0) + 1)
       val counts = received.getOrElse(name, HostSuiteCounts.empty)
       received = received.updated(name, counts.copy(result = HostSuiteCounts.overall(counts.result, result)))
     }
@@ -100,9 +103,9 @@ private[sbt] final class HostReceipt {
   def verifyCompletion(): Unit = synchronized {
     closed = true
     verifyPublication()
-    if (expected != starts.keySet || starts != ends || (expected.nonEmpty && completed.isEmpty) ||
-      (completed.contains(TestResult.Passed) && received.values.exists(_.result != TestResult.Passed))) {
-      throw new MessageOnlyException(s"Incomplete distage host completion: selected=$expected started=$starts completed=$ends received=$received overall=$completed")
+    if (expected != starts.keySet.intersect(owned) || starts != ends || (starts.nonEmpty && completed.isEmpty) ||
+      (completed.contains(TestResult.Passed) && delivered.result != TestResult.Passed)) {
+      throw new MessageOnlyException(s"Incomplete distage host completion: selected=$expected started=$starts completed=$ends received=$received delivered=$delivered overall=$completed")
     }
   }
 
@@ -113,9 +116,11 @@ private[sbt] final class HostReceipt {
     closed = true
     verifyPublication()
     val actual = output.events.collect { case (name, counts) if owned.contains(HostSuiteName(name)) => HostSuiteName(name) -> HostSuiteCounts.from(counts) }
-    if (expected != starts.keySet || starts != ends || actual != received ||
-      (output.overall == TestResult.Passed && received.values.exists(_.result != TestResult.Passed))) {
-      throw new MessageOnlyException(s"Incomplete distage host result: selected=$expected started=$starts completed=$ends received=$received returned=$actual overall=${output.overall}")
+    val returned = output.events.values.foldLeft(HostSuiteCounts.empty)((counts, result) => counts + HostSuiteCounts.from(result))
+    if (expected != starts.keySet.intersect(owned) || starts != ends || actual != received ||
+      output.events.keySet.map(HostSuiteName(_)) != starts.keySet || returned != delivered ||
+      (output.overall == TestResult.Passed && delivered.result != TestResult.Passed)) {
+      throw new MessageOnlyException(s"Incomplete distage host result: selected=$expected started=$starts completed=$ends received=$received returned=$actual delivered=$delivered returnedCounts=$returned overall=${output.overall}")
     }
   }
 
