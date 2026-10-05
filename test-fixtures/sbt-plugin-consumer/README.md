@@ -10,7 +10,7 @@ are checked after each run. Configuration filters and a custom test configuratio
 exercise the same public plugin settings.
 SBT 2 verifies five distinct public stock suite digests before running these
 cases; a missing or aliased digest fails the fixture.
-The combined matrix has43 scenarios per compiler. It edits a scanned plugin
+The combined matrix has 43 scenarios per compiler. It edits a scanned plugin
 implementation, proves that all six stock suite digests remain unchanged, and
 checks that `test` and `testQuick` still rerun and use the edited implementation.
 A suite-class edit must change its own digest while preserving the foreign
@@ -49,11 +49,27 @@ fixture does not prove the complete incremental-input model, the complete
 activation/input domain, multi-project aggregation or
 resource-failure/cancellation recovery.
 
+`verify-multi-project.py` runs ten scenarios per compiler across two aggregated
+modules and their Test and Integration configurations. Each configuration has
+its own target directory. Full, selected, incremental and quick commands check
+body identities, public results, JUnit identities, fresh worker processes and
+paired memoized resources. Inspection checks module/configuration identities
+without execution. Inherited user result loggers exercise configuration routing.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-multi-project.py \
+  --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/multi-project-capture
+```
+
 `verify-host-limits.py` runs five compatible DI suites with SBT host task limits
 of one and two. It checks fifteen physical bodies and matching JUnit identities,
 one shared paired resource lifetime per command, and a fresh lifetime on repeat.
 The first returning suite task must observe all fifteen body files; host group
-start/end records retain the actual concurrency maximum. These in-process JVM
+start/end records retain the actual concurrency maximum. Three bodies in each
+suite wait for one another with a finite deadline; start receipts must identify
+three distinct threads before they complete. The listener checks every exact
+test identity and rejects duplicate or omitted events. These in-process JVM
 controls do not establish cancellation, fork or multi-project behavior.
 
 ```sh

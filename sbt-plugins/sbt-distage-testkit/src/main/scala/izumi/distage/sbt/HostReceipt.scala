@@ -237,9 +237,20 @@ private[sbt] final class HostSelectionObserver(val inherited: Seq[String] => Seq
 
 private[sbt] final class HostResultLogger(val inherited: TestResultLogger, owner: HostReceiptOwner) extends TestResultLogger {
   override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = {
-    owner.consume(output)
-    inherited.run(log, output, taskName)
+    val verified = log match {
+      case previous: HostVerifiedResultLog if previous.output eq output => previous
+      case other =>
+        owner.consume(output)
+        new HostVerifiedResultLog(other, output)
+    }
+    inherited.run(verified, output, taskName)
   }
+}
+
+private[sbt] final class HostVerifiedResultLog(inherited: sbt.util.Logger, val output: Tests.Output) extends sbt.util.Logger {
+  override def trace(cause: => Throwable): Unit = inherited.trace(cause)
+  override def success(message: => String): Unit = inherited.success(message)
+  override def log(level: sbt.util.Level.Value, message: => String): Unit = inherited.log(level, message)
 }
 
 private[sbt] object HostReceiptPolicy {

@@ -87,12 +87,12 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
-| 2d.9 | not started | No evaluation point passed yet. |
+| 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
 | 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Production counted normal/death/recovery controls pass both SDKs on all three Scala versions. SDK2 task-exception reporting, complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
-| 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
+| 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign framework payloads pass current mixed fork and held-delivery controls on Scala2.13/3. The startup agent restores the held batch and rejects premature exits without wrapping foreign events. The preceding quick check preserves the foreign history skip. Overlap reporting, complete mixed domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
@@ -13635,3 +13635,92 @@ multi-project aggregation, full failure/cancellation/reporting domains, all
 selection-reason records, or the final platform/JDK matrix. Published-artifact
 qualification remains the preceding three-pair refresh; no additional
 publication or revalidation of unchanged portable artifacts was performed.
+
+
+## 2026-10-05: combined configuration/concurrency/exit regression batch (2d.3/4/9/11/13/14/15/17, in progress)
+
+Evaluation point: the commit containing this entry, parent `8aeb8d1aa`.
+The owner requested large validation batches and priority for the SBT2 deadlock.
+The preceding shutdown correction is retained; this batch corrects a newly
+reproduced configuration ownership defect and strengthens actual host coverage.
+
+Fail-first capture `sbt2-multi-project-batch-second` exits1 on Scala3.9:
+an empty Integration `testOnly` command traverses two plugin result loggers
+separated by opaque user loggers. The outer logger consumes its receipt; the
+inherited Test logger then throws `Distage host task has no active receipt`.
+`HostResultLogger` now passes the verified Output identity explicitly through
+a delegating public Logger. Nested plugin loggers forward that same result
+without consuming another admission. Missing active ownership on an unverified
+result still fails. The additional receipt check keeps another admission active,
+proves it is untouched, and checks exact Output/task identity and one delegation.
+
+Build commands, exit0,18 checks:
+
+```sh
+direnv exec . sbt --server -java-home "$JDK21" -batch -J-Xmx6G \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostReceiptTest /srv/nvme/tmp/izumi-impl/sbt2-config-owner-build-first/receipt-checks' \
+  sbt-distage-testkit/publishLocal
+```
+
+The combined driver runs `verify-multi-project.py` and `verify-matrix.py` with
+`--artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 2.13.18`, the latter
+also with `--sbt-version 2.0.9`; then it runs `verify-command-groups.py` once
+per compiler with `--repo-root /home/pavel/work/safe/7mind/izumi` and the same
+artifact version. Exact argv, immutable source/JAR inputs and per-command
+captures are in `sbt2-config-owner-regression-third/commands.json`.
+All four drivers and six real SBT processes exit0. Completion SHA256:
+`798a559ecd1b8e7ef788b0f6541fbf19cc72dae6545d2659b3864198324a3182`.
+
+- Multi-project:20 scenarios,80 context checks,330 physical bodies and330
+  exact XML cases,28 fresh paired DI lifetimes and32 distinct exited workers.
+  Two modules aggregate full/selected/incremental/quick commands; Test and
+  Integration use independent targets. Four inspected target identities match
+  all their test IDs without executing bodies. Input/quick public Output is
+  independently captured; production verifies full Output.
+- History:86 scenarios,498 physical bodies and66 paired DI lifetimes. All
+  preceding conservative/foreign history, scanned implementation/suite edits,
+  selection, activation, memoization, inspection and recovery controls pass.
+- Command groups:16 positive/negative controls,78 physical bodies. Both
+  compilers retain held sibling drain, premature System.exit(0/1)/Runtime.halt
+  rejection and same-session recovery. The overlapping-suite map/XML loss
+  remains explicitly rejected, not restored.
+
+The independent concurrent host batch command is:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-host-limits.py \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 --host-threads 1 2 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-concurrent-events-batch-first
+```
+
+Driver and all four SBT processes exit0:8 commands,120 bodies,120 exact
+listener identities and120 XML cases, with8 fresh paired shared lifetimes.
+Three bodies per suite record distinct threads before a finite CountDownLatch
+releases them; omission/sequential execution fails rather than hanging. Host
+windows attain their configured maximum of one/two, and the first returning
+suite task observes all15 bodies. Completion SHA256:
+`be357d6b5578db5ea45d779d7f2b6148a76b670b93ebe500502c36ccbc2e2c18`.
+
+These130 command controls capture1,026 physical bodies. Failed fixture captures
+remain separate: regression-first overwrote Integration source directories with
+Defaults and ran no Integration bodies; regression-second executes its bodies
+but inherits Test's JUnit destination. Regression-third applies sources after
+Defaults and explicitly installs stock public report settings/listeners for
+Integration. Neither fixture correction is represented as a production defect.
+
+The refreshed plugin JAR SHA256 is
+`919c2cebb0302ab31bb8e16089482c55aff1c5755603b0860db969ce450af3d9`.
+All40 packaged class/TASTy payloads match compiled outputs; its POM retains
+ByteBuddy1.17.7 in compile scope. The bounded publication record is in
+`sbt2-config-owner-build-first/publication.json`. Unchanged portable artifacts
+were not republished or retested.
+
+A source-level upgrade audit of [SBT2.0.10](https://github.com/sbt/sbt/releases/tag/v2.0.10)
+finds Tests.scala, ForkTests.scala, WorkerMain.java and WorkerExchange.scala
+byte-identical to2.0.9. Source JARs, hashes and comparisons are frozen in
+`sbt2-latest-source-audit-first`. This does not establish whole-version runtime
+behavior; it gives no source-level correction for the measured reporting paths.
+The pin remains2.0.9. Target suite terminal records, complete SDK failure/overlap
+reporting, streaming/cancellation and final evaluations remain open. No full
+step is marked done, and no push or PR was made.

@@ -174,6 +174,35 @@ object HostReceiptTest {
       current.abort(generation)
     }
 
+    check("verify once through opaque inherited loggers without consuming another admission") {
+      val earlier = owner()
+      val previous = earlier.enter()
+      val current = owner()
+      val generation = current.enter()
+      var forwarded = 0
+      val delegate = new TestResultLogger {
+        override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = {
+          require(output eq empty, "Result logger changed the SDK output")
+          require(taskName == "fixture", "Result logger changed the task identity")
+          forwarded += 1
+        }
+      }
+      val inherited = new HostResultLogger(delegate, earlier)
+      val opaque = new TestResultLogger {
+        override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = inherited.run(log, output, taskName)
+      }
+      try {
+        HostReceiptPolicy.logger(opaque, current).run(sbt.util.Logger.Null, empty, "fixture")
+        require(forwarded == 1, "Inherited logger did not run exactly once")
+        require(earlier.receipt eq previous.receipt, "Inherited logger consumed another command's receipt")
+        rejects(classOf[IllegalStateException]) { val _ = current.receipt; () }
+        earlier.consume(empty)
+      } finally {
+        current.abort(generation)
+        earlier.abort(previous)
+      }
+    }
+
     check("publish exact fork receipts only after completed host groups") {
       val current = owner()
       val generation = current.enter()

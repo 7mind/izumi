@@ -21,6 +21,7 @@ EXPECTED_BODIES = len(SUITES) * TESTS_PER_SUITE
 WINDOW_SOURCE = '''package fixture
 
 import sbt.{TestEvent, TestResult, TestsListener}
+import sbt.testing.{Status, TestSelector}
 import java.nio.file.{Files, Path}
 
 private[fixture] final case class SuiteName(value: String)
@@ -34,6 +35,7 @@ final class HostWindow(directory: Path, limit: Int, log: sbt.util.Logger) extend
   private var active = Set.empty[SuiteName]
   private var maximum = 0
   private var firstEndBodies = Option.empty[Long]
+  private var events = Set.empty[(SuiteName, String)]
 
   override def doInit(): Unit = synchronized {
     require(active.isEmpty, "Host window initialized with active groups")
@@ -41,6 +43,7 @@ final class HostWindow(directory: Path, limit: Int, log: sbt.util.Logger) extend
     ended = Set.empty
     maximum = 0
     firstEndBodies = None
+    events = Set.empty
   }
   override def startGroup(name: String): Unit = synchronized {
     val suite = SuiteName(name)
@@ -51,7 +54,18 @@ final class HostWindow(directory: Path, limit: Int, log: sbt.util.Logger) extend
     require(maximum <= limit, "Host group concurrency exceeds its configured limit")
     log.info("HOST_WINDOW_START suite=" + name + " active=" + active.size)
   }
-  override def testEvent(event: TestEvent): Unit = { val _ = event; () }
+  override def testEvent(event: TestEvent): Unit = synchronized {
+    event.detail.foreach { detail =>
+      val suite = SuiteName(detail.fullyQualifiedName())
+      val path = detail.selector() match {
+        case selector: TestSelector => selector.testName()
+        case other => throw new IllegalArgumentException("Unexpected concurrent test selector: " + other)
+      }
+      require(expected.contains(suite) && active.contains(suite) && detail.status() == Status.Success, "Unexpected concurrent test event")
+      require(!events.contains(suite -> path), "Duplicate concurrent test event")
+      events += suite -> path
+    }
+  }
   override def endGroup(name: String, cause: Throwable): Unit = throw new IllegalStateException("Unexpected host group failure: " + name, cause)
   override def endGroup(name: String, result: TestResult): Unit = synchronized {
     val suite = SuiteName(name)
@@ -69,6 +83,8 @@ final class HostWindow(directory: Path, limit: Int, log: sbt.util.Logger) extend
   override def doComplete(result: TestResult): Unit = synchronized {
     require(result == TestResult.Passed && active.isEmpty && started == expected && ended == expected, "Incomplete host window")
     require(firstEndBodies.contains(expectedBodies), "First task body evidence is absent")
+    val expectedEvents = expected.flatMap(suite => Set("first", "second", "third").map(leaf => suite -> ("equal display name should " + leaf)))
+    require(events == expectedEvents, "Concurrent test events were omitted or misidentified")
     log.info("HOST_WINDOW_OK limit=" + limit + " maximum=" + maximum + " started=" + started.size + " ended=" + ended.size + " firstEndBodies=" + firstEndBodies.get)
   }
 }
@@ -126,6 +142,22 @@ def main():
                     elif original.name in ['SuiteA.scala', 'SuiteB.scala']:
                         assert source.count('extends PlainFixtureSuite') == 1
                         source = source.replace('extends PlainFixtureSuite', 'extends DIFixtureSuite')
+                    elif original.name == 'FixtureSuites.scala':
+                        before = 'final class BodyAudit(directory: Path, suite: String) {\n'
+                        assert source.count(before) == 1
+                        source = source.replace(before, before + '''  private final val TestsPerSuite = 3
+  private final val BodyStartTimeoutSeconds = 10L
+  private val started = new java.util.concurrent.atomic.AtomicInteger
+  private val ready = new java.util.concurrent.CountDownLatch(TestsPerSuite)
+''')
+                        before = '  def record(index: Int, resource: Option[String]): Unit = {\n'
+                        assert source.count(before) == 1
+                        source = source.replace(before, before + '''    val ordinal = started.incrementAndGet()
+    val entry = suite + "\\t" + index + "\\t" + ordinal + "\\t" + Thread.currentThread().getId
+    val _ = Files.write(directory.resolve(suite + "-" + index + ".start"), entry.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+    ready.countDown()
+    require(ready.await(BodyStartTimeoutSeconds, java.util.concurrent.TimeUnit.SECONDS), "Concurrent suite bodies did not all start")
+''')
                     path.write_text(source)
                 project = build / 'project'
                 project.mkdir()
@@ -183,6 +215,13 @@ def main():
                     expected_xml = [('izumi.fixtures.host.' + suite, 'equal display name should ' + leaf) for suite in SUITES for leaf in ['first', 'second', 'third']]
                     if sorted((row[0], row[1]) for row in bodies) != sorted(expected) or sorted(identities) != sorted(expected_xml):
                         failures.append('Physical/report identity set differs: ' + case)
+                    starts = [path.read_text().split('\t') for path in audit.glob('*.start')]
+                    if sorted((row[0], row[1]) for row in starts) != sorted(expected):
+                        failures.append('Concurrent body start identities differ: ' + case)
+                    for suite in SUITES:
+                        entries = [row for row in starts if row[0] == 'izumi.fixtures.host.' + suite]
+                        if sorted(row[2] for row in entries) != ['1', '2', '3'] or len({row[3] for row in entries}) != TESTS_PER_SUITE:
+                            failures.append('Three bodies did not overlap on distinct threads: ' + case + '/' + suite)
                     if len(acquired) != 1 or acquired != released or {row[2] for row in bodies} != set(acquired) or resources.intersection(acquired):
                         failures.append('Shared/fresh paired resource lifetime differs: ' + case)
                     resources.update(acquired)
@@ -197,7 +236,7 @@ def main():
                 if failures:
                     (evidence / 'completion.json').write_text(json.dumps(dict(exit=1, outcomes=outcomes), indent=2) + '\n')
                     raise SystemExit(1)
-    (evidence / 'completion.json').write_text(json.dumps(dict(exit=0, outcomes=outcomes, bodies=len(outcomes) * 2 * EXPECTED_BODIES, resourceLifetimes=len(resources), scope='Five compatible DI suites, actual SBT host task windows of one/two and serial fresh-resource recovery; in-process JVM controls, no cancellation/fork/multi-project acceptance.'), indent=2) + '\n')
+    (evidence / 'completion.json').write_text(json.dumps(dict(exit=0, outcomes=outcomes, bodies=len(outcomes) * 2 * EXPECTED_BODIES, resourceLifetimes=len(resources), scope='Five compatible DI suites, three concurrent bodies per suite with distinct thread receipts and exact listener identities, actual SBT host task windows of one/two and serial fresh-resource recovery; in-process JVM controls, no cancellation/fork/multi-project acceptance.'), indent=2) + '\n')
 
 
 if __name__ == '__main__':
