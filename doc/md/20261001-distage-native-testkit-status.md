@@ -13184,3 +13184,15 @@ despite the owner's resume instruction; authorized work proceeds in this turn.
 No acceptance item or whole step is marked done. The verified six-file change
 is eligible for local commit `Report JVM suite registration linkage failures`,
 parent `0f49dabcac85c79b44bad4b1501366579cd5bff7`. No push is performed.
+
+The verified implementation checkpoint is local commit
+`ff74dae68dc2922d6a2671e4c2c979da21ba2c93`
+(`Report JVM suite registration linkage failures`). Post-commit verification
+checks exactly the six intended paths, the recorded parent, all1,677 captured
+source/documentation rows unchanged, and a clean working tree. Pre-commit guard
+SHA256 `4957c8f5743e78edae4eb72d2ff2596a4bcc62e65eb5228272a7ca1fcf1627e9`;
+the actual commit record is `registration-linkage-final-guard-first/commit.json`.
+This subsequent ledger-only stamp leaves every compiled input and tested driver
+unchanged. No branch is pushed, acceptance item completed, or goal completion
+claimed. A post-check still observes the goal tracker's paused state; no available
+goal tool can set it active, and no replacement goal is created.
