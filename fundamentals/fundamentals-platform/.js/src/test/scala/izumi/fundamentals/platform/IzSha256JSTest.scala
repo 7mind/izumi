@@ -1,9 +1,11 @@
 package izumi.fundamentals.platform
 
+import izumi.fundamentals.platform.Sha256TestVectors.{binaryVectors, textVectors}
 import izumi.fundamentals.platform.bytes.IzBytes.*
 import izumi.fundamentals.platform.crypto.IzSha256
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.nio.charset.StandardCharsets
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters.*
 import scala.scalajs.js.typedarray.Int8Array
@@ -16,6 +18,17 @@ class IzSha256JSTest extends AnyWordSpec {
   }
 
   "portable sha256" should {
+    "match the FIPS 180-4 and NIST CAVP test vectors" in {
+      textVectors.foreach {
+        case (input, expected) =>
+          assert(IzSha256.digest(input.getBytes(StandardCharsets.UTF_8)).toHex == expected, input.take(32))
+      }
+      binaryVectors.foreach {
+        case (input, expected) =>
+          assert(IzSha256.digest(input).toHex == expected, input.toHex)
+      }
+    }
+
     "agree with node:crypto for every message length around the block boundaries" in {
       val random = new Random(0)
       (0 to 300).foreach {

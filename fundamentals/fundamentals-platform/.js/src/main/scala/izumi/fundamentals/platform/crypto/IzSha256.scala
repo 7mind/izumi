@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.crypto
 
-/** SHA-256 as specified in FIPS 180-4. Platform-independent; the JS platform has no `MessageDigest`. */
+/** SHA-256 as specified in FIPS 180-4, for Scala.js, which has no `MessageDigest`. */
 private[platform] object IzSha256 {
   private final val BlockSize = 64
   private final val LengthFieldSize = 8
