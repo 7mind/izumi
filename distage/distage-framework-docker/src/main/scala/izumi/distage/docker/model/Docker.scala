@@ -173,7 +173,9 @@ object Docker {
     * @param files    Files and directories this JVM reads and copies into the container after creating it and before starting it,
     *                 before the `afterCreate` hooks, so the container engine never needs access to the host path.
     *                 Copies are owned by root, world-readable, and executable only when the source file is;
-    *                 modification times are not preserved.
+    *                 modification times are not preserved. Each entry is archived in memory and the archives are kept
+    *                 for the lifetime of the container resource, so this suits small trees such as configs and migrations;
+    *                 use `mounts` for large data.
     *
     * @param afterCreate Hooks run in order after the container is created and before it is started, after copying `files`.
     *                 A container is reused only if it was created with hooks of identical reuse keys, `files` included,
