@@ -14478,3 +14478,59 @@ bytes; they were not rerun. No whole step or final item is marked done. Complete
 owned/foreign failure and cancellation domains, custom input-task composition,
 streaming, production JS/Native hosts, coverage, migration and final reviews
 remain open. IDE work remains excluded; no push or PR was made.
+
+
+## 2026-10-05: full uncached Native tests after the rebase
+
+Commit: the commit containing this entry, parent
+`6ee57638cbc386a464a989665960ca18a348cac8`.
+The preceding in-process checkpoint's post-commit proof confirms a clean worktree,
+unchanged production tree, and the committed driver SHA256
+`86a233d0de6a4bbf4bafb0a1191a81dca66e7064bf65c81d6ff573358a3219a4`.
+Record: `/srv/nvme/tmp/izumi-impl/sbt2-inprocess-groups-third/commit-proof.json`.
+
+The targeted post-rebase runtime commands used ordinary incremental test tasks.
+This additional batch deliberately uses testFull on the whole Native aggregate:
+
+```sh
+direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"' build \
+  'set ThisBuild / insideCI := true' \
+  'izumi-native/Test/testFull' \
+  '++2.13.18' \
+  'izumi-native/Test/testFull'
+```
+
+Actual exit 0, with all frozen source/build inputs unchanged. Exact argv, tested
+head, source hashes, full log and terminal result are under
+`/srv/nvme/tmp/izumi-impl/develop-rebase-20261005/full-native/`.
+The audit splits the log at the explicit Scala switch and checks fixture markers
+in each round. Scala3.9 reports 799 ScalaTest cases in 13 completed groups;
+Scala2.13 reports 762 cases in 13 completed groups. The per-group counts are in
+audit.json; these aggregate counts do not replace the final per-suite migration
+inventory. Platform/source-set differences remain subject to that inventory.
+
+Both rounds additionally pass assertion86, Cats12 and BIO13 checks, protocol219,
+base-runner802, session-environment118 and distage-provider516. The protocol's
+default Scala3 variant remains compiled with 3.8.4. Both Native engine rounds
+report `NATIVE_TESTKIT_DI_CONFIGURATION_OK` and
+`NATIVE_TESTKIT_PARALLEL_MEMOIZED_OK tests=4 acquired=1 released=1`.
+Parallel cancellation acquires and releases both resources on both compilers;
+production and dummy environment/plugin concurrency controls each complete64
+requests per round. The named launcher, cancellation, assertion transport,
+throwable and planning-failure markers are retained in audit.json.
+
+An independent publication inspection checks all18 assertion-module POMs at
+`1.3.0-M5-SNAPSHOT` across JVM/JS/Native and Scala2.13/3. None declares a direct
+ScalaTest/Scalactic dependency or an izumi dependency above fundamentals.
+Record: `develop-rebase-20261005/assertion-publication-poms.json`. This inspects
+direct published dependencies; it does not claim a new transitive classpath
+audit or a new external-consumer run.
+
+The Native compiler/linker emits warnings through error-level logging, but both
+commands and the batch exit0. The batch temporarily stops logging after its
+last provider marker; a process inspection finds it has already exited0, so no
+deadlock is reproduced and no production correction is made.
+No whole step or final item is marked done. Full current JVM/JS runtime checks,
+the final suite inventory, remaining host lifecycle/streaming work, production
+JS/Native hosts, coverage, migration and final reviews remain open. IDE work
+remains excluded; no push or PR was made.
