@@ -13034,3 +13034,18 @@ The goal tracker still reports `paused`; the owner resume instruction authorizes
 this turn's work, but no available tracker tool can resume automatic continuation
 or update its original fixed-scope objective. The plan/checklist record the
 explicit owner amendments; the goal is not complete.
+
+
+### Support revision commit checkpoint
+
+Verified support implementation commit:
+`b5545c3a631c71d2f710ad084d899e7a9c7ce1a6` (`Drop SBT 1 and Scala 2.12 support`).
+The local commit contains exactly the reviewed 44-file change. All 1,675
+existing tracked source/documentation files remain byte-identical to the
+pre-commit freeze, and the working tree is clean before this ledger-only entry.
+Pre-commit guard SHA-256:
+`a39e3a59be9d069b1d7aed5a09fe89ffc0c0e3666ffb7a2864c19431dfbf8780`.
+Its ten terminal-success records bind the matrix, publication, point-position
+checks, consumer audits, supported-input guards and corrected reproduction
+drivers. No push, whole-step completion, final acceptance or goal completion is
+claimed. The following commit changes only this ledger checkpoint.
