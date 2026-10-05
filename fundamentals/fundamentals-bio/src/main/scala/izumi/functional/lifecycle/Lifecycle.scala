@@ -1,5 +1,6 @@
 package izumi.functional.lifecycle
 
+import scala.annotation.nowarn
 import cats.Applicative
 import cats.effect.kernel
 import cats.effect.kernel.{GenConcurrent, Resource, Sync}
@@ -781,6 +782,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
+  @nowarn("msg=shadows field")
   open class Make_[+F[_], A](acquire: => F[A])(release: => F[Unit]) extends Make[F, A](acquire)(_ => release)
 
   /**
@@ -846,6 +848,7 @@ object Lifecycle extends LifecycleInstances {
     *   }
     * }}}
     */
+  @nowarn("msg=shadows field")
   open class FromAutoCloseable[+F[_]: QuasiIO, +A <: AutoCloseable](acquire: => F[A]) extends Lifecycle.Of(Lifecycle.fromAutoCloseable(acquire))
 
   /**

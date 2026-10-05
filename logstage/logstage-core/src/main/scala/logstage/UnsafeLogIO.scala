@@ -1,5 +1,6 @@
 package logstage
 
+import scala.annotation.nowarn
 import izumi.functional.bio.{SyncSafe1, SyncSafe2, SyncSafe3}
 import izumi.fundamentals.platform.language.CodePosition
 import izumi.logstage.api.Log.Entry
@@ -26,6 +27,7 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
 
   def fromLogger[F[_]: SyncSafe1](logger: AbstractLoggerF[F]): UnsafeLogIO[F] = new UnsafeLogIOSyncSafeInstanceF[F](logger)(SyncSafe1[F])
 
+  @nowarn("msg=shadows field")
   class UnsafeLogIOSyncSafeInstance[F[_]](logger: AbstractLogger)(F: SyncSafe1[F]) extends LogCreateIOSyncSafeInstance[F](F) with UnsafeLogIO[F] {
     override def unsafeLog(entry: Entry): F[Unit] = {
       F.syncSafe(logger.unsafeLog(entry))
@@ -36,6 +38,7 @@ object UnsafeLogIO extends LowPriorityUnsafeLogIOInstances {
     }
   }
 
+  @nowarn("msg=shadows field")
   class UnsafeLogIOSyncSafeInstanceF[F[_]](
     logger: AbstractLoggerF[F]
   )(F: SyncSafe1[F] // Used in LogCreateIOSyncSafeInstance

@@ -11,7 +11,7 @@ import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.graphs.struct.AdjacencyPredList
 import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -35,9 +35,7 @@ trait SemigraphSolver[N, I, V] {
   ): Either[NEList[ConflictResolutionError[N, V]], Resolution[N, V]]
 }
 
-@nowarn("msg=[Uu]nused import")
 object SemigraphSolver {
-  import scala.collection.compat._
   import scala.collection.immutable
 
   final case class RemappedValue[V, N](meta: V, remapped: Map[N, MutSel[N]])

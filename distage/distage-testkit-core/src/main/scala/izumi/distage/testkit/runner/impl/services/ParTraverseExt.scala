@@ -4,8 +4,6 @@ import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO}
 
-import scala.annotation.nowarn
-
 trait ParTraverseExt[F[_]] {
   def groupedParTraverse[A, B](l: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]]
   def configuredParTraverse[A, B](parallelism: Parallelism)(l: Iterable[A])(f: A => F[B]): F[List[B]]
@@ -13,14 +11,11 @@ trait ParTraverseExt[F[_]] {
 
 object ParTraverseExt {
 
-  @nowarn("msg=[Uu]nused import")
   final class ParTraverseExtImpl[F[_]](
   )(implicit
     F: QuasiIO[F],
     P: QuasiAsync[F],
   ) extends ParTraverseExt[F] {
-    import scala.collection.compat.*
-
     override def groupedParTraverse[A, B](l0: Iterable[A])(getParallelismGroup: A => Parallelism)(f: A => F[B]): F[List[B]] = {
       val sorted = l0.groupBy(getParallelismGroup).toList.sortBy {
         case (Parallelism.Unlimited, _) => 1

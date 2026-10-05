@@ -3,14 +3,10 @@ package izumi.fundamentals.graphs.tools.cycles
 import izumi.fundamentals.graphs.DAGError
 import izumi.fundamentals.graphs.struct.{AdjacencyList, AdjacencyPredList}
 
-import scala.annotation.nowarn
 import scala.collection.mutable
 
 // TODO: this class is not required for distage
-@nowarn("msg=[Uu]nused import")
 final class CycleEraser[N](predecessorsMatrix: AdjacencyPredList[N], breaker: LoopBreaker[N]) {
-  import scala.collection.compat._
-
   private val output: mutable.Map[N, mutable.LinkedHashSet[N]] = mutable.HashMap.empty
   private var current: mutable.Map[N, mutable.LinkedHashSet[N]] = asMut(predecessorsMatrix)
 

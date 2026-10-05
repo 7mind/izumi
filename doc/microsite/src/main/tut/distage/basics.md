@@ -60,14 +60,6 @@ If you're using Scala 3 you **must** enable `-Yretain-trees` for this library to
 scalacOptions += "-Yretain-trees"
 ```
 
-If you're using Scala `2.12` you **must** enable `-Ypartial-unification` and either `-Xsource:2.13` or `-Xsource:3` for this library to work correctly:
-
-```scala
-// REQUIRED options for Scala 2.12
-scalacOptions += "-Ypartial-unification"
-scalacOptions += "-Xsource:3" // or at least "-Xsource:2.13"
-```
-
 Additionally, all source examples in this document use [underscore syntax for type lambdas](https://docs.scala-lang.org/scala3/guides/migration/plugin-kind-projector.html) which you can enable with the following options:
 
 @@@vars
@@ -343,7 +335,7 @@ In `distage-framework`'s @scaladoc[RoleAppMain](izumi.distage.roles.RoleAppMain)
 ./launcher -u repo:dummy -u env:prod app1
 ```
 
-In `distage-testkit`, choose axes using @scaladoc[TestConfig](izumi.distage.testkit.TestConfig):
+In `distage-testkit`, choose axes using @scaladoc[TestConfig](izumi.distage.testkit.model.TestConfig):
 
 ```scala mdoc:to-string
 import distage.StandardAxis.Repo
@@ -679,8 +671,6 @@ See @scaladoc[`DefaultModule`](izumi.distage.modules.DefaultModule) implicit for
 what exact components are available for each effect type, see
 @scaladoc[ZIOSupportModule](izumi.distage.modules.support.ZIOSupportModule),
 @scaladoc[CatsIOSupportModule](izumi.distage.modules.support.CatsIOSupportModule),
-@scaladoc[MonixSupportModule](izumi.distage.modules.support.MonixSupportModule),
-@scaladoc[MonixBIOSupportModule](izumi.distage.modules.support.MonixBIOSupportModule),
 @scaladoc[ZIOCatsEffectInstancesModule](izumi.distage.modules.typeclass.ZIOCatsEffectInstancesModule), respectively.
 
 DefaultModule occurs as an implicit parameter in `distage` entrypoints that require an effect type parameter, namely: `Injector[F]()` in `distage-core`, @ref[`extends RoleAppMain[F]`](distage-framework.md#roles) and @ref[`extends PlanCheck.Main[F]`](distage-framework.md#compile-time-checks) in `distage-framework` and @ref[`extends Spec1[F]`](distage-testkit.md) in `distage-testkit`.

@@ -2,8 +2,6 @@ package izumi.functional.bio
 
 import izumi.fundamentals.platform.language.SourceFilePositionMaterializer
 
-import scala.annotation.nowarn
-
 trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAccumulatingOps2[F] {
 
   def catchAll[E, A, E2](r: F[E, A])(f: E => F[E2, A]): F[E2, A]
@@ -62,9 +60,7 @@ trait Error2[F[+_, +_]] extends ApplicativeError2[F] with Monad2[F] with ErrorAc
     catchAll(r: F[E, A])(e => flatMap(f(e))(if (_) fail(e) else retryUntilF(r)(f)))
   }
 
-  @nowarn("msg=[Uu]nused import")
   def partition[E, A](l: Iterable[F[E, A]]): F[Nothing, (List[E], List[A])] = {
-    import scala.collection.compat.*
     map(traverse(l)(attempt[E, A]))(_.partitionMap(identity))
   }
 

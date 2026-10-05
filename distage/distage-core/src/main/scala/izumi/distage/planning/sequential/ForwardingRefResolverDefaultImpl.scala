@@ -12,7 +12,7 @@ import izumi.fundamentals.graphs.struct.{AdjacencyList, AdjacencyPredList}
 import izumi.fundamentals.graphs.tools.cycles.LoopDetector
 import izumi.fundamentals.graphs.{DG, GraphMeta}
 
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 object ForwardingRefResolverDefaultImpl {
@@ -97,14 +97,11 @@ object ForwardingRefResolverDefaultImpl {
   }
 }
 
-@nowarn("msg=[Uu]nused import")
 class ForwardingRefResolverDefaultImpl(
   breaker: FwdrefLoopBreaker
 ) extends ForwardingRefResolver {
 
   import ForwardingRefResolverDefaultImpl.*
-
-  import scala.collection.compat.*
 
   /** This solution is lot more performant and sound than it was in the early days,
     * but still there are some expensive ideas of the further improvement

@@ -20,7 +20,7 @@ import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.os.{IzOs, OsType}
-import izumi.fundamentals.platform.resources.ArtifactVersion
+import izumi.fundamentals.platform.resources.{ArtifactVersion, IzResources}
 import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.logger.LogSink
 import izumi.logstage.api.routing.StaticLogRouter
@@ -312,12 +312,14 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
 
     "produce config dumps and support minimization" in {
       val version = ArtifactVersion(Version.Unknown(s"0.0.0-${UUID.randomUUID().toString}"))
-      val role00OverrideConf = getClass.getResource("/testrole00-override.conf").getPath
       withProperties(
         overrides ++
         Map(TestPluginCatsIO.versionProperty -> version.version.toString)
       ) {
-        TestEntrypoint.main(Array("-nc", "-c", role00OverrideConf, "-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
+        withResourceFile("/testrole00-override.conf") {
+          role00OverrideConf =>
+            TestEntrypoint.main(Array("-nc", "-c", role00OverrideConf, "-ll", logLevel, "-u", "axiscomponentaxis:incorrect", ":configwriter", "-t", targetPath))
+        }
       }
 
       val cwCfg = cfg("configwriter-full", version)
@@ -462,121 +464,123 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "prioritize configs as expected, support system property" in {
       import ConfigTestRole.configTestConfig
 
-      TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
+      withResourceFile("/configtest-role-override.conf") {
+        roleOverrideConf =>
+          withResourceFile("/configtest-common-override.conf") {
+            commonOverrideConf =>
+              TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
 
-      assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-      assert(configTestConfig.commonReference == 2, "common-reference")
-      assert(configTestConfig.common == 3, "common")
-      assert(configTestConfig.applicationReference == 4, "application-reference")
-      assert(configTestConfig.application == 5, "application")
-      assert(configTestConfig.roleReference == 6, "role-reference")
-      assert(configTestConfig.role == 7, "role")
+              assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+              assert(configTestConfig.commonReference == 2, "common-reference")
+              assert(configTestConfig.common == 3, "common")
+              assert(configTestConfig.applicationReference == 4, "application-reference")
+              assert(configTestConfig.application == 5, "application")
+              assert(configTestConfig.roleReference == 6, "role-reference")
+              assert(configTestConfig.role == 7, "role")
 
-      val roleOverrideConf = getClass.getResource("/configtest-role-override.conf").getPath
+              TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-      TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+              assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+              assert(configTestConfig.commonReference == 29, "common-reference")
+              assert(configTestConfig.common == 3, "common")
+              assert(configTestConfig.applicationReference == 9, "application-reference")
+              assert(configTestConfig.application == 5, "application")
+              assert(configTestConfig.roleReference == 9, "role-reference")
+              assert(configTestConfig.role == 7, "role")
 
-      assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-      assert(configTestConfig.commonReference == 29, "common-reference")
-      assert(configTestConfig.common == 3, "common")
-      assert(configTestConfig.applicationReference == 9, "application-reference")
-      assert(configTestConfig.application == 5, "application")
-      assert(configTestConfig.roleReference == 9, "role-reference")
-      assert(configTestConfig.role == 7, "role")
+              withProperties(
+                DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
+              ) {
+                TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-      withProperties(
-        DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
-      ) {
-        TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+                assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
+                assert(configTestConfig.commonReference == 29, "common-reference")
+                assert(configTestConfig.common == 3, "common")
+                assert(configTestConfig.applicationReference == 9, "application-reference")
+                assert(configTestConfig.application == 5, "application")
+                assert(configTestConfig.roleReference == 9, "role-reference")
+                assert(configTestConfig.role == 5, "role")
+                ()
+              }
 
-        assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-        assert(configTestConfig.commonReference == 29, "common-reference")
-        assert(configTestConfig.common == 3, "common")
-        assert(configTestConfig.applicationReference == 9, "application-reference")
-        assert(configTestConfig.application == 5, "application")
-        assert(configTestConfig.roleReference == 9, "role-reference")
-        assert(configTestConfig.role == 5, "role")
-        ()
-      }
+              TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
 
-      val commonOverrideConf = getClass.getResource("/configtest-common-override.conf").getPath
+              assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+              assert(configTestConfig.commonReference == 28, "common-reference")
+              assert(configTestConfig.common == 8, "common")
+              assert(configTestConfig.applicationReference == 8, "application-reference")
+              assert(configTestConfig.application == 8, "application")
+              assert(configTestConfig.roleReference == 6, "role-reference")
+              assert(configTestConfig.role == 7, "role")
 
-      TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
+              TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-      assert(configTestConfig.commonReference == 28, "common-reference")
-      assert(configTestConfig.common == 8, "common")
-      assert(configTestConfig.applicationReference == 8, "application-reference")
-      assert(configTestConfig.application == 8, "application")
-      assert(configTestConfig.roleReference == 6, "role-reference")
-      assert(configTestConfig.role == 7, "role")
+              assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+              assert(configTestConfig.commonReference == 289, "common-reference")
+              assert(configTestConfig.common == 8, "common")
+              assert(configTestConfig.applicationReference == 9, "application-reference")
+              assert(configTestConfig.application == 8, "application")
+              assert(configTestConfig.roleReference == 9, "role-reference")
+              assert(configTestConfig.role == 7, "role") // role reference beats explicit common config
 
-      TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+              withProperties(
+                DebugProperties.`distage.roles.always-include-reference-common-configs`.name -> "false"
+              ) {
+                TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
 
-      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-      assert(configTestConfig.commonReference == 289, "common-reference")
-      assert(configTestConfig.common == 8, "common")
-      assert(configTestConfig.applicationReference == 9, "application-reference")
-      assert(configTestConfig.application == 8, "application")
-      assert(configTestConfig.roleReference == 9, "role-reference")
-      assert(configTestConfig.role == 7, "role") // role reference beats explicit common config
+                assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+                assert(configTestConfig.commonReference == 8, "common-reference")
+                assert(configTestConfig.common == 8, "common")
+                assert(configTestConfig.applicationReference == 8, "application-reference")
+                assert(configTestConfig.application == 8, "application")
+                assert(configTestConfig.roleReference == 6, "role-reference")
+                assert(configTestConfig.role == 7, "role")
+                ()
+              }
 
-      withProperties(
-        DebugProperties.`distage.roles.always-include-reference-common-configs`.name -> "false"
-      ) {
-        TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
+              withProperties(
+                DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
+              ) {
+                TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-        assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-        assert(configTestConfig.commonReference == 8, "common-reference")
-        assert(configTestConfig.common == 8, "common")
-        assert(configTestConfig.applicationReference == 8, "application-reference")
-        assert(configTestConfig.application == 8, "application")
-        assert(configTestConfig.roleReference == 6, "role-reference")
-        assert(configTestConfig.role == 7, "role")
-        ()
-      }
+                assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+                assert(configTestConfig.commonReference == 289, "common-reference")
+                assert(configTestConfig.common == 8, "common")
+                assert(configTestConfig.applicationReference == 9, "application-reference")
+                assert(configTestConfig.application == 8, "application")
+                assert(configTestConfig.roleReference == 9, "role-reference")
+                assert(configTestConfig.role == 8, "role")
+                ()
+              }
 
-      withProperties(
-        DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
-      ) {
-        TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+              TestEntrypoint.main(Array("-c", commonOverrideConf, "-nc", "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-        assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-        assert(configTestConfig.commonReference == 289, "common-reference")
-        assert(configTestConfig.common == 8, "common")
-        assert(configTestConfig.applicationReference == 9, "application-reference")
-        assert(configTestConfig.application == 8, "application")
-        assert(configTestConfig.roleReference == 9, "role-reference")
-        assert(configTestConfig.role == 8, "role")
-        ()
-      }
+              assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
+              assert(configTestConfig.commonReference == 89, "common-reference")
+              assert(configTestConfig.common == 8, "common")
+              assert(configTestConfig.applicationReference == 9, "application-reference")
+              assert(configTestConfig.application == 8, "application")
+              assert(configTestConfig.roleReference == 9, "role-reference")
+              assert(configTestConfig.role == 8, "role")
 
-      TestEntrypoint.main(Array("-c", commonOverrideConf, "-nc", "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
+              // system property config overrides
 
-      assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-      assert(configTestConfig.commonReference == 89, "common-reference")
-      assert(configTestConfig.common == 8, "common")
-      assert(configTestConfig.applicationReference == 9, "application-reference")
-      assert(configTestConfig.application == 8, "application")
-      assert(configTestConfig.roleReference == 9, "role-reference")
-      assert(configTestConfig.role == 8, "role")
+              withProperties(
+                "configTest.commonReferenceDev" -> "20"
+              ) {
+                ConfigFactory.invalidateCaches()
+                TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
 
-      // system property config overrides
-
-      withProperties(
-        "configTest.commonReferenceDev" -> "20"
-      ) {
-        ConfigFactory.invalidateCaches()
-        TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
-
-        assert(configTestConfig.commonReferenceDev == 20, "common-reference-dev")
-        assert(configTestConfig.commonReference == 2, "common-reference")
-        assert(configTestConfig.common == 3, "common")
-        assert(configTestConfig.applicationReference == 4, "application-reference")
-        assert(configTestConfig.application == 5, "application")
-        assert(configTestConfig.roleReference == 6, "role-reference")
-        assert(configTestConfig.role == 7, "role")
-        ()
+                assert(configTestConfig.commonReferenceDev == 20, "common-reference-dev")
+                assert(configTestConfig.commonReference == 2, "common-reference")
+                assert(configTestConfig.common == 3, "common")
+                assert(configTestConfig.applicationReference == 4, "application-reference")
+                assert(configTestConfig.application == 5, "application")
+                assert(configTestConfig.roleReference == 6, "role-reference")
+                assert(configTestConfig.role == 7, "role")
+                ()
+              }
+          }
       }
     }
 
@@ -696,12 +700,22 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DebugProperties.`izumi.distage.roles.activation.ignore-unknown`.name -> "true",
         DebugProperties.`izumi.distage.roles.activation.warn-unset`.name -> "false",
       ) {
-        val checkTestGoodRes = getClass.getResource("/check-test-good.conf").getPath
-        val customRoleConfigRes = getClass.getResource("/custom-role.conf").getPath
-        new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id, "-c", customRoleConfigRes))
+        withResourceFile("/check-test-good.conf") {
+          checkTestGoodRes =>
+            withResourceFile("/custom-role.conf") {
+              customRoleConfigRes =>
+                new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id, "-c", customRoleConfigRes))
+            }
+        }
 //        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id))
       }
     }
+  }
+
+  private def withResourceFile[R](name: String)(f: String => R): R = {
+    val resource = IzResources(getClass).materialize(name.stripPrefix("/"), "RoleAppTest").getOrElse(fail(s"Missing test resource: $name"))
+    try f(resource.path.toString)
+    finally resource.close()
   }
 
   // Asserts the fatal failure was recorded as a structured error entry carrying the failure cause, rather than only

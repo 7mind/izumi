@@ -3,12 +3,7 @@ package izumi.fundamentals.collections
 import izumi.fundamentals.collections.nonempty.{NEList, NEMap, NESet, NEString}
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.annotation.nowarn
-
-@nowarn("msg=[Uu]nused import")
 class NonEmptyCollectionsTest extends AnyWordSpec {
-
-  import scala.collection.compat._
 
   "NEList" should {
     "maintain base contracts" in {

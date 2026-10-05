@@ -7,7 +7,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.G
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
 import izumi.distage.docker.impl.ContainerResource.PortDecl
 import izumi.distage.docker.impl.DockerClientWrapper.{ContainerDestroyMeta, RemovalReason}
-import izumi.distage.docker.model.{Docker, DockerFailureCause, DockerFailureException, DockerTimeoutException}
+import izumi.distage.docker.model.{ContainerHook, Docker, DockerFailureCause, DockerFailureException, DockerTimeoutException}
 import izumi.distage.docker.model.Docker.*
 import izumi.distage.docker.{DockerConst, DockerContainer}
 import izumi.distage.model.definition.Lifecycle
@@ -16,6 +16,7 @@ import izumi.functional.Value
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.collections.nonempty.NEList
+import izumi.fundamentals.platform.crypto.IzHash
 import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.files.FileLockMutex
 import izumi.fundamentals.platform.integration.ResourceCheck
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 open class ContainerResource[F[_], Tag](
@@ -42,12 +44,21 @@ open class ContainerResource[F[_], Tag](
 
   import client.rawClient
 
+  protected lazy val afterCreateHooks: Seq[ContainerHook] = {
+    (if (config.files.isEmpty) Nil else List(new CopyFilesHook(config.files.toList))) ++ config.afterCreate
+  }
+
+  protected lazy val hooksDigest: Option[String] = {
+    ContainerResource.hooksDigest(afterCreateHooks.map(_.reuseKey))
+  }
+
   protected lazy val stableLabels: Map[String, String] = {
     val reuseLabel = Map(
       DockerConst.Labels.reuseLabel -> Docker.shouldReuse(config.reuse, client.clientConfig.globalReuse).toString,
       DockerConst.Labels.dependencies -> deps.map(_.id.name).toList.sorted.mkString(";"),
     )
-    reuseLabel ++ client.labels ++ config.userTags
+    val hooksLabel = hooksDigest.map(DockerConst.Labels.hooksDigest -> _).toMap
+    reuseLabel ++ hooksLabel ++ client.labels ++ config.userTags
   }
 
   protected def toExposedPort(port: DockerPort, number: Int): ExposedPort = {
@@ -256,6 +267,7 @@ open class ContainerResource[F[_], Tag](
               val cInspection = rawClient.inspectContainerCmd(id).exec()
               val cNetworks = cInspection.getNetworkSettings.getNetworks.asScala.keys.toList
               val missingNetworks = config.networks.filterNot(n => cNetworks.contains(n.name))
+              val cHooksDigest = Option(cInspection.getConfig.getLabels).flatMap(labels => Option(labels.get(DockerConst.Labels.hooksDigest)))
               val name = cInspection.getName
               mapContainerPorts(cInspection) match {
                 case Left(value) =>
@@ -263,6 +275,9 @@ open class ContainerResource[F[_], Tag](
                   Seq.empty
                 case _ if missingNetworks.nonEmpty =>
                   logger.info(s"Container $name:$id is missing required networks $missingNetworks so will not be reused")
+                  Seq.empty
+                case _ if cHooksDigest != hooksDigest =>
+                  logger.info(s"Container $name:$id was created with after-create hooks $cHooksDigest instead of $hooksDigest so will not be reused")
                   Seq.empty
 
                 case Right(value) =>
@@ -353,7 +368,7 @@ open class ContainerResource[F[_], Tag](
       _ <- F.when(config.autoPull) {
         doPull(imageName, imageRegistry, registryAuth)
       }
-      out <- F.maybeSuspend {
+      out <- F.bracketCase(acquire = F.maybeSuspend {
         @nowarn("msg=method.*Bind.*deprecated")
         val createContainerCmd = Value(baseCmd)
           .mut(config.name)(_.withName(_))
@@ -372,48 +387,74 @@ open class ContainerResource[F[_], Tag](
           .get
 
         logger.debug(s"Going to create container from image `$imageName`...")
-        val res = createContainerCmd.exec()
-
-        logger.debug(s"Going to start container ${res.getId -> "id"}...")
-        rawClient.startContainerCmd(res.getId).exec()
-
-        val inspection = rawClient.inspectContainerCmd(res.getId).exec()
-        val hostName = inspection.getConfig.getHostName
-        val maybeMappedPorts = mapContainerPorts(inspection)
-
-        maybeMappedPorts match {
-          case Left(value) =>
-            throw DockerFailureException(
-              s"Created container from `$imageName` with ${res.getId -> "id"}, but ports are missing: $value!",
-              DockerFailureCause.MissingPorts(value),
-            )
-
-          case Right(mappedPorts) =>
-            val container = DockerContainer[Tag](
-              id = ContainerId(res.getId),
-              name = inspection.getName,
-              hostName = hostName,
-              labels = inspection.getConfig.getLabels.asScala.toMap,
-              containerConfig = config,
-              clientConfig = client.clientConfig,
-              connectivity = mappedPorts,
-              availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
-            )
-            logger.info(s"Created new $container from $imageName... Going to attach container ${res.getId -> "id"} to ${config.networks -> "networks"}")
-            config.networks.foreach {
-              network =>
-                rawClient
-                  .connectToNetworkCmd()
-                  .withContainerId(container.id.name)
-                  .withNetworkId(network.id)
-                  .exec()
-            }
-
-            container
-        }
-      }
+        ContainerId(createContainerCmd.exec().getId)
+      })(release = {
+        case (containerId, Some(_)) => client.removeContainer(containerId, ContainerDestroyMeta.NoMeta, RemovalReason.FailedToStart)
+        case (_, None) => F.unit
+      })(use = startCreated(imageName, _))
       result <- await(out)
     } yield result
+  }
+
+  private def startCreated(imageName: String, containerId: ContainerId): F[DockerContainer[Tag]] = {
+    F.maybeSuspend {
+      runAfterCreateHooks(containerId)
+
+      logger.debug(s"Going to start container ${containerId.name -> "id"}...")
+      rawClient.startContainerCmd(containerId.name).exec()
+
+      val inspection = rawClient.inspectContainerCmd(containerId.name).exec()
+      val hostName = inspection.getConfig.getHostName
+      val maybeMappedPorts = mapContainerPorts(inspection)
+
+      maybeMappedPorts match {
+        case Left(value) =>
+          throw DockerFailureException(
+            s"Created container from `$imageName` with ${containerId.name -> "id"}, but ports are missing: $value!",
+            DockerFailureCause.MissingPorts(value),
+          )
+
+        case Right(mappedPorts) =>
+          val container = DockerContainer[Tag](
+            id = containerId,
+            name = inspection.getName,
+            hostName = hostName,
+            labels = inspection.getConfig.getLabels.asScala.toMap,
+            containerConfig = config,
+            clientConfig = client.clientConfig,
+            connectivity = mappedPorts,
+            availablePorts = VerifiedContainerConnectivity.NoAvailablePorts(),
+          )
+          logger.info(s"Created new $container from $imageName... Going to attach container ${containerId.name -> "id"} to ${config.networks -> "networks"}")
+          config.networks.foreach {
+            network =>
+              rawClient
+                .connectToNetworkCmd()
+                .withContainerId(container.id.name)
+                .withNetworkId(network.id)
+                .exec()
+          }
+
+          container
+      }
+    }
+  }
+
+  protected def runAfterCreateHooks(containerId: ContainerId): Unit = {
+    afterCreateHooks.foreach {
+      hook =>
+        logger.debug(s"Going to run after-create ${hook.toString -> "hook"} on ${containerId -> "id"}...")
+        try {
+          hook.afterCreate(rawClient, containerId)
+        } catch {
+          case NonFatal(t) =>
+            throw DockerFailureException(
+              s"After-create hook $hook failed on container $containerId: $t",
+              DockerFailureCause.Throwed(t),
+              t,
+            )
+        }
+    }
   }
 
   protected def doPull(imageName: String, registry: Option[String], registryAuth: Option[AuthConfig]): F[Unit] = {
@@ -558,4 +599,8 @@ open class ContainerResource[F[_], Tag](
 
 object ContainerResource {
   final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
+
+  def hooksDigest(reuseKeys: Seq[String]): Option[String] = {
+    if (reuseKeys.isEmpty) None else Some(IzHash.sha256(reuseKeys.map(IzHash.sha256).mkString))
+  }
 }

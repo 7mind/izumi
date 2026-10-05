@@ -92,6 +92,7 @@ object DockerClientWrapper {
     case object LostDependencies extends RemovalReason
     case object NotReusedAndYetWasNotCleanedUpEarlierByItsFinalizer extends RemovalReason
     case object AlreadyExited extends RemovalReason
+    case object FailedToStart extends RemovalReason
   }
 
   class DockerIntegrationCheck[F[_]](

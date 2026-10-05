@@ -13,6 +13,8 @@ object DockerConst {
     final val networkDriverPrefix = "distage.driver"
 
     final val dependencies = "distage.dependencies"
+
+    final val hooksDigest = "distage.hooks.digest"
   }
 
   object State {

@@ -63,7 +63,10 @@ object PortableResourceMacro extends PortableResourceBase {
   ): c.Expr[Map[String, String]] = {
     val sourcePath = getStringLiteral(c)(path.tree)
 
-    val resources = extractResourceContents(sourcePath)
+    val resources = extractResourceContents(sourcePath) match {
+      case Left(error) => c.abort(c.enclosingPosition, error)
+      case Right(contents) => contents
+    }
     if (check && resources.isEmpty) {
       c.error(c.enclosingPosition, s"empty result while enumerating $sourcePath")
     }

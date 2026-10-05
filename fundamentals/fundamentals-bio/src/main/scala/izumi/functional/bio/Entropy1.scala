@@ -5,9 +5,8 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.uuid.IzUUID
 
 import java.util.UUID
-import scala.annotation.{nowarn, unused}
-import scala.collection.compat.*
-import scala.collection.generic.CanBuildFrom
+import scala.annotation.unused
+import scala.collection.BuildFrom
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -33,8 +32,7 @@ trait Entropy1[F[_]] extends DivergenceHelper {
   def nextTimeUUID(): F[UUID]
   def nextUUID(): F[UUID]
 
-  @nowarn("msg=CanBuildFrom")
-  def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]]
+  def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: BuildFrom[CC[T], T, CC[T]]): F[CC[T]]
 
   def withSeed(seed: Long): Entropy1[F]
   def setSeed(seed: Long): F[Unit]
@@ -66,8 +64,7 @@ object Entropy1 extends LowPriorityEntropyInstances {
   trait ScalaEntropy extends Entropy1[Identity] {
     protected def random: scala.util.Random
 
-    @nowarn("msg=CanBuildFrom")
-    override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): CC[T] = {
+    override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: BuildFrom[CC[T], T, CC[T]]): CC[T] = {
       random.shuffle(xs)
     }
 
@@ -145,8 +142,7 @@ sealed trait LowPriorityEntropyInstances {
       override def writeRandomBytes(bytes: Array[Byte]): F[Unit] = F.syncSafe(impureEntropy.writeRandomBytes(bytes))
       override def withSeed(seed: Long): Entropy1[F] = fromImpureEntropy(using impureEntropy.withSeed(seed), F)
 
-      @nowarn("msg=CanBuildFrom")
-      override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: CanBuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
+      override def shuffle[T, CC[X] <: IterableOnce[X]](xs: CC[T])(implicit bf: BuildFrom[CC[T], T, CC[T]]): F[CC[T]] =
         F.syncSafe(impureEntropy.shuffle[T, CC](xs))
     }
   }

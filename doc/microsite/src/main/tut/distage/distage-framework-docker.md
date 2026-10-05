@@ -38,7 +38,7 @@ The required parameters for `Config` are:
 - `image` - the docker image to use
 - `ports` - ports to map on the docker container
 
-See @scaladoc[`Docker.ContainerConfig[Tag]`](izumi.distage.docker.Docker$$ContainerConfig) for
+See @scaladoc[`Docker.ContainerConfig[Tag]`](izumi.distage.docker.model.Docker$$ContainerConfig) for
 additional parameters.
 
 Example [postgres](https://hub.docker.com/_/postgres/) container definition:
@@ -141,7 +141,7 @@ provides additional APIs for modifying the container definition.
 
 #### modifyConfig
 
-Use @scaladoc[`modifyConfig`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#modifyConfig)
+Use @scaladoc[`modifyConfig`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#modifyConfig-fffff9db)
 to modify the configuration of a container. The modifier is instantiated to a `Functoid`, which
 will summon any additional dependencies.
 
@@ -181,7 +181,7 @@ class PostgresWithMountsDockerModule[F[_]: TagK] extends ModuleDef {
 
 #### dependOnContainer
 
-@scaladoc[`dependOnContainer`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnContainer)
+@scaladoc[`dependOnContainer`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#dependOnContainer-bda)
 adds a dependency on a given Docker container.
 `distage` ensures the requested container is available before the dependent.
 
@@ -217,7 +217,7 @@ Another example of dependencies between containers is in the "Docker Container N
 ### Availability and Health Checks
 
 The `healthCheck` properties of
-@scaladoc[Docker.ContainerConfig](izumi.distage.docker.Docker$$ContainerConfig) configure the
+@scaladoc[Docker.ContainerConfig](izumi.distage.docker.model.Docker$$ContainerConfig) configure the
 health checks. A container resource will not be provided if the health checks did not succeed at
 acquire time. These are used to determine if an existing container can be used and if starting a
 fresh container succeeded.
@@ -227,7 +227,7 @@ several standard checks provided in
 @scaladoc[ContainerHealthCheck](izumi.distage.docker.healthcheck.ContainerHealthCheck$) that can be
 combined to cover many common cases.
 
-The @scaladoc[availablePorts](izumi.distage.docker.DockerContainer#availablePorts) property of
+The @scaladoc[availablePorts](izumi.distage.docker.DockerContainer) property of
 the container resource are the mapped ports that passed the health check. This is a map
 from a `Docker.DockerPort` provided in the config to a host and port. For example:
 
@@ -378,7 +378,7 @@ postgresDockerIntegrationExample.unsafeRunSync()(cats.effect.unsafe.IORuntime.gl
 
 ### Docker Container Environment
 
-The container config (@scaladoc[Docker.ContainerConfig](izumi.distage.docker.Docker$$ContainerConfig))
+The container config (@scaladoc[Docker.ContainerConfig](izumi.distage.docker.model.Docker$$ContainerConfig))
 defines the container environment. Of note are the environment variables, command of entrypoint, and working
 directory properties:
 
@@ -432,7 +432,7 @@ Docker.
 #### 2. Add to Container Config
 
 A container will be connected to all networks in the `networks` of the `config`. The method
-@scaladoc[`connectToNetwork`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#connectToNetwork)
+@scaladoc[`connectToNetwork`](izumi.distage.docker.DockerContainer$$DockerProviderExtensions#connectToNetwork-9c)
 adds a dependency on a network defined by a `ContainerNetworkDef`, as in this example:
 
 ```mdoc:to-string
@@ -468,7 +468,7 @@ For an existing network to be reused, the config and object name at time of crea
 
 ### Docker Client Configuration
 
-The @scaladoc[`Docker.ClientConfig`](izumi.distage.docker.Docker$$ClientConfig) is the configuration
+The @scaladoc[`Docker.ClientConfig`](izumi.distage.docker.model.Docker$$ClientConfig) is the configuration
 of the Docker client used. Including the module `DockerSupportModule` will provide a
 `Docker.ClientConfig`.
 

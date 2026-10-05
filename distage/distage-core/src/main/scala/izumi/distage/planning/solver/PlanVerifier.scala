@@ -16,16 +16,13 @@ import izumi.fundamentals.platform.strings.IzString.toRichIterable
 import izumi.reflect.TagK
 
 import java.util.concurrent.TimeUnit
-import scala.annotation.{nowarn, tailrec}
+import scala.annotation.tailrec
 import scala.concurrent.duration.FiniteDuration
 
 /** @see [[izumi.distage.model.Injector.assert]] */
-@nowarn("msg=[Uu]nused import")
 class PlanVerifier(
   queries: GraphQueries
 ) {
-  import scala.collection.compat.*
-
   def verify[F[_]: TagK](
     bindings: ModuleBase,
     roots: Roots,

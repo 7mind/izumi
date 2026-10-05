@@ -25,7 +25,7 @@ import izumi.logstage.api.IzLogger
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import scala.annotation.nowarn
-import scala.collection.compat.immutable.ArraySeq
+import scala.collection.immutable.ArraySeq
 import scala.util.Try
 
 /**

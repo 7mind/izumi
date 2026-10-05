@@ -4,7 +4,6 @@ import izumi.functional.bio.{WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.orphans.{`cats.effect.kernel.Async`, `cats.effect.kernel.GenTemporal`}
 import izumi.fundamentals.platform.functional.Identity
 
-import scala.collection.compat.*
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 

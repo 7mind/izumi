@@ -7,7 +7,7 @@ sealed abstract class DockerException(message: String, cause: Throwable) extends
   def this(message: String) = this(message, null)
 }
 
-case class DockerFailureException(message: String, explanation: DockerFailureCause, cause: Throwable) extends DockerException(message)
+case class DockerFailureException(message: String, explanation: DockerFailureCause, cause: Throwable) extends DockerException(message, cause)
 object DockerFailureException {
   def apply(message: String, explanation: DockerFailureCause): DockerFailureException = DockerFailureException(message, explanation, null)
 }

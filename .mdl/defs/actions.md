@@ -18,8 +18,8 @@
 
 # Axis
 - `platform`=`{jvm*|js|js-nojvm}`
-- `java_version`=`{11|17|21*|25}`
-- `scala_version`=`{2.12|2.13*|3}`
+- `java_version`=`{17|21*|25}`
+- `scala_version`=`{2.13*|3}`
 
 # action: setup-jdk
 
@@ -29,9 +29,6 @@ Setup JDK path based on JAVA_VERSION
 JAVA_VERSION_VAL="${sys.axis.java_version}"
 
 case "$JAVA_VERSION_VAL" in
-  11)
-    JAVA_HOME_VAL="${JDK11:-}"
-    ;;
   17)
     JAVA_HOME_VAL="${JDK17:-}"
     ;;
@@ -200,7 +197,7 @@ bash sbtgen.sc "${ARGS[@]}"
 
 # action: test
 
-Run tests and binary compatibility checks
+Run tests
 
 ```bash
 soft action.gen retain.action.check-sbtgen-staleness
@@ -216,19 +213,19 @@ read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 if [[ "$PLATFORM" == "js-nojvm" ]]; then
   # Run compile and test in separate sbt JVMs so the incremental compiler and
   # Scala.js linker heap is freed between phases.
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
     --java-home "$JAVA_HOME" \
     "${SBT_J_OPTS[@]}" \
     "$VERSION_COMMAND clean" \
     "$VERSION_COMMAND Test/compile"
 
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
     --java-home "$JAVA_HOME" \
     "${SBT_J_OPTS[@]}" \
     "set ThisBuild / Test / parallelExecution := false" \
     "$VERSION_COMMAND test"
 else
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
     --java-home "$JAVA_HOME" \
     "${SBT_J_OPTS[@]}" \
     "$VERSION_COMMAND clean" \
@@ -255,14 +252,14 @@ PLATFORM="${sys.axis.platform}"
 read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
 if [[ "$PLATFORM" == "js-nojvm" ]]; then
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
     --java-home "$JAVA_HOME" \
     "${SBT_J_OPTS[@]}" \
     "$VERSION_COMMAND clean" \
     coverage \
     "$VERSION_COMMAND Test/compile"
 
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
     --java-home "$JAVA_HOME" \
     "${SBT_J_OPTS[@]}" \
     coverage \
@@ -270,7 +267,7 @@ if [[ "$PLATFORM" == "js-nojvm" ]]; then
     "$VERSION_COMMAND test" \
     "$VERSION_COMMAND coverageReport"
 else
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
     --java-home "$JAVA_HOME" \
     "${SBT_J_OPTS[@]}" \
     "$VERSION_COMMAND clean" \
@@ -297,7 +294,7 @@ _JAVA_OPTIONS="$JAVA_OPTIONS"
 VERSION_COMMAND="${action.setup-scala.version-command}"
 read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
 
-sbt -batch -no-colors -v \
+sbt --server -batch -no-colors -v \
   --java-home "$JAVA_HOME" \
   "${SBT_J_OPTS[@]}" \
   "project docs" \
@@ -333,7 +330,7 @@ if [[ "$CI_BRANCH_VAL" != "develop" && ! "$CI_BRANCH_TAG_VAL" =~ ^v ]]; then
   exit 0
 fi
 
-sbt -batch -no-colors -v \
+sbt --server -batch -no-colors -v \
   --java-home "$JAVA_HOME" \
   "${SBT_J_OPTS[@]}" \
   "project docs" \
@@ -377,7 +374,7 @@ if [[ ! -f "$SONATYPE_SECRET" ]] ; then
 fi
 
 if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
       --java-home "$JAVA_HOME" \
       "${SBT_J_OPTS[@]}" \
       "show credentials" \
@@ -387,7 +384,7 @@ if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
       "sonaUpload" \
       "sonaRelease"
 else
-  sbt -batch -no-colors -v \
+  sbt --server -batch -no-colors -v \
       --java-home "$JAVA_HOME" \
       "${SBT_J_OPTS[@]}" \
       "show credentials" \

@@ -101,7 +101,7 @@ object MiniBIO extends MiniBIOPlatformSpecific {
     implicit def autoRunAlways[A](f: MiniBIO[Throwable, A]): A = f.run() match {
       case Exit.Success(value) =>
         value
-      case failure: Exit.FailureUninterrupted[Throwable] =>
+      case failure: Exit.FailureUninterrupted[Throwable @unchecked] =>
         throw failure.toThrowable
     }
 

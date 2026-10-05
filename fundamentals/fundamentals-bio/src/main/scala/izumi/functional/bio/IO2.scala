@@ -1,6 +1,6 @@
 package izumi.functional.bio
 
-import scala.collection.compat.*
+import scala.collection.Factory
 import scala.util.Try
 
 trait IO2[F[+_, +_]] extends Panic2[F] {

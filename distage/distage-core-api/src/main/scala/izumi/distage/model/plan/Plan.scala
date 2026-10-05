@@ -18,8 +18,6 @@ import izumi.fundamentals.graphs.{DG, GraphMeta}
 import izumi.fundamentals.platform.cache.CachedHashcode
 import izumi.reflect.{Tag, TagK}
 
-import scala.annotation.nowarn
-
 final case class Plan(
   plan: DG[DIKey, ExecutableOp],
   input: PlannerInput,
@@ -191,10 +189,7 @@ object Plan {
       resolveImports(Function.unlift(i => locator.lookupLocal[Any](i.target)))
     }
 
-    @nowarn("msg=[Uu]nused import")
     def resolveImports(f: PartialFunction[ImportDependency, Any]): Plan = {
-      import scala.collection.compat.*
-
       val dg = plan.plan
       plan.copy(plan = dg.copy(meta = GraphMeta(dg.meta.nodes.view.mapValues {
         case i: ImportDependency =>

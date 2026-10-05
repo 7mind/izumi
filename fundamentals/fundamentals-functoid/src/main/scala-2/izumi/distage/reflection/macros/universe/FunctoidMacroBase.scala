@@ -131,9 +131,7 @@ abstract class FunctoidMacroBase[Ftoid[_]](val c: blackbox.Context) {
     logger.log(s"lambda params: $lambdaParams")
     logger.log(s"method ref params: $methodReferenceParams")
 
-    @nowarn("msg=[Uu]nused import")
     val annotationsOnMethodAreNonEmptyAndASuperset: Boolean = {
-      import scala.collection.compat.*
       methodReferenceParams.sizeCompare(lambdaParams) == 0 &&
       methodReferenceParams.exists(_.symbol.friendlyAnnotations.nonEmpty)
     }

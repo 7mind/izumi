@@ -38,7 +38,10 @@ object PortableResource {
       val path = _path.valueOrAbort
       val check = _check.valueOrAbort
 
-      val resources = extractResourceContents(path)
+      val resources = extractResourceContents(path) match {
+        case Left(error) => report.errorAndAbort(error)
+        case Right(contents) => contents
+      }
 
       if (check && resources.isEmpty) {
         report.errorAndAbort(s"empty result while enumerating $path")

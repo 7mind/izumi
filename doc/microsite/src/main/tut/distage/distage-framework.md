@@ -165,6 +165,16 @@ This allows you to ensure correctness of default configs during development with
 
 If you need to disable this check, set `checkConfig` option of `PlanCheckConfig` to `false`.
 
+Note that the check runs at compile time, when sbt has not yet copied the *same* configuration's resources into
+its class directory: a `PlanCheck` in `src/test` reading configs from `src/test/resources` will not see them on a clean
+build unless the build orders the copy before compilation:
+
+```scala
+Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+```
+
+Configs in `src/main/resources`, or in the test resources of a `test->test` dependency, need no such setting.
+
 ### Using with `distage-teskit`
 
 Use @scaladoc[SpecWiring](izumi.distage.testkit.scalatest.SpecWiring) to spawn a test-suite that also triggers compile-time checks.
@@ -251,39 +261,6 @@ object CustomCheckLauncher extends RoleAppMain.LauncherCats[cats.effect.IO] {
 
 @scaladoc[PlanVerifier](izumi.distage.planning.solver.PlanVerifier) hosts the multi-graph traversal doing
 the actual checking and can be invoked at runtime or in macro. It can also be invoked using `Injector#assert` and `Injector#verify` methods.
-
-### Scala 2.12
-
-If you're using Scala `2.12` and get compilation errors such as
-
-```scalak
-[error]  type mismatch;
-[error]  found   : String("mode:test")
-[error]  required: izumi.fundamentals.platform.language.literals.LiteralString{type T = String("mode:test")} with izumi.fundamentals.platform.language.literals.LiteralString
-```
-
-Then you'll have to refactor your instance of `PlanCheck.Main` (or similar) to make sure that `PlanCheckConfig` is
-defined in a separate `val`. You may do this by moving it from a constructor parameter to an early initializer.
-
-Example:
-
-```scala
-object WiringTest extends PlanCheck.Main(
-  MyApp,
-  PlanCheckConfig(...)
-)
-// [error]
-```
-
-Fix:
-
-```scala
-object WiringTest extends {
-  val config = PlanCheckConfig(... )
-} with PlanCheck.Main(MyApp, config)
-```
-
-Note that this issue does not exist on Scala `2.13+`, it is caused by a bug in Scala 2.12's treatment of implicits in class parameter position.
 
 ## Typesafe Config
 
@@ -373,7 +350,7 @@ type _ref = izumi.distage.testkit.TestConfig
 def _ref = (_: izumi.distage.testkit.TestConfig).configBaseName
 ```
 
-Where `distage-testkit` uses @scaladoc[`TestConfig#configBaseName`](izumi.distage.testkit.TestConfig#configBaseName)
+Where `distage-testkit` uses @scaladoc[`TestConfig#configBaseName`](izumi.distage.testkit.model.TestConfig)
 instead of `roleName`.
 
 Explicit config files passed to the role launcher `-c file.conf` the command-line flag have a higher priority than

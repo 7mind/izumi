@@ -227,7 +227,7 @@ open class AsyncZio[R] extends Async2[ZIO[R, +_, +_]] {
                   zio.Cause.interrupt(zio.FiberId.None) ++ interruptedCause0
                 }
                 ZIO.failCause(interruptedCause)
-              case uninterrupted: Exit.FailureUninterrupted[E] =>
+              case uninterrupted: Exit.FailureUninterrupted[E @unchecked] =>
                 // In BIO (and cats-effect), only external interruption counts as 'interruption'
                 // Internal interruption is not a valid state (and is treated as a defect - Exit.Termination)
                 ZIO.fail(uninterrupted)

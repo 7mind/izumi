@@ -39,25 +39,40 @@ trait PortableResourceBase {
   }
 
   protected def extractResourceContents(
+    sourcePath: String
+  ): Either[String, Seq[(String, String)]] = {
+    extractResourceContents(sourcePath, new ClassGraph())
+  }
+
+  protected def extractResourceContents(
     sourcePath: String,
-  ): Seq[(String, String)] = {
-    val scanResult = new ClassGraph()
+    classGraph: ClassGraph,
+  ): Either[String, Seq[(String, String)]] = {
+    val scanResult = classGraph
       .acceptPaths(sourcePath)
-      .disableJarScanning()
       .disableModuleScanning()
       .disableNestedJarScanning()
       .scan
 
     try {
       import scala.jdk.CollectionConverters.*
-      scanResult.getAllResources.asScala.toSeq.map {
+      val found = scanResult.getAllResources.asScala.toSeq.map {
         resource =>
           val stream = resource.open()
           try {
-            resource.getPath -> stream.streamToString()
+            (resource.getPath, resource.getClasspathElementURI.toString, stream.streamToString())
           } finally {
             stream.close()
           }
+      }
+      val conflicts = found.groupBy(_._1).toSeq.sortBy(_._1).collect {
+        case (path, entries) if entries.map(_._3).distinct.size > 1 =>
+          s"$path differs between ${entries.map(_._2).mkString(", ")}"
+      }
+      if (conflicts.nonEmpty) {
+        Left(conflicts.mkString(s"conflicting resources under $sourcePath on the classpath:\n", "\n", ""))
+      } else {
+        Right(found.map { case (path, _, content) => path -> content }.distinct)
       }
     } finally {
       scanResult.close()

@@ -223,7 +223,7 @@ private[quasi] sealed trait LowPriorityQuasiIOInstances extends LowPriorityQuasi
           case (a, exit) =>
             exit match {
               case Exit.Success(_) => release(a, None).orTerminate
-              case failure: Exit.Failure[Throwable] => release(a, Some(failure.toThrowable)).orTerminate
+              case failure: Exit.Failure[Throwable @unchecked] => release(a, Some(failure.toThrowable)).orTerminate
             }
         })(use = use)
       }

@@ -12,8 +12,6 @@ import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 object unsafe {
-  import scala.collection.compat.*
-
   object EitherSupport {
     import TrySupport.{quasiAsyncTry, quasiIORunnerTry, quasiIOTry, quasiTemporalTry}
 

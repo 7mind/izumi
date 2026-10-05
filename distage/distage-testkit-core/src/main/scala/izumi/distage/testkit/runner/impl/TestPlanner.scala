@@ -28,7 +28,6 @@ import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.logger.{LogQueue, LogRouter}
 
-import scala.annotation.nowarn
 import scala.annotation.unchecked.uncheckedVariance
 import scala.util.Try
 
@@ -81,7 +80,6 @@ object TestPlanner {
   )
 }
 
-@nowarn("msg=[Uu]nused import")
 class TestPlanner(
   logging: TestkitLogging,
   configLoader: TestConfigLoader,
@@ -89,8 +87,6 @@ class TestPlanner(
   testRunnerLocator: LocatorRef,
   logBuffer: LogQueue,
 ) {
-  import scala.collection.compat.*
-
   /**
     * Group tests by their memoization environment.
     * [[TestEnvironment.EnvExecutionParams]] - contains parts of environment that may radically affect planning.

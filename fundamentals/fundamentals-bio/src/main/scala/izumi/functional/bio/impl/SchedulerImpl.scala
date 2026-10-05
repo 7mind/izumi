@@ -2,13 +2,13 @@ package izumi.functional.bio.impl
 
 import izumi.functional.bio.Clock1.ClockAccuracy
 import izumi.functional.bio.{Clock2, F, WeakTemporal2}
-import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
 
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import scala.concurrent.duration.FiniteDuration
+import scala.jdk.DurationConverters.JavaDurationOps
 
 open class SchedulerImpl[F[+_, +_]: WeakTemporal2](implicit clock: Clock2[F]) extends Scheduler2[F] {
 
@@ -35,7 +35,7 @@ open class SchedulerImpl[F[+_, +_]: WeakTemporal2](implicit clock: Clock2[F]) ex
       dec <- makeDecision(now, in)
       next = dec match {
         case ControllerDecision.Repeat(_, interval, action) =>
-          val sleepTime = toFiniteDuration(java.time.Duration.between(now, interval))
+          val sleepTime = java.time.Duration.between(now, interval).toScala
           F.sleep(sleepTime) *> repeater(loop(_, action)(stopper)(repeater))
         case ControllerDecision.Stop(_) =>
           stopper(in)

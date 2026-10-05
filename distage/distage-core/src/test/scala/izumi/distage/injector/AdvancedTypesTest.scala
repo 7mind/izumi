@@ -5,7 +5,6 @@ import izumi.distage.fixtures.TraitCases.*
 import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import izumi.fundamentals.platform.language.literals.LiteralCompat
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.annotation.nowarn
@@ -243,16 +242,14 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   }
 
   "support constant types in class strategy" in {
-    val constantHolder = LiteralCompat.`5`
-
     val definition = PlannerInput.everything(new ModuleDef {
-      make[constantHolder.T]
+      make[5]
     })
 
     val injector = mkInjector()
     val context = injector.produce(definition).unsafeGet()
 
-    assert(context.get[constantHolder.T] == 5)
+    assert(context.get[5] == 5)
   }
 
   "regression test for https://github.com/7mind/izumi/issues/1523 Parameterization failure with Set of intersection type alias" in {

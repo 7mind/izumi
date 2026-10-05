@@ -17,7 +17,7 @@ trait Bracket2[F[+_, +_]] extends Error2[F] {
     */
   final def bracketOnFailure[E, A, B](acquire: F[E, A])(cleanupOnFailure: (A, Exit.Failure[E]) => F[Nothing, Unit])(use: A => F[E, B]): F[E, B] = {
     bracketCase[E, A, B](acquire) {
-      case (a, e: Exit.Failure[E]) => cleanupOnFailure(a, e)
+      case (a, e: Exit.Failure[E @unchecked]) => cleanupOnFailure(a, e)
       case _ => unit
     }(use)
   }
@@ -27,7 +27,7 @@ trait Bracket2[F[+_, +_]] extends Error2[F] {
     * Do not run cleanup if `use` finished successfully.
     */
   final def guaranteeOnFailure[E, A](f: F[E, A], cleanupOnFailure: Exit.Failure[E] => F[Nothing, Unit]): F[E, A] = {
-    guaranteeCase[E, A](f, { case e: Exit.Failure[E] => cleanupOnFailure(e); case _ => unit })
+    guaranteeCase[E, A](f, { case e: Exit.Failure[E @unchecked] => cleanupOnFailure(e); case _ => unit })
   }
 
   /**

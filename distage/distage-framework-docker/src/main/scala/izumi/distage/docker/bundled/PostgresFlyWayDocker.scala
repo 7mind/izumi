@@ -1,9 +1,14 @@
 package izumi.distage.docker.bundled
 
-import distage.{Functoid, Id, ModuleDef, TagK}
-import izumi.distage.docker.model.Docker.{DockerPort, DockerReusePolicy, Mount}
+import distage.{Id, Lifecycle, ModuleDef, TagK}
+import izumi.distage.docker.model.Docker.{ContainerFile, DockerPort, DockerReusePolicy}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
+import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.resources.IzResources
+import izumi.fundamentals.platform.resources.IzResources.MaterializedResource
+
+import java.nio.file.Paths
 
 /**
   * Example postgres docker with flyway. It's sufficient to apply simple migrations on start.
@@ -11,16 +16,15 @@ import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
   */
 object PostgresFlyWayDocker extends ContainerDef {
 
-  /** @param flyWaySqlPath path to the migrations directory, by default `/sql` in current resource directory if exists */
+  /** @param flyWaySqlPath directory with the migrations; `None` copies the `sql` resource directory of the classpath into the container */
   final case class Cfg(
-    flyWaySqlPath: String = Cfg.defaultMigrationsResource,
+    flyWaySqlPath: Option[String] = None,
     user: String = "postgres",
     password: String = "postgres",
     database: String = "postgres",
     schema: String = "public",
   )
   object Cfg {
-    lazy val defaultMigrationsResource: String = Option(classOf[Cfg].getResource("/sql")).fold("")(_.getPath)
     lazy val default: Cfg = Cfg()
   }
 
@@ -45,7 +49,23 @@ object PostgresFlyWayDocker extends ContainerDef {
   )
 
   object FlyWay extends ContainerDef {
-    def applyCfg(hostname: String, cfg: Cfg): Config => Config = _.copy(
+    final case class Migrations(directory: MaterializedResource)
+
+    def migrations(cfg: Cfg): Lifecycle[Identity, Migrations] = {
+      Lifecycle.makeSimple {
+        val directory = cfg.flyWaySqlPath match {
+          case Some(path) =>
+            MaterializedResource.InPlace(Paths.get(path))
+          case None =>
+            IzResources(classOf[Cfg])
+              .materialize("sql", "flyway-sql")
+              .getOrElse(throw new IllegalStateException("No `sql` resource directory on the classpath; set `flyWaySqlPath` to the migrations directory"))
+        }
+        Migrations(directory)
+      }(_.directory.close())
+    }
+
+    def applyCfg(hostname: String, cfg: Cfg, migrations: Migrations): Config => Config = _.copy(
       cmd = Seq(
         s"-url=jdbc:postgresql://$hostname/${cfg.database}",
         s"-schemas=${cfg.schema}",
@@ -55,17 +75,15 @@ object PostgresFlyWayDocker extends ContainerDef {
         "baseline",
         "migrate",
       ),
-      mounts = Seq(Mount(cfg.flyWaySqlPath, "/flyway/sql")),
+      files = Seq(ContainerFile(migrations.directory.path, "/flyway/sql")),
     )
 
-    override def config: Config = FlyWay.applyCfg("localhost", Cfg(""))(
-      Config(
-        image = "flyway/flyway:10",
-        ports = Seq.empty,
-        reuse = DockerReusePolicy.ReuseEnabled,
-        autoRemove = false,
-        healthCheck = ContainerHealthCheck.exitCodeCheck(),
-      )
+    override def config: Config = Config(
+      image = "flyway/flyway:10",
+      ports = Seq.empty,
+      reuse = DockerReusePolicy.ReuseEnabled,
+      autoRemove = false,
+      healthCheck = ContainerHealthCheck.exitCodeCheck(),
     )
   }
 
@@ -76,11 +94,11 @@ object PostgresFlyWayDocker extends ContainerDef {
 }
 
 /**
-  * By default [[PostgresFlyWayDocker]] will mount the `resources/sql` directory in the target docker,
-  * however, this cannot work if `resources` folder is virtual, i.e. inside the JAR - this module will only work
-  * in development mode when resources are represented by files on the filesystem.
+  * By default [[PostgresFlyWayDocker]] will copy the `resources/sql` directory into the target docker.
+  * When `resources` is packaged inside a JAR, the `sql` directory is extracted into a temporary
+  * directory for the lifetime of the FlyWay container, which is then copied instead.
   *
-  * If you need to run [[PostgresFlyWayDocker]] in a JAR, please use a custom `cfg` parameter
+  * To copy a different directory, set `flyWaySqlPath` in the `cfg` parameter
   *
   * @param cfg Config with flyway migrations path
   */
@@ -89,6 +107,10 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
 ) extends ModuleDef {
 
   make[PostgresFlyWayDocker.Cfg].from(cfg)
+
+  make[PostgresFlyWayDocker.FlyWay.Migrations].fromResource {
+    (cfg: PostgresFlyWayDocker.Cfg) => PostgresFlyWayDocker.FlyWay.migrations(cfg)
+  }
 
   // Network binding, to be able to access Postgres container from the FlyWay container
   make[PostgresFlyWayDocker.FlyWayNetwork.Network].fromResource {
@@ -114,10 +136,12 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
       .modifyConfig {
-        Functoid { // FIXME: explicit `Functoid` application required on Scala 3 due to https://github.com/lampepfl/dotty/issues/16108
-          (postgresContainer: PostgresFlyWayDocker.Container @Id(name = "postgres-flyway-proxy"), cfg: PostgresFlyWayDocker.Cfg) =>
-            PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg)
-        }
+        (
+          postgresContainer: PostgresFlyWayDocker.Container @Id(name = "postgres-flyway-proxy"),
+          cfg: PostgresFlyWayDocker.Cfg,
+          migrations: PostgresFlyWayDocker.FlyWay.Migrations,
+        ) =>
+          PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg, migrations)
       }
   }
 

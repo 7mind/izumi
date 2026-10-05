@@ -19,7 +19,6 @@ import izumi.fundamentals.graphs.{DG, GraphMeta}
 
 import scala.annotation.nowarn
 
-@nowarn("msg=[Uu]nused import")
 class PlannerDefaultImpl(
   forwardingRefResolver: ForwardingRefResolver,
   sanityChecker: SanityChecker,
@@ -27,8 +26,6 @@ class PlannerDefaultImpl(
   hook: PlanningHook,
   resolver: PlanSolver,
 ) extends Planner {
-
-  import scala.collection.compat.*
 
   override def plan(input: PlannerInput): Either[NEList[DIError], Plan] = {
     planNoRewrite(input.copy(bindings = rewrite(input.bindings)))

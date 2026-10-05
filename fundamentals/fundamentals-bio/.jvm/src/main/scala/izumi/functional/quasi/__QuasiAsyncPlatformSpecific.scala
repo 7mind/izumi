@@ -7,7 +7,6 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 
 import java.util.concurrent.{ConcurrentHashMap, Executors}
-import scala.collection.compat.*
 import scala.concurrent.*
 import scala.concurrent.duration.Duration
 
@@ -82,7 +81,7 @@ private[quasi] object __QuasiAsyncPlatformSpecific {
       }
     result match {
       case Exit.Success(value) => value
-      case failure: Exit.FailureUninterrupted[Throwable] => throw failure.toThrowable
+      case failure: Exit.FailureUninterrupted[Throwable @unchecked] => throw failure.toThrowable
     }
   }
 

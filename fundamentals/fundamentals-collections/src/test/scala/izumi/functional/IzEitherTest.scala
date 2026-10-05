@@ -4,11 +4,8 @@ import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
 import org.scalatest.wordspec.AnyWordSpec
 
-import scala.annotation.nowarn
-
-@nowarn("msg=[Uu]nused import")
 class IzEitherTest extends AnyWordSpec {
-  import scala.collection.compat.*
+  import scala.collection.Factory
 
   type BuilderFail
   type IzType

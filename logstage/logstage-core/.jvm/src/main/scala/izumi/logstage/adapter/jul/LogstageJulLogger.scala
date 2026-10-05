@@ -5,7 +5,7 @@ import izumi.logstage.api.Log
 import logstage.LogRouter
 
 import java.util.logging.{Handler, LogManager, LogRecord, Logger}
-import scala.collection.compat.immutable.ArraySeq
+import scala.collection.immutable.ArraySeq
 
 /**
   * If you don't like our JUL adapter, you still might use our SLF4J adapter with `jul-to-slf4j`

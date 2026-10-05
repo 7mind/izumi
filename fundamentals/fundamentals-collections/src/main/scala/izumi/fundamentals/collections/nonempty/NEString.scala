@@ -2,12 +2,11 @@ package izumi.fundamentals.collections.nonempty
 
 // shameless copypaste from Scalactic
 
-import scala.collection.compat.Factory
+import scala.collection.Factory
 import scala.collection.mutable.{ArrayBuffer, Buffer}
 import scala.collection.{Iterable, Seq}
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
-import scala.collection.compat.*
 
 // Can't be a LinearSeq[T] because Builder would be able to create an empty one.
 /**

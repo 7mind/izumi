@@ -1,5 +1,7 @@
 package izumi.distage.fixtures
 
+import scala.annotation.nowarn
+
 object TypesCases {
 
   object TypesCase1 {
@@ -75,6 +77,7 @@ object TypesCases {
 
   object TypesCase5 {
     type WidgetId = WidgetId.Type
+    @nowarn("msg=should not contain")
     object WidgetId {
       type Repr = Int
       type Base = Any { type WidgetId$newtype }

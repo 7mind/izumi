@@ -1,7 +1,5 @@
 package izumi.fundamentals.platform.strings.impl
 
-import scala.collection.compat.*
-
 final class String_Iterable_Syntax[A](private val s: IterableOnce[A]) extends AnyVal {
   def niceList(shift: String = " ", prefix: String = "- "): String = {
     val iterator = s.iterator

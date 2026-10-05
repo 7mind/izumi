@@ -4,7 +4,6 @@
 //import cats.implicits._
 //import DAGTraverser.{Interrupted, Marking, Meta, NodeFailure, NonProgress, TraverseFailure, TraverseState}
 //import izumi.fundamentals.graphs.struct.IncidenceMatrix
-//import scala.collection.compat._
 //
 //
 //class DAGTraverserImpl[F[_], Node, Trace, Progress]

@@ -1,7 +1,8 @@
 package izumi.fundamentals.platform.resources
 
 import izumi.fundamentals.platform.files.IzFiles
-import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, PathReference, RecursiveCopyOutput, ResourceLocation, UnloadablePathReference}
+import izumi.fundamentals.platform.language.Quirks.Discarder
+import izumi.fundamentals.platform.resources.IzResources.{FileContent, LoadablePathReference, MaterializedResource, PathReference, RecursiveCopyOutput, ResourceLocation, UnloadablePathReference}
 import izumi.fundamentals.platform.resources.IzResourcesDirty.ContentIterator
 
 import java.io.*
@@ -13,6 +14,7 @@ import java.util.zip.ZipEntry
 import scala.collection.mutable
 import scala.language.implicitConversions
 import scala.reflect.{ClassTag, classTag}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
@@ -38,6 +40,39 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
     }
   }
 
+  /**
+    * Filesystem access to a classpath resource: [[IzResources.MaterializedResource.InPlace]] when the resource is
+    * a plain file or directory, [[IzResources.MaterializedResource.Extracted]] when it was copied out of its jar
+    * into a temporary file or directory, which `close` deletes. `None` when the resource does not exist or its
+    * filesystem cannot be opened.
+    */
+  def materialize(resPath: String, tempPrefix: String): Option[MaterializedResource] = {
+    getPath(resPath).collect {
+      case LoadablePathReference(path, _) if path.getFileSystem == FileSystems.getDefault =>
+        MaterializedResource.InPlace(path)
+      case LoadablePathReference(path, _) if Files.isDirectory(path) =>
+        extractInto(Files.createTempDirectory(tempPrefix))(IzResources.copyTree(path, _).discard())
+      case LoadablePathReference(path, _) =>
+        extractInto(Files.createTempFile(tempPrefix, "-" + path.getFileName.toString))(Files.copy(path, _, StandardCopyOption.REPLACE_EXISTING).discard())
+    }
+  }
+
+  private def extractInto(target: Path)(copy: Path => Unit): MaterializedResource.Extracted = {
+    val extracted = MaterializedResource.Extracted(target)
+    try {
+      copy(target)
+      extracted
+    } catch {
+      case NonFatal(failure) =>
+        try {
+          extracted.close()
+        } catch {
+          case NonFatal(cleanup) => failure.addSuppressed(cleanup)
+        }
+        throw failure
+    }
+  }
+
   def read(fileName: String): Option[InputStream] = {
     Option(classLoader.getResourceAsStream(fileName))
   }
@@ -52,42 +87,12 @@ final class IzResources(private val classLoader: ClassLoader) extends AnyVal {
 final class IzResourcesDirty(private val classLoader: ClassLoader) extends AnyVal {
 
   def copyFromClasspath(sourcePath: String, targetDir: Path): RecursiveCopyOutput = {
-    val pathReference = IzResources(classLoader).getPath(sourcePath)
-    if (pathReference.isEmpty) {
-      return RecursiveCopyOutput.empty
-    }
-    val targets = mutable.ArrayBuffer.empty[Path]
-
-    pathReference match {
+    IzResources(classLoader).getPath(sourcePath) match {
       case Some(LoadablePathReference(jarPath, _)) =>
-        Files.walkFileTree(
-          jarPath,
-          new SimpleFileVisitor[Path]() {
-            private var currentTarget: Path = _
-
-            override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
-              currentTarget = targetDir.resolve(jarPath.relativize(dir).toString)
-              Files.createDirectories(currentTarget)
-              FileVisitResult.CONTINUE
-            }
-
-            override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
-              val target = targetDir.resolve(jarPath.relativize(file).toString)
-              targets += target
-              Files.copy(
-                file,
-                target,
-                StandardCopyOption.REPLACE_EXISTING,
-              )
-              FileVisitResult.CONTINUE
-            }
-          },
-        )
-
+        RecursiveCopyOutput(IzResources.copyTree(jarPath, targetDir))
       case _ =>
+        RecursiveCopyOutput.empty
     }
-
-    RecursiveCopyOutput(targets.toSeq) // 2.13 compat
   }
 
   def enumerateClasspath(sourcePath: String): ContentIterator = {
@@ -140,6 +145,27 @@ object IzResourcesDirty {
 object IzResources {
   @inline def apply(clazz: Class[?]): IzResources = new IzResources(clazz.getClassLoader)
   @inline def apply(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
+
+  private[resources] def copyTree(source: Path, targetDir: Path): Seq[Path] = {
+    val targets = mutable.ArrayBuffer.empty[Path]
+    Files.walkFileTree(
+      source,
+      new SimpleFileVisitor[Path]() {
+        override def preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          Files.createDirectories(targetDir.resolve(source.relativize(dir).toString))
+          FileVisitResult.CONTINUE
+        }
+
+        override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+          val target = targetDir.resolve(source.relativize(file).toString)
+          targets += target
+          Files.copy(file, target, StandardCopyOption.REPLACE_EXISTING)
+          FileVisitResult.CONTINUE
+        }
+      },
+    )
+    targets.toSeq
+  }
 
   @inline implicit def toResources(clazz: Class[?]): IzResources = new IzResources(clazz.getClassLoader)
   @inline implicit def toResources(classLoader: ClassLoader): IzResources = new IzResources(classLoader)
@@ -194,6 +220,40 @@ object IzResources {
   }
 
   final case class FileContent(path: Path, content: Array[Byte])
+
+  sealed trait MaterializedResource extends AutoCloseable {
+    def path: Path
+  }
+  object MaterializedResource {
+    final case class InPlace(path: Path) extends MaterializedResource {
+      override def close(): Unit = ()
+    }
+    final case class Extracted(path: Path) extends MaterializedResource {
+      override def close(): Unit = {
+        if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
+          deleteTree()
+        }
+      }
+
+      private def deleteTree(): Unit = {
+        Files.walkFileTree(
+          path,
+          new SimpleFileVisitor[Path]() {
+            override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+              Files.delete(file)
+              FileVisitResult.CONTINUE
+            }
+
+            override def postVisitDirectory(dir: Path, exc: IOException): FileVisitResult = {
+              Files.delete(dir)
+              FileVisitResult.CONTINUE
+            }
+          },
+        )
+        ()
+      }
+    }
+  }
 
   sealed trait PathReference
   final case class UnloadablePathReference(uri: URI) extends PathReference

@@ -1,8 +1,7 @@
 package izumi.fundamentals.platform.files
 
 import java.io.File
-import java.net.URI
-import java.nio.file.{FileSystem, Path}
+import java.nio.file.{FileSystem, FileSystems, Path}
 
 object IzZip {
 
@@ -40,9 +39,7 @@ object IzZip {
       .filter(f => f.exists() && f.isFile && (f.getName.endsWith(".jar") || f.getName.endsWith(".zip")))
       .flatMap {
         f =>
-          val uri = f.toURI
-          val jarUri = URI.create(s"jar:${uri.toString}")
-          val fs = IzFiles.getFs(jarUri, Thread.currentThread().getContextClassLoader).get
+          val fs = FileSystems.newFileSystem(f.toPath)
 
           try {
             enumerate(predicate, fs)

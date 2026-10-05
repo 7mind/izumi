@@ -2,14 +2,8 @@ package izumi.functional.bio.data
 
 import scala.language.implicitConversions
 
-/**
-  * @note if you're using Scala 2.12 and getting "no such method" or implicit-related errors when interacting with Morphism3,
-  * you must enable `-Xsource:2.13` or `-Xsource:3` compiler option.
-  *
-  * BIO does not work without `-Xsource:2.13` or `-Xsource:3` option on 2.12.
-  */
 object Morphism3 extends LowPriorityMorphismInstances {
-  protected[data] type Morphism3[-F[_, _, _], +G[_, _, _]] // Note: protected[data] instead of private[data] due to a 2.12 bug causing build to fail
+  private[data] type Morphism3[-F[_, _, _], +G[_, _, _]]
   implicit final class Ops[-F[_, _, _], +G[_, _, _]](private val self: Morphism3[F, G]) extends AnyVal {
     @inline def apply[R, E, A](f: F[R, E, A]): G[R, E, A] = self.asInstanceOf[F[R, E, A] => G[R, E, A]](f)
 

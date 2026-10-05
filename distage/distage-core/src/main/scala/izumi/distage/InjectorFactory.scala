@@ -8,7 +8,6 @@ import izumi.distage.model.recursive.Bootloader
 import izumi.distage.model.reflection.DIKey
 import izumi.distage.model.{Injector, Locator, PlannerInput}
 import izumi.distage.modules.DefaultModule
-import izumi.fundamentals.platform.functional.Identity
 import izumi.reflect.TagK
 
 trait InjectorFactory {
@@ -40,17 +39,6 @@ trait InjectorFactory {
     locatorPrivacy: LocatorPrivacy = defaultBootstrapLocatorPrivacy,
     bootstrapRootsMode: BootstrapRootsMode = defaultBootstrapRootsMode,
   ): Injector[F]
-
-  /**
-    * Create a new default Injector with [[izumi.fundamentals.platform.functional.Identity]] effect type
-    *
-    * Use `apply[F]()` variant to specify a different effect type
-    *
-    * @note this method exists only because of Scala 2.12's sub-par implicit handling:
-    *       2.12 fails to default to `QuasiIO.quasiIOIdentity` when writing `Injector()` if cats-effect
-    *       is on the classpath because of recursive (on 2.12: diverging) instances in `cats.effect.kernel.Sync` object
-    */
-  def apply(): Injector[Identity]
 
   /**
     * Alias for `apply[F]` that doesn't add a [[DefaultModule]] for F into bindings.

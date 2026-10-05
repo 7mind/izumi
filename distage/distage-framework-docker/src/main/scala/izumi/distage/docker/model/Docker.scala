@@ -10,6 +10,7 @@ import izumi.fundamentals.platform.integration.PortCheck.HostPortPair
 import pureconfig.ConfigReader
 
 import java.net.{Inet4Address, Inet6Address, InetAddress}
+import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.util.{Success, Try}
@@ -168,6 +169,17 @@ object Docker {
     *
     * @param autoPull Pull the image if it does not exists before starting the container.
     *                 default: true, should only be disabled if you absolutely must manage the image manually.
+    *
+    * @param files    Files and directories this JVM reads and copies into the container after creating it and before starting it,
+    *                 before the `afterCreate` hooks, so the container engine never needs access to the host path.
+    *                 Copies are owned by root, world-readable, and executable only when the source file is;
+    *                 modification times are not preserved. The files are read twice: once to compute the reuse digest
+    *                 and once into temporary tar files, which are deleted after copying; creation fails if the files
+    *                 changed in between.
+    *
+    * @param afterCreate Hooks run in order after the container is created and before it is started, after copying `files`.
+    *                 A container is reused only if it was created with hooks of identical reuse keys, `files` included,
+    *                 compared by a digest label; see [[ContainerHook]].
     */
   final case class ContainerConfig[+Tag](
     image: String,
@@ -194,6 +206,8 @@ object Docker {
     healthCheck: ContainerHealthCheck = ContainerHealthCheck.portCheck,
     portProbeTimeout: FiniteDuration = FiniteDuration(200, TimeUnit.MILLISECONDS),
     autoPull: Boolean = true,
+    files: Seq[ContainerFile] = Seq.empty,
+    afterCreate: Seq[ContainerHook] = Seq.empty,
   ) {
     def tcpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.TCPBase => t: DockerPort }.toSet
     def udpPorts: Set[DockerPort] = ports.collect { case t: DockerPort.UDPBase => t: DockerPort }.toSet
@@ -292,6 +306,11 @@ object Docker {
     containerPath: String,
     noCopy: Boolean = false,
     readOnly: Boolean = false,
+  )
+
+  final case class ContainerFile(
+    hostPath: Path,
+    containerPath: String,
   )
 
   final case class UnmappedPorts(

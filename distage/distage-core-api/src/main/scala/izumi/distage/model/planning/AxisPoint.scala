@@ -4,8 +4,6 @@ import izumi.fundamentals.collections.IzCollections.*
 import izumi.fundamentals.collections.MutableMultiMap
 import izumi.fundamentals.platform.strings.IzString.toRichString
 
-import scala.collection.compat.*
-
 final case class AxisPoint(axis: String, value: String) {
   override def toString: String = s"$axis:$value"
 }

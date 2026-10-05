@@ -1,7 +1,6 @@
 package izumi.functional.bio.retry
 
 import izumi.functional.bio.Clock1.ClockAccuracy
-import izumi.functional.bio.__VersionSpecificDurationConvertersCompat.toFiniteDuration
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
 import izumi.functional.bio.{Clock2, Error2, F, Functor2, IO2, Monad2, Primitives2, Ref2, Temporal2, TemporalInstances, UnsafeRun2}
 import org.scalatest.Assertion
@@ -12,6 +11,7 @@ import java.time.{Instant, ZoneOffset, ZonedDateTime}
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.concurrent.duration.*
+import scala.jdk.DurationConverters.JavaDurationOps
 
 class SchedulerTest extends AnyWordSpec {
 
@@ -391,7 +391,7 @@ class SchedulerTest extends AnyWordSpec {
               case _: ControllerDecision.Stop[B] @unchecked => F.pure(acc)
               case repeat: ControllerDecision.Repeat[F, Any, B] @unchecked =>
                 val next = repeat.action
-                val sleepTime = toFiniteDuration(java.time.Duration.between(now, repeat.interval))
+                val sleepTime = java.time.Duration.between(now, repeat.interval).toScala
                 F.sleep(sleepTime) *> eff *> loop((), next, acc :+ sleepTime, iter - 1)
             }
           } yield res).flatten

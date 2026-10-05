@@ -7,7 +7,7 @@
 `distage` performs pruning of all unused bindings by default.
 When you configure a set of "root" keys -
 either explicitly by passing @scaladoc[Roots](izumi.distage.model.plan.Roots)
-or implicitly by using @scaladoc[Injector#produceRun](izumi.distage.model.Injector#produceRun) or @scaladoc[Injector#produceGet](izumi.distage.model.Injector#produceGet) methods, `distage` will remove all bindings that aren't required to create the supplied roots – these bindings will be thrown out and not even considered, much less executed.
+or implicitly by using @scaladoc[Injector#produceRun](izumi.distage.model.Injector#produceRun) or @scaladoc[Injector#produceGet](izumi.distage.model.Injector#produceGet-fffffdbd) methods, `distage` will remove all bindings that aren't required to create the supplied roots – these bindings will be thrown out and not even considered, much less executed.
 
 Pruning serves two important purposes:
 

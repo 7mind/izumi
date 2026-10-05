@@ -18,8 +18,6 @@ import izumi.fundamentals.graphs.{DG, GraphMeta, WeakEdge}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.strings.IzString.*
 
-import scala.annotation.nowarn
-
 trait PlanSolver {
   def resolveConflicts(
     input: PlannerInput,
@@ -35,13 +33,10 @@ object PlanSolver {
     weakSetMembers: Set[WeakEdge[DIKey]],
   )
 
-  @nowarn("msg=[Uu]nused import")
   class Impl(
     resolver: SemigraphSolver[DIKey, Int, InstantiationOp],
     preps: GraphQueries,
   ) extends PlanSolver {
-
-    import scala.collection.compat.*
 
     def resolveConflicts(
       input: PlannerInput,

@@ -7,9 +7,11 @@ object IzSha256HashFunction extends IzHashFunction {
     MessageDigest.getInstance("SHA-256").digest(bytes)
   }
 
-  // scalajs workaround compatibility
-  def setImported(): Unit = {}
-  def getImpl: IzHashFunction = this
-
   override def id: IzHashId = IzHashId.SHA_256
+
+  @deprecated("SHA-256 is implemented portably, no JS module needs to be imported", "1.3.0")
+  def setImported(): Unit = ()
+
+  @deprecated("Use IzSha256HashFunction directly", "1.3.0")
+  def getImpl: IzHashFunction = this
 }
