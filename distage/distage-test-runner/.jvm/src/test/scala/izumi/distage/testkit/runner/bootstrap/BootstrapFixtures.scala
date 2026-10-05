@@ -6,8 +6,10 @@ import izumi.distage.testkit.runner.spec.{AnyWordSpec, AsyncWordSpec}
 
 import sbt.testing.{Event, EventHandler, Status, SuiteSelector, Task, TaskDef, TestSelector}
 
-import java.util.concurrent.{CountDownLatch, Executors, TimeUnit}
-import java.util.concurrent.atomic.AtomicInteger
+import java.nio.ByteBuffer
+import java.nio.channels.Pipe
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, Executors, TimeUnit}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
@@ -16,6 +18,7 @@ import scala.util.control.NonFatal
 object BootstrapFixtures {
   private final val ParallelTasks = 2
   private final val TimeoutSeconds = 30
+  private final val CancellationPollMillis = 1L
 
   def main(args: Array[String]): Unit = {
     var checks = 0
@@ -132,6 +135,70 @@ object BootstrapFixtures {
     catch { case cause: IllegalStateException => cause eq outputFailure }
     verify(lossPropagated, "Common application output failure must retain the original host callback exception after provider cleanup")
     verify(lossRunner.done().isEmpty, "Lost-channel runner must drain its lifecycle")
+    val entered = new CountDownLatch(1)
+    val finalizing = new CountDownLatch(1)
+    val releaseCancellation = new CountDownLatch(1)
+    val interruptedTask = new AtomicReference[Throwable]()
+    val reportingFailure = new AtomicReference[Throwable]()
+    val interruptFlag = new AtomicBoolean(false)
+    val cancellationEvents = new ConcurrentLinkedQueue[Event]()
+    val cancellationRequest = RequestArguments.parse(flags.toVector).fold(error => throw new IllegalArgumentException(error.message), value => value)
+    val cancellationFactory: String => TestSuite = name => new TestSuite {
+      override def register(registration: RegistrationContext): RegisteredSuite = {
+        val suite = SuiteDescriptor(SuiteId(name), name)
+        val test = TestDescriptor(TestId(registration.target, suite.id, Vector("interrupted body"), None), "interrupted body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
+        val provider = new ExecutionProvider {
+          override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(selected) }
+          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
+            override val tests: Vector[TestDescriptor] = selected
+            override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+            override def execute(context: RunExecutionContext): Future[ProviderOutcome] = Future {
+              context.emit(ProviderEvent.TestStarted(test.id))
+              entered.countDown()
+              val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TimeoutSeconds)
+              while (!context.cancellation.isRequested && System.nanoTime() < deadline) Thread.sleep(CancellationPollMillis)
+              require(context.cancellation.isRequested, "Task interruption did not cancel its provider")
+              finalizing.countDown()
+              require(releaseCancellation.await(TimeoutSeconds, TimeUnit.SECONDS), "Cancelled provider finalizer was not released")
+              val result = TestResult(test.id, TestStatus.Cancelled, None, 0L)
+              context.emit(ProviderEvent.TestCompleted(result))
+              ProviderOutcome(Vector(result), Vector.empty, cancelled = true)
+            }(registration.executionContext)
+          })
+        }
+        RegisteredSuite(suite, Vector(test), provider)
+      }
+    }
+    val cancellationRunner = new BootstrapRunner(flags, Array.empty, cancellationFactory, cancellationRequest, None)
+    val cancellationTask = cancellationRunner.tasks(Array(definitions.head)).head
+    val reportingPipe = Pipe.open()
+    val cancellationThread = new Thread(() => {
+      try { val _ = cancellationTask.execute(new EventHandler { override def handle(event: Event): Unit = { val _ = cancellationEvents.add(event) } }, Array.empty) }
+      catch { case cause: Throwable => interruptedTask.set(cause) }
+      interruptFlag.set(Thread.currentThread().isInterrupted)
+      try { val _ = reportingPipe.sink().write(ByteBuffer.wrap(Array[Byte](1))) }
+      catch { case cause: Throwable => reportingFailure.set(cause) }
+    }, "bootstrap-interruption-reporting")
+    try {
+      cancellationThread.start()
+      verify(entered.await(TimeoutSeconds, TimeUnit.SECONDS), "Cancellation body must enter before interruption")
+      cancellationThread.interrupt()
+      verify(finalizing.await(TimeoutSeconds, TimeUnit.SECONDS), "Task interruption must reach provider finalization")
+      verify(cancellationThread.isAlive, "Interrupted task must join its held finalizer")
+      releaseCancellation.countDown()
+      cancellationThread.join(TimeUnit.SECONDS.toMillis(TimeoutSeconds))
+      verify(!cancellationThread.isAlive, "Cancelled task and reporting must terminate")
+      verify(interruptedTask.get().isInstanceOf[InterruptedException], "Cancelled task must propagate its original interruption")
+      verify(!interruptFlag.get() && reportingFailure.get() == null, "Rethrown interruption must leave host NIO reporting usable: " + reportingFailure.get())
+      verify(cancellationEvents.asScala.map(_.status()).toVector == Vector(Status.Canceled, Status.Error), "Cancelled task must retain cancellation and run-level error outcomes")
+      verify(cancellationRunner.done().isEmpty, "Cancelled runner must drain its lifecycle")
+      println("BOOTSTRAP_INTERRUPTION_REPORTING_OK finalization=joined original=interrupted nio=usable")
+    } finally {
+      releaseCancellation.countDown()
+      cancellationThread.join(TimeUnit.SECONDS.toMillis(TimeoutSeconds))
+      reportingPipe.sink().close()
+      reportingPipe.source().close()
+    }
     Vector(new LinkageError("Held live linkage failure"), new InterruptedException("Held live interrupt failure")).foreach { failure =>
       val held = new CountDownLatch(1)
       val release = new CountDownLatch(1)

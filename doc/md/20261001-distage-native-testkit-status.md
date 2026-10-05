@@ -96,19 +96,19 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
-| 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
-| 2d.11 | in progress | The current JVM streaming publication retains all226 preceding SBT2 controls on Scala2.13/3 and passes four additional early-delivery controls below. History, multi-project/configuration, concurrent host windows, exits, omission, task errors, input composition and standard/legacy JUnit layouts are covered. Complete failure/input inventory and final evaluation stay open. |
+| 2d.10 | in progress | Current interruption correction passes20 published cancellation/normal/recovery commands on Scala2.13/3, in process and forked, with held finalizers and same-session incremental recovery below. Premature-exit controls also pass the326-command batch. The unchanged target-agent classes retain the preceding29 JDK17/21/25 exit controls. Complete SBT-client cancellation/failure/recovery domain and final evaluation remain open. |
+| 2d.11 | in progress | Current correction passes326 SBT2 command controls on Scala2.13/3: the preceding230 general controls,36 resource/body controls,40 stock callback comparisons and20 cancellation/normal/recovery controls below. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap50,18 task checks,20 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap58 checks per compiler,18 task checks,20 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current body/JUnit controls retain normal mixed/held delivery, omissions and owned/foreign task Errors. Repeated fork groups retain all six outcomes in custom Output and one XML file; equal-total foreign status swaps reject. Premature exits reject after sibling drain. Complete callback/cancellation/finalization domains and final evaluation remain open. |
+| 2d.22 | in progress | Current326-command batch retains preceding body/JUnit/error controls and all15 selected cancellation outcomes per interrupted run, including finalizer failures. Cancellation commands reject, retain complete XML and recover with fresh resources below. Complete host-callback outcomes, SBT-client cancellation and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -14967,3 +14967,115 @@ step or final item is done. Complete classloader/option and selected-outcome
 reporting domains, actual cancellation, complete input/history semantics,
 production JS/Native hosts, coverage, migration and final reviews remain open.
 IDE work remains deferred. No push or PR was made.
+
+
+## 2026-10-06: JVM task interruption reporting and fork recovery
+
+Commit: the commit containing this entry, parent
+`59ddbdafcceecc0311133f238052e22cdb08b8d9`.
+This checkpoint covers parts of 2d.2/4/10/11/17/18/22. It does not close step 2d.
+
+The new real-SBT fixture interrupts the first executing public SDK task after
+one Cats Effect body enters. Five suites select 15 tests and share one memoized
+Lifecycle resource. A separate control thread holds the finalizer for 250ms and
+requires the task to remain pending until release is permitted. Cancellation,
+cancellation with a failing finalizer, normal execution and incremental
+`test`/`testQuick` recovery run in one SBT session, in process and forked, on
+both supported compilers. Actual host/body PIDs, acquisition/release receipts,
+run IDs, schema-4 outcomes, selected test identities and XML are checked.
+These are Behavioral-Active, Effectual-GoodCommunication controls at real SBT
+boundaries. The focused bootstrap control uses an injected provider through the
+SDK Task interface and a real NIO pipe to check post-interruption reporting.
+
+The first published fixture reproduction times out with actual exit 124 on both
+compilers under `sbt2-task-cancellation-first`. The application emits a completed
+cancellation outcome and finalizes its resource, but the target shutdown agent
+waits for a missing host decision while SBT waits for the worker response.
+In-process reporting also contains a zero-byte XML file and
+`ClosedByInterruptException`. The fixture initially writes its own task-return
+marker before clearing the interrupt flag; that marker defect is corrected
+before repeating the production reproduction. Both corrected lanes still hang,
+with all five target terminal receipts present. Their host/target thread dumps
+and live receipts are captured under `sbt2-task-cancellation-second`, then only
+the verified owned process groups are signalled. Those actual exits are 143,
+not natural completion. Its broad frozen-input check reports the subsequently
+added bootstrap test as changed; production/publication/driver bytes did not
+change during that reproduction. This failed run is not acceptance evidence.
+
+The narrower fail-first command is:
+
+```sh
+direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"' \
+  repro 'set ThisBuild / insideCI := true' \
+  'distage-test-runnerJVM/Test/runMain izumi.distage.testkit.runner.bootstrap.BootstrapFixtures'
+```
+
+Record: `/srv/nvme/tmp/izumi-impl/sbt2-interruption-reporting-before/`.
+Actual exit 1: `Rethrown interruption must leave host NIO reporting usable:
+java.nio.channels.ClosedByInterruptException`. The original task interruption
+has propagated and provider completion was joined, but the callback thread's
+interrupt flag is also set. Source inspection identifies the bootstrap's
+unconditional flag restoration after rethrowing `InterruptedException`.
+That flag causes subsequent host NIO reporting to fail. Cached SDK WorkerMain
+source shows that forked worker IPC also uses NIO, providing a mechanism for
+the observed host/agent wait cycle. The cancellation/recovery matrix below
+verifies that removing the restoration resolves the reproduced hang.
+
+The production correction removes that restoration. Cancellation still requests
+provider shutdown, waits for application completion and its executor, reports
+all selected outcomes, and propagates the original interruption. Rethrowing the
+interruption leaves the consumed flag cleared so host reporting can finish.
+The regression requires the original interruption, joined held completion,
+cancellation/error events and a usable NIO pipe after the SDK task returns.
+
+The first producer run passes the strengthened Scala 3.9 bootstrap but fails
+because the harness pre-creates the XML fixture's destination. That precondition
+is corrected, with no publication from the failed run. The complete producer
+and consumer batches then run:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancellation-producer-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancellation-qualify.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancellation-regression-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancellation-regression-audit.py
+```
+
+Producer exit 0, frozen inputs unchanged: 219 protocol checks, 802 base-runner
+checks and 58 bootstrap checks per compiler, plus 21 XML, 20 receipt and 18 task
+boundary checks. The focused interruption/NIO control passes on both compilers.
+All five local JAR publications match their compiled payloads byte-for-byte;
+both runner source JARs contain the exact corrected Framework source. The 20
+agent/target Java classes match the preceding qualified publication, preserving
+its applicable JDK17/21/25 exit evidence. The new qualified publications and 75
+files are preserved under `sbt2-cancellation-qualified-publication/`.
+
+All 26 consumer drivers and all 326 command controls pass, with no frozen
+source/driver/publication input changes. This one batch includes 230 preceding
+general controls, 36 resource/body controls, 40 stock callback comparisons and 20
+new cancellation/normal/recovery commands. The independent audit reads raw
+body/resource/event/XML records. Its initial acquisition-failure oracle wrongly
+expects a successful acquisition instead of an attempt; the saved failing
+oracle and `audit-before.log` record that defect. Correcting that distinction
+requires no production or fixture change and no SBT rerun. The final audit
+passes with 326 controls, 24 incremental recovery requests, 56 fresh run IDs,
+56 distinct resource attempts and 52 successful acquisitions.
+
+The 20 new commands contain eight actual cancellations and twelve normal/recovery
+runs. They verify 188 physical bodies, 300 selected terminal results and 348 XML
+cases. Every cancellation has one physical body, 15 Cancelled results and 21 XML
+cases: 15 selected test cases, five run-level suite errors, and the original
+primary task interruption error. Four cancellation cases also retain the
+explicit Finalization failure. Finalizers remain held until the control permits
+release; tasks and forks then terminate and owned command directories disappear.
+All eight incremental recovery requests execute/report 15 bodies and use a fresh
+resource and run ID in the same SBT process. No incomplete run reports success.
+
+Exact argv, generated inputs, immutable driver hashes, captures and completion
+records are under `/srv/nvme/tmp/izumi-impl/sbt2-cancellation-regression-first/`.
+Independent audit: `audit/completion.json`, exit 0, SHA256
+`2f9dece4dd189fbce56491148a0e5311acc82f9d457f2bcb9e367f086c92a645`.
+This verifies interruption of an executing SDK task; cancellation originating
+from the SBT client's cancellation channel remains to be checked. Complete
+option/classloader, input/history and host-hook outcome domains remain open,
+as do production JS/Native hosts, coverage, migration and final reviews. IDE
+remains deferred. No push or PR was made.

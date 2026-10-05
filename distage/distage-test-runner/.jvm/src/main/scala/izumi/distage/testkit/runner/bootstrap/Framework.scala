@@ -92,7 +92,6 @@ private[bootstrap] final class BootstrapRunner(
             Array.empty
           } finally {
             endTask()
-            interruption.restore()
           }
         }
       }: Task
@@ -324,5 +323,4 @@ private[bootstrap] final class TaskInterruption {
   }
 
   def rethrow(): Unit = failure.foreach(throw _)
-  def restore(): Unit = if (failure.nonEmpty) Thread.currentThread().interrupt()
 }
