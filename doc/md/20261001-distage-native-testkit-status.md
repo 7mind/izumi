@@ -14534,3 +14534,68 @@ No whole step or final item is marked done. Full current JVM/JS runtime checks,
 the final suite inventory, remaining host lifecycle/streaming work, production
 JS/Native hosts, coverage, migration and final reviews remain open. IDE work
 remains excluded; no push or PR was made.
+
+
+## 2026-10-05: full supported JVM/JS runtime matrix after the rebase
+
+Commit: the commit containing this entry, parent
+`444fbd7d0390a61c49251120ebf0664f3a7970f9`.
+All 1,508 source/build inputs remain identical to the compiled integration
+checkpoint. No production changes or republishing are made in this checkpoint.
+
+The first batch completes three whole-aggregate testFull commands: Scala3.9 JS,
+Scala3.9 JVM and Scala2.13 JS. Its final Scala2.13 JVM request fails because the
+preceding standalone version switch changes the protocol dependency to2.13 while
+the aggregate also includes the fixed Scala3.8 SBT plugin. The full batch exits1;
+only its three completed commands are recorded as passing. A separate attempt
+to prefix the named JVM aggregate with `++2.13.18` is rejected with `Expected key`
+and an empty `all` command before tests run. Neither invocation establishes a
+production defect, and no mismatch exemption or source correction is added.
+Records: `develop-rebase-20261005/full-jvm-js/` and
+`develop-rebase-20261005/full-jvm-2.13-corrected/` under
+`/srv/nvme/tmp/izumi-impl/`.
+
+The completed replacement batch uses the root CI compile command, then the
+three JVM library families, excluding the fixed-compiler SBT plugin:
+
+```sh
+direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"' build \
+  'set ThisBuild / insideCI := true' \
+  '++2.13.18 Test/compile' \
+  '++2.13.18' \
+  'fundamentals-jvm/Test/testFull' \
+  'distage-jvm/Test/testFull' \
+  'logstage-jvm/Test/testFull'
+```
+
+Actual batch exit0. The root CI compile succeeds, followed by all three runtime
+commands. Fundamentals reports619 ScalaTest cases in4 completed groups, distage
+850 in9 groups, and logstage110 in4 groups. All17 groups report all tests passed.
+The assertion, protocol, base-runner, provider and application fixture markers
+also pass. Exact argv, input hashes, full log, terminal result and audit are in
+`develop-rebase-20261005/full-jvm-2.13-families/`.
+Audit SHA256: `bf2b0f1016ae2bd18877a75612ad026bdd4632e72b623026ccd1a39554cfe1a5`.
+
+Together with the preceding Native checkpoint, full runtime evidence now covers
+both supported Scala versions on JVM, JS and Native:
+
+| Target | Scala3.9 ScalaTest cases/groups | Scala2.13 ScalaTest cases/groups |
+| --- | --- | --- |
+| JVM | 1611/17 | 1579/17 |
+| JS | 890/13 | 858/13 |
+| Native | 799/13 | 762/13 |
+
+These counts are runtime evidence, not a reconciled per-suite migration inventory
+or a claim that platform-specific suites have identical membership. They do not
+replace the custom runner checks or the published SBT consumer evidence.
+
+A direct-dependency inspection of all6 current base-runner publication POMs
+finds only fundamentals and protocol izumi dependencies and no SBT implementation
+dependency. The public test-interface dependency is retained. Record:
+`develop-rebase-20261005/base-runner-publication-poms.json`. This is not a new
+resolved transitive graph audit.
+
+No whole step or final item is marked done. Remaining host compatibility,
+failure/cancellation, streaming, production JS/Native hosts, coverage, migration
+and final acceptance reviews remain open. IDE work remains excluded; no push or
+PR was made.
