@@ -120,21 +120,32 @@ public final class TaskCompleteness {
         Objects.requireNonNull(sink, "Missing target completion sink");
         boolean owned = false;
         for (TaskDef definition : definitions) owned |= isOwned(definition);
-        if (!owned) return tasks;
+        if (!owned) return protect(tasks);
         Set<SuiteName> returned = new HashSet<>();
         List<Task> completed = new ArrayList<>();
         for (Task task : tasks) {
             if (isOwned(task.taskDef())) {
                 SuiteName name = new SuiteName(task.taskDef().fullyQualifiedName());
                 returned.add(name);
-                completed.add(task instanceof AcknowledgedTask ? task : new AcknowledgedTask(task, new CompletionScope(name, sink)));
-            } else completed.add(task);
+                completed.add(task instanceof GuardedTask ? task : new GuardedTask(task, new CompletionScope(name, sink)));
+            } else completed.add(protect(task));
         }
         for (TaskDef definition : definitions) {
             SuiteName name = new SuiteName(definition.fullyQualifiedName());
-            if (isOwned(definition) && !returned.contains(name)) completed.add(new AcknowledgedTask(new MissingTask(definition), new CompletionScope(name, sink)));
+            if (isOwned(definition) && !returned.contains(name)) completed.add(new GuardedTask(new MissingTask(definition), new CompletionScope(name, sink)));
         }
         return completed.toArray(Task[]::new);
+    }
+
+    public static Task[] protect(Task[] tasks) {
+        Objects.requireNonNull(tasks, "Runner returned no task array");
+        Task[] guarded = new Task[tasks.length];
+        for (int index = 0; index < tasks.length; index++) guarded[index] = protect(tasks[index]);
+        return guarded;
+    }
+
+    private static Task protect(Task task) {
+        return task instanceof GuardedTask ? task : new GuardedTask(task, new ForeignScope());
     }
 
     private static boolean isOwned(TaskDef definition) {
@@ -142,7 +153,21 @@ public final class TaskCompleteness {
         return definition.fingerprint() instanceof SubclassFingerprint fingerprint && !fingerprint.isModule() && fingerprint.superclassName().equals(SUITE_SUPERCLASS);
     }
 
-    private static final class CompletionScope {
+    private interface TaskScope {
+        void record(Status status);
+        Task[] children(Task[] tasks);
+        void failed();
+        void finish();
+    }
+
+    private static final class ForeignScope implements TaskScope {
+        @Override public void record(Status status) {}
+        @Override public Task[] children(Task[] tasks) { return protect(tasks); }
+        @Override public void failed() {}
+        @Override public void finish() {}
+    }
+
+    private static final class CompletionScope implements TaskScope {
         private final SuiteName suite;
         private final CompletionSink sink;
         private final UUID token = UUID.randomUUID();
@@ -156,22 +181,22 @@ public final class TaskCompleteness {
             for (Status status : Status.values()) counts.put(status, 0);
         }
 
-        private synchronized void record(Status status) {
+        @Override public synchronized void record(Status status) {
             if (remaining <= 0) throw new IllegalStateException("Event emitted after target suite terminal");
             counts.put(status, Math.addExact(counts.get(status), 1));
         }
 
-        private synchronized Task[] children(Task[] tasks) {
+        @Override public synchronized Task[] children(Task[] tasks) {
             Objects.requireNonNull(tasks, "Task returned no child task array");
             remaining = Math.addExact(remaining, tasks.length);
             Task[] children = new Task[tasks.length];
-            for (int index = 0; index < tasks.length; index++) children[index] = new AcknowledgedTask(tasks[index], this);
+            for (int index = 0; index < tasks.length; index++) children[index] = new GuardedTask(tasks[index], this);
             return children;
         }
 
-        private synchronized void failed() { returnedNormally = false; }
+        @Override public synchronized void failed() { returnedNormally = false; }
 
-        private synchronized void finish() {
+        @Override public synchronized void finish() {
             if (remaining <= 0) throw new IllegalStateException("Target suite completed twice");
             remaining -= 1;
             if (remaining == 0) sink.publish(new Completion(token, suite, ProcessHandle.current().pid(), returnedNormally,
@@ -179,12 +204,12 @@ public final class TaskCompleteness {
         }
     }
 
-    private static final class AcknowledgedTask implements Task {
+    private static final class GuardedTask implements Task {
         private final Task delegate;
-        private final CompletionScope completion;
+        private final TaskScope completion;
         private boolean executed;
 
-        private AcknowledgedTask(Task delegate, CompletionScope completion) {
+        private GuardedTask(Task delegate, TaskScope completion) {
             this.delegate = Objects.requireNonNull(delegate, "Missing target task");
             this.completion = completion;
         }
@@ -225,11 +250,11 @@ public final class TaskCompleteness {
 
     private static final class CountingHandler implements EventHandler {
         private final EventHandler delegate;
-        private final CompletionScope completion;
+        private final TaskScope completion;
         private boolean closed;
         private boolean callbackFailed;
 
-        private CountingHandler(EventHandler delegate, CompletionScope completion) {
+        private CountingHandler(EventHandler delegate, TaskScope completion) {
             this.delegate = Objects.requireNonNull(delegate, "Missing target event handler");
             this.completion = completion;
         }

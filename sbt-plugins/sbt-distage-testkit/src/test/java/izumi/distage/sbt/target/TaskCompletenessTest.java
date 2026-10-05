@@ -67,9 +67,30 @@ public final class TaskCompletenessTest {
 
         TaskCompleteness.CompletionStore foreignStore = factory.create("foreign");
         TaskDef foreign = definition("fixture.Foreign", false);
-        Task[] original = new Task[]{task(foreign, h -> NO_CHILDREN)};
-        require(TaskCompleteness.normalise(new TaskDef[]{foreign}, original, foreignStore) == original && foreignStore.completed().isEmpty(), "Foreign framework tasks were changed");
-        ok(mode, "foreign array identity");
+        Event foreignEvent = event(foreign, Status.Success);
+        AtomicInteger foreignExecutions = new AtomicInteger();
+        List<Event> foreignEvents = new ArrayList<>();
+        LinkageError foreignFailure = new LinkageError("original foreign task failure");
+        Task[] original = new Task[]{task(foreign, h -> {
+            foreignExecutions.incrementAndGet(); h.handle(foreignEvent); throw foreignFailure;
+        })};
+        Task safeForeign = TaskCompleteness.normalise(new TaskDef[]{foreign}, original, foreignStore)[0];
+        Task[] foreignChildren = safeForeign.execute(foreignEvents::add, NO_LOGGERS);
+        require(foreignExecutions.get() == 1 && foreignChildren.length == 0 && foreignEvents.size() == 2 && foreignEvents.get(0) == foreignEvent, "Foreign execution or original event identity changed");
+        require(safeForeign.taskDef() == foreign && safeForeign.tags()[0].equals("fixture"), "Foreign task definition or tags changed");
+        require(foreignEvents.get(1).status() == Status.Error && foreignEvents.get(1).selector() instanceof SuiteSelector && foreignEvents.get(1).throwable().get() == foreignFailure, "Foreign task lost its terminal error or cause");
+        require(foreignStore.completed().isEmpty(), "Foreign tasks published distage target records");
+        ok(mode, "foreign task error, single execution, original events and no owned records");
+
+        TaskCompleteness.CompletionStore foreignChildStore = factory.create("foreign-child");
+        Task foreignChild = task(foreign, h -> { h.handle(foreignEvent); throw foreignFailure; });
+        Task foreignRoot = task(foreign, h -> new Task[]{foreignChild});
+        List<Event> foreignChildEvents = new ArrayList<>();
+        Task[] guardedChildren = TaskCompleteness.normalise(new TaskDef[]{foreign}, new Task[]{foreignRoot}, foreignChildStore)[0].execute(foreignChildEvents::add, NO_LOGGERS);
+        guardedChildren[0].execute(foreignChildEvents::add, NO_LOGGERS);
+        require(foreignChildEvents.size() == 2 && foreignChildEvents.get(0) == foreignEvent && foreignChildEvents.get(1).throwable().get() == foreignFailure, "Foreign descendant error lost its original event or cause");
+        require(foreignChildStore.completed().isEmpty(), "Foreign descendants published distage target records");
+        ok(mode, "foreign descendant error and no owned records");
 
         TaskCompleteness.CompletionStore statusStore = factory.create("statuses");
         List<Event> statuses = new ArrayList<>();

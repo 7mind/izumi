@@ -133,6 +133,28 @@ addresses an escaping LinkageError in TestRunner; the pinned fork worker has the
 separate notification ordering described above. This reproduction remains an
 unfiled draft report, with no SDK upgrade or private SDK replacement.
 
+`verify-foreign-task-failure.py` exercises the published distage plugin against
+the generic framework from `verify-command-groups.py`. It runs normal, throwing,
+and immediate recovery commands in one SBT session, in process and forked, on
+Scala 2.13 and 3. SuiteA emits three successes and then throws LinkageError;
+SuiteB is an independent group. Before the public task guard, each throwing
+command executes SuiteA's three bodies, loses its XML, and skips SuiteB. With
+the guard, both suites execute once, Output and XML retain six successes and
+one SuiteA error, and the command still fails with the original cause visible.
+Every fork has exited before capture, and later commands use fresh workers.
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-foreign-task-failure.py \
+  --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 2.13.18 \
+  --expected-task-report error \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-foreign-task-failure-example
+```
+
+`--expected-task-report absent` checks the preceding plugin's reproduced
+report loss. Only `error` checks the corrected product behavior. The fixture
+reuses the generic framework source and build contract rather than introducing
+another copy of the SDK host implementation.
+
 `verify-held-batch.py` reproduces an incomplete SDK result after the host
 listener has returned. One generic framework executes two three-body suites;
 its child `Runner.done` waits for the first host group only. The host listener
