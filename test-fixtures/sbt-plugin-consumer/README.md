@@ -10,13 +10,17 @@ are checked after each run. Configuration filters and a custom test configuratio
 exercise the same public plugin settings.
 SBT 2 verifies five distinct public stock suite digests before running these
 cases; a missing or aliased digest fails the fixture.
-The combined matrix has 43 scenarios per compiler. It edits a scanned plugin
+The combined matrix has 47 scenarios per compiler. It edits a scanned plugin
 implementation, proves that all six stock suite digests remain unchanged, and
 checks that `test` and `testQuick` still rerun and use the edited implementation.
 A suite-class edit must change its own digest while preserving the foreign
 suite's digest. Both incremental commands then execute the expected bodies.
 Additional quick runs change external input, activation and memoization, and
 follow a partial selection with the complete suite set.
+An application constructor failure, in process and forked, must produce exactly
+one construction attempt and one error report for each of three selected suites,
+without executing bodies or acquiring resources. A subsequent incremental
+command in the same session must execute all five suites with fresh resources.
 
 Additional controls inspect exact IDs without body execution or acquisition,
 select one DI body through framework JSON arguments, and verify the subsequent

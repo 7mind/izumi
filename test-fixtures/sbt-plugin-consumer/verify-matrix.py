@@ -135,6 +135,45 @@ verifyRejectedAxisFilter := {
 '''
 
 
+LAUNCH_FAILURE_CONTROL = r'''
+val enableLaunchFailure = taskKey[Unit]("Enable one owned application construction failure")
+enableLaunchFailure := Def.uncached {
+  IO.write(file(sys.props("izumi.fixture.audit-root")) / "launch-failure.flag", "enabled")
+}
+val verifyLaunchFailure = inputKey[Unit]("Verify every selected suite reports a single application launch failure")
+verifyLaunchFailure := {
+  val parsed = spaceDelimited("case").parsed
+  require(parsed.size == 1, "Expected one launch failure case")
+  val result = (Test / testOnly).toTask(" *SuiteC *SuiteD *SuiteE").result.value
+  val audit = file(sys.props("izumi.fixture.audit-root"))
+  require((audit / "launch-failure.flag").isFile, "Launch failure fixture flag was not installed")
+  require(result.toEither.isLeft, "Application launch failure did not reject the command")
+  require((audit * "*.body").get().isEmpty && (audit * "*.acquire").get().isEmpty && (audit * "*.release").get().isEmpty, "Failed application executed bodies or acquired resources")
+  val attempts = (audit * "*.constructor").get()
+  require(attempts.size == 1, "Selected suite tasks relaunched the failed application")
+  val expected = Set("SuiteC", "SuiteD", "SuiteE").map("izumi.fixtures.host." + _)
+  require(expected.contains(IO.read(attempts.head)), "Failed constructor did not belong to the selection")
+  val reports = (target.value / "test-reports" * "*.xml").get()
+  require(reports.size == expected.size, "A selected suite has no launch failure report")
+  val reported = reports.map { report =>
+    val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(report)
+    val cases = document.getElementsByTagName("testcase")
+    val errors = document.getElementsByTagName("error")
+    require(cases.getLength == 1 && errors.getLength == 1, "Launch failure was not a terminal suite error")
+    require(Seq("failure", "skipped").forall(name => document.getElementsByTagName(name).getLength == 0), "Launch failure has an unexpected outcome")
+    require(errors.item(0).getTextContent.contains("APPLICATION_LAUNCH_FAILURE"), "Suite reported another failure")
+    cases.item(0).asInstanceOf[org.w3c.dom.Element].getAttribute("classname")
+  }.toSet
+  require(reported == expected, "Launch failure suite identities differ")
+  val capture = file(sys.props("izumi.fixture.captures")) / parsed.head
+  require(!capture.exists(), "Launch failure capture must be new")
+  IO.copyDirectory(audit, capture / "body-audit")
+  IO.copyDirectory(target.value / "test-reports", capture / "test-reports")
+  streams.value.log.info("PLUGIN_LAUNCH_FAILURE_OK case=" + parsed.head + " attempts=1 bodies=0 reported=3 errors=3 acquired=0 released=0")
+}
+'''
+
+
 SBT2_DIGEST_CONTROL = '''
 val verifyDistinctStockDigests = taskKey[Unit]("Verify the stock incremental fixture precondition")
 verifyDistinctStockDigests := Def.uncached {
@@ -208,6 +247,10 @@ def commands(sbt_version):
         sequence.extend(["prepareFixture " + name, "verifyRejectedAxisFilter " + name])
         expected.append(dict(case=name, kind="rejected-filter", labels=[], acquisitions=0, revision=revision))
 
+    def launch_failure(name, revision):
+        sequence.extend(["prepareFixture " + name, "enableLaunchFailure", "verifyLaunchFailure " + name])
+        expected.append(dict(case=name, kind="launch-failure", labels=[], acquisitions=0, revision=revision))
+
     inspect("list", "Test / distageList", "", 15, "pluginConsumer/test")
     inspect("plan", "Test / distagePlan", "", 15, "pluginConsumer/test")
     inspect("selected-plan", "Test / distagePlan", selected_options, 1, "pluginConsumer/test")
@@ -219,6 +262,8 @@ def commands(sbt_version):
 
     case("full", full, ALL_SUITES + " ForeignSuite", 1, "alpha")
     case("conservative-repeat", quick, ALL_SUITES, 1, "alpha")
+    launch_failure("launch-failure", "alpha")
+    case("after-launch-failure", quick, ALL_SUITES, 1, "alpha")
     selected("quick-individual", "testQuick *SuiteC", "alpha")
     case("quick-after-individual", "testQuick *SuiteC", "SuiteC", 1, "alpha")
     case("quick-memoization-disabled", "testQuick *SuiteC -- --memoization disabled", "SuiteC", 3, "alpha")
@@ -253,6 +298,8 @@ def commands(sbt_version):
     rejected_filter("fork-rejected-filter", "beta")
     case("fork-after-rejected-filter", quick + " *SuiteC", "SuiteC", 1, "beta")
     case("fork-full", full, ALL_SUITES + " ForeignSuite", 1, "beta")
+    launch_failure("fork-launch-failure", "beta")
+    case("fork-after-launch-failure", quick, ALL_SUITES, 1, "beta")
     case("fork-selected", quick + " *SuiteC *SuiteD", "SuiteC SuiteD", 1, "beta")
     sequence.append("changeExternalInput gamma")
     case("fork-changed-input", quick, ALL_SUITES, 1, "gamma")
@@ -302,7 +349,16 @@ def main():
                 if source.name == "build.sbt":
                     start = text.index("Test / testFrameworks :=")
                     end = text.index("Test / javaOptions +=", start)
-                    text = text[:start] + text[end:] + CONTROLS + REJECTED_FILTER_CONTROL + (SBT2_DIGEST_CONTROL if sbt_version == "2.0.9" else "")
+                    text = text[:start] + text[end:] + CONTROLS + REJECTED_FILTER_CONTROL + LAUNCH_FAILURE_CONTROL + (SBT2_DIGEST_CONTROL if sbt_version == "2.0.9" else "")
+                elif source.name == "FixtureSuites.scala":
+                    before = "abstract class DIFixtureSuite extends SpecIdentity {\n"
+                    assert text.count(before) == 1
+                    text = text.replace(before, before + '''  if (Files.exists(Paths.get(sys.props("izumi.fixture.audit-root")).resolve("launch-failure.flag"))) {
+    val attempt = Paths.get(sys.props("izumi.fixture.audit-root")).resolve(java.util.UUID.randomUUID().toString + ".constructor")
+    val _ = Files.write(attempt, getClass.getName.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+    throw new IllegalStateException("APPLICATION_LAUNCH_FAILURE")
+  }
+''')
                 elif source.name == "FixturePlugin.scala":
                     before = 'new SharedResource(repo + "-" + UUID.randomUUID().toString, Paths.get(sys.props("izumi.fixture.audit-root")))'
                     assert text.count(before) == 1
@@ -344,7 +400,8 @@ def main():
             failures = []
             for row in expected:
                 name, labels = row["case"], row["labels"]
-                marker = (f"PLUGIN_REJECTED_FILTER_OK case={name} bodies=0 reported=1 errors=1 acquired=0 released=0" if row["kind"] == "rejected-filter" else
+                marker = (f"PLUGIN_LAUNCH_FAILURE_OK case={name} attempts=1 bodies=0 reported=3 errors=3 acquired=0 released=0" if row["kind"] == "launch-failure" else
+                          f"PLUGIN_REJECTED_FILTER_OK case={name} bodies=0 reported=1 errors=1 acquired=0 released=0" if row["kind"] == "rejected-filter" else
                           f"PLUGIN_SELECTED_OK case={name} bodies=1 reported=1 acquired=1 released=1" if row["kind"] == "selected" else
                           f"TARGET_BOOTSTRAP_HOST_OK case={name} suites={len(labels)} bodies={len(labels) * 3} reported={len(labels) * 3} acquired={row['acquisitions']} released={row['acquisitions']}"
                           if labels else "PLUGIN_STOCK_NOOP_OK case=" + name)

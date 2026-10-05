@@ -83,7 +83,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
 | 2d.3 | in progress | The preceding SBT2/Scala2.13+3 full/selected/repeat/quick checks pass, including the15 owned quick cases and the foreign stock skip. The current exit-agent correction separately passes selected/grouped and mixed repeat controls. Earlier SDK1/Scala2.12 matrices are historical. Complete stock-contract and final evaluation remain open. |
 | 2d.4 | in progress | The current fork agent preserves six-case held foreign Output on both supported compilers. Serial groups and mixed repeat controls pass. Overlapping-suite SDK map/JUnit replacement is rejected rather than restored; the reproduced early System.exit(0) deadlock is corrected and recovery verified. Complete reporting, history and final evaluation remain open. |
-| 2d.5 | in progress | The current86-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns and changed suite/scanned-implementation digests on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
+| 2d.5 | in progress | The current94-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns, changed suite/scanned-implementation digests and same-session launch-failure recovery on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
 | 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
@@ -13724,3 +13724,48 @@ behavior; it gives no source-level correction for the measured reporting paths.
 The pin remains2.0.9. Target suite terminal records, complete SDK failure/overlap
 reporting, streaming/cancellation and final evaluations remain open. No full
 step is marked done, and no push or PR was made.
+
+
+## 2026-10-05: one application launch failure, all selected suites, same-session recovery (2d.10/11/22, in progress)
+
+Evaluation point: the commit containing this entry, parent `f5fbdc474`.
+Production artifacts are unchanged. The combined consumer matrix adds four
+scenarios per compiler, now47 each, using the published plugin and runner.
+A flag causes the first selected DI constructor to record an immutable UUID
+attempt and throw before registration completes. Three selected suite tasks
+must all report that launch failure, with exactly one constructor attempt and
+no bodies/acquisition/release. The next stock incremental command must run all
+five suites with fresh paired resources. Both controls run in process and forked.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-matrix.py \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-launch-failure-batch-second
+```
+
+Observed: driver and both real SBT processes exit0, all94 scenario checks pass.
+The four negative child task results are failures retained through public
+`.result`; their enclosing verification commands continue the same SBT session.
+Each negative capture has exactly one constructor attempt, three distinct
+selected suite Error/XML identities, the original launch failure marker, and
+zero body/resource records. Four immediate recovery controls each execute15
+bodies and acquire/release one new shared resource. Independent capture audit
+reconciles558 physical bodies,574 XML cases and70 unique paired DI lifetimes
+across the complete batch. The difference includes twelve launch suite errors
+and four preceding rejected-axis suite errors, with no physical bodies for either.
+
+Completion SHA256:
+`12caf22327f0e61906536cddbcef52cb4f1564d748f5579c6ad2c8c92c7d86a2`.
+Independent `launch-audit.json` SHA256:
+`2e22ec2c4eb0bad9475a134a0d93bceff0727de3160d47bc4889a76911db5a6e`.
+Sources, argv, physical captures and reports remain in the directory above.
+
+First capture failed the forked control's fixture precondition: SBT cached the
+flag-writing task, so the cleared flag was not restored. The raw audit has no
+flag or constructor attempts and nine ordinary successful bodies. The helper
+now uses `Def.uncached` and explicitly verifies the installed flag. This was a
+fixture correction, not a production failure or false-success correction.
+No unchanged artifacts were republished or requalified. Complete launch/setup/
+cancellation/reporting domains and final evaluations remain open; no full step
+or goal completion is claimed, and no push or PR was made.
