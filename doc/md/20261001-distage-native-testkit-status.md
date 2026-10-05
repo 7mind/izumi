@@ -104,7 +104,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50,18 task checks,20 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
+| 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
@@ -14788,3 +14788,72 @@ in-process/forked early-delivery controls. No whole step or final item is done.
 Complete host failure/cancellation/input and streaming domains, production
 JS/Native hosts, coverage, migration and final reviews remain open. IDE work
 remains deferred. No push or PR was made.
+
+
+## 2026-10-05: JVM resource/body failure and same-session recovery controls
+
+Commit: the commit containing this entry, parent
+`d1fda4587e7911b16edfaac02caa204342f6018b`.
+The parent's post-commit proof exits0 with a clean worktree,1,518 committed
+input records and the qualified230 consumer controls. Record:
+`/srv/nvme/tmp/izumi-impl/sbt2-streaming-consumers-second/commit-proof.json`.
+No production code or published artifact changes in this checkpoint.
+
+`verify-resource-failures.py` generates five compatible DI suites, three tests
+each, with one shared memoized Lifecycle. It exercises normal execution,
+acquisition failure, assertion failure, unexpected body failure and shared
+release failure. Every failure is followed by explicit complete selection in
+the same SBT session. Both in-process and forked modes run on both supported
+compilers. Generated Java options contain literal owned paths; body receipts and
+an uncached public task establish actual target/host process ownership.
+These are Behavioral-Active, Effectual-GoodCommunication controls of the real
+SBT command/reporting boundary, with exact physical receipts and independent
+protocol/XML checks. Existing memory/filesystem contracts cover lower-level
+transport and report behavior.
+
+The first matrix exits1 at fixture compilation: the fixture passed a String to
+the assertion API's AssertionContext parameter. This is a fixture defect, not a
+production reproduction. The corrected fixture uses the standard assertion
+signature and checks its structured diagnostic instead of a supplied message.
+Captures: `/srv/nvme/tmp/izumi-impl/sbt2-resource-failures-first/`.
+
+The corrected coherent36-command matrix is:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-resource-failures-second.py
+```
+
+The wrapper records exact driver argv and frozen source/artifact hashes, runs
+at most two SBT processes concurrently (the host has48 available processors),
+and exits0. Both driver and actual SBT exits are0; all frozen inputs remain
+unchanged. Each compiler runs18 commands in one SBT session. Public `.result`
+observes expected command rejection without ending that session. The logs also
+retain SBT cache-output-directory diagnostics caused by the fixture's custom
+target layout; these do not reject the actual commands or alter the checked
+execution/reporting sets.
+
+The audit checks36 fresh run IDs and36 fresh resource attempts,480 physical
+bodies,540 terminal test results and560 XML cases. Acquisition failures execute
+no bodies and every selected test has a Setup failure outcome. Assertion and
+unexpected body modes each retain exactly one failed SuiteC/first result and14
+successes, with an assertion diagnostic present only for the assertion mode.
+Each shared release failure retains15 successful test outcomes, one run-level
+Finalization failure and five suite Error cases in addition to the15 successful
+XML cases. It rejects the overall command. Every explicit recovery acquires and
+releases a fresh resource and executes/reports all15 selected tests; same-session
+host PIDs remain stable, and fork body PIDs differ from the host.
+
+Commands, generated input hashes, case definitions, frozen driver copies,
+receipts, frames, XML and results are under
+`/srv/nvme/tmp/izumi-impl/sbt2-resource-failures-second/`.
+The independent audit uses Python to decode actual schema-4 frames and XML,
+checks the exact body and terminal identity sets, reconciles failure phases,
+and verifies all recorded input hashes. Result: `audit.json`, exit0; SHA256
+`bf46d05d3085112bb692403dd76d80d89347457f654c6280099400358381a33e`.
+
+This adds bounded resource/body/finalization and explicit recovery evidence to
+the unchanged230-control JVM publication. Those earlier commands are not rerun
+for a fixture-only addition. No whole step or final item is done. Incremental
+recovery/caching, cancellation, complete stock/input domains, JS/Native hosts,
+coverage, migration and final reviews remain open. IDE remains deferred.
+No push or PR was made.
