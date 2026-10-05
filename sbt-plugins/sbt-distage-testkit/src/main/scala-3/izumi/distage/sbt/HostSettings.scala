@@ -11,11 +11,12 @@ private[sbt] object HostSettings {
   def settings: Seq[Def.Setting[?]] = Seq(
     distageBuildId := thisProjectRef.value.build.toString,
     distageTargetId := thisProjectRef.value.project + "/" + configuration.value.name,
+    distageEventDirectory := target.value / "distage-events",
     HostJUnitReports.format := Def.uncached { HostJUnitFileFormat.configured(sys.props.get(HostJUnitFileFormat.Property), sys.env.get(HostJUnitFileFormat.Environment)) },
     testFrameworks ~= { frameworks => if (frameworks.contains(DistageHostPolicy.framework)) frameworks else frameworks :+ DistageHostPolicy.framework },
     loadedTestFrameworks := Def.uncached { loadedTestFrameworks.value.map { case (key, framework) => key -> HostCompletionFramework.wrap(framework) } },
     distageCatalogueId := Def.uncached { DistageHostPolicy.catalogueId(definedTests.value) },
-    testOptions := Def.uncached { DistageHostPolicy.withIdentity(testOptions.value, DistageHostPolicy.arguments(distageBuildId.value, distageTargetId.value, distageCatalogueId.value)) },
+    testOptions := Def.uncached { DistageHostPolicy.withIdentity(DistageHostPolicy.withEvents(testOptions.value, distageEventDirectory.value), DistageHostPolicy.arguments(distageBuildId.value, distageTargetId.value, distageCatalogueId.value)) },
     testSelected / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
     testQuick / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),
     executeTests / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),

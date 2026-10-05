@@ -175,7 +175,7 @@ object BootstrapFixtures {
           RegisteredSuite(suite, Vector(test), provider)
         }
       }
-      val fatalRunner = new BootstrapRunner(flags, Array.empty, factory, request)
+      val fatalRunner = new BootstrapRunner(flags, Array.empty, factory, request, None)
       val fatalTasks = fatalRunner.tasks(definitions)
       val fatalHandler = new EventHandler { override def handle(event: Event): Unit = throw failure }
       val follower = new RecordingHandler

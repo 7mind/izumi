@@ -43,8 +43,22 @@ object ForkReceiptBootstrapFixtures {
       rejects { val _ = ForkReceiptArguments.parse(commandValues :+ ForkReceiptArguments.CommandCompletionOption, remote) }
       rejects { val _ = ForkReceiptArguments.parse(user :+ ForkReceiptArguments.CommandCompletionOption, remote) }
       rejects { val _ = ForkReceiptArguments.parse(values, remote :+ ForkReceiptArguments.CommandCompletionOption) }
+      val eventValues = values ++ Vector(ForkReceiptArguments.EventDirectoryOption, store.directory.toString)
+      val eventInvocation = ForkReceiptArguments.parse(eventValues, remote)
+      require(eventInvocation.eventDirectory.contains(store.directory) && eventInvocation.arguments == user, "Event transport options reached request parsing")
+      require(eventInvocation.forwardedRemoteArguments == forwarded, "Event transport changed fork activation")
+      val eventHost = framework.runner(eventValues.toArray, remote.toArray, getClass.getClassLoader)
+      val eventChild = framework.runner(eventHost.args(), eventHost.remoteArgs(), getClass.getClassLoader)
+      require(eventHost.args().toVector == eventValues && eventChild.args().toVector == eventValues, "Fork did not retain event transport options")
+      require(eventHost.done() == "" && eventChild.done() == "", "Empty event selection did not complete")
+      rejects { val _ = ForkReceiptArguments.parse(eventValues ++ Vector(ForkReceiptArguments.EventDirectoryOption, store.directory.toString), remote) }
+      rejects { val _ = ForkReceiptArguments.parse(values :+ ForkReceiptArguments.EventDirectoryOption, remote) }
+      rejects { val _ = ForkReceiptArguments.parse(values ++ Vector(ForkReceiptArguments.EventDirectoryOption, "relative"), remote) }
+      rejects { val _ = ForkReceiptArguments.parse(values ++ Vector(ForkReceiptArguments.EventDirectoryOption, store.directory.resolve("absent").toString), remote) }
+      rejects { val _ = ForkReceiptArguments.parse(values, remote ++ Vector(ForkReceiptArguments.EventDirectoryOption, store.directory.toString)) }
       println("FORK_BOOTSTRAP_CHECK_OK explicit fork activation, immutable forwarding, empty selection and invalid ownership")
       println("FORK_COMMAND_ARGUMENTS_CHECK_OK host and fork activation, missing agent, duplicate and unowned options")
+      println("FORK_EVENT_ARGUMENTS_CHECK_OK parsing, immutable forwarding, empty selection and invalid directories")
     } finally { store.close(); other.close(); Files.delete(parent) }
   }
 

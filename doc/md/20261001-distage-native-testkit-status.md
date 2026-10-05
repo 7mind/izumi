@@ -97,8 +97,8 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
-| 2d.11 | in progress | The corrected input-initializer publication passes226 SBT2 controls on Scala2.13/3 below:190 prior controls,24 in-process grouping controls and12 input-composition controls. History, multi-project/configuration, concurrent host windows, exits, omission, task errors and standard/legacy JUnit layouts are covered. Complete failure/input inventory and final evaluation stay open. |
-| 2d.12 | not started | No evaluation point passed yet. |
+| 2d.11 | in progress | The current JVM streaming publication retains all226 preceding SBT2 controls on Scala2.13/3 and passes four additional early-delivery controls below. History, multi-project/configuration, concurrent host windows, exits, omission, task errors, input composition and standard/legacy JUnit layouts are covered. Complete failure/input inventory and final evaluation stay open. |
+| 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
@@ -14686,3 +14686,105 @@ composition evidence. No whole step or final item is marked done. Complete host
 input/failure/cancellation domains, streaming, production JS/Native hosts,
 coverage, migration and final reviews remain open. IDE work remains excluded.
 No push or PR was made.
+
+
+## 2026-10-05: JVM live event streams, four held-body controls
+
+Commit: the commit containing this entry, parent
+`803ef930294b4829759b181d7059fb8a7ad3fd53`.
+The earlier input-composition post-commit proof establishes that parent with a
+clean worktree and committed source bytes; it does not establish this change.
+All captures below are under `/srv/nvme/tmp/izumi-impl/`.
+
+The reproduced defect is an absent public event channel: the JVM bootstrap
+projects completion events into SBT listeners but discards start events. In
+`sbt2-streaming-second-3.9` and `sbt2-streaming-second-2.13`, both physical bodies
+enter, one finishes and the other remains held. No event frames become visible.
+Each verifier exits1 with `STREAM_NOT_VISIBLE_BEFORE_GROUP_COMPLETE`, then
+releases the held body; actual SBT exits0 and reports two successful tests.
+The initial pilot also produced cache-output-directory diagnostics; its corrected
+second captures establish the streaming reproduction. The qualified parent
+plugin and both JVM protocol/runner publications are preserved under
+`sbt2-streaming-baseline-803ef9302`, with their file hashes and the baseline driver.
+
+The plugin now supplies the public configuration-scoped `distageEventDirectory`
+key, defaulting to that configuration's `target / "distage-events"`. It creates
+the directory and passes the reserved transport option only to its own framework.
+The JVM parser removes that option before semantic request parsing and retains
+it across explicit fork activation. Invalid, duplicated, misplaced, missing or
+nonabsolute directory options reject explicitly.
+Each application invocation creates one UUID-named `.jsonl` file. Every logical
+protocol output message is encoded as a schema-4 envelope and flushed before
+normal SBT projection. Using.Manager owns channel closure and retains operation
+and closure failures; application finalization and executor joining remain in
+the existing invocation boundary. This adds no schema change, stdout framing,
+SBT implementation dependency in the portable engine, or IDE implementation.
+
+The producer command is:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-streaming-producer-first.py
+```
+
+Its recorded argv runs strict-mode JVM protocol and base-runner fixtures on
+Scala3.8.4/3.9.0 and Scala2.13.18, the public fork argument fixture on both runner
+compilers, and the plugin's XML/receipt/task controls. It then publishes only the
+five changed JVM artifacts. Actual exit0 and all recorded inputs remain unchanged
+at completion. Both protocol runs report219 checks, both base-runner runs802,
+both bootstrap runs50, and both fork argument runs verify the new transport
+controls. The plugin reports21 XML,20 receipt and18 task-completeness controls.
+The recorded consumer-driver hash is the baseline driver; its preserved copy
+identifies those bytes after later fixture-only refinements.
+Records: `sbt2-streaming-producer-first/command.json`, `run.log`,
+`completion.json` and `qualified-publications.json`.
+All five published JARs match every compiled class/TASTy payload. The plugin
+retains86 payloads and its20 target Java classes remain class version61.0.
+Plugin JAR SHA256:
+`b402e599ea3d06849e80c7c849f30b727f5b4448d30a3302d4e4b0b8dc7fa92e`.
+
+The first coherent consumer batch runs20 drivers, at most three SBT processes
+concurrently, with1,613 frozen source/driver/artifact input records:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-streaming-regression-first.py
+```
+
+The preceding226 command controls all pass, as do both in-process streaming
+controls. The whole batch exits1: the two new fork fixtures receive a cached
+`javaOptions` audit-root value from another capture. Their actual test failures
+are FileAlreadyExistsException in that other capture's body files, not a
+production streaming failure. Both failed captures retain their exact frames,
+XML, argv and logs. No inputs change during that batch.
+
+The fixture correction makes generated build inputs explicit literals instead
+of relying on untracked system-property reads in cached Java options. Physical
+body receipts now record process IDs; a public uncached task records the actual
+SBT process. This verifies fork ownership as well as event visibility. Production
+source and all five publications remain unchanged after the first batch.
+Only the corrected four-case process matrix needs rerunning:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-streaming-consumers-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-streaming-regression-audit.py
+```
+
+All four driver and actual SBT exits are0, with frozen inputs unchanged. Both
+supported compilers pass in-process and forked execution. Before release, each
+capture contains two exact start identities and only the first body's successful
+completion, with no run terminal. After release, each contains one seven-frame
+stream, six contiguous event sequence numbers, two successful test outcomes,
+one matching Finished/Completed outcome, and two matching XML cases. Forked
+body PIDs differ from SBT; in-process body PIDs match it.
+The independent audit verifies all226 unchanged preceding controls plus these
+four corrected streaming controls against actual receipts, frames and XML. It
+retains the first batch's exit1 rather than treating it as a whole-batch pass.
+Audit SHA256:
+`2f97f3740886ac08fb611e93c2b40a07e0821f9b634e634220b305b2c6951fd7`.
+Records: `sbt2-streaming-consumers-second/audit/completion.json` and both batches'
+`commands.json`, `frozen-inputs.json` and `completion.json`.
+
+This closes the reproduced absent JVM event channel and establishes bounded
+in-process/forked early-delivery controls. No whole step or final item is done.
+Complete host failure/cancellation/input and streaming domains, production
+JS/Native hosts, coverage, migration and final reviews remain open. IDE work
+remains deferred. No push or PR was made.

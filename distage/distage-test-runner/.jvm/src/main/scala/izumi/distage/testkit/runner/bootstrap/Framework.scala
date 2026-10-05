@@ -5,11 +5,13 @@ import izumi.distage.testkit.runner.*
 
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework as SbtFramework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, SuiteSelector, Task, TaskDef, TestSelector}
 
+import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.concurrent.{Await, ExecutionContext, Promise}
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
+import scala.util.Using
 
 final class Framework extends SbtFramework {
   private val fingerprint = new SubclassFingerprint {
@@ -23,7 +25,7 @@ final class Framework extends SbtFramework {
   override def runner(args: Array[String], remoteArgs: Array[String], testClassLoader: ClassLoader): Runner = {
     val invocation = ForkReceiptArguments.parse(args.toVector, remoteArgs.toVector)
     val request = RequestArguments.parse(invocation.arguments).fold(error => throw new IllegalArgumentException(error.message), value => value)
-    val runner = new BootstrapRunner(args.clone(), invocation.forwardedRemoteArguments.toArray, name => JvmSuiteLoader.load(name, testClassLoader), request)
+    val runner = new BootstrapRunner(args.clone(), invocation.forwardedRemoteArguments.toArray, name => JvmSuiteLoader.load(name, testClassLoader), request, invocation.eventDirectory)
     if (invocation.forked) {
       val directory = invocation.hostDirectory.getOrElse(throw new IllegalStateException("Fork receipt activation has no host ownership"))
       if (invocation.commandCompletion) {
@@ -43,6 +45,7 @@ private[bootstrap] final class BootstrapRunner(
   remoteArguments: Array[String],
   factory: String => TestSuite,
   request: RunRequest,
+  eventDirectory: Option[Path],
 ) extends Runner {
   private var spent = false
   private var activeTasks = 0
@@ -61,7 +64,7 @@ private[bootstrap] final class BootstrapRunner(
         case _ => throw new IllegalArgumentException("Task fingerprint does not identify a distage suite")
       }
     }
-    val invocation = new Invocation(request, definitions.toVector, factory)
+    val invocation = new Invocation(request, definitions.toVector, factory, eventDirectory)
     invocation.projections.map { projection =>
       new Task {
         private var executed = false
@@ -119,7 +122,7 @@ private[bootstrap] final class BootstrapRunner(
   }
 }
 
-private[bootstrap] final class Invocation(request: RunRequest, definitions: Vector[TaskDef], factory: String => TestSuite) {
+private[bootstrap] final class Invocation(request: RunRequest, definitions: Vector[TaskDef], factory: String => TestSuite, eventDirectory: Option[Path]) {
   private final val ShutdownPollSeconds = 1L
   val projections: Vector[SuiteProjection] = definitions.map(new SuiteProjection(_))
   private val completion = Promise[Either[Throwable, RunOutcome]]()
@@ -146,7 +149,7 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
   private def execute(interruption: TaskInterruption): Either[Throwable, RunOutcome] = {
     val executor = Executors.newWorkStealingPool()
     val executionContext = ExecutionContext.fromExecutorService(executor)
-    try {
+    try Using.Manager { use =>
       val factories = projections.map { projection => () => new TestSuite {
         override def register(context: RegistrationContext): RegisteredSuite = {
           val name = projection.definition.fullyQualifiedName()
@@ -157,24 +160,28 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
         }
       }}
       val run = RunId(UUID.randomUUID().toString)
+      val frames = eventDirectory.map(directory => use(FileProtocolFrameSink.createNew(directory.resolve(run.value + ".jsonl"))))
       var terminal = Option.empty[RunOutcome]
       var finished = Option.empty[RunOutcome]
       val output = new ProtocolOutput {
-        override def accept(message: ProtocolMessage): Unit = message match {
-          case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, test)) =>
-            val matching = projections.filter(_.owns(test.id.suite))
-            require(matching.size == 1, "Test completion has no unique suite task owner")
-            matching.head.complete(test)
-            matching.head.requireDelivery()
-          case ProtocolMessage.Event(_, RunEvent.Finished(_, outcome)) => finished = Some(outcome)
-          case ProtocolMessage.Event(_, _) => ()
-          case ProtocolMessage.Completed(outcome) =>
-            require(terminal.isEmpty && finished.contains(outcome), "Application completion differs from its terminal event")
-            terminal = Some(outcome)
-          case ProtocolMessage.Rejected(_, failure) =>
-            require(terminal.isEmpty, "Application emitted duplicate terminal responses")
-            terminal = Some(RunOutcome(run, Vector.empty, Vector(failure), cancellation.isRequested))
-          case _ => throw new IllegalStateException("Execution application emitted an unexpected response")
+        override def accept(message: ProtocolMessage): Unit = {
+          frames.foreach(_.writeFrame(ProtocolCodec.encode(message)))
+          message match {
+            case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, test)) =>
+              val matching = projections.filter(_.owns(test.id.suite))
+              require(matching.size == 1, "Test completion has no unique suite task owner")
+              matching.head.complete(test)
+              matching.head.requireDelivery()
+            case ProtocolMessage.Event(_, RunEvent.Finished(_, outcome)) => finished = Some(outcome)
+            case ProtocolMessage.Event(_, _) => ()
+            case ProtocolMessage.Completed(outcome) =>
+              require(terminal.isEmpty && finished.contains(outcome), "Application completion differs from its terminal event")
+              terminal = Some(outcome)
+            case ProtocolMessage.Rejected(_, failure) =>
+              require(terminal.isEmpty, "Application emitted duplicate terminal responses")
+              terminal = Some(RunOutcome(run, Vector.empty, Vector(failure), cancellation.isRequested))
+            case _ => throw new IllegalStateException("Execution application emitted an unexpected response")
+          }
         }
       }
       val application = new TestApplication(run, request.identity, factories, executionContext, output)
@@ -182,8 +189,8 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
       if (cancellation.isRequested) application.cancel()
       val execution = application.accept(ProtocolMessage.Request(RequestOperation.Execute, run, request))
       interruption.await(Await.result(execution, Duration.Inf), () => cancel())
-      Right(terminal.getOrElse(throw new IllegalStateException("Application returned without a terminal response")))
-    } catch { case NonFatal(cause) => Left(cause) }
+      terminal.getOrElse(throw new IllegalStateException("Application returned without a terminal response"))
+    }.toEither
     finally {
       activeApplication = None
       executionContext.shutdown()

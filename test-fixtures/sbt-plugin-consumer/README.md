@@ -82,3 +82,25 @@ python3 -B test-fixtures/sbt-plugin-consumer/verify-host-limits.py \
   --scala-version 3.9.0 2.13.18 --host-threads 1 2 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/host-limits-capture
 ```
+
+`verify-streaming.py` holds one body while its sibling finishes. Before releasing
+that body, it requires both start frames and the sibling completion frame in the
+public `Test / distageEventDirectory` channel. The default directory is
+`Test / target` followed by `distage-events`; other enabled configurations use
+their corresponding scoped keys. Each application run creates a UUID-named
+`.jsonl` file containing schema-4 protocol envelopes, flushed after each frame.
+After release, the fixture reconciles exact test identities, event sequence,
+terminal outcomes and JUnit cases. It covers both in-process and forked JVM
+execution; it does not establish IDE or JS/Native transport behavior.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-streaming.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 --fork false \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/streaming-example
+```
+
+Run separate captures for Scala 2.13.18 and `--fork true`. These are
+Behavioral-Active, Effectual-GoodCommunication controls of actual SBT processes.
+The existing framed memory/filesystem contracts cover the channel encoding and
+failure behavior below this process boundary.

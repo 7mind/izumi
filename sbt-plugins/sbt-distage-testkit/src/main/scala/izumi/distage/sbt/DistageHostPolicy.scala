@@ -1,8 +1,8 @@
 package izumi.distage.sbt
 
-import izumi.distage.testkit.protocol.{BuildId, BuildTargetId, CatalogueId, CatalogueIdentity, RequestArguments}
+import izumi.distage.testkit.protocol.{BuildId, BuildTargetId, CatalogueId, CatalogueIdentity, ForkReceiptArguments, RequestArguments}
 
-import sbt.{TestDefinition, TestFramework, TestOption, Tests}
+import sbt.{File, IO, TestDefinition, TestFramework, TestOption, Tests}
 import sbt.testing.SubclassFingerprint
 import sbt.util.Logger
 
@@ -43,6 +43,15 @@ private[sbt] object DistageHostPolicy {
       case _ => false
     }
     retained :+ Tests.Argument(framework, arguments: _*)
+  }
+
+  def withEvents(options: Seq[TestOption], directory: File): Seq[TestOption] = {
+    IO.createDirectory(directory)
+    val retained = options.filterNot {
+      case Tests.Argument(Some(owner), values) if owner == framework => values.headOption.contains(ForkReceiptArguments.EventDirectoryOption)
+      case _ => false
+    }
+    retained :+ Tests.Argument(framework, ForkReceiptArguments.EventDirectoryOption, directory.toPath.toAbsolutePath.normalize().toString)
   }
 
   def inspectionArguments(operation: String, identities: Seq[String], options: Seq[String], definitions: Seq[TestDefinition]): Seq[String] = {
