@@ -99,7 +99,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
 | 2d.11 | in progress | The current JVM streaming publication retains all226 preceding SBT2 controls on Scala2.13/3 and passes four additional early-delivery controls below. History, multi-project/configuration, concurrent host windows, exits, omission, task errors, input composition and standard/legacy JUnit layouts are covered. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
-| 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
+| 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
@@ -14899,3 +14899,71 @@ No whole phase or final item is done. Cancellation, stock setup/cleanup and
 classloader composition, complete input/history domains, production JS/Native
 hosts, coverage, migration and final reviews remain open. IDE remains deferred.
 No push or PR was made.
+
+
+## 2026-10-05: stock setup/cleanup and caller-loader comparison
+
+Commit: the commit containing this entry, parent
+`617d330c64767b75334640d1c5d0d9d1382bddf0`.
+The preceding incremental-recovery post-commit proof exits0, verifies1,519
+committed inputs and16 incremental recovery requests, and confirms unchanged
+production/publication bytes. Record:
+`/srv/nvme/tmp/izumi-impl/sbt2-resource-failures-incremental-first/commit-proof.json`.
+This checkpoint changes only fixtures/documentation; no production correction
+or republishing is required.
+
+`verify-setup-cleanup.py` creates two projects in one SBT session: a stock custom
+framework and the published distage plugin with a plain spec. Both execute the
+same three physical bodies and exact report identities. Normal, setup-failure,
+cleanup-failure and recovery cases run in process and forked on both supported
+compilers. Public Tests.Setup/Tests.Cleanup constructors retain their code digest.
+The callbacks record their actual host PID, caller loader class/identity, ability
+to load the suite class, loaded class identity and local ordering timestamps.
+Bodies verify that setup is already visible and cleanup is absent before their
+side effects. Cleanup verifies that all three body effects exist. In-process
+body class identity must match the class loaded through the setup callback's
+loader. Both callbacks must receive the same caller loader and class identity.
+
+These are Behavioral-Active, Effectual-GoodCommunication controls of real SBT
+behavior, using the stock path as an independent reference. Source inspection
+uses cached SBT SDK Tests/ForkTests files, and javap on the pinned2.0.9 actions
+JAR confirms the public callback constructors. Comments saying fork hooks are
+not performed do not establish runtime behavior: actual fork callbacks run in
+SBT and receive a host loader unable to load the target suite. The measured
+stock and distage paths agree. No private SBT API is used.
+
+The first40-command matrix passes under `sbt2-setup-cleanup-first`. Explicit
+body/cleanup ordering guards then strengthen the fixture, and the same coherent
+matrix is rerun against the final fixture bytes:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-setup-cleanup-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-setup-cleanup-audit.py \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-setup-cleanup-second
+```
+
+All40 controls and20 stock/distage comparisons pass. Both drivers and actual
+SBT processes exit0; frozen source/driver/publication inputs remain unchanged.
+The audit verifies96 physical bodies,40 setup callbacks and32 cleanup callbacks.
+All eight setup-failure cases execute no bodies or cleanup and reject the
+command; both stock and distage produce no suite XML in that host-setup failure
+case. All eight cleanup-failure cases retain three successful body XML cases
+but reject the overall command. Recovery executes all three bodies in the same
+SBT process. Fork bodies run outside the SBT PID; all callbacks run inside it.
+The comparison preserves these stock semantics; it does not establish the
+complete selected-ID outcome channel for host setup/cleanup failures.
+
+Exact argv, generated source hashes, frozen driver copies, callback/body
+receipts, public task results, event captures and XML are under
+`/srv/nvme/tmp/izumi-impl/sbt2-setup-cleanup-second/`.
+Independent audit: `audit.json`, exit0, SHA256
+`1c43d6767bc6d5474349fc28e0614f7e40e4b179cfefb42ee93f2d73264a15e2`.
+The preceding230 general controls and36 incremental resource/body controls
+remain applicable to their unchanged production and drivers; those commands
+are not rerun for this fixture addition.
+
+This establishes bounded stock callback and caller-loader behavior. No whole
+step or final item is done. Complete classloader/option and selected-outcome
+reporting domains, actual cancellation, complete input/history semantics,
+production JS/Native hosts, coverage, migration and final reviews remain open.
+IDE work remains deferred. No push or PR was made.

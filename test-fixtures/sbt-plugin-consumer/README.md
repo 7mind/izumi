@@ -123,3 +123,23 @@ Each capture runs eighteen commands across in-process and forked modes. These
 Behavioral-Active, Effectual-GoodCommunication controls establish explicit
 same-session incremental recovery for these failure modes; cancellation and
 the complete input/caching domain remain separate acceptance requirements.
+
+`verify-setup-cleanup.py` compares a stock custom framework and the published
+distage runner in two projects in one SBT session. Normal, setup-failure,
+cleanup-failure and recovery cases run with both fork settings. Callback PID,
+caller loader and loaded class identity are compared with physical body receipts.
+Body guards require setup before execution and cleanup after the body effects.
+Both paths must preserve exact body XML and public command success/failure.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-setup-cleanup.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/setup-cleanup-example
+```
+
+Run Scala 2.13.18 separately. Each compiler runs twenty controls. These are
+Behavioral-Active, Effectual-GoodCommunication tests. Fork callbacks run in SBT
+with its host loader; test bodies run in the target process. These controls do
+not establish the entire classloader-lifetime or selected-outcome reporting
+contract after host setup/cleanup failures.
