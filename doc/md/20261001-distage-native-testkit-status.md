@@ -90,14 +90,14 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Target terminal records and missing-suite Error/Output/XML reconciliation pass12 current in-process/fork controls on Scala2.13/3, with same-session recovery. Complete target/failure domain and final evaluation remain open. |
 | 2d.3 | in progress | The preceding SBT2/Scala2.13+3 full/selected/repeat/quick checks pass, including the15 owned quick cases and the foreign stock skip. The current exit-agent correction separately passes selected/grouped and mixed repeat controls. Earlier SDK1/Scala2.12 matrices are historical. Complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Current published forked duplicate-group controls preserve six body outcomes in custom public Output and one suite XML file on both supported compilers and both JUnit filename formats. Serial/mixed/history controls pass. Full in-process duplicate-group domain, complete failure reporting and final evaluation remain open. |
+| 2d.4 | in progress | Published forked and in-process foreign duplicate-group controls preserve six body outcomes in custom public Output and one suite XML file on both supported compilers and both JUnit filename formats. In-process serial/parallel configurations, exclusions and same-session recovery pass24 additional controls below. Complete owned/foreign failure domain and final evaluation remain open. |
 | 2d.5 | in progress | The current94-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns, changed suite/scanned-implementation digests and same-session launch-failure recovery on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
 | 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
-| 2d.11 | in progress | Current batch passes190 SBT2 controls on Scala2.13/3: history, multi-project/configuration, concurrent host windows, exits, mapped-task omission, task errors and repeated foreign groups in standard/legacy JUnit layouts. Complete failure/input inventory and final evaluation stay open. |
+| 2d.11 | in progress | Post-rebase publication passes190 SBT2 controls on Scala2.13/3; a subsequent unchanged-production batch passes24 in-process foreign grouping controls. History, multi-project/configuration, concurrent host windows, exits, omission, task errors and standard/legacy JUnit layouts are covered below. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
@@ -14416,3 +14416,65 @@ No whole step or final item is marked done. Full uncached test inventories,
 in-process duplicate groups, callback/cancellation/finalization and custom input
 composition domains, streaming, production JS/Native hosts, coverage, migration
 and final reviews remain open. IDE work remains deferred. No push or PR was made.
+
+
+## 2026-10-05: in-process foreign duplicate groups, 24 controls
+
+Commit: the commit containing this entry, parent
+`cbbf558b633d1822d6a556199f215bb659acfef1`.
+The preceding integration post-commit proof exits 0, confirms a clean worktree,
+and matches all 1,508 compiled source/build inputs to the committed bytes.
+Its `develop-rebase-20261005/commit-proof.json` SHA256 is
+`620a8a5908fe455ba60f9fdbb7407e3216c5acbba01f9ec8fa302fffca1ce8d4`.
+
+The new specified-contract fixture uses only public SBT settings, commands,
+framework APIs and reports. Its taxonomy is Behavioral-Active,
+Effectual-GoodCommunication: actual body receipts and public XML files establish
+the host behavior that the existing memory/filesystem producer controls cannot
+establish by themselves. It reuses the existing foreign framework's three-body
+source. UUID receipt filenames prevent duplicate execution within one process
+from colliding in the audit filesystem; suite/test identities are unchanged.
+
+Each driver executes single-group, serial-groups, serial duplicate-groups,
+parallel-configured duplicate-groups, empty exclusion and recovery controls in
+one SBT process. An outer custom result logger records Output before delegating.
+Every nonempty body receipt must identify that same SBT process. The verifier
+compares exact body and XML testcase identities, per-suite totals, filename
+layout and Output; counters alone cannot pass it.
+
+The first fixture version exits 1 during settings initialization: a setting
+reads the case marker before prepareGroups creates it. The FileNotFoundException
+logs are retained under `sbt2-inprocess-groups-first`. This does not reproduce a
+production defect. A static initial parallel setting and explicit setting changes
+between prepared commands correct the fixture. All24 controls then pass in
+`sbt2-inprocess-groups-second`. After naming the three-body contract constant,
+the same coherent batch is rerun against the final driver bytes:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-inprocess-groups-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-inprocess-groups-audit.py
+```
+
+Four drivers cover Scala3.9.0/2.13.18 and standard/legacy XML layouts, with at
+most three SBT processes active. Both legacy drivers explicitly set
+`SBT_TESTING_LEGACYREPORT=always`. Exact per-driver argv, generated-source hashes,
+environment changes and current publication hashes are retained under
+`sbt2-inprocess-groups-third`. Every driver and actual SBT process exits 0;
+source, driver and artifact inputs remain frozen throughout.
+
+The independent audit exits 0: 24 command controls, 120 body receipts and eight
+duplicate-group captures. Every duplicate capture has six SuiteA bodies, six
+Passed outcomes visible to the custom logger and exactly one six-case XML file,
+with each original test identity occurring twice. Excluded commands have no
+bodies or testcase reports; recovery uses the same host process. Audit SHA256:
+`eaf53b7b1cd5ec5587290a41973366d73a206d3b04156f5be4fd7718612db750`.
+The unchanged plugin remains the qualified `1.3.0-M5-SNAPSHOT` publication with
+JAR SHA256 `c252273383e77fd5d8736eeb3df780c4300bb98e7c06859fbe999c08db1efd2e`.
+No production change or republishing is required.
+
+This adds a bounded in-process foreign grouping checkpoint. The preceding190
+consumer and59 producer checks remain applicable to the unchanged production
+bytes; they were not rerun. No whole step or final item is marked done. Complete
+owned/foreign failure and cancellation domains, custom input-task composition,
+streaming, production JS/Native hosts, coverage, migration and final reviews
+remain open. IDE work remains excluded; no push or PR was made.
