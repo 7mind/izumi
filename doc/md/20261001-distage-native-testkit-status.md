@@ -13481,3 +13481,14 @@ complete history/grouping/setup/cleanup/classloader domains, JS/Native host
 transport, coverage, IDE integration, migration and final acceptance remain
 open. No remote push or PR is performed. The following local commit checkpoint
 will identify these code and evidence inputs; it is not a completion claim.
+
+
+### Command-acknowledgement local commit checkpoint
+
+Local commit `45c5d341d305996fcdb7b9a71fab2b6e2f0f741b`, parent
+`8229b4dfd9747f2128f2d53aa2d0a01e8ef7de7a`, contains the13 reviewed paths and
+this checkpoint's evidence. `fork-command-local-commit-first/commit.json`
+records unchanged input bytes and a clean checkout after that commit. The
+following ledger-only stamp changes no compiled or executed input. The early
+System.exit liveness defect and overlap reporting remain open; no step, goal,
+push or PR completion is claimed.
