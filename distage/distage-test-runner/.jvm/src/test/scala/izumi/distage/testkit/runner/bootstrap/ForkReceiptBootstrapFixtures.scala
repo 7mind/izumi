@@ -32,7 +32,19 @@ object ForkReceiptBootstrapFixtures {
       rejects { val _ = ForkReceiptArguments.parse(values, remote ++ Vector(ForkReceiptArguments.ForkDirectoryOption, other.directory.toString)) }
       rejects { val _ = ForkReceiptArguments.parse(values ++ Vector(ForkReceiptArguments.ForkDirectoryOption, store.directory.toString), remote) }
       rejects { val _ = ForkReceiptArguments.parse(values, remote ++ Vector(ForkReceiptArguments.HostDirectoryOption, store.directory.toString)) }
+      val commandValues = values :+ ForkReceiptArguments.CommandCompletionOption
+      val command = ForkReceiptArguments.parse(commandValues, remote)
+      require(command.commandCompletion && !command.forked && command.arguments == user, "Command completion options reached request parsing")
+      val commandHost = framework.runner(commandValues.toArray, remote.toArray, getClass.getClassLoader)
+      require(commandHost.args().toVector == commandValues && commandHost.remoteArgs().toVector == forwarded && commandHost.done() == "", "Command completion lost explicit fork ownership")
+      val commandChild = ForkReceiptArguments.parse(commandValues, forwarded)
+      require(commandChild.commandCompletion && commandChild.forked, "Fork lost command completion activation")
+      rejects { val _ = framework.runner(commandValues.toArray, forwarded.toArray, getClass.getClassLoader) }
+      rejects { val _ = ForkReceiptArguments.parse(commandValues :+ ForkReceiptArguments.CommandCompletionOption, remote) }
+      rejects { val _ = ForkReceiptArguments.parse(user :+ ForkReceiptArguments.CommandCompletionOption, remote) }
+      rejects { val _ = ForkReceiptArguments.parse(values, remote :+ ForkReceiptArguments.CommandCompletionOption) }
       println("FORK_BOOTSTRAP_CHECK_OK explicit fork activation, immutable forwarding, empty selection and invalid ownership")
+      println("FORK_COMMAND_ARGUMENTS_CHECK_OK host and fork activation, missing agent, duplicate and unowned options")
     } finally { store.close(); other.close(); Files.delete(parent) }
   }
 

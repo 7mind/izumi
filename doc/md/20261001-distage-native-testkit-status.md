@@ -81,26 +81,26 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.9 | in progress | Schema-4 protocol: 186 checks per producer lane; typed/framed application and real JVM file contracts pass audited published consumers below. Standalone/host transports and final evaluation remain open. |
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
-| 2d.3 | in progress | Conservative SBT1/2 bindings rerun selected distage suites and retain measured foreign cache skips below; complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Historical plugin/host-limit matrices remain below. Current SBT2/Scala2.13+3 published checks reconcile normal mixed forks and in-process runs; the production guard now rejects a truncated foreign Output after callback completion, with same-session recovery. Full global acknowledgement, structured errors, history and final evaluation remain open. |
+| 2d.3 | in progress | Current SBT2/Scala2.13+3 forked full/selected/repeat/quick checks pass; quick reruns the15 owned cases and preserves the unchanged foreign suite's stock skip. Earlier SDK1/Scala2.12 matrices are historical. Complete stock-contract and final evaluation remain open. |
+| 2d.4 | in progress | The command-boundary fork acknowledgement restores the reproduced held foreign callback's six-case Output on both supported compilers. Serial groups, mixed forks and full/selected/quick controls pass below. Overlapping-suite SDK map/JUnit replacement is rejected rather than restored; early System.exit(0) deadlocks the handshake. Complete reporting, history and final evaluation remain open. |
 | 2d.5 | not started | No evaluation point passed yet. |
 | 2d.6 | not started | No evaluation point passed yet. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | not started | No evaluation point passed yet. |
 | 2d.9 | not started | No evaluation point passed yet. |
-| 2d.10 | in progress | Receipt guards reject owned omissions, inconsistent fork results and recorded target death. The current published plugin also rejects SDK2 foreign Output truncation on Scala2.13/3, followed by explicit same-session recovery. Generic exit-zero false success, restoration of mixed delivery, complete failure/recovery and final evaluation remain open. |
+| 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) during a foreign task on Scala2.13/3. The failed command waits for another held worker's shutdown before same-session recovery. System.exit(0) instead enters the shutdown hook and reproduces an unbounded mutual wait. That liveness defect, complete failure/recovery and final evaluation remain open. |
 | 2d.11 | in progress | Published plugin matrix passes 198 cases, and twelve five-suite host-limit lanes pass. Production counted normal/death/recovery controls pass both SDKs on all three Scala versions. SDK2 task-exception reporting, complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Test and custom Integration configurations pass the plugin checkpoint below, including corrected identity inheritance; multi-project and final evaluation remain open. |
-| 2d.15 | in progress | Historical foreign execution/cache and registration-order controls remain below. Current SBT2/Scala2.13+3 normal fork and in-process checks preserve the original foreign framework; production all-framework group/aggregate guards reject truncated SDK output without changing foreign events. Complete mixed delivery/result domain and final evaluation remain open. |
+| 2d.15 | in progress | Original foreign framework payloads pass current mixed fork and held-delivery controls on Scala2.13/3. A startup agent installed through public group/ForkOptions settings restores the held batch without wrapping foreign events. Quick preserves the measured foreign history skip. Overlap reporting, early-exit liveness, complete mixed domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Bounded body/JUnit reconciliation and bootstrap failure projections pass below. Current production guards reconcile all framework groups and aggregate statuses, retaining exact per-distage-suite counts. SDK2 Task.execute exceptions and truncated-output rejection still need structured terminal/error reporting. Full terminal/failure domain and final evaluation remain open. |
+| 2d.22 | in progress | Bounded body/JUnit reconciliation and registration-linkage projections pass with command acknowledgements. Runtime.halt(0) is rejected after checking every admitted worker; overlap map/JUnit loss is explicitly rejected. Early System.exit(0) deadlocks before a result. SDK task exceptions, target terminal records, complete structured failures and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -13293,3 +13293,191 @@ qualified code/test/driver inputs retain their recorded bytes.
 `mixed-delivery-guard-local-commit-first/commit.json` freezes the five nonledger
 changed-file hashes. This following ledger-only stamp changes no tested input;
 no push, whole-step acceptance or goal completion is claimed.
+
+
+## 2026-10-05 — Command-boundary JVM fork acknowledgement (in progress)
+
+Items2d.3/4/10/11/13/15/17/22, O.3 and O.7 remain **in progress**.
+The goal tracker was read at the start of this continuation and was **active**;
+no `/goal resume` command is needed for the current state. No owner permission
+or interop release is pending. This checkpoint advances the JVM work, not the
+whole step or goal.
+
+### Implementation and observed limits
+
+The plugin decorates subprocess groups through public `Tests.Group` and
+`ForkOptions.runJVMOptions`. A Java premain agent has no Scala/SBT dependency,
+bytecode transformation or foreign-framework wrapper. Each actual fork records
+its own PID/prefix in the command's owned directory. Its shutdown hook waits for
+a host commit/abort decision, keeping process exit from releasing the SDK result
+snapshot ahead of buffered listener delivery. Ordinary SDK replies can finish
+serial group tasks while their processes wait for the command boundary. The
+host validates its result, signals every admitted fork and checks their
+acknowledgements and exits before cleanup. Failures from those checks are
+accumulated so an earlier dead fork does not skip waiting for later workers.
+The bootstrap's explicit command-completion mode validates matching agent launch
+ownership and bypasses the earlier counted runner; unflagged receipt fixtures
+retain their counted mode. Argument parsing rejects duplicate, unowned and
+wrong-channel command flags.
+
+The current acknowledgement has a reproduced liveness defect. A foreign task
+calling `System.exit(0)` enters the shutdown hook before the worker sends its
+reply. The SDK waits indefinitely for that reply; the hook waits for a decision
+from the command which cannot finish. `Runtime.halt(0)` bypasses shutdown hooks
+and is rejected in the passing controls. These are distinct termination paths.
+No generic early-exit or complete cancellation claim is made. Resolving this
+mutual wait is the next engineering task; a timeout which rejects legitimate
+long-running sibling groups is not established as a compatible solution.
+
+Overlapping groups executing the same foreign suite also remain unresolved:
+six bodies/events become three SDK Output/JUnit cases. The existing guard rejects
+that command and permits recovery, rather than repairing its result. The pinned
+SDK `Tests.foldTasks` constructs a map from concatenated entries, replacing equal
+suite keys. The retained JUnit file likewise has only three cases. This is a
+separate result aggregation domain from the restored held-callback race. Tracker
+searches for `site:github.com/sbt/sbt/issues testGrouping same test multiple groups
+results overwritten` and `site:github.com/sbt/sbt/issues "testGrouping" "duplicate"`
+returned no exact matching report in the inspected results; that does not prove
+that none exists. This ledger and the retained minimal builds are an unfiled
+upstream draft. No issue was sent.
+
+Pinned SDK source provenance remains
+`/srv/nvme/tmp/izumi-impl/2d-fork-selection-sdk2-source-first/`, notably
+`actions_3/sbt/ForkTests.scala`, `actions_3/sbt/Tests.scala`,
+`actions_3/sbt/internal/WorkerExchange.scala` and
+`worker/sbt/internal/worker1/WorkerMain.java`. The public startup-agent contract
+is described in [Java17 instrumentation documentation](https://docs.oracle.com/en/java/javase/17/docs/api/java.instrument/java/lang/instrument/package-summary.html).
+The published agent class header is major61/minor0, matching Java17 bytecode;
+that header check is not a JDK17 runtime acceptance lane.
+
+### Commands and results
+
+Evidence paths below are under `/srv/nvme/tmp/izumi-impl/`. Each named consumer
+capture retains generated inputs, exact argv/cwd in `commands.json`, raw output,
+completion and physical/report evidence. New directories are used for every
+execution. SDK2.0.9, JDK21, artifact1.3.0-SNAPSHOT, Scala3.9.0 and2.13.18 are used
+unless specified otherwise.
+
+- **Fail first, delayed Output restoration.**
+  `python3 -B test-fixtures/sbt-worker-receipt-race/verify-plugin-delivery.py
+  --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0
+  --expected-held-result complete --evidence-dir
+  /srv/nvme/tmp/izumi-impl/fork-command-completion-before-first`
+  returns actual/driver1 before the production change. Six callbacks reach the
+  host, but its SDK Output has three cases and the guard rejects the command.
+  Completion SHA256
+  `f38c0839dbd4b9e20148c5eb0f2c67804e419c9351f79052ac34e7787bc5a725`.
+  `pre-change-inputs.json` freezes the four production inputs before editing.
+- **Producer checks and local publication.** Batch commands use
+  `direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"'`.
+  `fork-command-producer-meta-first` runs protocol `Test/testFull`, plugin
+  `Test/runMain izumi.distage.sbt.HostReceiptTest <new directory>` and protocol/
+  plugin `publishLocal`, actual0: protocol219/schema4 and17 receipt checks.
+  `fork-command-producer-runtime-first/{3.9.0,2.13.18}` runs `++<compiler>`,
+  protocol/base-runner/higher-runner `Test/testFull`, base-runner `publishLocal`
+  and, on2.13, protocol `publishLocal`. Both return actual0 with protocol219,
+  base802, higher639, bootstrap50 and registration3groups/4errors/1recovery body.
+  The protocol's Scala3 producer stays at3.8.4. Current cleanup/argument checks
+  in `fork-command-producer-cleanup-third` return actual0:17 receipt checks and
+  `ForkReceiptBootstrapFixtures` command-argument checks on both compilers.
+  Completion SHA256
+  `0f442978c1c827b95f5be5a924560576d017014abd9f96af134324fb02962180`.
+  The second producer attempt had a misplaced loop extraction and failed
+  compilation with undeclared `commit`/`admitted`; its source/log are retained.
+  The correction was compiled and published by the third attempt.
+- **Final published held-callback restoration.** Run the first command above
+  with each supported compiler and fresh
+  `fork-command-delivery-scala{3,213}-second` directories. Both return actual/
+  driver0. Normal, five-second held and recovery controls each have6 exact body,
+  SDK Output and positive XML cases; each lane has3 fresh workers and receipt
+  cleanup. The original generic framework helper is unchanged. Scala3 completion
+  SHA256 `3240a395c8628da7c6df6caa7e4840512e4871bc5633ca4db08c7db62979cbec`;
+  Scala2.13
+  `83ae5c3abf754c0e3d68998829ce6d847a0648f0c00105d9501d1ef7ac1d4971`.
+  Earlier first captures also pass before the cleanup refinement.
+- **Fail first, remaining-worker drain.**
+  `python3 -B fork-command-groups-driver-fourth.py --repo-root
+  /home/pavel/work/safe/7mind/izumi --artifact-version 1.3.0-SNAPSHOT
+  --scala-version 3.9.0 --evidence-dir
+  /srv/nvme/tmp/izumi-impl/fork-command-groups-scala3-fourth`
+  returns actual/driver1 before the drain correction. WorkerA halts; workerB
+  remains in an externally gated shutdown hook. The public failed command and
+  capture are reached before the gate opens. The oracle observes
+  `rejectedBeforeRelease=true`, `capturedBeforeRelease=true` and the capture's
+  live-worker precondition fails. Completion SHA256
+  `f42472eace86654eebb4f7d6749e6a2f87348d907fea7d1ccc57a07eeee27ef5`.
+- **Current grouping/drain/recovery checks.**
+  `python3 -B test-fixtures/sbt-worker-receipt-race/verify-command-groups.py
+  --repo-root . --artifact-version 1.3.0-SNAPSHOT --scala-version <compiler>
+  --evidence-dir <new directory>` returns actual/driver0 on both compilers:
+  `fork-command-groups-scala3-fifth` and `...-scala213-first`. Single and serial
+  controls each reconcile6 bodies/Output/XML cases; empty exclusions execute0
+  with no worker; recovery reconciles6 with fresh workers. Overlap and halt
+  controls are explicitly rejected. Each lane uses8 actual worker PIDs, none
+  surviving the public command. During the five-second held shutdown observation,
+  rejection/capture are both absent, then the failed command returns only after
+  workerB exits. Completion SHA256s
+  `7b332ffa89aa37da28a34693312a010c34d5e0262f19c6517b82b0192e8821c4`
+  and `24e9e3e00b98d32461a48e897ff932ecc44b9c2640b361f8b57b05e8f6174eae`.
+  First fixture generation failed to compile an overloaded `IO.read` eta
+  expansion; second exposed overlap truncation; third used an unmatched pattern,
+  which stock SDK2 correctly rejects before execution. Those captures remain;
+  the current empty control uses valid patterns plus explicit exclusions.
+- **Mixed-framework regression.**
+  `verify-mixed-forks.py --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9
+  --scala-version 3.9.0 2.13.18 --evidence-dir
+  /srv/nvme/tmp/izumi-impl/fork-command-mixed-forks-first` returns0:
+  4 commands reconcile72 body/Output/XML cases and4 paired DI lifetimes.
+  Completion SHA256
+  `cdadd4061500d9423d77abd145f0036fdc9499adbfa4f01339b4854ae353c698`.
+- **Stock full/selected/quick controls.**
+  `python3 -B fork-command-quick-driver-first.py --scala-version <compiler>
+  --evidence-dir <new directory>` passes both `fork-command-quick-scala*-first`
+  captures with actual/driver0. Each lane executes public `testFull`, `testOnly`,
+  repeat and `testQuick`:69 exact body/XML cases,51 independently captured input
+  Output cases,4 fresh paired DI lifetimes. Quick executes the15 owned cases and
+  skips the unchanged foreign suite. Full Output is checked by production but
+  not independently captured by this driver. Completion SHA256s
+  `dd8af53a33fafb910cab4c46cd5b0202bf3245417c06676f2c239490a27b0576`
+  and `fceadee55214a192048029f06b537a4255ef71c88f2c16f0d8dd13872825f142`.
+  Separate `fork-command-stock-scala*-first` controls also pass54 body/XML cases
+  per compiler before adding the quick check.
+- **Registration-failure regression.**
+  `python3 -B test-fixtures/host-sharing-consumer/verify-registration-linkage.py
+  --artifact-version 1.3.0-SNAPSHOT --scala-version <compiler> --evidence-dir
+  <new directory>` passes `fork-command-registration-scala{3,213}-first` with
+  actual/driver0. Fault/repeat each preserve2 per-suite SDK/XML errors with no
+  bodies or resources; recovery has3 positive cases and1 paired DI lifetime.
+  Completion SHA256s
+  `4f5452427e0802dce2375e6a88cfa8e2baa0c31734743cd025f96789a0d5c2d2`
+  and `60894664bcfc06698867b73202526ee23ca4aae0d3cb1edfe840504f8e293da6`.
+- **Unresolved System.exit liveness reproduction.**
+  `fork-command-system-exit-first/commands.json` retains the exact independent
+  SBT argv/cwd. Generated `GroupFramework.scala` changes the generic halt call
+  to `System.exit(0)`. A normal6-case control succeeds first; then `testOnly
+  fixture.SuiteA` executes3 bodies and enters the shutdown hook. After5 seconds,
+  the parent remains alive and no public result/capture exists. The owned
+  PID199802 is killed only after freezing that observation, and SBT then fails
+  with exit137 from its worker; actual outer exit1, expected-defect driver0.
+  Completion SHA256
+  `0860270948aeb3ba19ba23437bd8fe19c6a6a87fec9fc1d5ada1c46a102f61cd`.
+  This is a failing product domain, not a passing liveness acceptance check.
+- **Publication and input audit.**
+  `python3 -B fork-command-publication-audit-second.py` returns0. Current154
+  JAR/POM pairs retain149 previous qualified pairs and refresh5 JVM protocol/
+  base-runner/plugin pairs; the final drain correction refreshes only the plugin
+  from the preceding current catalogue. Payloads match compiled products,
+  including the managed `sbt/sbt.autoplugins` descriptor. Catalogue SHA256
+  `541053c0d23b4ea7c0965296670b8cfa115cdfd40652960001bbed1ab7735089`;
+  plugin JAR
+  `67637f391a0e9f4d8049a2116651993a89072416325161774ea0b47cedd4fbfd`.
+  The source snapshot precedes the final README liveness note; that prose-only
+  edit changes no compiled or executed fixture input. Python AST checks for
+  both permanent drivers and `git diff --check` pass.
+
+No whole step is marked done. Terminal-record projection, complete worker-error
+reporting, early-exit/cancellation recovery, tracked DI/configuration closure,
+complete history/grouping/setup/cleanup/classloader domains, JS/Native host
+transport, coverage, IDE integration, migration and final acceptance remain
+open. No remote push or PR is performed. The following local commit checkpoint
+will identify these code and evidence inputs; it is not a completion claim.

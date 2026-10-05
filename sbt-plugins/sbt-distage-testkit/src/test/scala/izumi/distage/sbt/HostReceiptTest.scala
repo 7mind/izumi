@@ -217,7 +217,7 @@ object HostReceiptTest {
       val listeners = execution.options.collect { case Tests.Listeners(values) => values }.flatten
       require(listeners.count(_.isInstanceOf[HostForkReceiptListener]) == 1 && listeners.contains(foreign) && !listeners.contains(earlier), "Inherited listeners were not rebound")
       val directories = execution.options.collect { case Tests.Argument(Some(framework), values) if framework == DistageHostPolicy.framework => values }
-      require(directories == Seq(Seq(ForkReceiptArguments.HostDirectoryOption, current.store.directory.toString)), "Inherited receipt directory was retained")
+      require(directories == Seq(Seq(ForkReceiptArguments.HostDirectoryOption, current.store.directory.toString, ForkReceiptArguments.CommandCompletionOption)), "Inherited receipt directory was retained")
       first.abort(previous); second.abort(current)
     }
 

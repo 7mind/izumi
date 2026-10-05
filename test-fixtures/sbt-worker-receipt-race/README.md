@@ -193,21 +193,42 @@ acceptance remain open.
 
 `verify-plugin-delivery.py` exercises the published distage plugin against the
 unchanged generic framework from `verify-held-batch.py`. In one SBT 2 session,
-it runs a normal control, holds the second batch to reproduce truncated output,
-and runs a normal recovery. The production guard must reject the held command
-through the public `testOnly.result` boundary after the callback returns. Each
-command executes exactly six bodies in a fresh worker and creates six positive
-XML cases; the incomplete command returns only three cases in `Tests.Output`.
-The driver checks those sets, command rejection, recovery and receipt cleanup.
+it runs a normal control, holds the second batch and runs a normal recovery.
+With `--expected-held-result complete`, every command must return all six cases,
+matching the six physical bodies and positive XML cases in a fresh worker. The
+command-boundary startup agent keeps that worker alive through callback delivery.
+The driver also checks recovery and receipt cleanup. The explicit `reject` mode
+retains the oracle for the earlier guard-only implementation, which returned
+three SDK cases and rejected the held command; it is historical evidence.
 
 ```sh
 python3 -B test-fixtures/sbt-worker-receipt-race/verify-plugin-delivery.py \
   --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 \
+  --expected-held-result complete \
   --evidence-dir /srv/nvme/tmp/izumi-impl/plugin-delivery-example
 ```
 
-Repeat with `--scala-version 2.13.18` and a new evidence directory. This verifies
-rejection of incomplete SDK output; it does not restore the missing batch or
-close global acknowledgement, callback drain, foreign history or structured
-run-error reporting. The independent upstream reproductions above continue to
-run without the distage plugin.
+Repeat with `--scala-version 2.13.18` and a new evidence directory. The independent
+upstream reproductions above continue to run without the distage plugin.
+
+`verify-command-groups.py` checks single and serial foreign groups, overlapping
+suite names, exclusion of every selected suite, exit-zero worker death, and
+same-session recovery. A second worker's shutdown hook is held after the first
+worker halts: the public command must wait for the held worker's exit before
+returning its failure. Captures verify that workers are alive during result
+delivery, dead after the command, and have separate process identities. An
+overlapping-suite run is rejected because SBT overwrites one result-map entry
+and JUnit file; that domain remains unresolved. These are bounded checks, not
+the complete cancellation, history or structured-error acceptance gate.
+
+Replacing the halt control with `System.exit(0)` reproduces an unresolved
+deadlock in the current command handshake. The shutdown hook starts before the
+SDK sends its reply, leaving the hook waiting for the host decision and the host
+waiting for that reply. The status ledger records the exact controlled
+reproduction, its normal control, frozen observation and owned-process cleanup.
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-command-groups.py \
+  --repo-root . --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/command-groups-example
+```

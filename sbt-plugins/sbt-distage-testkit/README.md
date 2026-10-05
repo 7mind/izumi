@@ -18,11 +18,26 @@ completion and the SDK's overall result before an input task succeeds. The
 wrapped result logger compares the returned group set and all seven aggregate
 status counts with listener delivery, plus exact per-suite counts for distage.
 Foreign events retain their original identities, including identities that
-differ from their containing group. These
-checks reject the reproduced SBT 2 fork-result snapshot race; they do not repair
-the SDK. Replacing the scoped result logger preserves completion validation but
+differ from their containing group. Each fork receives a small Java startup
+agent through the public group and JVM-option settings. Its shutdown hook keeps
+the worker alive until the host validates the command, acknowledges all admitted
+workers and waits for their exit. This restores the reproduced held-callback
+result loss, including commands containing only foreign suites. Serial groups
+can finish their SDK tasks while waiting for the command acknowledgement.
+Workers that exit without acknowledging completion fail the command. An earlier
+worker failure does not skip waiting for the other admitted workers. Replacing
+the scoped result logger preserves completion validation but
 removes that additional output-map comparison. Receipt owners are separate for
 selected, quick and full tasks in each enabled configuration.
+
+Repeated suite names in overlapping fork groups remain a reporting limitation:
+SBT 2 merges their result maps by replacement, and its JUnit files share a suite
+name. The receipt guard rejects the reproduced truncated result. An early
+`System.exit(0)` during a task also deadlocks this handshake: the host awaits the
+worker reply while the shutdown hook awaits the host decision. This checkpoint
+remains in progress. Cancellation,
+complete worker-error reporting and the full grouping/history domain still need
+their acceptance checks.
 
 For another test configuration, install
 `inConfig(configuration)(Defaults.testSettings ++ distageTestSettings)`.

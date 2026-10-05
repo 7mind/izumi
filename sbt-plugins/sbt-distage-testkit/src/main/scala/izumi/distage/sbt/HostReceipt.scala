@@ -138,7 +138,9 @@ private[sbt] final class HostReceipt {
   }
 }
 
-private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val store: FileForkReceiptStore)
+private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val store: FileForkReceiptStore) {
+  val completion = new HostForkCompletion(store.directory)
+}
 
 private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStore) {
   private var current = Option.empty[HostReceiptGeneration]
@@ -153,6 +155,7 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
   def receipt: HostReceipt = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).receipt }
 
   def store: FileForkReceiptStore = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).store }
+  def completion: HostForkCompletion = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).completion }
 
   def consume(output: Tests.Output): Unit = {
     val generation = synchronized {
@@ -171,9 +174,17 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
 
   private def finish[A](generation: HostReceiptGeneration)(operation: => A): A = {
     var original = Option.empty[Throwable]
-    try operation
+    try {
+      val result = operation
+      generation.completion.finish(commit = true)
+      result
+    }
     catch { case cause: Throwable => original = Some(cause); throw cause }
     finally {
+      if (original.nonEmpty) {
+        try generation.completion.finish(commit = false)
+        catch { case cause: Throwable => original.get.addSuppressed(cause) }
+      }
       try abort(generation)
       catch {
         case cause: Throwable => original match {
@@ -265,7 +276,7 @@ private[sbt] object HostReceiptPolicy {
       if (wrapped.exists { case Tests.Filters(includes) => includes.nonEmpty; case _ => false }) wrapped
       else wrapped :+ Tests.Filters(Seq(capture(_ => true)))
     } else inheritedOptions
-    val directory = Tests.Argument(DistageHostPolicy.framework, ForkReceiptArguments.HostDirectoryOption, owner.store.directory.toString)
+    val directory = Tests.Argument(DistageHostPolicy.framework, ForkReceiptArguments.HostDirectoryOption, owner.store.directory.toString, ForkReceiptArguments.CommandCompletionOption)
     inherited.copy(options = Tests.Listeners(Seq(listener)) +: (options :+ directory))
   }
 

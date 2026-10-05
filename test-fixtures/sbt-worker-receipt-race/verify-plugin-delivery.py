@@ -68,6 +68,7 @@ def main():
     parser.add_argument('--evidence-dir', type=Path, required=True)
     parser.add_argument('--artifact-version', required=True)
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
+    parser.add_argument('--expected-held-result', choices=['reject', 'complete'], required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve()
     out.mkdir(exist_ok=False)
@@ -94,7 +95,8 @@ def main():
     inputs = [dict(path=str(path), sha256=sha(path)) for path in sorted(build.rglob('*')) if path.is_file()]
     commands = ['set Global / localCacheDirectory := file("' + str(out / 'local-cache') + '")']
     for mode in ['normal', 'held', 'recovery']:
-        commands += ['prepareDelivery ' + mode, 'rejectIncompleteDelivery' if mode == 'held' else 'testOnly ' + SELECTED, 'captureDelivery ' + mode]
+        request = 'rejectIncompleteDelivery' if mode == 'held' and args.expected_held_result == 'reject' else 'testOnly ' + SELECTED
+        commands += ['prepareDelivery ' + mode, request, 'captureDelivery ' + mode]
     commands += ['show Test / dependencyClasspath']
     argv = ['direnv', 'exec', str(ROOT), 'sh', '-c', 'exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"', 'plugin-delivery', '-Dfixture.scala-version=' + args.scala_version, '-Dfixture.artifact-version=' + args.artifact_version, '-Dfixture.audit-root=' + str(build / 'audit'), '-Dfixture.captures=' + str(out / 'cases'), *commands]
     (out / 'commands.json').write_text(json.dumps(dict(cwd=str(build), argv=argv, sources=inputs, helperSha256=sha(helper)), indent=2) + '\n')
@@ -142,15 +144,17 @@ def main():
         reports = [ElementTree.parse(path) for path in (capture / 'test-reports').glob('*.xml')]
         reported = [(node.attrib['classname'], node.attrib['name']) for report in reports for node in report.findall('.//testcase')]
         valid = valid and sorted((row[0], row[1]) for row in physical) == expected and {row[2] for row in physical} == {child} and child != parent and child not in children and len(reports) == 2 and sorted(reported) == [(suite, 'body-' + index) for suite, index in expected] and all(report.getroot().attrib['tests'] == '3' and all(report.getroot().attrib[key] == '0' for key in ['errors', 'failures', 'skipped']) for report in reports)
-        valid = valid and (output == 'fixture.SuiteA\tPassed\t3\t0\t0\t0' and (audit / 'host.rejected').is_file() and (audit / 'host.returned').is_file() if mode == 'held' else output == full_output and not (audit / 'host.rejected').exists())
+        rejected = mode == 'held' and args.expected_held_result == 'reject'
+        valid = valid and (output == 'fixture.SuiteA\tPassed\t3\t0\t0\t0' and (audit / 'host.rejected').is_file() and (audit / 'host.returned').is_file() if rejected else output == full_output and not (audit / 'host.rejected').exists())
         parents.add(parent)
         children.add(child)
-        cases.append(dict(mode=mode, physicalBodies=len(physical), xmlCases=len(reported), publicOutput=output, taskRejected=mode == 'held', parentPid=parent, childPid=child))
-    valid = valid and len(cases) == 3 and len(parents) == 1 and len(children) == 3 and raw.count('PLUGIN_DELIVERY_CAPTURE_OK case=') == 3 and raw.count('PLUGIN_DELIVERY_REJECTED ') == 1 and 'PLUGIN_DELIVERY_FALSE_SUCCESS' not in raw
+        cases.append(dict(mode=mode, physicalBodies=len(physical), xmlCases=len(reported), publicOutput=output, taskRejected=rejected, parentPid=parent, childPid=child))
+    expected_rejections = 1 if args.expected_held_result == 'reject' else 0
+    valid = valid and len(cases) == 3 and len(parents) == 1 and len(children) == 3 and raw.count('PLUGIN_DELIVERY_CAPTURE_OK case=') == 3 and raw.count('PLUGIN_DELIVERY_REJECTED ') == expected_rejections and 'PLUGIN_DELIVERY_FALSE_SUCCESS' not in raw
     for row in inputs:
         assert sha(row['path']) == row['sha256']
     assert sha(helper) == sha(out / 'source-helper.py') and sha(__file__) == sha(out / 'driver.py')
-    completion = dict(exit=0 if valid else 1, actualExit=actual, valid=valid, scala=args.scala_version, cases=cases, scope='Published plugin, unchanged generic foreign framework, real SDK2 truncation rejected through testOnly.result, normal and explicit same-session recovery, fresh worker PIDs, exact physical/XML/output controls and receipt cleanup. This is rejection of incomplete output, not restoration of the omitted batch; global acknowledgement, callback drain, foreign history, structured run errors and final acceptance remain open.')
+    completion = dict(exit=0 if valid else 1, actualExit=actual, valid=valid, scala=args.scala_version, expectedHeldResult=args.expected_held_result, cases=cases, scope='Published plugin and unchanged generic foreign framework: normal, held and same-session recovery with fresh workers and exact body/XML/output checks. Complete mode requires the held command to succeed with all six cases. Reject mode records the earlier mitigation and cannot establish restoration or final acceptance.')
     (out / 'completion.json').write_text(json.dumps(completion, indent=2) + '\n')
     print(json.dumps(completion), flush=True)
     raise SystemExit(completion['exit'])

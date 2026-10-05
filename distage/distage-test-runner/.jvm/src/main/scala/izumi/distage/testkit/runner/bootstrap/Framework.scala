@@ -25,10 +25,15 @@ final class Framework extends SbtFramework {
     val request = RequestArguments.parse(invocation.arguments).fold(error => throw new IllegalArgumentException(error.message), value => value)
     val runner = new BootstrapRunner(args.clone(), invocation.forwardedRemoteArguments.toArray, name => JvmSuiteLoader.load(name, testClassLoader), request)
     if (invocation.forked) {
-      val TimeoutSeconds = 30L
-      val PollMillis = 5L
       val directory = invocation.hostDirectory.getOrElse(throw new IllegalStateException("Fork receipt activation has no host ownership"))
-      new ForkReceiptRunner(runner, FileForkReceiptStore.open(directory), ForkReceiptWaitPolicy(TimeUnit.SECONDS.toNanos(TimeoutSeconds), PollMillis))
+      if (invocation.commandCompletion) {
+        require(Option(System.getProperty(ForkCompletionAgent.DIRECTORY_PROPERTY)).contains(directory.toString), "Command completion agent has no matching target ownership")
+        runner
+      } else {
+        val TimeoutSeconds = 30L
+        val PollMillis = 5L
+        new ForkReceiptRunner(runner, FileForkReceiptStore.open(directory), ForkReceiptWaitPolicy(TimeUnit.SECONDS.toNanos(TimeoutSeconds), PollMillis))
+      }
     } else runner
   }
 }
