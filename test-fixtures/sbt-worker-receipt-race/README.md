@@ -212,23 +212,41 @@ Repeat with `--scala-version 2.13.18` and a new evidence directory. The independ
 upstream reproductions above continue to run without the distage plugin.
 
 `verify-command-groups.py` checks single and serial foreign groups, overlapping
-suite names, exclusion of every selected suite, exit-zero worker death, and
-same-session recovery. A second worker's shutdown hook is held after the first
-worker halts: the public command must wait for the held worker's exit before
+suite names, exclusion of every selected suite, Runtime.halt(0), System.exit(0/1),
+and same-session recovery. A second worker's shutdown hook is held after the first
+worker halts or exits with zero: the public command must wait for the held worker's exit before
 returning its failure. Captures verify that workers are alive during result
 delivery, dead after the command, and have separate process identities. An
 overlapping-suite run is rejected because SBT overwrites one result-map entry
 and JUnit file; that domain remains unresolved. These are bounded checks, not
 the complete cancellation, history or structured-error acceptance gate.
 
-Replacing the halt control with `System.exit(0)` reproduces an unresolved
-deadlock in the current command handshake. The shutdown hook starts before the
+The earlier `System.exit(0)` control reproduced a deadlock in the command
+handshake. The shutdown hook starts before the
 SDK sends its reply, leaving the hook waiting for the host decision and the host
-waiting for that reply. The status ledger records the exact controlled
-reproduction, its normal control, frozen observation and owned-process cleanup.
+waiting for that reply. The exit capture distinguishes the pinned worker's
+direct System.exit(0) from its top-level main from a premature exit. Only normal
+completion waits for the host decision; a premature exit publishes a failure
+and proceeds so the host can reject it. System.exit(1) retains SBT's original
+nonzero-exit error and cancellation of the second serial group. The status
+ledger retains the failing reproduction and subsequent checks.
+
+The agent uses the project's pinned Byte Buddy through Java instrumentation to
+capture the initiating thread in JDK shutdown. It does not depend on SBT private
+classes. This couples the agent to JDK shutdown implementation; installation
+fails immediately if the expected methods cannot be transformed.
+`verify-exit-capture.py` runs a host-packaged agent from a captured successful
+group against JDK17/21/25. Its 29 cases check normal commit/abort, premature
+zero/nonzero exits, halt, natural termination, competing requests, and denied
+requests on JDK17/21. Each command retains its arguments, output and exit markers.
 
 ```sh
 python3 -B test-fixtures/sbt-worker-receipt-race/verify-command-groups.py \
   --repo-root . --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/command-groups-example
+
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-exit-capture.py \
+  --agent-jar /srv/nvme/tmp/izumi-impl/command-groups-example/cases/single/audit/agent.jar \
+  --jdk17-home "$JDK17" --jdk21-home "$JDK21" --jdk25-home "$JDK25" \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/exit-capture-example
 ```

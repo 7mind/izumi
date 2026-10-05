@@ -1,6 +1,7 @@
 package izumi.distage.sbt
 
 import izumi.distage.testkit.protocol.ForkCompletionAgent
+import net.bytebuddy.ByteBuddy
 
 import sbt.{MessageOnlyException, Tests}
 
@@ -67,17 +68,23 @@ private[sbt] final class HostForkCompletion(directory: Path) {
     val manifest = new Manifest
     val _ = manifest.getMainAttributes.put(Attributes.Name.MANIFEST_VERSION, "1.0")
     val _ = manifest.getMainAttributes.putValue("Premain-Class", classOf[ForkCompletionAgent].getName)
-    val name = classOf[ForkCompletionAgent].getName.replace('.', '/') + ".class"
-    val source = classOf[ForkCompletionAgent].getResourceAsStream("ForkCompletionAgent.class")
-    require(source != null, "Fork completion agent bytecode is missing")
+    val _ = manifest.getMainAttributes.putValue("Can-Retransform-Classes", "true")
+    val byteBuddy = classOf[ByteBuddy].getProtectionDomain.getCodeSource.getLocation.toURI
+    require(Files.isRegularFile(java.nio.file.Paths.get(byteBuddy)), "Fork exit capture dependency is not a JAR")
+    val _ = manifest.getMainAttributes.put(Attributes.Name.CLASS_PATH, byteBuddy.toASCIIString)
+    val output = new JarOutputStream(Files.newOutputStream(agent), manifest)
     try {
-      val output = new JarOutputStream(Files.newOutputStream(agent), manifest)
-      try {
-        output.putNextEntry(new JarEntry(name))
-        val _ = source.transferTo(output)
-        output.closeEntry()
-      } finally output.close()
-    } finally source.close()
+      (classOf[ForkCompletionAgent] +: classOf[ForkCompletionAgent].getDeclaredClasses.toVector).foreach { agentClass =>
+        val name = agentClass.getName.replace('.', '/') + ".class"
+        val source = agentClass.getResourceAsStream("/" + name)
+        require(source != null, "Fork completion agent bytecode is missing: " + name)
+        try {
+          output.putNextEntry(new JarEntry(name))
+          val _ = source.transferTo(output)
+          output.closeEntry()
+        } finally source.close()
+      }
+    } finally output.close()
   }
 
   private def path(prefix: Path, suffix: String): Path = prefix.resolveSibling(prefix.getFileName.toString + "." + suffix)

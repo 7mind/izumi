@@ -49,7 +49,7 @@ final class GroupFramework extends Framework {
           })
         }
         val mode = new String(Files.readAllBytes(audit.resolve("mode")),StandardCharsets.UTF_8)
-        if (mode == "halt" && definition.fullyQualifiedName() == "fixture.SuiteB") {
+        if (Set("halt","exit").contains(mode) && definition.fullyQualifiedName() == "fixture.SuiteB") {
           Runtime.getRuntime.addShutdownHook(new Thread(() => {
             val written = Files.write(audit.resolve("worker.held"),pid.getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE)
             require(Files.isRegularFile(written),"Shutdown hold marker missing")
@@ -59,6 +59,8 @@ final class GroupFramework extends Framework {
           }))
         }
         if (mode == "halt" && definition.fullyQualifiedName() == "fixture.SuiteA") Runtime.getRuntime.halt(0)
+        if (mode == "exit" && definition.fullyQualifiedName() == "fixture.SuiteA") System.exit(0)
+        if (mode == "exit-one" && definition.fullyQualifiedName() == "fixture.SuiteA") System.exit(1)
         Array.empty
       }
     }}
@@ -87,7 +89,7 @@ Test / testGrouping := Def.uncached {
   def group(name: String, tests: Seq[TestDefinition]) = new Tests.Group(name, tests, Tests.SubProcess(options))
   mode match {
     case "single" | "recovery" | "empty" => Seq(group("single", definitions))
-    case "serial" | "halt" => definitions.map(test => group(test.name, Seq(test)))
+    case "serial" | "halt" | "exit" | "exit-one" => definitions.map(test => group(test.name, Seq(test)))
     case "overlap" => Seq(group("first", definitions.filter(_.name == "fixture.SuiteA")), group("second", definitions.filter(_.name == "fixture.SuiteA")))
     case other => sys.error("Unknown group mode: " + other)
   }
@@ -103,9 +105,10 @@ Test / testSelected / testResultLogger := {
       IO.write(audit / "host.output", rows.mkString("\n"))
       val roots = (receiptParent * "command-*").get()
       require(roots.size == 1, "Command root missing")
+      if (IO.read(audit / "mode") != "empty") IO.copyFile(roots.head / "distage-fork-agent.jar",audit / "agent.jar")
       val entries = (roots.head * "fork-*.entered").get().sortBy(_.name)
       val entered = entries.map(file => IO.read(file))
-      require(IO.read(audit / "mode") == "halt" || entered.forall(pid => ProcessHandle.of(pid.toLong).isPresent && ProcessHandle.of(pid.toLong).get.isAlive), "Fork exited before public result delivery")
+      require(Set("halt","exit","exit-one").contains(IO.read(audit / "mode")) || entered.forall(pid => ProcessHandle.of(pid.toLong).isPresent && ProcessHandle.of(pid.toLong).get.isAlive), "Fork exited before public result delivery")
       require((roots.head * "fork-*.decision").get().isEmpty, "Fork decision preceded public result delivery")
       IO.write(audit / "host.forks", entered.mkString("\n"))
       inherited.run(log,output,taskName)
@@ -121,13 +124,15 @@ prepareGroups := {
   IO.delete((Test / target).value / "test-reports")
   IO.write(audit / "mode",parsed.head)
 }
-val rejectHalt = taskKey[Unit]("Observe premature worker death and permit same-session recovery")
-rejectHalt := Def.uncached {
+val rejectExit = taskKey[Unit]("Observe premature worker death and permit same-session recovery")
+rejectExit := Def.uncached {
   (Test / testOnly).toTask(" fixture.SuiteA fixture.SuiteB").result.value.toEither match {
     case Left(cause) =>
-      require(cause.toString.contains("Incomplete distage fork command acknowledgement"),"Unexpected halt failure: " + cause)
+      val mode = IO.read(file(sys.props("fixture.audit-root")) / "mode")
+      val expected = if (mode == "exit-one") "Forked test process exited with code 1" else "Incomplete distage fork command acknowledgement"
+      require(cause.toString.contains(expected),"Unexpected exit failure: " + cause)
       IO.write(file(sys.props("fixture.audit-root")) / "host.rejected",cause.toString)
-    case Right(_) => sys.error("HALT_FALSE_SUCCESS")
+    case Right(_) => sys.error("EXIT_FALSE_SUCCESS")
   }
 }
 val rejectOverlap = taskKey[Unit]("Observe duplicated-suite SDK aggregation loss")
@@ -162,6 +167,13 @@ captureGroups := {
 def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
+def is_process_alive(pid):
+    try:
+        os.kill(int(pid),0)
+        return True
+    except ProcessLookupError:
+        return False
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--repo-root', type=Path, required=True)
@@ -178,29 +190,37 @@ def main():
     (build/'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "'+args.artifact_version+'")\n')
     inputs = [dict(path=str(p),sha256=sha(p)) for p in sorted(build.rglob('*')) if p.is_file()]
     commands = ['set Global / localCacheDirectory := file("'+str(out/'local-cache')+'")']
-    modes = ['single','serial','overlap','empty','halt','recovery']
+    exit_modes = ['halt','exit']
+    failure_modes = [*exit_modes,'exit-one']
+    modes = ['single','serial','overlap','empty',*failure_modes,'recovery']
     for mode in modes:
-        request = 'rejectHalt' if mode == 'halt' else 'rejectOverlap' if mode == 'overlap' else 'testOnly fixture.SuiteA fixture.SuiteB'
+        request = 'rejectExit' if mode in failure_modes else 'rejectOverlap' if mode == 'overlap' else 'testOnly fixture.SuiteA fixture.SuiteB'
         commands += ['prepareGroups '+mode,request,'captureGroups '+mode]
     commands += ['show Test / dependencyClasspath']
     argv = ['direnv','exec',str(args.repo_root.resolve()),'sh','-c','exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"','fork-command-groups','-Dfixture.scala-version='+args.scala_version,'-Dfixture.artifact-version='+args.artifact_version,'-Dfixture.audit-root='+str(build/'audit'),'-Dfixture.captures='+str(out/'cases'),*commands]
     (out/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=inputs),indent=2)+'\n')
     print('FORK_COMMAND_GROUPS_START '+args.scala_version,flush=True)
-    observation = None
+    observations = {}
     with (out/'run.log').open('x') as log:
         process = subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
         deadline = time.monotonic() + TIMEOUT_SECONDS
         audit = build/'audit'
         while process.poll() is None and time.monotonic() < deadline:
-            if observation is None and (audit/'worker.held').exists():
+            if (audit/'worker.held').exists() and (audit/'mode').read_text() not in observations:
                 time.sleep(5)
-                observation = dict(pid=(audit/'worker.held').read_text(),rejectedBeforeRelease=(audit/'host.rejected').exists(),capturedBeforeRelease=(out/'cases/halt').exists())
-                (out/'held-shutdown-observation.json').write_text(json.dumps(observation,indent=2)+'\n')
+                mode = (audit/'mode').read_text()
+                pid = (audit/'worker.held').read_text()
+                observation = dict(pid=pid,aliveBeforeRelease=is_process_alive(pid),rejectedBeforeRelease=(audit/'host.rejected').exists(),capturedBeforeRelease=(out/'cases'/mode).exists())
+                observations[mode] = observation
+                (out/('held-shutdown-'+mode+'-observation.json')).write_text(json.dumps(observation,indent=2)+'\n')
                 (audit/'worker.allow').write_text('release after frozen shutdown observation\n')
             time.sleep(0.01)
-        if observation is None and (audit/'worker.held').exists():
-            observation = dict(pid=(audit/'worker.held').read_text(),rejectedBeforeRelease=(audit/'host.rejected').exists(),capturedBeforeRelease=(out/'cases/halt').exists())
-            (out/'held-shutdown-observation.json').write_text(json.dumps(observation,indent=2)+'\n')
+        if (audit/'worker.held').exists() and (audit/'mode').read_text() not in observations:
+            mode = (audit/'mode').read_text()
+            pid = (audit/'worker.held').read_text()
+            observation = dict(pid=pid,aliveBeforeRelease=is_process_alive(pid),rejectedBeforeRelease=(audit/'host.rejected').exists(),capturedBeforeRelease=(out/'cases'/mode).exists())
+            observations[mode] = observation
+            (out/('held-shutdown-'+mode+'-observation.json')).write_text(json.dumps(observation,indent=2)+'\n')
             (audit/'worker.allow').write_text('release after failed process observation\n')
         try: actual = process.wait(timeout=10)
         except subprocess.TimeoutExpired:
@@ -210,7 +230,9 @@ def main():
             actual = 124
         log.write('\nEXIT '+str(actual)+'\n')
     failures = []; cases = []; all_pids = set(); parents = set()
-    if observation is None or observation['rejectedBeforeRelease'] or observation['capturedBeforeRelease']: failures.append('Public command completed before held worker shutdown')
+    for mode in exit_modes:
+        observation = observations.get(mode)
+        if observation is None or not observation['aliveBeforeRelease'] or observation['rejectedBeforeRelease'] or observation['capturedBeforeRelease']: failures.append('Public command completed before held worker shutdown: '+mode)
     if actual: failures.append('SBT failed: inspect run.log')
     else:
         for mode in modes:
@@ -220,14 +242,14 @@ def main():
             if pids & all_pids: failures.append('Worker reused: '+mode)
             all_pids |= pids
             counts = {s:sum(r[0]==s for r in rows) for s in ['fixture.SuiteA','fixture.SuiteB']}
-            expected = {'fixture.SuiteA':6,'fixture.SuiteB':0} if mode=='overlap' else {'fixture.SuiteA':0,'fixture.SuiteB':0} if mode=='empty' else {'fixture.SuiteA':3,'fixture.SuiteB':3}
+            expected = {'fixture.SuiteA':6,'fixture.SuiteB':0} if mode=='overlap' else {'fixture.SuiteA':3,'fixture.SuiteB':0} if mode=='exit-one' else {'fixture.SuiteA':0,'fixture.SuiteB':0} if mode=='empty' else {'fixture.SuiteA':3,'fixture.SuiteB':3}
             if counts != expected: failures.append('Body counts differ: '+mode)
-            if len(pids) != (0 if mode=='empty' else 2 if mode in ['serial','overlap','halt'] else 1): failures.append('Fork membership differs: '+mode)
+            if len(pids) != (0 if mode=='empty' else 2 if mode in ['serial','overlap',*exit_modes] else 1): failures.append('Fork membership differs: '+mode)
             reports = [ElementTree.parse(p) for p in (out/'cases'/mode/'test-reports').glob('*.xml')]
             xml_cases = [n for report in reports for n in report.findall('.//testcase')]
             output = (audit/'host.output').read_text() if (audit/'host.output').exists() else None
             rejected = (audit/'host.rejected').is_file()
-            if mode in ['halt','overlap']:
+            if mode in [*failure_modes,'overlap']:
                 if not rejected: failures.append('Incomplete command accepted: '+mode)
             else:
                 if rejected: failures.append('Successful control rejected: '+mode)
@@ -241,7 +263,7 @@ def main():
             cases.append(dict(mode=mode,bodies=len(rows),pids=sorted(pids),output=output,xmlCases=len(xml_cases),rejected=rejected))
         if len(parents)!=1: failures.append('Host session changed')
     for row in inputs: assert sha(row['path']) == row['sha256']
-    result = dict(exit=0 if not failures else 1,actualExit=actual,scala=args.scala_version,heldShutdown=observation,cases=cases,failures=failures,scope='Serial and overlapping foreign groups, empty selection, exit-zero rejection and same-session recovery. Overlapping-suite Output/JUnit overwrite is explicitly rejected and remains an unresolved SDK reporting domain.')
+    result = dict(exit=0 if not failures else 1,actualExit=actual,scala=args.scala_version,heldShutdown=observations,cases=cases,failures=failures,scope='Serial and overlapping foreign groups, empty selection, Runtime.halt(0), System.exit(0/1) rejection, sibling shutdown drain and same-session recovery. Overlapping-suite Output/JUnit overwrite is explicitly rejected and remains an unresolved SDK reporting domain.')
     (out/'completion.json').write_text(json.dumps(result,indent=2)+'\n'); print(json.dumps(result),flush=True)
     raise SystemExit(result['exit'])
 

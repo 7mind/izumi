@@ -816,7 +816,7 @@ object Izumi {
     artifacts = withTestResourcesOnCompileClasspath(Seq(
       Artifact(
         name = Projects.distage.testProtocol,
-        libs = Seq(circe_core, circe_parser),
+        libs = Seq(circe_core, circe_parser, bytebuddy in Scope.Provided.jvm),
         depends = Seq.empty,
         platforms = Targets.protocol,
         settings = assertionFixtureSettings ++ Seq(
@@ -1166,7 +1166,7 @@ object Izumi {
     artifacts = Seq(
       Artifact(
         name = Projects.sbtplugins.distage_testkit,
-        libs = Seq.empty,
+        libs = Seq(bytebuddy in Scope.Compile.jvm),
         depends = Seq(Projects.distage.testProtocol in Scope.Compile.jvm),
         settings = Projects.sbtplugins.settings ++ Seq(
           "crossScalaVersions" := Seq("3.8.4"),
