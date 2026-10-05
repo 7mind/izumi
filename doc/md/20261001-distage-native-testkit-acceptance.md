@@ -11,6 +11,17 @@ them, but may not remove, narrow, or reinterpret one. If the agent cannot meet a
 item, or finds it contradicted by evidence, the item is *waiting on owner*, never
 done. Edits to the plan do not change this file.
 
+Owner revision, 2026-10-05: drop SBT 1 and Scala 2.12 support. Supported hosts
+are SBT 2.0.9; supported targets are Scala 2.13.18 and Scala 3.9.0, with the
+SBT plugin and portable protocol retaining their Scala 3.8.4 baseline. This
+explicit owner instruction authorizes the version-scope edits below. Item IDs,
+evaluation points, platforms, and correctness requirements remain unchanged.
+
+The owner also authorizes custom plugin-loader hooks to migrate to an explicit
+session-aware factory API. This is the sole non-import migration exception in
+2b.10; O.1 still requires preserving planning, environment merging, memoization,
+and effect execution.
+
 Where an item and the plan differ on what must be achieved, the stricter of the
 two applies; the plan defers work only through its open decisions. This file
 alone defines when and where an item is evaluated. Its evaluation points,
@@ -35,8 +46,7 @@ unqualified wording.
   (counts, exit codes, report contents), and the commit. A test counts as
   evidence only after it has been confirmed to exercise the item it is cited
   for.
-- **Scope.** An item that names one SBT version holds on that version. Every
-  other 2d item holds on both SBT 1.13.0 and SBT 2.0.9. On JS and Native,
+- **Scope.** Every 2d item holds on SBT 2.0.9. On JS and Native,
   forked variants do not apply, because the platform plugins reject
   `fork := true`.
 - **Other requirements.** The plan's other requirements on the implementation
@@ -67,15 +77,15 @@ files with that lane's flags. Run lanes in a disposable worktree, or regenerate
 with the committed flags afterwards (item L5).
 
 - **L1** (final): JVM lanes. Run `platform:jvm` on JDK 17, 21, and 25, each with
-  Scala 2.12, 2.13, and 3. Use `:coverage` for Scala 2 and `:test` for Scala 3,
+  Scala 2.13 and 3. Use `:coverage` for Scala 2 and `:test` for Scala 3,
   as CI does.
-- **L2** (final): JS lanes. Run `platform:js-nojvm` on JDK 21 with Scala 2.12,
-  2.13, and 3, using CI's action per Scala version. CI also runs JDK 17 and 25.
+- **L2** (final): JS lanes. Run `platform:js-nojvm` on JDK 21 with Scala 2.13
+  and 3, using CI's action per Scala version. CI also runs JDK 17 and 25.
   Locally, one JDK is accepted because the JDK only hosts the compiler and linker
   for JS; the remaining risk is JDK-specific compiler or linker behaviour, which
   CI catches once the branch is pushed.
 - **L3** (final): Native lanes. Use the platform values that step 1a adds, on
-  JDK 21 with Scala 2.12, 2.13, and 3. One JDK is accepted on the same grounds
+  JDK 21 with Scala 2.13 and 3. One JDK is accepted on the same grounds
   as L2.
 - **L4** (final): the site lane, `platform:js` on JDK 21 with Scala 3,
   `:site-test`.
@@ -104,7 +114,7 @@ release once they exist.
 - **1a.1** (final): `sbtgen/Deps.scala` adds Native to its cross targets, with
   Scala Native pinned to 0.5.12.
 - **1a.2** (final): Every module that builds for JS also builds for Native on
-  2.12, 2.13, and the repository's Scala 3 compiler, except the legacy
+  2.13 and the repository's Scala 3 compiler, except the legacy
   `distage-testkit-scalatest`, and every such published module publishes for
   Native. Unpublished test-only projects build and run their tests on Native but
   publish nothing. The portable protocol module's Native variant compiles with
@@ -146,10 +156,10 @@ release once they exist.
 
 ## 1c: plain assertion macro, spans, diagnostics
 
-- **1c.1** (final): Behavioral fixtures compile and execute on 2.12, 2.13, and
+- **1c.1** (final): Behavioral fixtures compile and execute on 2.13 and
   Scala 3, across JVM/JS/Native.
-- **1c.2** (final): Fixtures compiled on 2.12 with and without `-Yrangepos`, and
-  on 2.13 with range positions disabled, render exact spans or the explicit
+- **1c.2** (final): Fixtures compiled on 2.13 with and without range positions
+  render exact spans or the explicit
   representation for missing ranges.
 - **1c.3** (final): The assertion artifacts' dependency graphs contain no
   `org.scalatest` or `org.scalactic` module and no izumi module above
@@ -178,7 +188,7 @@ release once they exist.
 
 ## 1d: `assert1`, `assert2`, effect adapters, temporary ScalaTest bridge
 
-- **1d.1** (final): On 2.12, 2.13, and Scala 3 across JVM/JS/Native, no check is
+- **1d.1** (final): On 2.13 and Scala 3 across JVM/JS/Native, no check is
   eager.
 - **1d.2** (final): On the same lanes, repeat and concurrent executions are
   independent.
@@ -230,7 +240,9 @@ release once they exist.
   head, a compatibility fixture verifies this. It holds such suites in their
   migrated form, and they compile and pass. The status ledger records a diff of
   each against its pre-migration source, and that diff touches only import
-  lines.
+  lines. Custom plugin-loader hooks may additionally migrate to the
+  owner-authorized session-aware factory API; their recorded diffs identify
+  those changes and verify the preserved behavior required by O.1.
 - **2b.11** (final): Each run session instantiates suites through its own
   factories, and the run is declared complete only after its resources are
   released.
@@ -290,13 +302,12 @@ The scope rule above applies to every 2d item.
 - **2d.4** (final): Exact execution and reporting sets agree.
 - **2d.5** (final): Per-suite history is correct.
 - **2d.6** (final): Editing the suite class, or an implementation reachable only
-  through a scanned plugin, reruns the suite under SBT 2 `test` and SBT 1
-  `testQuick`.
+  through a scanned plugin, reruns the suite under SBT 2 `test` and `testQuick`.
 - **2d.7** (final): Untracked configuration inputs force a rerun with an explicit
   cache decision.
 - **2d.8** (final): A partial-suite run, in-process or forked, does not suppress
-  a later complete run on either SBT version.
-- **2d.9** (final): Concurrent test events within one suite all reach SBT 1
+  a later complete run.
+- **2d.9** (final): Concurrent test events within one suite all reach SBT 2
   listeners.
 - **2d.10** (final): No incomplete run reports success.
 - **2d.11** (final): The runner fixtures exist and pass, with real SBT process
@@ -319,13 +330,13 @@ The scope rule above applies to every 2d item.
     the incomplete run.
   - On SBT 2, an incremental no-op is distinguished from a full run.
   - Incremental fixtures first verify distinct stock suite digests. Then, under
-    SBT 2 `test` and SBT 1 `testQuick`, a cached success is invalidated by
+    SBT 2 `test` and `testQuick`, a cached success is invalidated by
     changes to the suite class, activation, memoization, test selection,
     configuration resources, and implementations reachable only through
     scanned plugins.
   - Partial-suite runs, in-process or forked, cannot suppress a later complete
     run.
-  - Parallel tests in one suite emit concurrent events, and SBT 1 listeners
+  - Parallel tests in one suite emit concurrent events, and SBT 2 listeners
     receive every one.
 - **2d.12** (final): Events stream. Test start and finish events reach the
   distage event stream and the IDE channel before their group completes, while
@@ -351,7 +362,7 @@ The scope rule above applies to every 2d item.
 - **2d.20** (final): The in-process 0a matrix passes with only the target
   bootstrap registered, or the status ledger records the measured need that
   justifies host substitution.
-- **2d.21** (final): The plugin is built for SBT 1 and SBT 2. `distageList` and
+- **2d.21** (final): The plugin is built for SBT 2. `distageList` and
   `distagePlan` exist. Framework arguments after `--` supply test IDs,
   activation overrides, axis filtering, and memoization settings. A standalone
   launcher accepts the same normalized request without SBT.
@@ -374,7 +385,7 @@ The scope rule above applies to every 2d item.
 - **2e.1** (final): The base runner takes over the `fundamentals-*-test` JS and
   Native lanes.
 - **2e.2** (final): The runner layers link on Native and pass their own tests on
-  2.12, 2.13, and 3.9.
+  2.13 and 3.9.
 - **2e.3** (final): Native engine fixtures execute Identity, ZIO, and Cats Effect
   bodies with DI and configuration, shared lifecycle acquisition and release,
   assertion failures, and finalizer failures. Linking effect libraries alone is
@@ -399,7 +410,7 @@ Browser JS follows the plan's "Browser JS" open decision.
 - **3.1** (final): A fixture with known executed and unexecuted branches
   produces the expected report under each claimed combination. The claimed
   combinations follow the plan's coverage table:
-  - Claimed: JVM on Scala 2.12 and 2.13, including forked runs and multiple
+  - Claimed: JVM on Scala 2.13, including forked runs and multiple
     modules.
   - Claimed: JVM on the Scala 3 compiler the build uses (3.9.0 after 2a),
     including the assertion macro fixtures. If Scoverage fails there, the status
@@ -499,7 +510,7 @@ step 1a, as the "Other requirements" rule specifies.
   runtimes, and the plain module is independent of both.
 - **O.12** (final, step 2b): Plan lines 222–223, "Share protocol data independently
   of SBT's classloader and Scala version", and lines 847–856, "with no izumi
-  dependencies" and "same wire schema": shared types cross-build on 2.12, 2.13,
+  dependencies" and "same wire schema": shared types cross-build on 2.13
   and 3.8.4 for JVM/JS/Native, depend on no izumi modules, and use one wire schema
   across classloader/process boundaries without assuming Scala objects cross them.
 - **O.13** (final, step 2b): Plan lines 243–248, "`Spec1`, `Spec2`, `SpecZIO`,

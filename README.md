@@ -6,6 +6,9 @@
 [![License](https://img.shields.io/github/license/7mind/izumi.svg)](https://github.com/7mind/izumi/blob/develop/LICENSE)
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/lauris/awesome-scala)
 
+Supported library targets are Scala 2.13 and Scala 3. The distage-owned test
+runner’s SBT integration requires SBT 2.
+
 <p align="center">
   <a href="https://izumi.7mind.io/">
   <img width="40%" src="https://github.com/7mind/izumi/blob/develop/doc/microsite/src/main/tut/media/izumi-logo-full-purple.png?raw=true" alt="Izumi"/>

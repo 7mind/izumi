@@ -8,7 +8,7 @@ import subprocess
 
 
 def commands(sbt_version):
-    full = "testFull" if sbt_version == "2.0.9" else "test"
+    full = "testFull"
     all_suites = "SuiteA SuiteB SuiteC SuiteD SuiteE"
     selected = "testOnly izumi.fixtures.host.SuiteC izumi.fixtures.host.SuiteD"
     sequence = ["clean"]
@@ -51,8 +51,8 @@ def commands(sbt_version):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifact-version", required=True)
-    parser.add_argument("--sbt-version", nargs="+", required=True, choices=["1.13.0", "2.0.9"])
-    parser.add_argument("--scala-version", nargs="+", required=True, choices=["3.9.0", "2.13.18", "2.12.21"])
+    parser.add_argument("--sbt-version", nargs="+", required=True, choices=["2.0.9"])
+    parser.add_argument("--scala-version", nargs="+", required=True, choices=["3.9.0", "2.13.18"])
     parser.add_argument("--evidence-dir", type=Path, required=True)
     arguments = parser.parse_args()
     fixture = Path(__file__).resolve().parent

@@ -75,7 +75,7 @@ object Izumi {
       // because they're missing in `3.3.0-alpha.2` release
       Library("org.scalatest", "scalatest-core", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-diagrams", V.scalatest, LibraryType.Auto),
-//      Library("org.scalatest", "scalatest-expectations", V.scalatest, LibraryType.Auto),
+  //      Library("org.scalatest", "scalatest-expectations", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-featurespec", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-flatspec", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-freespec", V.scalatest, LibraryType.Auto),
@@ -84,7 +84,7 @@ object Izumi {
       Library("org.scalatest", "scalatest-matchers-core", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-mustmatchers", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-propspec", V.scalatest, LibraryType.Auto),
-//      Library("org.scalatest", "scalatest-refspec", V.scalatest, LibraryType.Auto),
+  //      Library("org.scalatest", "scalatest-refspec", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-shouldmatchers", V.scalatest, LibraryType.Auto),
       Library("org.scalatest", "scalatest-wordspec", V.scalatest, LibraryType.Auto),
 
@@ -125,16 +125,16 @@ object Izumi {
 
     final val zio_interop_tracer = Library("dev.zio", "zio-interop-tracer", V.zio_interop_cats, LibraryType.Auto)
 
-//    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
-//    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
-//    final val monix_all = Seq(monix, monix_bio)
+  //    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
+  //    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
+  //    final val monix_all = Seq(monix, monix_bio)
     // FIXME Disable monix due to lack of CE3 support as of now, see:
     //   https://github.com/monix/monix/issues/1502
     //   https://github.com/monix/monix/pull/1533
     final val monix_all = Seq.empty[Library]
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant)
-//    final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
+  //    final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val sbt_test_interface = Library("org.scala-sbt", "test-interface", V.sbt_test_interface, LibraryType.Invariant) in Scope.Compile.jvm
@@ -276,7 +276,7 @@ object Izumi {
     )
 
     final val cross = Seq(jvmPlatform, jsPlatform, nativePlatform)
-    final val protocol = cross.map(_.copy(language = Seq(ScalaVersion("3.8.4"), scala213, scala212)))
+    final val protocol = cross.map(_.copy(language = Seq(ScalaVersion("3.8.4"), scala213)))
     final val jvmJs = Seq(jvmPlatform, jsPlatform)
     final val jvm = Seq(jvmPlatform)
     final val js = Seq(jsPlatform)
@@ -638,7 +638,7 @@ object Izumi {
           "mainClass" in SettingScope.Test :=
             """{
               |  val options = (Test / scalacOptions).value
-              |  val pointOnly = (scalaVersion.value.startsWith("2.12") && !options.contains("-Yrangepos")) || options.contains("-Yrangepos:false")
+              |  val pointOnly = options.contains("-Yrangepos:false")
               |  Some(if (pointOnly) "izumi.fundamentals.assertions.AssertionFixturesWithoutRanges" else "izumi.fundamentals.assertions.AssertionFixtures")
               |}""".stripMargin.raw,
         ),
@@ -1169,9 +1169,9 @@ object Izumi {
         libs = Seq.empty,
         depends = Seq(Projects.distage.testProtocol in Scope.Compile.jvm),
         settings = Projects.sbtplugins.settings ++ Seq(
-          "crossScalaVersions" := Seq("3.8.4", "2.12.21"),
+          "crossScalaVersions" := Seq("3.8.4"),
           "scalaVersion" := "crossScalaVersions.value.head".raw,
-          "sbtVersion" in SettingScope.Raw("pluginCrossBuild") := """{ scalaBinaryVersion.value match { case "2.12" => "1.13.0"; case "3" => "2.0.9"; case other => sys.error("Unsupported distage plugin Scala version: " + other) } }""".raw,
+          "sbtVersion" in SettingScope.Raw("pluginCrossBuild") := "2.0.9",
           "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
         ),
         plugins = Plugins(

@@ -116,8 +116,8 @@ def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--evidence-dir',required=True,type=Path)
-    parser.add_argument('--sbt-version',required=True,nargs='+',choices=['2.0.9','1.13.0'])
-    parser.add_argument('--scala-version',required=True,nargs='+',choices=['3.9.0','2.13.18','2.12.21'])
+    parser.add_argument('--sbt-version',required=True,nargs='+',choices=['2.0.9'])
+    parser.add_argument('--scala-version',required=True,nargs='+',choices=['3.9.0','2.13.18'])
     parser.add_argument('--artifact-version',required=True)
     args=parser.parse_args(); evidence=args.evidence_dir.resolve(); evidence.mkdir(parents=True,exist_ok=False)
     shutil.copy2(__file__,evidence/'driver.py'); fixture=ROOT/'test-fixtures/host-sharing-consumer'
@@ -135,7 +135,7 @@ def main():
                 if source.name=='build.sbt':
                     start=value.index('Test / testFrameworks :='); end=value.index('Test / javaOptions +=',start); value=value[:start]+value[end:]
                     value+='\nlazy val heldConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)\nTest / fork := true\n'
-                    value+=SETTINGS.replace('UNCACHED','Def.uncached' if sdk=='2.0.9' else '').replace('SELECTED','testSelected' if sdk=='2.0.9' else 'testOnly')
+                    value+=SETTINGS.replace('UNCACHED','Def.uncached').replace('SELECTED','testSelected')
                 elif source.name in ['SuiteA.scala','SuiteB.scala']: value=value.replace('extends PlainFixtureSuite','extends DIFixtureSuite')
                 dest.write_text(value)
             (build/'src/test/scala/izumi/fixtures/host/HeldDeliveryFramework.scala').write_text(SOURCE)

@@ -12,7 +12,6 @@ val verifyFixture = inputKey[Unit]("Check physical bodies, resource lifetimes an
 libraryDependencies += "io.7mind.izumi" %% "distage-testkit-runner" % sys.props("izumi.fixture.version") % Test
 libraryDependencies ++= Seq("org.typelevel" %% "cats-effect" % "3.7.1", "dev.zio" %% "zio" % "2.1.26" excludeAll("dev.zio" %% "izumi-reflect"))
 libraryDependencies ++= { if (scalaVersion.value.startsWith("3.")) Seq.empty else Seq(compilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full)) }
-scalacOptions ++= { if (scalaVersion.value.startsWith("2.12.")) Seq("-Ypartial-unification") else Seq.empty }
 scalacOptions ++= {
   if (scalaVersion.value.startsWith("3.")) Seq("-release:17", "-Ybackend-parallelism", "1", "-Yretain-trees", "-Xmax-inlines:64", "-Wunused:all", "-Xkind-projector:underscores")
   else Seq("-release:17", "-Xsource:3", "-P:kind-projector:underscore-placeholders")

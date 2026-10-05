@@ -61,7 +61,7 @@ captureMixedFixture := {
 '''
 def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def main():
-    parser=argparse.ArgumentParser(); parser.add_argument('--evidence-dir',required=True,type=Path); parser.add_argument('--artifact-version',required=True); parser.add_argument('--sbt-version',nargs='+',required=True,choices=['2.0.9','1.13.0']); parser.add_argument('--scala-version',nargs='+',required=True,choices=['3.9.0','2.13.18','2.12.21']); a=parser.parse_args()
+    parser=argparse.ArgumentParser(); parser.add_argument('--evidence-dir',required=True,type=Path); parser.add_argument('--artifact-version',required=True); parser.add_argument('--sbt-version',nargs='+',required=True,choices=['2.0.9']); parser.add_argument('--scala-version',nargs='+',required=True,choices=['3.9.0','2.13.18']); a=parser.parse_args()
     out=a.evidence_dir.resolve(); out.mkdir(exist_ok=False); shutil.copy2(__file__,out/'driver.py')
     helper=ROOT/'test-fixtures/host-sharing-consumer/verify-held-forks.py'
     spec=importlib.util.spec_from_file_location('held_source',helper); module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
@@ -77,7 +77,7 @@ def main():
                 dest=build/p.relative_to(fixture); dest.parent.mkdir(parents=True,exist_ok=True); value=p.read_text()
                 if p.name=='build.sbt':
                     start=value.index('Test / testFrameworks :='); end=value.index('Test / javaOptions +=',start); value=value[:start]+value[end:]
-                    value+='\nlazy val mixedConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)\nTest / fork := true\n'+SETTINGS.replace('SELECTED','testSelected' if sdk=='2.0.9' else 'testOnly').replace('UNCACHED','Def.uncached' if sdk=='2.0.9' else '')
+                    value+='\nlazy val mixedConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)\nTest / fork := true\n'+SETTINGS.replace('SELECTED','testSelected').replace('UNCACHED','Def.uncached')
                 elif p.name in ['SuiteA.scala','SuiteB.scala']: value=value.replace('extends PlainFixtureSuite','extends DIFixtureSuite')
                 dest.write_text(value)
             (build/'src/test/scala/izumi/fixtures/host/CompletionAuditFramework.scala').write_text(source)

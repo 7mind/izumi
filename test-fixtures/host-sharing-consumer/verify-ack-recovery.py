@@ -41,7 +41,7 @@ def main():
     parser.add_argument('--artifact-version',required=True)
     parser.add_argument('--sbt-version',required=True,choices=['2.0.9'])
     parser.add_argument('--framework-order',required=True,choices=['own-first','foreign-first'])
-    parser.add_argument('--scala-version',required=True,choices=['3.9.0','2.13.18','2.12.21'])
+    parser.add_argument('--scala-version',required=True,choices=['3.9.0','2.13.18'])
     parser.add_argument('--evidence-dir',required=True,type=Path)
     args=parser.parse_args()
     out=args.evidence_dir.resolve();out.mkdir(exist_ok=False);shutil.copy2(__file__,out/'driver.py')

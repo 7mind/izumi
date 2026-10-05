@@ -7,6 +7,7 @@ TIMEOUT_SECONDS=180
 GRACE_SECONDS=10
 HOLD_WAIT_SECONDS=120
 HOLD_WINDOW_SECONDS=5
+EXPECTED_CONTROL_COUNT=2
 SOURCE=r'''package fixture
 import sbt.testing.{Event,EventHandler,Fingerprint,Framework,Logger,OptionalThrowable,Runner,Selector,Status,SubclassFingerprint,Task,TaskDef,TestSelector}
 import java.nio.charset.StandardCharsets
@@ -112,10 +113,10 @@ def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--evidence-dir',type=Path,required=True);a=parser.parse_args()
     out=a.evidence_dir.resolve();out.mkdir(exist_ok=False);shutil.copy2(__file__,out/'driver.py');outcomes=[]
-    for sdk in ['2.0.9','1.13.0']:
+    for sdk in ['2.0.9']:
         for mode in ['normal','held']:
             lane=out/('sbt'+sdk+'-'+mode);build=lane/'build';(build/'project').mkdir(parents=True);(build/'src/test/scala').mkdir(parents=True);audit=lane/'audit';audit.mkdir()
-            (build/'build.sbt').write_text(BUILD.replace('SELECTED','testSelected' if sdk=='2.0.9' else 'testOnly'));(build/'project/build.properties').write_text('sbt.version='+sdk+'\n');(build/'src/test/scala/BatchFramework.scala').write_text(SOURCE)
+            (build/'build.sbt').write_text(BUILD.replace('SELECTED','testSelected'));(build/'project/build.properties').write_text('sbt.version='+sdk+'\n');(build/'src/test/scala/BatchFramework.scala').write_text(SOURCE)
             commands=['testOnly fixture.SuiteA fixture.SuiteB']
             if sdk=='2.0.9':commands.insert(0,'set Global / localCacheDirectory := file("'+str(lane/'local-cache')+'")')
             shell='task_sdk="$1"; shift; exec sbt --server --sbt-version "$task_sdk" -java-home "$JDK21" -batch -J-Xmx6G "$@"'
@@ -157,6 +158,6 @@ def main():
             row=dict(sbt=sdk,mode=mode,actualExit=actual,valid=valid,bodies=len(bodies),xmlCases=len(reported),publicOutput=output,resultLoggerState=state,parentPid=parent,childPid=child,reports=reports,observation=observation);(lane/'completion.json').write_text(json.dumps(row,indent=2)+'\n');outcomes.append(row);print(json.dumps({k:v for k,v in row.items() if k not in ['reports','observation']}),flush=True)
             if not valid:break
         if not outcomes[-1]['valid']:break
-    valid=len(outcomes)==4 and all(row['valid'] for row in outcomes);terminal=dict(exit=0 if valid else 1,outcomes=outcomes,scope='Expected SDK-defect reproduction; public test-interface/listener/logger only, one framework and two three-body suites, no izumi/plugin/private SDK changes. Child done waits only for first host group. Driver0 requires held SDK2 incomplete Output after second group and doComplete return, not product acceptance.')
+    valid=len(outcomes)==EXPECTED_CONTROL_COUNT and all(row['valid'] for row in outcomes);terminal=dict(exit=0 if valid else 1,outcomes=outcomes,scope='Expected SDK-defect reproduction; public test-interface/listener/logger only, one framework and two three-body suites, no izumi/plugin/private SDK changes. Child done waits only for first host group. Driver0 requires held SDK2 incomplete Output after second group and doComplete return, not product acceptance.')
     (out/'completion.json').write_text(json.dumps(terminal,indent=2)+'\n');print(json.dumps(dict(exit=terminal['exit'],completionSha256=sha(out/'completion.json'))));raise SystemExit(terminal['exit'])
 if __name__=='__main__':main()

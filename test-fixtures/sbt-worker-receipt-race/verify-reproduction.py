@@ -92,7 +92,7 @@ def main():
     outcomes = []
     driver_bytes = Path(__file__).read_bytes()
     (evidence / "verify-reproduction.py").write_bytes(driver_bytes)
-    for sdk in ["2.0.9", "1.13.0"]:
+    for sdk in ["2.0.9"]:
         for name, hold in [("fast", 0), ("held", HELD_EVENT_MILLIS)]:
             lane = evidence / ("sbt" + sdk + "-" + name)
             build = lane / "build"

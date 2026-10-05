@@ -131,8 +131,8 @@ verifyDistinctStockDigests := Def.uncached {
 
 
 def commands(sbt_version):
-    quick = "test" if sbt_version == "2.0.9" else "testQuick"
-    full = "testFull" if sbt_version == "2.0.9" else "test"
+    quick = "test"
+    full = "testFull"
     sequence, expected = ["clean"], []
     if sbt_version == "2.0.9":
         sequence.extend(["verifyDistinctStockDigests", "show Test / definedTestDigests"])
@@ -216,8 +216,8 @@ def commands(sbt_version):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--artifact-version", required=True)
-    parser.add_argument("--sbt-version", nargs="+", required=True, choices=["1.13.0", "2.0.9"])
-    parser.add_argument("--scala-version", nargs="+", required=True, choices=["3.9.0", "2.13.18", "2.12.21"])
+    parser.add_argument("--sbt-version", nargs="+", required=True, choices=["2.0.9"])
+    parser.add_argument("--scala-version", nargs="+", required=True, choices=["3.9.0", "2.13.18"])
     parser.add_argument("--evidence-dir", type=Path, required=True)
     arguments = parser.parse_args()
     root = Path(__file__).resolve().parents[2]

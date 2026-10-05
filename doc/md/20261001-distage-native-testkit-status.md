@@ -5,6 +5,15 @@ Branch: `wip/distage-test-runner-and-scala-native`. Baseline inspected on
 existed at that baseline; the eight local commits above the tracking branch were
 planning changes. No pushes are authorized.
 
+Owner support revision, 2026-10-05: drop SBT 1 and Scala 2.12, and resume the
+goal. Current acceptance covers SBT 2 and Scala 2.13/3 targets on JVM/JS/Native;
+the SBT plugin and protocol keep Scala 3.8.4. The owner explicitly authorized
+these version-scope changes. Earlier version matrices below remain historical
+evidence; retiring a lane does not mark any shared correctness gate complete.
+The owner's explicit factory-API answer also permits non-import migration edits
+for custom loader hooks under 2b.10. Ordinary suites retain imports-only
+migration; O.1 and the complete hook inventory remain required.
+
 This ledger follows the fixed [acceptance checklist](20261001-distage-native-testkit-acceptance.md).
 Partial sub-step evidence does not establish completion of its parent step or
 any final evaluation point. All final items must be checked again on the final
@@ -59,7 +68,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.7 | in progress | Resource-free plain registration and raw DI/four-spec discovery pass nine lanes below; final evaluation outstanding. |
 | 2b.8 | in progress | Atomic registration and owner-approved loader factories pass nine producer and nine published-consumer lanes below, including opaque/warmed-worker isolation and held-resource overlap. Complete custom-hook audit and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain and distage path/suite/test IDs reject in all nine JVM/JS/Native lanes below; final evaluation outstanding. |
-| 2b.10 | waiting on owner | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below. The approved factory migration requires non-import edits to eligible custom hooks; the fixed item remains unmet for those hooks. Complete inventory and final evaluation outstanding. |
+| 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below. The owner explicitly permits factory-API migration edits for custom loader hooks. Complete migration-diff inventory, preserved behavior under O.1, and final evaluation remain outstanding. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | in progress | Typed application agrees on discovered, planned and executed IDs in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
 | 2c.2 | in progress | Application rejects unknown IDs and actual DI axis values before provisioning in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
@@ -87,7 +96,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.15 | in progress | A real foreign control framework retains measured explicit execution and cache skips below. Normal mixed forks pass both SDKs on all three Scala versions. Foreign bodies execute exactly once in both measured held registration orders, while SDK2 omits their Output in the own-first order. Complete mixed delivery/result domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission now prevents owned stock success publication in three-Scala published consumers:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. SDK1 scratch task-boundary omission passes198 body/XML cases and36 actual history-I/O fault cases below, but failed finalization still leaves five owned timestamps; production SDK1, tracked closure, complete teardown/failure domain and final evaluation remain open. |
+| 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
@@ -12892,3 +12901,136 @@ the fixed imports-only compatibility requirement remains unmet for migrated
 custom hooks. At the user's renewed quota-pause request, pause the existing
 goal after this local checkpoint and resume it after quota refresh. All fixed
 acceptance items and owner decisions remain intact.
+
+
+## Owner support revision verified, 2026-10-05
+
+The owner explicitly resumes work and drops SBT 1 and Scala 2.12. Supported
+library targets remain Scala 2.13.18 and Scala 3.9.0 on JVM/JS/Native; both SBT
+plugins use SBT 2.0.9 and Scala 3.8.4, and the protocol retains its 3.8.4/2.13
+cross-build. The factory-API answer also authorizes the custom-hook migration
+exception in 2b.10. Ordinary suites retain imports-only migration, and O.1 still
+requires preserved planning, environment merging, memoization and effect
+execution. All 142 checklist item IDs and evaluation labels retain their order.
+No parent step or final item is marked done by retiring unsupported lanes.
+
+The implementation removes the generator's 2.12 target, compiler/dependency
+branches and PureConfig 0.17.8 pin, removes eleven version-specific source files,
+sets both SBT plugins to Scala 3, regenerates the build, and updates CI,
+fixture input choices and current support documentation. Shared Scala 2 and
+2.13+ implementations remain. Historical SBT 1/2.12 captures and published cache
+artifacts remain historical evidence. The generated diff is 127 insertions and
+2,452 deletions; no new dependency upgrade is included.
+
+Verification was performed on the working tree based on
+`cfba51c626e7bd1be46ff2a55282c1cf5ad85bd8`. The verified support implementation
+commit is recorded in the following checkpoint. All capture paths below are
+under `/srv/nvme/tmp/izumi-impl/`.
+
+- Generation: `direnv exec . sh -c 'JAVA_HOME="$JDK21" bash sbtgen.sc --js --native'`
+  returns 0. Repeating it returns 0 with byte-identical `build.sbt`,
+  `project/plugins.sbt` and `project/build.properties`.
+  `owner-sbt2-scala213-3-scope-first/generation-repeat.json` SHA-256
+  `568e8f7066140ab33d5f16ea4509fd7c9d4232d37b4374775056ca9513119af3`;
+  generated `build.sbt` SHA-256
+  `63040b9caa9af42fca656c9cc99664451dd575b65a7d028375a52463ef0d1a4e`.
+- Producer matrix: `python3 -B owner-sbt2-scala213-3-six-lane-third.py`
+  qualifies actual Scala 3.9/2.13 executions on JVM/JS/Native, with 86 plain,
+  12 Cats and 13 BIO assertion checks, protocol219/schema4, base802 on each
+  platform, core143/103/118 and higher639/516/516 per compiler. JVM bootstrap50,
+  eleven actual standalone launcher processes per compiler and fourteen SBT2
+  host contracts per host invocation pass. The driver commands freeze all
+  1,674 non-ledger inputs. Completion SHA-256
+  `067cb4a7292334c635458b3c699bec6349e39bb248c5fcae039d51f9b4e60294`.
+  First/second driver captures remain unchanged: the first rejects obsolete
+  protocol186/bootstrap29/launcher10 predicates after actual Scala3 SBT0; the
+  second completes every 2.13 runtime suite but wrongly invokes the 3.8.4 host
+  against a switched 2.13 protocol. The third reuses those exact unchanged
+  runtime inputs and runs the remaining host/launcher commands at their
+  supported compilers. It does not relabel either failed driver as successful.
+  Pinned SBT2 [Cross.scala](https://github.com/sbt/sbt/blob/v2.0.9/main/src/main/scala/sbt/Cross.scala#L255) confirms inline `++ version task`, used by CI,
+  restricts execution to compatible project references; this differs from the
+  mistaken explicit host command after a separate version switch.
+- Publication: `python3 -B owner-sbt2-scala213-3-runtime-publication-first.py`
+  returns 0 for both supported compilers. Its exact commands locally publish
+  152 runtime/assertion-adapter pairs and both SBT2 plugins, with captured
+  Compile/Test classpaths. No external publication or push occurs.
+  `python3 -B owner-sbt2-scala213-3-publication-audit-first.py` returns 0,
+  freezes all 154 JAR/POM pairs and compares 51,582 non-manifest payload entries
+  with current compiled products. Fixture leakage and POM boundaries pass.
+  Publication SHA-256
+  `bff616b9081bc2b6badaab70e8b1de78aa24ef4a09802ccbda6822fed218cc01`;
+  qualified-source SHA-256
+  `0d02c5380d79001f624c4515d400d856b8a5fc4864e6c1a9248ca590b8fbb89f`.
+  The only producer-matrix/publication input changes are the three normative
+  documents honoring the factory-API answer, recorded separately in the
+  publication's `matrix-source-qualification.json`.
+- Point positions: `python3 -B owner-sbt2-scala213-3-point-positions-first.py`
+  runs the existing assertion fixture with `Test / scalacOptions` using
+  `-Yrangepos:false`. JVM/JS/Native each report
+  `ASSERTION_FIXTURES_OK checks=83 mode=point positions=point`; actual and driver
+  exits are 0. A post-run check verifies all 154 published binaries and 51,582
+  compiled payload entries unchanged. The supported range-enabled counterparts
+  passed in the producer matrix above.
+- Published consumers: `python3 -B owner-sbt2-scala213-3-published-consumer-driver-first.py
+  --scala-version <3.9.0|2.13.18>` returns actual/driver0 in each independent
+  build. Each uses both published SBT2 plugins, validates dependency build-info
+  compiler3.8.4/SBT2.0.9, and exercises production scoped digest omission with
+  no copied host source, fixture digest override or cache-store adapter. Each
+  reconciles 72 physical bodies with 72 positive XML cases, four paired DI
+  resource lifetimes/observed owned child PIDs, one parent and six recorded
+  removed receipt directories. Full/input cleanup faults, healthy full recovery,
+  incremental repeat, foreign two-key history and zero-body/XML cached no-op
+  pass. The first root auditor incorrectly looks for the meta update report
+  under `project/target`; its retained exit1 does not invalidate the actual
+  runs. The second reads the observed `target/out/jvm/scala-3.8.4/build-build`
+  report, binds 24 own Test JARs and both plugins plus protocol in the meta
+  build, and verifies all captured original/frozen bytes. It binds 157/126
+  external JARs respectively; one boot path per compiler is excluded before
+  filesystem access and remains explicitly unbound. Scala3 audit SHA-256
+  `2d88b34e0bacb9c1f0b6d456bb0a7a74b67bda0b8c2f1f93dcbb38a1a3d25e39`;
+  Scala2.13 audit SHA-256
+  `5abd63bcd6f2c75df23413f9c19026f0059f4314a54cc638b37c22f374306be6`.
+  The consumer writer's inherited closing sentence still lists SDK1 open;
+  the owner revision and second root audit supersede that obsolete scope label.
+- Retired fixture arguments: eighteen actual argparse checks reject SBT1.13.0
+  and Scala2.12.21 with exit2/`invalid choice` before fixture creation. All
+  fixture Python files parse. Removing the framework helper's unused version
+  parameter preserves its exact supported command sequence. The final source
+  check records only seven post-publication changes: four documentation files
+  and three verification drivers; all production/generator/build bytes remain
+  identical to their qualified publication inputs. Completion SHA-256
+  `1f7d42b4ed3a5b3dd24306d303218cceae91521376531fbeb5c68ee448e4d5b4`.
+- Reproduction-driver correction: the task-error and held-batch drivers first
+  execute two valid SBT2 controls but return1 because their aggregate predicate
+  still requires four SBT1/2 controls. This exact fail-first condition is frozen
+  in `owner-sbt2-scala213-3-driver-count-fail-first.json`, SHA-256
+  `6fccddb4574ff751278be4050c9a2585e5086242d2485b0138ad3704b39be8a2`.
+  After correcting the count and removing the now-unreachable SBT1 report
+  branch, fresh invocations of `verify-task-error.py` and `verify-held-batch.py`
+  each return0 with both supported controls valid. Their second completion
+  hashes are `0cfa71c2f3792e6c6cb17341d6c5672a7b5176c6c3eacf93309de441640186ae`
+  and `7794e8a9ceb677b979654e401295ba4df3dbf899e4d22c31a89f4e22ccaca880`.
+  These are expected-defect reproductions: task throwing still fails without
+  structured group/completion/XML, and the held result still contains three
+  cases despite six physical/XML cases. They establish the remaining SBT2
+  defects, not product acceptance.
+
+Provenance correction: the first `before.json` freeze overlapped the first code
+edit and is not a pre-change baseline. The subsequent Git archive honors
+`export-ignore` and omits ten tracked metadata files. Both remain unchanged.
+The authoritative baseline is `committed-blobs-before.json`, 1,686 exact tracked
+Git blobs at `cfba51c6`, SHA-256
+`46576b65ffbc5bd25251abb5b580c2f66ccb9f5753ab026a1148806c24ccd66a`.
+`initial-snapshot-final-comparison.json` records the initial snapshot's twelve
+mismatches against those blobs. No inference of unchanged sources uses the
+mixed snapshot or treats the export-filtered archive as a full tracked tree.
+
+All shared SBT2 reporting, terminal-record, cancellation/drain, tracked-closure,
+configuration/classloader, multi-project, JS/Native host transport, coverage,
+IDE, migration and final-HEAD evaluation gates remain open. Historical SBT1 and
+Scala2.12 evidence is retained without a new production-support obligation.
+The goal tracker still reports `paused`; the owner resume instruction authorizes
+this turn's work, but no available tracker tool can resume automatic continuation
+or update its original fixed-scope objective. The plan/checklist record the
+explicit owner amendments; the goal is not complete.

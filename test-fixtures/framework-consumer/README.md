@@ -1,7 +1,7 @@
 # Published JVM framework consumer
 
 This independent build uses the published runner and its public test-interface
-framework under SBT 1.13.0 and 2.0.9. Five no-argument suites have three tests
+framework under SBT 2.0.9. Five no-argument suites have three tests
 each, with the same display paths in every suite. Every body creates its own
 execution record with `CREATE_NEW`; the verifier compares the exact record set
 with the host's JUnit suite and test identities. Repeated execution starts with
@@ -18,8 +18,8 @@ repository root:
 ```sh
 python3 test-fixtures/framework-consumer/verify-matrix.py \
   --artifact-version 1.3.0-SNAPSHOT \
-  --sbt-version 1.13.0 2.0.9 \
-  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
   --evidence-dir target/native-testkit-evidence
 ```
 

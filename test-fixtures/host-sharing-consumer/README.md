@@ -1,7 +1,7 @@
 # Published JVM host sharing fixture
 
-This Linux process fixture measures the target bootstrap under SBT 1.13.0 and
-2.0.9. Two plain suites and three SpecIdentity suites each declare three tests
+This Linux process fixture measures the target bootstrap under SBT 2.0.9.
+Two plain suites and three SpecIdentity suites each declare three tests
 with equal display paths across suites. The DI suites discover a scanned plugin
 and share a memoized Lifecycle resource. Every body, acquisition and release
 creates a physical record with CREATE_NEW. The verifier compares exact body
@@ -30,8 +30,8 @@ After publishing the runner's dependency closure, run from the repository root:
 ```sh
 python3 test-fixtures/host-sharing-consumer/verify-matrix.py \
   --artifact-version 1.3.0-SNAPSHOT \
-  --sbt-version 2.0.9 1.13.0 \
-  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/host-sharing-example
 ```
 
@@ -52,8 +52,8 @@ four commands must use distinct receipt directories and clean them up.
 ```sh
 python3 test-fixtures/host-sharing-consumer/verify-counted-forks.py \
   --artifact-version 1.3.0-SNAPSHOT \
-  --sbt-version 2.0.9 1.13.0 \
-  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/counted-forks-example
 ```
 
@@ -75,8 +75,8 @@ with normal delivery, fresh resources and a new cleaned receipt directory.
 ```sh
 python3 -B test-fixtures/host-sharing-consumer/verify-held-forks.py \
   --artifact-version 1.3.0-SNAPSHOT \
-  --sbt-version 2.0.9 1.13.0 \
-  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/held-forks-example
 ```
 
@@ -98,8 +98,8 @@ SBT process must use a fresh DI resource and cleaned command receipt directory.
 ```sh
 python3 -B test-fixtures/host-sharing-consumer/verify-mixed-forks.py \
   --artifact-version 1.3.0-SNAPSHOT \
-  --sbt-version 2.0.9 1.13.0 \
-  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/mixed-forks-example
 ```
 
@@ -124,7 +124,7 @@ is substituted.
 ```sh
 python3 -B test-fixtures/host-sharing-consumer/verify-global-exit-ack.py \
   --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
-  --scala-version 3.9.0 2.13.18 2.12.21 --framework-order own-first \
+  --scala-version 3.9.0 2.13.18 --framework-order own-first \
   --evidence-dir /srv/nvme/tmp/izumi-impl/global-exit-ack-example
 ```
 

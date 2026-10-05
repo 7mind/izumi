@@ -23,6 +23,13 @@ investigation. Proposed production interfaces and commands below do not exist ye
 Recorded [owner decisions](#owner-decisions) and the remaining
 [open decisions](#open-decisions) are listed at the end.
 
+Owner revision, 2026-10-05: support SBT 2 only and drop Scala 2.12 throughout
+the project. Target libraries support Scala 2.13 and Scala 3 on JVM/JS/Native;
+the SBT plugin and portable protocol retain the host-compatible Scala 3.8.4
+baseline. Historical SBT 1/Scala 2.12 measurements below remain evidence of
+past experiments, not current support requirements. All shared correctness
+requirements and evaluation points remain in force.
+
 ## Evidence and implications
 
 The [issue report](https://github.com/7mind/izumi/issues/2361) records lost tests
@@ -234,7 +241,7 @@ module's tests cannot use a runner that depends on that module.
   `Future` bodies, plus discovery, selection, execution, structured events and
   reporting, the target side of the protocol, and the test-classpath framework
   bootstrap. It depends on fundamentals modules only, plus the portable protocol
-  module, whose shared types cross-compile on Scala 2.12, 2.13, and 3.8.4 with
+  module, whose shared types cross-compile on Scala 2.13 and 3.8.4 with
   no izumi dependencies so the SBT plugins can use them (see
   [Scala 3 publishing baseline](#scala-3-publishing-baseline)). The assertions
   module obeys the same bound; its BIO and Cats Effect adapters sit above those
@@ -396,7 +403,8 @@ proxy only for a measured need. In either form the sharing scope is one
 `Runner.tasks` call: a host that calls it once per suite narrows sharing to that
 suite without losing or duplicating tests.
 
-Production bindings must preserve the following host contracts:
+Production bindings must preserve the following SBT 2 host contracts. The
+comparative SBT 1 observations below are retained as historical evidence:
 
 - In [SBT 1.13.0 Defaults](https://github.com/sbt/sbt/blob/v1.13.0/main/src/main/scala/sbt/Defaults.scala),
   `test` uses `executeTests`, while `testOnly` and `testQuick` use `inputTests`.
@@ -537,7 +545,7 @@ suites on both SBT versions and for partial selections on SBT 1. The residual ri
 the requirement. Migration acceptance reconciles discovered suite and test counts
 before and after each module migrates.
 
-Build the plugin for SBT 1 and 2 separately while sharing its protocol/logic.
+Build the plugin for SBT 2 while sharing its protocol with target runners.
 Keep SBT implementation dependencies out of the portable engine. Forked JVM
 tests execute in the test JVM. JS and Native use their actual target programs,
 not JVM evaluation of the specifications. The architectural direction is clear;
@@ -849,11 +857,11 @@ parallelism 1.
 Separately, the generated PureConfig dependency condition and compiler flags
 match only the exact version 3.7.4 and must be corrected for 3.9.0.
 
-The SBT plugins compile with their host's Scala version: 2.12 for SBT 1 and 3.8.4
-for SBT 2.0.9. A 3.8.4 compiler cannot read 3.9 TASTy, so the SBT 2 plugin must not
+The SBT plugins compile with SBT 2.0.9's Scala 3.8.4. A 3.8.4 compiler cannot
+read 3.9 TASTy, so the SBT 2 plugin must not
 depend on any 3.9-compiled artifact. Protocol types shared with the plugins and
-target runners belong in a portable Scala module cross-compiled for Scala 2.12,
-2.13, and 3.8.4, with no izumi dependencies. Build its JVM, JS, and Native
+target runners belong in a portable Scala module cross-compiled for Scala 2.13
+and 3.8.4, with no izumi dependencies. Build its JVM, JS, and Native
 variants; the 3.9 testkit can depend on them because 3.9 reads 3.8 TASTy. Java
 interfaces remain an option for the JVM host/test classloader boundary, where
 the spike already uses Java reflection. A Java-only artifact is not the shared
@@ -952,15 +960,15 @@ validated. JUnit XML alone cannot provide the live IDE experience.
 | 0a | Executed JVM application/plugin spike ([report](spikes/20261001/sbt/REPORT.md)) | Standard `test*` commands launch the application; multiple explicit suites, incremental reruns, changed arguments, sequential scheduling, forks, mixed frameworks, and JUnit output preserve suite identities and counts. The spike records its discovery mechanism, its non-forked and forked seams, its incremental-invalidation inputs, and its measured stock SBT 2 recording and conservative SBT 1 quick policy for non-forked and forked groups; a custom success store is a separate proposed optimization |
 | 0b | Native closure and Scala publishing compatibility spike ([report](spikes/20261001/portability/REPORT.md)) | `TestPlanner` and `DistageTestRunner` link and run a DI-backed test on Native with configuration loading and a static, non-scanning plugin configuration, or each concrete Native blocker (module, missing API, or dependency) is recorded; the spike lists every module it linked, including the configuration backend chosen for Native. The proposed dependency closure compiles with the permitted 3.9 compiler and is consumed from a separate build, or each concrete blocker is recorded; the older-consumer compatibility condition is tested separately and its TASTy failure recorded; blockers are recorded before estimating the port |
 | 0c | Executed JS/Native transport spike ([report](spikes/20261001/transport/REPORT.md)) | With a stub application, SBT 1 and 2 `test` and `testOnly` on JS and on Native preserve per-suite identities and counts through the chosen transport; every selected suite gets its own listener group and JUnit file; SBT 1 `testQuick` and SBT 2 incremental `test` record per-suite history, checked independently with verified distinct suite digests, successful/failing suites, changed arguments and partial requests; a shared stub resource is acquired and released exactly once per sharing group |
-| 1a | Native build of the existing libraries | `sbtgen/Deps.scala` adds Native to its cross targets, with Scala Native pinned to 0.5.12. Every module that builds for JS also builds and publishes for Native on 2.12, 2.13, and the repository's Scala 3 compiler, except the legacy `distage-testkit-scalatest`. `.native` source sets replace the spike's fixture-local files and build-time patches. Cats Effect is 3.7.x, with `scalac-compat-annotation` on Scala 2 compile classpaths while [typelevel/cats-effect#4693](https://github.com/typelevel/cats-effect/issues/4693) is open, and a released zio-interop-cats supplies Native artifacts. Every shared test suite that runs on JS also passes on Native through ScalaTest's Native artifacts, or moves to a platform-specific source set with its reason recorded. A facility whose dependency has no Native artifact, such as the Scala 2 circe-derivation macros, gets a Native implementation or is documented as unavailable there. `distage-testkit-core` runs the 0b engine checks as Native tests. CI builds and tests every Native lane from clean outputs, publishing includes the Native artifacts, and existing JVM and JS lanes still pass |
+| 1a | Native build of the existing libraries | `sbtgen/Deps.scala` adds Native to its cross targets, with Scala Native pinned to 0.5.12. Every module that builds for JS also builds and publishes for Native on 2.13 and the repository's Scala 3 compiler, except the legacy `distage-testkit-scalatest`. `.native` source sets replace the spike's fixture-local files and build-time patches. Cats Effect is 3.7.x, with `scalac-compat-annotation` on Scala 2 compile classpaths while [typelevel/cats-effect#4693](https://github.com/typelevel/cats-effect/issues/4693) is open, and a released zio-interop-cats supplies Native artifacts. Every shared test suite that runs on JS also passes on Native through ScalaTest's Native artifacts, or moves to a platform-specific source set with its reason recorded. A facility whose dependency has no Native artifact, such as the Scala 2 circe-derivation macros, gets a Native implementation or is documented as unavailable there. `distage-testkit-core` runs the 0b engine checks as Native tests. CI builds and tests every Native lane from clean outputs, publishing includes the Native artifacts, and existing JVM and JS lanes still pass |
 | 1b | Build matrix for the assertion modules | The assertion modules build on Scala Native and compile with the repository's Scala 3 compiler (3.9.0 after step 2a); separate consumer builds compile against locally published artifacts on every Scala 3 consumer lane; existing JVM, JS, and Native lanes still pass |
-| 1c | Plain assertion macro, spans, diagnostics | Behavioral fixtures compile and execute on 2.12, 2.13, and Scala 3, across JVM/JS/Native. Fixtures compiled on 2.12 with and without `-Yrangepos`, and on 2.13 with range positions disabled, render exact spans or the explicit representation for missing ranges. The assertion artifacts' dependency graphs contain no `org.scalatest` or `org.scalactic` module and no izumi module above fundamentals |
-| 1d | `assert1`, `assert2`, effect adapters, temporary ScalaTest bridge | On 2.12, 2.13, and Scala 3 across JVM/JS/Native: no eager checks; repeat/concurrent execution is independent; BIO failures are defects. The old runner correctly displays new failures on its existing JVM/JS targets |
+| 1c | Plain assertion macro, spans, diagnostics | Behavioral fixtures compile and execute on 2.13 and Scala 3, across JVM/JS/Native. Fixtures compiled on 2.13 with and without range positions render exact spans or the explicit representation for missing ranges. The assertion artifacts' dependency graphs contain no `org.scalatest` or `org.scalactic` module and no izumi module above fundamentals |
+| 1d | `assert1`, `assert2`, effect adapters, temporary ScalaTest bridge | On 2.13 and Scala 3 across JVM/JS/Native: no eager checks; repeat/concurrent execution is independent; BIO failures are defects. The old runner correctly displays new failures on its existing JVM/JS targets |
 | 2a | Repository-wide Scala 3.9 move | Every Scala 3 module compiles with 3.9.0 and passes its existing tests on every platform it builds for, except the SBT 2 plugin and the portable protocol module (all platform variants), which compile with SBT 2's 3.8.4 and resolve no 3.9-compiled artifact; dependency and compiler-flag conditions no longer match only the exact version 3.7.4; the 3.9.0 backend race ([scala/scala3#27209](https://github.com/scala/scala3/issues/27209)) is fixed in a released compiler, or 3.9.0 builds use backend parallelism 1 until it is; consumer builds on every Scala 3 lane compile against locally published artifacts and expand every closure macro that references compiler internals, including a compile-time plan check and `ScalaRelease` materialization, unless those references were removed |
 | 2b | Base runner, plain spec front end, test-only projects, and the distage spec front end with session ownership | `distage-test-runner` and the assertions module depend only on fundamentals modules and the portable protocol module, and the SBT project graph has no cycle; fundamentals tests run from unpublished `fundamentals-*-test` projects on the JVM, and their JS lanes, and the Native lanes from 1a, keep running until the base runner takes them over in 2e; plain suites with synchronous and `Future` bodies register and execute on the base runner; `distage-testkit-runner` extends it as an execution provider; discovery acquires no test resources; repeated/concurrent sessions do not share registration or run resources; duplicate IDs fail explicitly; existing distage and plain suites that use no other ScalaTest API compile after dependency and import changes only |
 | 2c | Application discovery, selection, planning, and execution | List/resolve/run agree on IDs. Unknown axis values and unknown explicit test IDs fail before provisioning. An activation override changes the activation shown by the plan output. With cross-test memoization disabled, a memoized resource is acquired and released once per test while sharing inside each test graph is unchanged; otherwise it is acquired and released once per intended sharing scope |
-| 2d | JVM SBT integration and structured/JUnit reporting | Plain and distage suites in one module and one SBT command share selection, reporting, and history semantics; every selected suite has a terminal completion record from the target, and a fixture whose target skips one selected suite reports that suite as an error, never as an empty pass; standard command semantics match the SBT version, except that incremental runs may rerun distage suites that stock SBT would skip, never the reverse; exact execution and reporting sets agree; per-suite history is correct. Editing the suite class, or an implementation reachable only through a scanned plugin, reruns the suite under SBT 2 `test` and SBT 1 `testQuick`; untracked configuration inputs force a rerun with an explicit cache decision. A partial-suite run, in-process or forked, does not suppress a later complete run on either SBT version. Concurrent test events within one suite all reach SBT 1 listeners. No incomplete run reports success |
-| 2e | JS and Native target integrations | The base runner takes over the `fundamentals-*-test` JS and Native lanes; the runner layers link on Native and pass their own tests on 2.12, 2.13, and 3.9. Native engine fixtures execute Identity, ZIO, and Cats Effect bodies with DI/configuration, shared lifecycle acquisition/release, assertion failures, and finalizer failures; linking effect libraries alone is insufficient. Linker retains selected suites; the SBT checks of step 2d hold on JS and Native; with a target-side framework, serialized tasks reconstruct correctly; async JS completion and target shutdown preserve events and finalization |
+| 2d | JVM SBT integration and structured/JUnit reporting | Plain and distage suites in one module and one SBT command share selection, reporting, and history semantics; every selected suite has a terminal completion record from the target, and a fixture whose target skips one selected suite reports that suite as an error, never as an empty pass; standard command semantics match the SBT version, except that incremental runs may rerun distage suites that stock SBT would skip, never the reverse; exact execution and reporting sets agree; per-suite history is correct. Editing the suite class, or an implementation reachable only through a scanned plugin, reruns the suite under SBT 2 `test` and `testQuick`; untracked configuration inputs force a rerun with an explicit cache decision. A partial-suite run, in-process or forked, does not suppress a later complete run on SBT 2. Concurrent test events within one suite all reach SBT 2 listeners. No incomplete run reports success |
+| 2e | JS and Native target integrations | The base runner takes over the `fundamentals-*-test` JS and Native lanes; the runner layers link on Native and pass their own tests on 2.13 and 3.9. Native engine fixtures execute Identity, ZIO, and Cats Effect bodies with DI/configuration, shared lifecycle acquisition/release, assertion failures, and finalizer failures; linking effect libraries alone is insufficient. Linker retains selected suites; the SBT checks of step 2d hold on JS and Native; with a target-side framework, serialized tasks reconstruct correctly; async JS completion and target shutdown preserve events and finalization |
 | 3 | Coverage integration | A fixture with known executed/unexecuted branches produces the expected report under each claimed combination; instrumentation is absent from published normal artifacts |
 | 4 | IntelliJ integration | Run suite/test, navigate failure, rerun failed tests, cancel, and debug a JVM test using the same IDs and settings as CLI/SBT |
 | 5 | Repository-wide migration and ScalaTest retirement | No current published module or repository test dependency contains `org.scalatest` or `org.scalactic`; no module's tests use a runner layer that depends on that module, and such tests live in a test-only project above that layer; migrated suites reference neither package; each migrated module discovers, executes, and reports the same selected tests. A temporary legacy adapter may exist only during the staged migration and is removed before this gate closes |
@@ -1006,12 +1014,12 @@ groups with host thread limits of one and two, and require completion without a
 barrier waiting for all suite tasks to start. After cancellation or target-process
 death, a new command in the same SBT session must execute successfully with fresh
 run resources and without caching the incomplete run. For SBT 2, distinguish
-an incremental no-op from a full run. Under SBT 2 `test` and SBT 1 `testQuick`,
+an incremental no-op from a full run. Under SBT 2 `test` and `testQuick`,
 verify that changes to the suite class, activation, memoization, test selection,
 configuration resources, and implementations reachable only through scanned
 plugins invalidate the relevant cached success, and that partial-suite runs,
 in-process or forked, cannot suppress a subsequent complete run. Emit concurrent
-events from parallel tests in one suite and check that SBT 1 listeners receive
+events from parallel tests in one suite and check that SBT 2 listeners receive
 every event.
 A correction to the legacy runner, if scheduled (see
 [Open decisions](#open-decisions)), first reproduces the original failure and
@@ -1063,7 +1071,14 @@ ScalaTest, and five other pages mention it too.
 ## Owner decisions
 
 The project owner made these decisions in the 2026-10-01 revision of this plan;
-the steps above follow them.
+the steps above follow them, with the following 2026-10-05 support revision.
+
+- **Supported versions (2026-10-05).** Drop SBT 1 and Scala 2.12 support.
+  Build and publish the SBT plugins for SBT 2 only. Keep Scala 2.13 and Scala 3
+  library targets on JVM/JS/Native, and Scala 3.8.4 for host-compatible plugins
+  and protocol. Remove the retired host/compiler lanes from CI, publication and
+  acceptance; preserve all behavior, reporting, caching, lifecycle and migration
+  requirements on the supported versions. Historical evidence remains recorded.
 
 - **Scope of ScalaTest retirement.** ScalaTest and Scalactic are removed entirely,
   including this repository's plain suites and every published module. The
@@ -1107,9 +1122,10 @@ assumptions; a different answer changes the listed steps.
   choice while preserving ordinary loader behavior, environment merging and
   same-session memoization. The status ledger records the incompatible opaque
   reconstruction/handoff reproductions and rejected provenance prototypes.
-  This decision authorizes the factory implementation; it does not mark the
-  fixed import-only acceptance item 2b.10 done or silently waive it for hooks
-  requiring additional edits. That item remains open for those migrations.
+  The owner authorizes the corresponding custom-hook exception to the
+  imports-only migration requirement in acceptance item 2b.10. Ordinary suites
+  retain that requirement. Custom-hook migration diffs and preserved behavior
+  must still be verified under 2b.10 and O.1 at their evaluation points.
 
 - **Legacy correction for #2361.** Assumed: the new runner and plugin address the
   failure class. A correction to the released ScalaTest-based runner is separate

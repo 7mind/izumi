@@ -62,7 +62,7 @@ Development
 Scala Native builds use Native 0.5.12. Native support is currently available for
 `fundamentals-basics`, `fundamentals-functional`, `fundamentals-collections`,
 `fundamentals-literals`, `fundamentals-language`, `fundamentals-platform`,
-`fundamentals-functoid`, and `fundamentals-json-circe` on Scala 2.12, 2.13, and 3.
+`fundamentals-functoid`, and `fundamentals-json-circe` on Scala 2.13 and 3.
 The remaining library ports are pending the released ZIO interop Native artifacts.
 
 Native SHA-256 in `fundamentals-platform` requires OpenSSL's `libcrypto` at link

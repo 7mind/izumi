@@ -1,12 +1,12 @@
 # Distage SBT plugin
 
-This initial binding is built for SBT 1.13.0 / Scala 2.12.21 and SBT 2.0.9 /
-Scala 3.8.4. Add `io.7mind.izumi` / `sbt-distage-testkit` with `addSbtPlugin`,
+This initial binding is built for SBT 2.0.9 / Scala 3.8.4. Target projects
+support Scala 2.13 and Scala 3. Add `io.7mind.izumi` / `sbt-distage-testkit` with `addSbtPlugin`,
 enable `izumi.distage.sbt.DistageTestkitPlugin`, and put the distage runner on
 the project's test classpath. The plugin registers the target framework and
 supplies build, configuration and discovered-suite identities.
 
-SBT 1 `testQuick` and SBT 2 `test` / `testQuick` conservatively rerun selected
+SBT 2 `test` / `testQuick` conservatively rerun selected
 distage suites. Each candidate gets a `DISTAGE_CACHE_DECISION` log entry with
 reason `untracked-input-closure`. This policy includes plain suites using the
 distage framework. User patterns, configured test options and exclusions still

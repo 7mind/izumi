@@ -5,6 +5,16 @@ The plan is the specification; this brief adds execution order, environment
 facts, and working rules. The plan's owner decisions take precedence over this
 brief.
 
+The owner's 2026-10-05 instructions supersede the earlier fixed version scope:
+drop SBT 1 support, drop Scala 2.12 support, and resume the goal. The authorized
+edits to the plan and checklist retire only those version obligations; all
+shared correctness gates and evaluation points remain fixed. SBT 1/Scala 2.12
+spike captures remain historical evidence.
+
+The owner also authorizes migrating custom plugin-loader hooks to the explicit
+session-aware factory API. Acceptance item 2b.10 permits those additional hook
+edits; ordinary suites retain imports-only migration, and O.1 remains required.
+
 ## Definition of done
 
 The [acceptance checklist](20261001-distage-native-testkit-acceptance.md) is the
@@ -79,7 +89,7 @@ is done. The fallback, if no release appears, is the owner's choice (the plan's
 - **Commands.** Run tools in batch mode through the dev shell:
   `direnv exec /home/pavel/work/safe/7mind/izumi sbt -batch ...`. A CI lane
   runs locally as
-  `direnv exec . mdl -u platform:<jvm|js|js-nojvm> -u java_version:<17|21|25> -u scala_version:<2.12|2.13|3> :gen :test`,
+  `direnv exec . mdl -u platform:<jvm|js|js-nojvm> -u java_version:<17|21|25> -u scala_version:<2.13|3> :gen :test`,
   with `:coverage` instead of `:test` where CI uses it and the Native platform
   values that step 1a adds. The checklist's lanes L1–L6 list the required ones.
   `:gen` rewrites the tracked generated files with the lane's flags, so run lanes
@@ -221,7 +231,8 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
     `loadedTestFrameworks` (with `Def.uncached` on SBT 2) only if that matrix
     shows a measured need.
   - Ordinary per-suite tasks project one application run per group.
-  - Apply the conservative SBT 1 `testQuick` policy.
+  - Conservatively rerun selected distage suites on SBT 2 when their input
+    closure is untracked, retaining foreign suite filtering and history.
   - Add DI digests through `extraTestDigests` or `definedTestDigests` on SBT 2.
 - 2e: the transport report's measured design is a host projection over the
   platform test adapters
@@ -243,5 +254,5 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
 The Codex `/goal` objective for this work:
 
 ```text
-Implement doc/md/20261001-distage-native-testkit-plan.md, steps 1a through 5, following doc/md/20261001-distage-native-testkit-implementation-brief.md. Done means every item in doc/md/20261001-distage-native-testkit-acceptance.md is done at each of its evaluation points on the head of branch wip/distage-test-runner-and-scala-native: verified by commands run against the code, with the commands, results, and commits recorded in doc/md/20261001-distage-native-testkit-status.md. The acceptance checklist and the plan's owner decisions are fixed: you may add or strengthen items but never remove, narrow, or reinterpret one, and an item you cannot meet is waiting on owner, not done. Follow the brief's dependency order, never wait on the pending zio-interop-cats Native release while independent work remains, commit each verified sub-step locally, and never push.
+Implement doc/md/20261001-distage-native-testkit-plan.md, steps 1a through 5, following doc/md/20261001-distage-native-testkit-implementation-brief.md. Done means every item in doc/md/20261001-distage-native-testkit-acceptance.md is done at each of its evaluation points on the head of branch wip/distage-test-runner-and-scala-native: verified by commands run against the code, with the commands, results, and commits recorded in doc/md/20261001-distage-native-testkit-status.md. The acceptance checklist and the plan's owner decisions are fixed except for the explicit owner decisions dropping SBT 1 and Scala 2.12 and permitting custom plugin-loader hooks to migrate to a session-aware factory API: you may otherwise add or strengthen items but never remove, narrow, or reinterpret one, and an item you cannot meet is waiting on owner, not done. Follow the brief's dependency order, never wait on the pending zio-interop-cats Native release while independent work remains, commit each verified sub-step locally, and never push.
 ```

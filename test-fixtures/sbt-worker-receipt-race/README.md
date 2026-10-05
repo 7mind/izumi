@@ -1,5 +1,8 @@
 # SBT worker result receipt reproduction
 
+Current drivers run SBT 2 only. Recorded SBT 1 outcomes below are historical
+controls from before the 2026-10-05 support decision.
+
 This is a draft upstream defect report and an independent process reproduction,
 using only the public test-interface Framework and SBT TestsListener APIs. It has
 no distage dependency, plugin or private SDK replacement. Do not publish the
@@ -32,7 +35,7 @@ python3 -B test-fixtures/sbt-worker-receipt-race/verify-reproduction.py \
   --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-worker-receipt-example
 ```
 
-The driver returns0 only when all four observed controls reproduce the table,
+The current driver returns0 only when both SBT 2 controls reproduce the table,
 including the SBT2 defect. This is an expected-defect reproduction, not a passing
 product acceptance check. It retains exact commands, build inputs, classpath
 logs, actual exits, listener markers and XML. Captures
@@ -108,7 +111,7 @@ python3 -B test-fixtures/sbt-worker-receipt-race/verify-task-error.py \
   --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-task-error-example
 ```
 
-Driver0 requires this four-control reproduction, including the missing SBT2
+Driver0 requires both SBT 2 controls, including the missing SBT2
 report. It does not establish product acceptance. Each control uses a fresh
 build and records its inputs, target and parent process identities, classpaths,
 raw output, XML and actual exit. The target receipt proves buffering by the
@@ -148,7 +151,7 @@ python3 -B test-fixtures/sbt-worker-receipt-race/verify-held-batch.py \
   --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-held-batch-example
 ```
 
-Driver0 requires all four controls, including the SDK2 mismatch; it is not
+Driver0 requires both SBT 2 controls, including the SDK2 mismatch; it is not
 product acceptance. There is no distage dependency or plugin. The six target
 body files use CREATE_NEW and identify a JVM distinct from SBT. Each independent
 build starts with fresh reports. The frozen held observation precedes gate

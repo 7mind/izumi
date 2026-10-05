@@ -66,8 +66,8 @@ def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--artifact-version',required=True)
-    parser.add_argument('--sbt-version',nargs='+',required=True,choices=['2.0.9','1.13.0'])
-    parser.add_argument('--scala-version',nargs='+',required=True,choices=['3.9.0','2.13.18','2.12.21'])
+    parser.add_argument('--sbt-version',nargs='+',required=True,choices=['2.0.9'])
+    parser.add_argument('--scala-version',nargs='+',required=True,choices=['3.9.0','2.13.18'])
     parser.add_argument('--evidence-dir',required=True,type=Path)
     arguments=parser.parse_args()
     evidence=arguments.evidence_dir.resolve()
@@ -92,8 +92,8 @@ def main():
             lane=evidence/('sbt'+sdk+'-scala'+scala)
             build=lane/'build'
             build.mkdir(parents=True)
-            full='testFull' if sdk=='2.0.9' else 'test'
-            quick='test' if sdk=='2.0.9' else 'testQuick'
+            full='testFull'
+            quick='test'
             for row in rows:
                 original=Path(row['path'])
                 dest=build/original.relative_to(fixture)
@@ -107,7 +107,7 @@ def main():
                     assert text.count(before)==1
                     text=text.replace(before,'val diLabels = Set("SuiteA", "SuiteB", "SuiteC", "SuiteD", "SuiteE")')
                     text+='\nlazy val deathConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)\nTest / fork := true\nTest / javaOptions += "-Dizumi.fixture.death-mode-file=" + sys.props("izumi.fixture.death-mode-file")\n'
-                    text+=CONTROL.replace('UNCACHED','Def.uncached' if sdk=='2.0.9' else '').replace('FULL',full)
+                    text+=CONTROL.replace('UNCACHED','Def.uncached').replace('FULL',full)
                 elif original.name in ['SuiteA.scala','SuiteB.scala']:
                     assert text.count('extends PlainFixtureSuite')==1
                     text=text.replace('extends PlainFixtureSuite','extends DIFixtureSuite')
@@ -120,7 +120,7 @@ def main():
                     acquisition='    val processData = resource.id + "\t" + ProcessHandle.current().pid()\n    val processReceipt = Files.write(resource.directory.resolve(resource.id + ".process"), processData.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)\n    require(Files.isRegularFile(processReceipt), "Target process receipt was not written")\n'
                     text=text.replace(before,acquisition+before)
                 dest.write_text(text)
-            with (build/"build.sbt").open("a") as extra: extra.write(FORK_SETTINGS.replace("UNCACHED", "Def.uncached" if sdk == "2.0.9" else ""))
+            with (build/"build.sbt").open("a") as extra: extra.write(FORK_SETTINGS.replace("UNCACHED", "Def.uncached"))
             project=build/'project'
             project.mkdir()
             (project/'build.properties').write_text('sbt.version='+sdk+'\n')

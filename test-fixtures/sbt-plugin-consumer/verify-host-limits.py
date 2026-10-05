@@ -82,8 +82,8 @@ def sha(path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact-version', required=True)
-    parser.add_argument('--sbt-version', nargs='+', required=True, choices=['2.0.9', '1.13.0'])
-    parser.add_argument('--scala-version', nargs='+', required=True, choices=['3.9.0', '2.13.18', '2.12.21'])
+    parser.add_argument('--sbt-version', nargs='+', required=True, choices=['2.0.9'])
+    parser.add_argument('--scala-version', nargs='+', required=True, choices=['3.9.0', '2.13.18'])
     parser.add_argument('--host-threads', nargs='+', required=True, type=int, choices=[1, 2])
     parser.add_argument('--evidence-dir', required=True, type=Path)
     arguments = parser.parse_args()
@@ -132,8 +132,8 @@ def main():
                 (project / 'build.properties').write_text('sbt.version=' + sdk + '\n')
                 (project / 'plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + arguments.artifact_version + '")\n')
                 (project / 'HostWindow.scala').write_text(WINDOW_SOURCE)
-                full = 'testFull' if sdk == '2.0.9' else 'test'
-                quick = 'test' if sdk == '2.0.9' else 'testQuick'
+                full = 'testFull'
+                quick = 'test'
                 sequence = ['show Global / concurrentRestrictions', 'show Test / parallelExecution', 'prepareFixture full', full, 'verifyFixture full 1 ' + ' '.join(SUITES), 'prepareFixture repeat', quick, 'verifyFixture repeat 1 ' + ' '.join(SUITES), 'show Test / dependencyClasspath', 'show Test / fullClasspath']
                 if sdk == '2.0.9':
                     sequence.insert(0, 'set Global / localCacheDirectory := file("' + str(lane / 'local-cache') + '")')

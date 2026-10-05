@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 180
 GRACE_SECONDS = 10
+EXPECTED_CONTROL_COUNT = 2
 SOURCE = r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
 import java.nio.charset.StandardCharsets
@@ -67,7 +68,7 @@ def main():
     evidence=args.evidence_dir.resolve(); evidence.mkdir(parents=True,exist_ok=False)
     shutil.copy2(__file__,evidence/'driver.py')
     outcomes=[]
-    for sdk in ['2.0.9','1.13.0']:
+    for sdk in ['2.0.9']:
         for mode in ['normal','throw']:
             lane=evidence/('sbt'+sdk+'-'+mode); build=lane/'build'
             (build/'project').mkdir(parents=True); (build/'src/test/scala').mkdir(parents=True)
@@ -101,13 +102,12 @@ def main():
             valid=actual==expected and len(sent)==3 and sent[:2]==['fixture.ThrowSuite','Success'] and raw.count('GENERIC_TASK_THROW_PARENT pid=')==1
             parents=re.findall(r'^GENERIC_TASK_THROW_PARENT pid=(\d+)$',raw,re.M)
             valid=valid and len(parents)==1 and len(sent)==3 and sent[2].isdigit() and sent[2]!=parents[0]
-            if mode=='normal' or sdk=='1.13.0':
-                status='Passed' if mode=='normal' else 'Error'
+            if mode=='normal':
+                status='Passed'
                 valid=valid and raw.count('GENERIC_TASK_THROW_COMPLETE result='+status)==1 and len(report_rows)==1
                 if report_rows:
                     row=report_rows[0]
-                    valid=valid and row['summary']['tests']=='1' and row['summary']['errors']==('0' if mode=='normal' else '1') and row['summary']['failures']=='0' and len(row['cases'])==1 and row['cases'][0]['classname']=='fixture.ThrowSuite'
-                    if mode=='throw': valid=valid and len(row['errors'])==1 and 'GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS' in row['errors'][0]['message']
+                    valid=valid and row['summary']['tests']=='1' and row['summary']['errors']=='0' and row['summary']['failures']=='0' and len(row['cases'])==1 and row['cases'][0]['classname']=='fixture.ThrowSuite'
             else:
                 valid=valid and not report_rows and 'GENERIC_TASK_THROW_START' not in raw and 'GENERIC_TASK_THROW_END' not in raw and 'GENERIC_TASK_THROW_EVENTS' not in raw and 'GENERIC_TASK_THROW_COMPLETE' not in raw and 'GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS' in raw
             for row in inputs: assert sha(row['path'])==row['sha256']
@@ -117,7 +117,7 @@ def main():
             print(json.dumps({k:v for k,v in record.items() if k not in ['reports','listenerMarkers']}),flush=True)
             if not valid: break
         if not outcomes[-1]['valid']: break
-    valid=len(outcomes)==4 and all(row['valid'] for row in outcomes)
+    valid=len(outcomes)==EXPECTED_CONTROL_COUNT and all(row['valid'] for row in outcomes)
     terminal=dict(exit=0 if valid else 1,outcomes=outcomes,scope='Expected-defect control. Public generic test-interface and TestsListener only; no distage dependencies/plugin/private SDK changes. Driver0 reproduces missing SBT2 completion on task Throwable, not product acceptance.')
     (evidence/'completion.json').write_text(json.dumps(terminal,indent=2)+'\n')
     print(json.dumps(dict(exit=terminal['exit'],completionSha256=sha(evidence/'completion.json'))),flush=True)

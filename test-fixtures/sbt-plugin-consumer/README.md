@@ -25,13 +25,13 @@ An inspection-only configuration supplies a constructor sentinel through its
 Java options. Its list/plan child PIDs must differ from SBT's PID, where the
 sentinel is explicitly absent.
 
-Run after publishing both host plugin variants and the runner closure:
+Run after publishing the SBT 2 plugin and the runner closure:
 
 ```sh
 python3 test-fixtures/sbt-plugin-consumer/verify-matrix.py \
   --artifact-version 1.3.0-SNAPSHOT \
-  --sbt-version 2.0.9 1.13.0 \
-  --scala-version 3.9.0 2.13.18 2.12.21 \
+  --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/sbt-plugin-example
 ```
 
@@ -51,7 +51,7 @@ controls do not establish cancellation, fork or multi-project behavior.
 
 ```sh
 python3 -B test-fixtures/sbt-plugin-consumer/verify-host-limits.py \
-  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 1.13.0 \
-  --scala-version 3.9.0 2.13.18 2.12.21 --host-threads 1 2 \
+  --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 --host-threads 1 2 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/host-limits-capture
 ```

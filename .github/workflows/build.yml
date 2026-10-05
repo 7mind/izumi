@@ -126,7 +126,7 @@ jobs:
       fail-fast: false
       matrix:
         java: [ '17', '21', '25' ]
-        scala: [ '2.12', '2.13', '3' ]
+        scala: [ '2.13', '3' ]
     steps:
       - uses: 7mind/github-env@minimal
       - name: Build and Test
