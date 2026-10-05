@@ -12,6 +12,7 @@ private[sbt] object HostSettings {
     distageBuildId := thisProjectRef.value.build.toString,
     distageTargetId := thisProjectRef.value.project + "/" + configuration.value.name,
     testFrameworks ~= { frameworks => if (frameworks.contains(DistageHostPolicy.framework)) frameworks else frameworks :+ DistageHostPolicy.framework },
+    loadedTestFrameworks := Def.uncached { loadedTestFrameworks.value.map { case (key, framework) => key -> HostCompletionFramework.wrap(framework) } },
     distageCatalogueId := Def.uncached { DistageHostPolicy.catalogueId(definedTests.value) },
     testOptions := Def.uncached { DistageHostPolicy.withIdentity(testOptions.value, DistageHostPolicy.arguments(distageBuildId.value, distageTargetId.value, distageCatalogueId.value)) },
     testSelected / HostReceiptPolicy.owner := HostReceiptPolicy.ownerAt(target.value),

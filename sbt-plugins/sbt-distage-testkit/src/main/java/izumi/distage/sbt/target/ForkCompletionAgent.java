@@ -1,4 +1,4 @@
-package izumi.distage.testkit.protocol;
+package izumi.distage.sbt.target;
 
 import java.io.IOException;
 import java.lang.instrument.Instrumentation;
@@ -16,14 +16,19 @@ import net.bytebuddy.asm.Advice;
 import net.bytebuddy.description.type.TypeDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.utility.JavaModule;
+import sbt.testing.Task;
+import sbt.testing.TaskDef;
 
+import static izumi.distage.testkit.protocol.ForkCompletionOwnership.DIRECTORY_PROPERTY;
+import static izumi.distage.testkit.protocol.ForkCompletionOwnership.PREFIX_PROPERTY;
+import static net.bytebuddy.matcher.ElementMatchers.hasSuperType;
+import static net.bytebuddy.matcher.ElementMatchers.isInterface;
 import static net.bytebuddy.matcher.ElementMatchers.named;
 import static net.bytebuddy.matcher.ElementMatchers.none;
+import static net.bytebuddy.matcher.ElementMatchers.not;
 import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 public final class ForkCompletionAgent extends Thread {
-    public static final String DIRECTORY_PROPERTY = "izumi.distage.fork-completion-directory";
-    private static final String PREFIX_PROPERTY = "izumi.distage.fork-completion-prefix";
     private static final long POLL_MILLIS = 5L;
     private static final int FAILURE_EXIT = 1;
     private final Path prefix;
@@ -53,6 +58,7 @@ public final class ForkCompletionAgent extends Thread {
         ForkCompletionAgent agent = new ForkCompletionAgent(prefix, owner);
         System.setProperty(PREFIX_PROPERTY, prefix.toString());
         installExitCapture(instrumentation);
+        installTaskCompletion(instrumentation, agent);
         System.setProperty(DIRECTORY_PROPERTY, prefix.getParent().toString());
         agent.publish("entered", agent.pid);
         Runtime.getRuntime().addShutdownHook(agent);
@@ -74,6 +80,16 @@ public final class ForkCompletionAgent extends Thread {
         if (!listener.installed.get() || listener.error.get() != null) {
             throw new IllegalStateException("Fork exit capture was not installed", listener.error.get());
         }
+    }
+
+    private static void installTaskCompletion(Instrumentation instrumentation, ForkCompletionAgent agent) {
+        new AgentBuilder.Default().ignore(none()).disableClassFormatChanges()
+            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+            .with(new CompletionListener(agent))
+            .type(hasSuperType(named("sbt.testing.Runner")).and(not(isInterface())))
+            .transform((builder, type, loader, module, domain) -> builder
+                .visit(Advice.to(RunnerTasks.class).on(named("tasks").and(takesArguments(TaskDef[].class)))))
+            .installOn(instrumentation);
     }
 
     @Override
@@ -131,6 +147,33 @@ public final class ForkCompletionAgent extends Thread {
         @Override
         public void onError(String name, ClassLoader loader, JavaModule module, boolean loaded, Throwable cause) {
             error.set(cause);
+        }
+    }
+
+    private static final class CompletionListener extends AgentBuilder.Listener.Adapter {
+        private final ForkCompletionAgent agent;
+
+        private CompletionListener(ForkCompletionAgent agent) {
+            this.agent = agent;
+        }
+
+        @Override
+        public void onError(String name, ClassLoader loader, JavaModule module, boolean loaded, Throwable cause) {
+            try {
+                agent.publish("failed", "Target task completion instrumentation failed: " + name + ": " + cause);
+            } catch (Throwable publication) {
+                cause.addSuppressed(publication);
+            }
+            cause.printStackTrace(System.err);
+            Runtime.getRuntime().halt(FAILURE_EXIT);
+        }
+    }
+
+    public static final class RunnerTasks {
+        @Advice.OnMethodExit
+        public static void exit(@Advice.Argument(0) TaskDef[] definitions, @Advice.Return(readOnly = false) Task[] tasks) {
+            Path directory = Paths.get(java.util.Objects.requireNonNull(System.getProperty(DIRECTORY_PROPERTY), "Missing target command ownership"));
+            tasks = TaskCompleteness.normalise(definitions, tasks, new TaskCompleteness.FileCompletionStore(directory));
         }
     }
 

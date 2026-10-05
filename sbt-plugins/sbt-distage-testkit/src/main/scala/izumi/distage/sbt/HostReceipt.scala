@@ -1,10 +1,12 @@
 package izumi.distage.sbt
 
 import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
+import izumi.distage.sbt.target.TaskCompleteness
 
 import sbt._
 
 import scala.util.control.NonFatal
+import scala.jdk.CollectionConverters._
 
 private[sbt] final case class HostSuiteName(value: String)
 
@@ -126,6 +128,22 @@ private[sbt] final class HostReceipt {
 
   private def requireOpen(): Unit = require(!closed, "Host event emitted after receipt completion")
 
+  def verifyTargetCompletion(directory: java.nio.file.Path): Unit = synchronized {
+    val records = new TaskCompleteness.FileCompletionStore(directory).completed().asScala.toVector
+    val bySuite = records.groupBy(value => HostSuiteName(value.suite().value()))
+    val actual = bySuite.map { case (name, completed) =>
+      val counts = completed.foldLeft(HostSuiteCounts.empty) { (sum, record) =>
+        val value = record.counts()
+        val result = if (value.error() > 0 || !record.returnedNormally()) TestResult.Error else if (value.failure() > 0) TestResult.Failed else TestResult.Passed
+        sum + HostSuiteCounts(result, value.success(), value.failure(), value.error(), value.skipped(), value.ignored(), value.canceled(), value.pending())
+      }
+      name -> counts
+    }
+    if (bySuite.keySet != expected || bySuite.exists { case (name, completed) => completed.size != ends.getOrElse(name, 0) || completed.exists(value => !value.returnedNormally()) } || actual != received) {
+      throw new MessageOnlyException(s"Incomplete distage target suite terminal records: selected=$expected completed=${bySuite.map { case (name, values) => name -> values.size }} received=$received target=$actual")
+    }
+  }
+
   def failPublication(cause: Throwable): Unit = synchronized {
     requireOpen()
     if (publicationFailure.isEmpty) publicationFailure = Some(cause)
@@ -176,6 +194,7 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
     var original = Option.empty[Throwable]
     try {
       val result = operation
+      generation.receipt.verifyTargetCompletion(generation.store.directory)
       generation.completion.finish(commit = true)
       result
     }

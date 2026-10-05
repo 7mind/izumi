@@ -80,7 +80,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.8 | in progress | Real ConfigLoader/module-provider application controls now pass eighteen public-boundary checks on all nine producer and audited published-consumer lanes below, with Planning diagnostics and reconciled failed outcomes. Full clients and final evaluation remain open. |
 | 2c.9 | in progress | Schema-4 protocol: 186 checks per producer lane; typed/framed application and real JVM file contracts pass audited published consumers below. Standalone/host transports and final evaluation remain open. |
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
-| 2d.2 | in progress | Receipt guard rejects omitted selected suites; target terminal records, missing-suite error reports and final evaluation remain open. |
+| 2d.2 | in progress | Target terminal records and missing-suite Error/Output/XML reconciliation pass12 current in-process/fork controls on Scala2.13/3, with same-session recovery. Complete target/failure domain and final evaluation remain open. |
 | 2d.3 | in progress | The preceding SBT2/Scala2.13+3 full/selected/repeat/quick checks pass, including the15 owned quick cases and the foreign stock skip. The current exit-agent correction separately passes selected/grouped and mixed repeat controls. Earlier SDK1/Scala2.12 matrices are historical. Complete stock-contract and final evaluation remain open. |
 | 2d.4 | in progress | The current fork agent preserves six-case held foreign Output on both supported compilers. Serial groups and mixed repeat controls pass. Overlapping-suite SDK map/JUnit replacement is rejected rather than restored; the reproduced early System.exit(0) deadlock is corrected and recovery verified. Complete reporting, history and final evaluation remain open. |
 | 2d.5 | in progress | The current94-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns, changed suite/scanned-implementation digests and same-session launch-failure recovery on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
@@ -95,12 +95,12 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign framework payloads pass current mixed fork and held-delivery controls on Scala2.13/3. The startup agent restores the held batch and rejects premature exits without wrapping foreign events. The preceding quick check preserves the foreign history skip. Overlap reporting, complete mixed domain and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap50 covers serialized handlers and callback cancellation/drain; complete actual-host/streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap50 and14 public task-completion checks cover serialized handlers, original event/throwable identities, late callback rejection and terminal publication after descendant tasks. Current host batches pass; complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
-| 2d.20 | in progress | Target-only sharing/reporting passes 72 host cases below; the remaining historical 0a domain and final evaluation stay open. |
+| 2d.20 | in progress | Current omitted-suite reproduction establishes the measured need for a public loaded-framework task wrapper in process; target-only code has lost the original selected definition. The ledger records the substitution and150 bounded current command controls. Complete historical0a domain and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current body/JUnit controls preserve normal mixed and held delivery. Runtime.halt(0) and System.exit(0) are rejected after draining a held sibling; System.exit(1) retains SBT's original error. Overlap map/JUnit loss is explicitly rejected. SDK task exceptions, target terminal records, complete structured failures and final evaluation remain open. |
+| 2d.22 | in progress | Current body/JUnit controls preserve normal mixed and held delivery; selected-suite omission produces a visible Error and reconciled target terminal records. Premature exits remain rejected after sibling drain, and the agent passes29 JDK17/21/25 controls. SDK task-exception and overlap reporting, complete structured failures and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -13769,3 +13769,130 @@ fixture correction, not a production failure or false-success correction.
 No unchanged artifacts were republished or requalified. Complete launch/setup/
 cancellation/reporting domains and final evaluations remain open; no full step
 or goal completion is claimed, and no push or PR was made.
+
+
+## 2026-10-05: target suite completion and missing-suite errors, one combined JVM batch (2d.2/17/20/22, in progress)
+
+Evaluation point: the commit containing this entry, parent `0740071c0`.
+Before this change, a public forwarding framework receives three selected DI
+suite definitions but drops SuiteD before calling the bootstrap. Both supported
+compilers, in process and forked, execute six C/E bodies and report six positive
+XML cases; SuiteD has no error report. The host receipt rejects the command and
+same-session recovery executes all nine bodies. The twelve expected-defect
+controls are frozen in `sbt2-missing-suite-repro-second` under
+`/srv/nvme/tmp/izumi-impl`, completion SHA256
+`e693d15ebaa75db7ec7c99d4374ec0fb23e8dc33e0f0a7058dde941cf32403bc`.
+Repro-first failed an argument-identity precondition and establishes no runtime
+failure.
+
+The correction uses public test-interface Runner/Task contracts. An owned task
+publishes its target PID, suite identity, distinct token, all seven event counts
+and return outcome after its complete descendant task graph terminates. Calls
+to its EventHandler are serialized, retain the original event object, and reject
+late delivery. A missing selected definition receives an ordinary suite Error
+task, so stock SDK listeners, Output and JUnit all receive the same error.
+Successful commands additionally reconcile target records with selection,
+completed host groups and received event counts before acknowledging forks.
+
+Measured need for the 2d.20 alternative: after the forwarding hook removes a
+TaskDef, the inner bootstrap has no record of that originally selected suite.
+The in-process integration wraps owned loaded frameworks through the public
+`loadedTestFrameworks` key to validate the original Runner.tasks input and
+output. Forks apply the same completion guard to implementations of public
+`sbt.testing.Runner.tasks` using the existing startup agent. No private SDK
+class name or copied host orchestration is used by this new guard. Foreign
+framework arrays/tasks/events retain their original identity. The startup agent
+moves from the JVM protocol artifact to the SBT plugin, alongside its SDK task
+boundary; the protocol retains only ownership property constants and no longer
+has a ByteBuddy dependency. The original JVM shutdown-origin capture remains.
+
+The generated build uses `--js --native`; its only output change removes the
+protocol's JVM ByteBuddy dependency. Generation log:
+`sbt2-target-terminal-generation-first.log`. The producer build command, run
+through the development shell with JDK21, is recorded with exact argv and input
+hashes in `sbt2-target-terminal-build-first/commands.json`:
+
+```sh
+direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"' build \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.target.TaskCompletenessTest /srv/nvme/tmp/izumi-impl/sbt2-target-terminal-build-first/completion-checks' \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostReceiptTest /srv/nvme/tmp/izumi-impl/sbt2-target-terminal-build-first/receipt-checks' \
+  'distage-test-protocolJVM/Test/testFull' 'distage-test-runnerJVM/Test/testFull' \
+  'distage-test-protocolJVM/publishLocal' 'distage-test-runnerJVM/publishLocal' \
+  'sbt-distage-testkit/publishLocal' '++2.13.18' \
+  'distage-test-protocolJVM/Test/testFull' 'distage-test-runnerJVM/Test/testFull' \
+  'distage-test-protocolJVM/publishLocal' 'distage-test-runnerJVM/publishLocal'
+```
+
+Actual exit0. Fourteen task-boundary checks run the same suite against real
+filesystem and hand-written memory stores: missing suite error, foreign
+identity, all statuses, descendant completion, late callbacks, original handler
+Throwable, and concurrent callback serialization. All eighteen existing host
+receipt checks pass. Both compiler producer lanes pass protocol219, base802,
+file59, bootstrap50, application/channel and JVM linkage/recovery controls.
+
+Independent consumer drivers run as one batch with three isolated build
+processes at a time. Exact commands are in
+`sbt2-target-terminal-regression-second/commands.json`; every production input
+and all five published JAR/POM pairs remain unchanged through that batch.
+
+| Current driver | Controls | Physical bodies | XML cases | Paired DI lifetimes |
+| --- | ---: | ---: | ---: | ---: |
+| History, Scala2.13/3 | 94 | 558 | 574 | 70 |
+| Two projects and Test/Integration, Scala2.13/3 | 20 (80 context checks) | 330 | 330 | 28 |
+| Concurrent events, host limits1/2, Scala2.13/3 | 8 | 120 | 120 | 8 |
+| Foreign groups and premature exits, Scala2.13/3 | 16 | 78 | 54 | 0 |
+| Missing-suite normal/error/recovery, Scala2.13/3 | 12 | 96 | 100 | 12 |
+
+All five regression drivers exit0. The initial missing-suite driver fails when
+both the target and host `done()` try to copy an identical terminal file. Its
+corrected fixture requires repeated captures to be byte-identical and passes
+all twelve controls in `sbt2-target-terminal-missing-third`:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-missing-suite.py \
+  --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 2.13.18 \
+  --expected-missing-report error \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-target-terminal-missing-third
+```
+
+Both actual SBT processes exit0. Four negative child task results remain
+failures through public `.result`; each has exactly six C/E bodies, one SuiteD
+Error, matching public Output/XML and three target terminal records. All36
+terminal records have the actual target PID and exact per-suite status counts.
+Four following commands execute all nine bodies with new paired resources.
+All six fork workers have distinct PIDs and have exited before capture. This
+fixture correction does not change production code. The failed batch terminal
+is preserved as exit1, rather than represented as a passing complete batch.
+The earlier regression-first stopped during preflight because its verifier
+looked for Scala3.9 runner classes under the protocol's Scala3.8 metadata path;
+no SBT command ran in that capture.
+
+The freshly packaged agent from the foreign-group capture also passes all29
+normal/abort/premature/competing/denied exit controls on real JDK17/21/25.
+Exact argv and per-process files are in
+`sbt2-target-terminal-exit-capture-first`. The existing early System.exit(0)
+deadlock correction remains effective; held sibling drain and same-session
+recovery still pass both compiler controls.
+
+Independent bounded audit reconciles150 command controls,1,182 physical bodies,
+1,178 XML cases,118 paired DI lifetimes and the29 direct exit controls. The XML
+difference retains known negative controls: launch/axis/omission errors have no
+corresponding bodies, while overlapping groups and premature exits still lose
+some SDK reports and are explicitly rejected. This is not a claim that the
+complete reporting domain passes. Audit
+`sbt2-target-terminal-audit-first/completion.json`, SHA256
+`fd1b0eaee45246e5c30295ab8874d2df1b08902797d41125d1e18aab1a1be0d0`,
+links every terminal source and the failed capture.
+
+The five refreshed artifact pairs have847 class/TASTy payloads matching actual
+compiled output. Both protocol JARs/source JARs exclude the former agent and
+include the ownership constants; their POMs have no ByteBuddy dependency. The
+plugin includes the agent and task-completion sources exactly, and its target
+Java classes are version61.0. Plugin JAR SHA256:
+`9aa87818b18696d58b3bcffa350d5142488f0b33b625ae0a92d05d5e811778b1`.
+The bounded record is `sbt2-target-terminal-regression-second/qualified-publication.json`.
+Unchanged JS/Native lanes and unrelated artifacts were not rerun or recatalogued.
+
+All parent/final items remain in progress. SDK task-exception and overlapping
+suite reporting, streaming/cancellation and actual JS/Native host integration
+remain open. No full step or goal completion, push or PR is claimed.

@@ -816,7 +816,7 @@ object Izumi {
     artifacts = withTestResourcesOnCompileClasspath(Seq(
       Artifact(
         name = Projects.distage.testProtocol,
-        libs = Seq(circe_core, circe_parser, bytebuddy in Scope.Provided.jvm),
+        libs = Seq(circe_core, circe_parser),
         depends = Seq.empty,
         platforms = Targets.protocol,
         settings = assertionFixtureSettings ++ Seq(

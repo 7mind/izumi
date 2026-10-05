@@ -122,3 +122,5 @@ project/plugins/project/
 hs_err_pid*
 .codegraph/
 test-fixtures/sbt-plugin-consumer/__pycache__/
+!sbt-plugins/sbt-distage-testkit/src/main/java/izumi/distage/sbt/target/
+!sbt-plugins/sbt-distage-testkit/src/test/java/izumi/distage/sbt/target/

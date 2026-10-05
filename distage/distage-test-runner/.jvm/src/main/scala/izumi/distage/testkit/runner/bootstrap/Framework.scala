@@ -27,7 +27,7 @@ final class Framework extends SbtFramework {
     if (invocation.forked) {
       val directory = invocation.hostDirectory.getOrElse(throw new IllegalStateException("Fork receipt activation has no host ownership"))
       if (invocation.commandCompletion) {
-        require(Option(System.getProperty(ForkCompletionAgent.DIRECTORY_PROPERTY)).contains(directory.toString), "Command completion agent has no matching target ownership")
+        require(Option(System.getProperty(ForkCompletionOwnership.DIRECTORY_PROPERTY)).contains(directory.toString), "Command completion agent has no matching target ownership")
         runner
       } else {
         val TimeoutSeconds = 30L

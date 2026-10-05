@@ -1,6 +1,6 @@
 package izumi.distage.sbt
 
-import izumi.distage.testkit.protocol.ForkCompletionAgent
+import izumi.distage.sbt.target.{ForkCompletionAgent, TaskCompleteness}
 import net.bytebuddy.ByteBuddy
 
 import sbt.{MessageOnlyException, Tests}
@@ -71,10 +71,12 @@ private[sbt] final class HostForkCompletion(directory: Path) {
     val _ = manifest.getMainAttributes.putValue("Can-Retransform-Classes", "true")
     val byteBuddy = classOf[ByteBuddy].getProtectionDomain.getCodeSource.getLocation.toURI
     require(Files.isRegularFile(java.nio.file.Paths.get(byteBuddy)), "Fork exit capture dependency is not a JAR")
-    val _ = manifest.getMainAttributes.put(Attributes.Name.CLASS_PATH, byteBuddy.toASCIIString)
+    val testInterface = classOf[sbt.testing.Task].getProtectionDomain.getCodeSource.getLocation.toURI
+    require(Files.isRegularFile(java.nio.file.Paths.get(testInterface)), "Fork test interface dependency is not a JAR")
+    val _ = manifest.getMainAttributes.put(Attributes.Name.CLASS_PATH, byteBuddy.toASCIIString + " " + testInterface.toASCIIString)
     val output = new JarOutputStream(Files.newOutputStream(agent), manifest)
     try {
-      (classOf[ForkCompletionAgent] +: classOf[ForkCompletionAgent].getDeclaredClasses.toVector).foreach { agentClass =>
+      Vector(classOf[ForkCompletionAgent], classOf[TaskCompleteness]).flatMap(value => value +: value.getDeclaredClasses.toVector).foreach { agentClass =>
         val name = agentClass.getName.replace('.', '/') + ".class"
         val source = agentClass.getResourceAsStream("/" + name)
         require(source != null, "Fork completion agent bytecode is missing: " + name)
