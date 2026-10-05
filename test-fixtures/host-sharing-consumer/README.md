@@ -169,3 +169,24 @@ membership, cancellation, premature death, cleanup faults and complete
 error/logger drain remain open. Files publish through a temporary file and atomic
 move; a paused-writer contract check is still outstanding. SBT1 uses a different
 completion handshake and is excluded from this prototype.
+
+`verify-registration-linkage.py` uses the published plugin and unmodified target
+bootstrap to exercise a `NoClassDefFoundError` during suite registration. Two
+selected suites must each receive one error in public SBT results and JUnit XML,
+with the missing-dependency class and message retained. The failed commands
+execute no bodies or DI resources. Between two fault commands, a healthy suite
+executes three bodies with one paired DI resource in the same SBT process. Each
+command uses a fresh target PID and removes its owned receipt directory.
+
+```sh
+python3 -B test-fixtures/host-sharing-consumer/verify-registration-linkage.py \
+  --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/registration-linkage-example
+```
+
+Use a separate evidence directory for Scala 2.13.18. Publish the current JVM
+runner and plugin dependency closure first. The outer process exits zero after
+the harness observes two failed public `testOnly` results and healthy recovery.
+This fixture covers registration linkage failures and their diagnostic text;
+complete structured reporting, other failure phases, cancellation and mixed
+framework completion require their separate controls.

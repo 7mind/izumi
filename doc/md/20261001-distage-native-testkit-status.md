@@ -13049,3 +13049,138 @@ Its ten terminal-success records bind the matrix, publication, point-position
 checks, consumer audits, supported-input guards and corrected reproduction
 drivers. No push, whole-step completion, final acceptance or goal completion is
 claimed. The following commit changes only this ledger checkpoint.
+
+## 2026-10-05: JVM registration linkage failures and fork diagnostics, in progress
+
+Work resumes from `0f49dabcac85c79b44bad4b1501366579cd5bff7` on
+`wip/distage-test-runner-and-scala-native`. The owner's SBT2-only,
+Scala2.13/3-only and custom-loader-factory amendments remain in force. Items
+2d.2/2d.4/2d.10/2d.11/2d.22 and O.28 remain in progress; this entry verifies a
+bounded registration-failure correction, not their complete acceptance.
+
+The new `RegistrationLinkageFixtures` first reproduces a registration-time
+`NoClassDefFoundError` through the public JVM Framework with two ordinary suite
+TaskDefs. The captured worker reports that error uncaught; the application
+future remains unresolved in `Invocation.execute`, and a 15-second fixture
+watchdog exits the target23. Actual outer SBT exits1, before any recovery body.
+`registration-linkage-before-first` preserves the source freeze, commands and
+thread dump. Its original driver exits1 because its exit-message predicate
+expects different capitalization/wording. The independent before qualification
+checks the actual lowercase SDK message, original error, blocked Await, child23,
+outer1, one registration attempt and all1,675 unchanged source rows. It exits0,
+SHA256 `72e767843548ea3fa5da667ad66315c9d66390d5e786c306f7e25de190e2e549`.
+The failed checker is not overwritten or relabeled.
+
+The JVM bootstrap now wraps registration `LinkageError`s in a discovery failure
+before they escape the application future, retaining the original cause. Its
+fixture checks one error per selected suite, discovery phase and linkage cause,
+a healthy group in the same Runner, another fresh failed group, and termination
+of application executors. The JVM base fixture invokes it in normal `testFull`
+checks. Initial after-change runs on3.9.0 and2.13.18 each exit0, together with
+the existing50 bootstrap checks. This corrects the measured JVM bootstrap
+boundary; it does not establish recovery for arbitrary fatal errors or other
+application entry points. The behavior of fatal exceptions leaving a Scala
+Future unresolved also matches the [Scala Future documentation](https://docs.scala-lang.org/overviews/core/futures.html).
+
+Published-consumer first attempts fail before target execution because the
+driver retained the direct-bootstrap fixture's identity options alongside the
+plugin's options. Both actual/driver exits1, with `Request requires exactly one
+--build-id`; the first post-checker also encounters the absent result file.
+`registration-linkage-consumer-first-failure-qualification.json` preserves
+those captures and qualifies this fixture correction, SHA256
+`42337ec5d191b88b32e550aaf4d89adffbbc205fe887eb2e8c10996da3f323ad`.
+The final driver removes that identity block and records missing output as a
+failed validation. No production identity policy was changed.
+
+Second consumer attempts execute the intended fault/recovery/fault commands on
+both compilers, with actual outer0 and driver1: counts and recovery agree, but
+the four error XML cases per lane lack the original missing-dependency class
+and message. SBT2's fork transport preserves the root exception message while
+this captured path loses its causal diagnostic. The measured limitation is
+handled by rendering the captured Failure's causes, suppressed failures and
+capture errors into the root projected message. Nested exception messages and
+their cause/suppressed relationships remain unchanged. Rendering reads the
+immutable Failure model rather than re-reading Throwable accessors. Full typed
+host reporting and original-stack preservation are not established by this
+text projection. The pinned [ForkTestMain source](https://github.com/sbt/sbt/blob/v2.0.9/worker/src/main/java/sbt/internal/worker1/ForkTestMain.java)
+is inspected; tracker searches identify no exact matching issue. No issue is
+filed and no private SDK API or copied orchestration is used.
+
+The pinned [ThrowableAdapterFactory](https://github.com/sbt/sbt/blob/v2.0.9/worker/src/main/java/sbt/internal/worker1/ThrowableAdapterFactory.java)
+writes cause/suppressed fields but reads only message, type and stack, skipping
+the other fields and constructing a PersistedException with no cause. The
+JUnit listener calls `printStackTrace` on that reconstructed Throwable. These
+inspected source paths explain the observed missing diagnostic; no historical
+wire trace is claimed. Their source copies and URL/hash manifest are preserved
+in `registration-linkage-sdk-source-first`.
+
+Diagnostic-loss audits run before changing those published binaries and exit0
+as expected-defect qualifications, preserving the consumers' driver1. Scala3
+audit SHA256 `56e783d70dfb30630533a74510101345ef4f7fadb5926aac45f650a2f5301b6f`;
+Scala2.13 `8b5d24f2171cd643f81fc00aed4ce57dc55c5d8251e1d5d0c0dcb0f9a7c51c43`.
+Their frozen artifacts retain the first correction's provenance, not the later
+diagnostic projection's bytes.
+
+Final producer/publication command:
+`python3 -B /srv/nvme/tmp/izumi-impl/registration-linkage-publication-driver-second.py`
+through the pinned direnv/git/Nix PATH. For each compiler it runs
+`++<compiler>`, `distage-test-runnerJVM/Test/testFull`,
+`distage-testkit-runnerJVM/Test/testFull`,
+`distage-test-runnerJVM/publishLocal`, and the Compile classpath report. Scala3
+also enables `-Wunused:all` for the changed runner's Compile/Test sources.
+Both actual processes and the driver exit0: each compiler retains802 base,
+639 DI-provider and50 bootstrap checks, plus the new three-group registration
+fixture. Terminal SHA256
+`a60e8e339a2201407e246417c27b6d6cb3414dc750dfa038e7fbfd8cfb0f436b`.
+All1,676 producer source rows remain unchanged during execution.
+
+The current154-pair publication catalogue is now
+`registration-linkage-producer-publication-second/publication.json`, SHA256
+`9f8563df3f8b852db3a6b97c8de7d8656783c6fa0f817e0d4fd433ca9721575a`.
+Only the two JVM base-runner binaries are refreshed;152 JAR/POM pairs retain
+their preceding verified bytes and producer provenance. The158 Scala3 and108
+Scala2.13 nonmanifest entries match frozen/current compiled products. New JAR
+SHA256 values are respectively
+`53c7790992f2a2b32e3fcd61d7cf2f2abfc094ba1b40700eaad3c60cf664df3f`
+and `0d21d55e0381fe14087094d43632a103136d9c22e673eca8908dc47898d92817`.
+No JS/Native production source changes or new six-lane acceptance are claimed.
+
+Permanent published-consumer command:
+`python3 -B test-fixtures/host-sharing-consumer/verify-registration-linkage.py
+--artifact-version 1.3.0-SNAPSHOT --scala-version <compiler> --evidence-dir
+/srv/nvme/tmp/izumi-impl/registration-linkage-published-scala<compiler>-third`.
+Both actual processes and drivers exit0. Each independent SBT2/Java21 build
+runs fault/recovery/fault in one host process without settings reapplication.
+Two failed public `testOnly` results are observed through `.result`; each fault
+reports both selected suites once as errors in public Output and XML, with the
+missing-dependency class/message retained. Faults execute no body or DI resource.
+Recovery executes exactly three SuiteC bodies with one paired DI resource.
+Three distinct child PIDs and receipt cleanup are checked per lane. Together
+the lanes reconcile six healthy physical bodies and eight error XML cases;
+outer0 means the expected rejected tasks and recovery were observed.
+Completion SHA256: Scala3
+`5e182a71e93e02e0fb9cdaddf0c804e4fbd9b9a7afabaa65cfe6d00797eb58ea`,
+Scala2.13 `cf7fc545d5b2b521533f154961d85f009bbb89b6ce33f2f8cc58ec019007497a`.
+
+Independent pass audits use `registration-linkage-consumer-audit-first.py`
+with explicit consumer directory, current publication, new evidence directory,
+compiler and `--expected-result pass`. Each freezes59 capture/source records;
+Scala3 resolves156 external JARs, Scala2.13 resolves125. Each lane's24 owned
+Test JARs and two owned meta JARs match the current publication. One unbound
+boot path per lane is excluded before filesystem access. Audit SHA256 values:
+`78709368e48820f5592ac4bf25818e340909bc1a3bfbeee0a27c03f0ef07ea8a`
+and `8fbe7636cc688ece7f77e67c42b482e1093a08fdd7b266280713ebd389ce7a40`.
+These are Effectual Good-Communication regression checks of actual SBT/target
+processes; no full runtime replica is claimed.
+
+The pre-commit source comparison finds only this helper's README documentation
+changed since the final producer freeze; all compiled inputs and the tested
+permanent driver retain their exact bytes. Python AST parsing and
+`git diff --check` pass. Global fork acknowledgement, immutable terminal records,
+tracked input closure/history, cancellation/drain, other failure phases,
+multi-project/configuration, JS/Native host integration, coverage, IDE work and
+final evaluation points remain open. The goal tracker still reports paused
+despite the owner's resume instruction; authorized work proceeds in this turn.
+No acceptance item or whole step is marked done. The verified six-file change
+is eligible for local commit `Report JVM suite registration linkage failures`,
+parent `0f49dabcac85c79b44bad4b1501366579cd5bff7`. No push is performed.

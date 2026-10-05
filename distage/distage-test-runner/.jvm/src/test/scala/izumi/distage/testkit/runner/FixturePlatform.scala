@@ -37,5 +37,6 @@ object FixturePlatform {
     ApplicationBlockingFixtures.main(Array.empty)
     ApplicationOutputBlockingFixtures.main(Array.empty)
     bootstrap.BootstrapFixtures.main(Array.empty)
+    bootstrap.RegistrationLinkageFixtures.main(Array.empty)
   }
 }

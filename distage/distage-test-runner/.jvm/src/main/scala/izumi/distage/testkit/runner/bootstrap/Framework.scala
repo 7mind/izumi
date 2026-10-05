@@ -145,8 +145,8 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
       val factories = projections.map { projection => () => new TestSuite {
         override def register(context: RegistrationContext): RegisteredSuite = {
           val name = projection.definition.fullyQualifiedName()
-          val instance = factory(name)
-          val registered = instance.register(context)
+          val registered = try factory(name).register(context)
+          catch { case cause: LinkageError => throw new IllegalStateException("Cannot register suite " + name, cause) }
           projection.associate(registered.descriptor.id)
           registered
         }
@@ -240,7 +240,7 @@ private[bootstrap] final class SuiteProjection(val definition: TaskDef) {
 
   private def project(selectorValue: Selector, statusValue: Status, failure: Option[Failure], durationValue: Long): Event = new Event {
     private val projectedThrowable = failure match {
-      case Some(value) => new OptionalThrowable(new ProjectedFailure(value))
+      case Some(value) => new OptionalThrowable(ProjectedFailure.root(value))
       case None => new OptionalThrowable
     }
     override def fullyQualifiedName(): String = definition.fullyQualifiedName()
@@ -270,11 +270,25 @@ private[bootstrap] final class SuiteProjection(val definition: TaskDef) {
 
 private[bootstrap] final class HostDeliveryFailure(cause: Throwable) extends RuntimeException("Host event delivery failed", cause)
 
-private[bootstrap] final class ProjectedFailure(val failure: Failure)
-  extends RuntimeException(s"${failure.phase}: ${failure.exceptionClass}: ${failure.message}", failure.causes.headOption.map(new ProjectedFailure(_)).orNull) {
-  failure.causes.drop(1).foreach(cause => addSuppressed(new ProjectedFailure(cause)))
-  failure.suppressed.foreach(cause => addSuppressed(new ProjectedFailure(cause)))
+private[bootstrap] final class ProjectedFailure private (val failure: Failure, message: String)
+  extends RuntimeException(message, failure.causes.headOption.map(ProjectedFailure.child).orNull) {
+  failure.causes.drop(1).foreach(cause => addSuppressed(ProjectedFailure.child(cause)))
+  failure.suppressed.foreach(cause => addSuppressed(ProjectedFailure.child(cause)))
   failure.captureErrors.foreach(error => addSuppressed(new ProjectedCaptureError(error)))
+}
+
+private[bootstrap] object ProjectedFailure {
+  def root(failure: Failure): ProjectedFailure = new ProjectedFailure(failure, diagnostic(failure))
+  private def child(failure: Failure): ProjectedFailure = new ProjectedFailure(failure, summary(failure))
+  private def summary(failure: Failure): String = s"${failure.phase}: ${failure.exceptionClass}: ${failure.message}"
+
+  // Forked SBT 2 can retain only the top-level message of the captured exception graph.
+  private def diagnostic(failure: Failure): String = {
+    val causes = failure.causes.map(value => "Caused by: " + diagnostic(value))
+    val suppressed = failure.suppressed.map(value => "Suppressed: " + diagnostic(value))
+    val captureErrors = failure.captureErrors.map(error => s"Cannot capture failure field ${error.field}: ${error.exceptionClass}")
+    (Vector(summary(failure)) ++ causes ++ suppressed ++ captureErrors).mkString("\n")
+  }
 }
 
 private[bootstrap] final class ProjectedCaptureError(val error: FailureCaptureError)
