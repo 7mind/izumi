@@ -1,6 +1,6 @@
 package izumi.distage.docker.bundled
 
-import distage.{Functoid, Id, Lifecycle, ModuleDef, TagK}
+import distage.{Id, Lifecycle, ModuleDef, TagK}
 import izumi.distage.docker.model.Docker.{ContainerFile, DockerPort, DockerReusePolicy}
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.{ContainerDef, ContainerNetworkDef}
@@ -136,14 +136,12 @@ class PostgresFlyWayDockerModule[F[_]: TagK](
       .make[F]
       .connectToNetwork(PostgresFlyWayDocker.FlyWayNetwork)
       .modifyConfig {
-        Functoid { // FIXME: explicit `Functoid` application required on Scala 3 due to https://github.com/lampepfl/dotty/issues/16108
-          (
-            postgresContainer: PostgresFlyWayDocker.Container @Id(name = "postgres-flyway-proxy"),
-            cfg: PostgresFlyWayDocker.Cfg,
-            migrations: PostgresFlyWayDocker.FlyWay.Migrations,
-          ) =>
-            PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg, migrations)
-        }
+        (
+          postgresContainer: PostgresFlyWayDocker.Container @Id(name = "postgres-flyway-proxy"),
+          cfg: PostgresFlyWayDocker.Cfg,
+          migrations: PostgresFlyWayDocker.FlyWay.Migrations,
+        ) =>
+          PostgresFlyWayDocker.FlyWay.applyCfg(postgresContainer.hostName, cfg, migrations)
       }
   }
 
