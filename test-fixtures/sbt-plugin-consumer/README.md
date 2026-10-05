@@ -107,8 +107,8 @@ failure behavior below this process boundary.
 
 `verify-resource-failures.py` runs five DI suites of three tests, sharing one
 memoized Lifecycle. Acquisition, assertion, unexpected body and shared release
-failures each precede an explicit complete recovery command in the same SBT
-session. It verifies physical IDs, paired lifetimes, process ownership, fresh
+failures each precede a complete incremental `test` or `testQuick` recovery
+command in the same SBT session. It verifies physical IDs, paired lifetimes, process ownership, fresh
 run/resource IDs, structured failure phases and exact XML outcomes. Run each
 supported compiler in a fresh capture:
 
@@ -121,5 +121,5 @@ python3 -B test-fixtures/sbt-plugin-consumer/verify-resource-failures.py \
 
 Each capture runs eighteen commands across in-process and forked modes. These
 Behavioral-Active, Effectual-GoodCommunication controls establish explicit
-same-session recovery; incremental recovery and cancellation remain separate
-acceptance requirements.
+same-session incremental recovery for these failure modes; cancellation and
+the complete input/caching domain remain separate acceptance requirements.

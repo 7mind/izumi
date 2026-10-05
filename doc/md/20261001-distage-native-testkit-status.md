@@ -104,7 +104,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap50,18 task checks,20 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
+| 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
@@ -14856,4 +14856,46 @@ the unchanged230-control JVM publication. Those earlier commands are not rerun
 for a fixture-only addition. No whole step or final item is done. Incremental
 recovery/caching, cancellation, complete stock/input domains, JS/Native hosts,
 coverage, migration and final reviews remain open. IDE remains deferred.
+No push or PR was made.
+
+
+## 2026-10-05: incremental recovery after JVM resource/body failures
+
+Commit: the commit containing this entry, parent
+`2d20aded2b77c3af4695fe1577bd12e466772f91`.
+The preceding fixture-only checkpoint's post-commit proof exits0, confirms a
+clean worktree and1,519 committed input records, and verifies the36 explicit
+recovery controls against unchanged production inputs/publications. Record:
+`/srv/nvme/tmp/izumi-impl/sbt2-resource-failures-second/commit-proof.json`.
+
+The same fixture now uses incremental `test` after acquisition/unexpected-body
+failure and `testQuick` after assertion/shared-release failure. Exact case
+requests are recorded in each lane's `command.json`. The normal and failure
+cases remain unchanged. This strengthens recovery acceptance without modifying
+production code or republishing artifacts.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-resource-failures-incremental-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-resource-failures-audit.py \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-resource-failures-incremental-first
+```
+
+The coherent36-command matrix passes on both supported compilers, in process
+and forked. Both drivers and actual SBT processes exit0; frozen inputs remain
+unchanged. All16 incremental recovery requests execute/report15 exact bodies,
+acquire/release one fresh resource and use a fresh run ID in the same SBT
+session. No failed or partial prior result suppresses those recovery bodies.
+Across all36 cases, the independent audit verifies480 physical bodies,540
+terminal results,560 XML cases,36 fresh runs and36 fresh resource attempts.
+Shared release failures still retain15 successful bodies plus five suite errors
+and reject the command. Records are under
+`/srv/nvme/tmp/izumi-impl/sbt2-resource-failures-incremental-first/`.
+Audit SHA256:
+`e5721c0fdfea7566fce804f641f22bf0f9bb4be3759bc6950c6e43d34a9f46d9`.
+
+The earlier230 consumer controls remain applicable to the unchanged production
+and their unchanged drivers; they are not rerun for this fixture refinement.
+No whole phase or final item is done. Cancellation, stock setup/cleanup and
+classloader composition, complete input/history domains, production JS/Native
+hosts, coverage, migration and final reviews remain open. IDE remains deferred.
 No push or PR was made.

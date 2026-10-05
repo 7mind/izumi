@@ -218,8 +218,10 @@ def main():
         commands.append('set Test / fork := ' + str(fork).lower())
         for index, mode in enumerate(MODES):
             name = ('fork-' if fork else 'inprocess-') + str(index) + '-' + mode
-            rows.append(dict(name=name, mode=mode, fork=fork))
             request = 'testOnly fixture.Suite*' if mode in ['normal', 'recovery'] else 'observeFailure'
+            if mode == 'recovery':
+                request = 'test' if index in [2, 6] else 'testQuick'
+            rows.append(dict(name=name, mode=mode, fork=fork, request=request))
             commands.extend(['prepareFailure ' + mode, request, 'captureFailure ' + name])
     inputs = [dict(path=str(path), sha256=sha(path)) for path in sorted(build.rglob('*')) if path.is_file()]
     argv = ['direnv', 'exec', str(root), 'sh', '-c', 'exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"', 'resource-failures', '-Dfixture.audit-root=' + str(build / 'target/audit'), *commands]
