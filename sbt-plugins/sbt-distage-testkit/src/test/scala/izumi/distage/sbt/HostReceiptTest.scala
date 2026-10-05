@@ -144,6 +144,38 @@ object HostReceiptTest {
       receipt.verify(Tests.Output(TestResult.Passed, Map(foreign.value -> new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)), Nil))
     }
 
+    check("reject foreign per-group status swaps with equal aggregate counts") {
+      val receipt = new HostReceipt
+      val listener = receipt.configure(Set.empty)
+      val left = HostSuiteName("fixture.Left")
+      val right = HostSuiteName("fixture.Right")
+      Seq(left -> Status.Success, right -> Status.Failure).foreach { case (suite, status) =>
+        listener.startGroup(suite.value)
+        listener.testEvent(TestEvent(Seq(event(suite, status))))
+        listener.endGroup(suite.value, if (status == Status.Success) TestResult.Passed else TestResult.Failed)
+      }
+      val swapped = Tests.Output(TestResult.Failed, Map(left.value -> new SuiteResult(TestResult.Failed, 0, 1, 0, 0, 0, 0, 0), right.value -> new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)), Nil)
+      rejects(classOf[MessageOnlyException])(receipt.verify(swapped))
+    }
+
+    check("merge repeated owned and foreign groups without changing complete SDK output") {
+      Seq(true, false).foreach { owned =>
+        val receipt = new HostReceipt
+        val listener = receipt.configure(if (owned) Set(name) else Set.empty)
+        if (owned) receipt.expect(name)
+        Seq(Status.Success, Status.Error).foreach { status =>
+          listener.startGroup(name.value)
+          listener.testEvent(TestEvent(Seq(event(name, status))))
+          listener.endGroup(name.value, if (status == Status.Success) TestResult.Passed else TestResult.Error)
+        }
+        val replaced = output(new SuiteResult(TestResult.Error, 0, 0, 1, 0, 0, 0, 0))
+        val merged = receipt.normalise(replaced)
+        require(HostSuiteCounts.from(merged.events(name.value)) == HostSuiteCounts(TestResult.Error, 1, 0, 1, 0, 0, 0, 0), "Repeated group counts were lost")
+        require(receipt.normalise(merged) eq merged, "Already merged SDK output changed")
+        receipt.verify(merged)
+      }
+    }
+
     check("retain a newer admission when an earlier task aborts") {
       val current = owner()
       val first = current.enter()
@@ -242,7 +274,7 @@ object HostReceiptTest {
         override def doComplete(result: TestResult): Unit = ()
       }
       val inherited = Tests.Execution(Seq(Tests.Listeners(Seq(earlier, foreign)), Tests.Argument(DistageHostPolicy.framework, ForkReceiptArguments.HostDirectoryOption, previous.store.directory.toString)), true, Seq.empty)
-      val execution = HostReceiptPolicy.execution(inherited, Seq.empty, second, full = false)
+      val execution = HostReceiptPolicy.execution(inherited, Seq.empty, second, full = false, HostJUnitFileFormat.Standard)
       val listeners = execution.options.collect { case Tests.Listeners(values) => values }.flatten
       require(listeners.count(_.isInstanceOf[HostForkReceiptListener]) == 1 && listeners.contains(foreign) && !listeners.contains(earlier), "Inherited listeners were not rebound")
       val directories = execution.options.collect { case Tests.Argument(Some(framework), values) if framework == DistageHostPolicy.framework => values }

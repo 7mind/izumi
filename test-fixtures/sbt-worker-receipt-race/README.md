@@ -238,9 +238,11 @@ suite names, exclusion of every selected suite, Runtime.halt(0), System.exit(0/1
 and same-session recovery. A second worker's shutdown hook is held after the first
 worker halts or exits with zero: the public command must wait for the held worker's exit before
 returning its failure. Captures verify that workers are alive during result
-delivery, dead after the command, and have separate process identities. An
-overlapping-suite run is rejected because SBT overwrites one result-map entry
-and JUnit file; that domain remains unresolved. These are bounded checks, not
+delivery, dead after the command, and have separate process identities. With
+`--expected-overlap-report complete`, both repeated groups execute and public
+Output and the suite's single XML file retain all six outcomes. The plugin
+accumulates public group results and merges the stock XML at group completion.
+`rejected` checks the preceding plugin's report-loss rejection. These are bounded checks, not
 the complete cancellation, history or structured-error acceptance gate.
 
 The earlier `System.exit(0)` control reproduced a deadlock in the command
@@ -265,6 +267,7 @@ requests on JDK17/21. Each command retains its arguments, output and exit marker
 ```sh
 python3 -B test-fixtures/sbt-worker-receipt-race/verify-command-groups.py \
   --repo-root . --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 \
+  --expected-overlap-report complete \
   --evidence-dir /srv/nvme/tmp/izumi-impl/command-groups-example
 
 python3 -B test-fixtures/sbt-worker-receipt-race/verify-exit-capture.py \

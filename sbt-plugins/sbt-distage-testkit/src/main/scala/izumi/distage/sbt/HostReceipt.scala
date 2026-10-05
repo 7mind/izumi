@@ -9,6 +9,7 @@ import scala.util.control.NonFatal
 import scala.jdk.CollectionConverters._
 
 private[sbt] final case class HostSuiteName(value: String)
+private[sbt] final case class HostGroupReceipt(name: HostSuiteName, result: SuiteResult)
 
 private[sbt] final case class HostSuiteCounts(result: TestResult, passed: Int, failed: Int, errors: Int, skipped: Int, ignored: Int, canceled: Int, pending: Int) {
   def +(other: HostSuiteCounts): HostSuiteCounts = HostSuiteCounts(
@@ -34,6 +35,8 @@ private[sbt] final class HostReceipt {
   private var expected = Set.empty[HostSuiteName]
   private var starts = Map.empty[HostSuiteName, Int]
   private var ends = Map.empty[HostSuiteName, Int]
+  private var activeGroups = Map.empty[Thread, HostGroupReceipt]
+  private var groupResults = Map.empty[HostSuiteName, Vector[SuiteResult]]
   private var received = Map.empty[HostSuiteName, HostSuiteCounts]
   private var delivered = HostSuiteCounts.empty
   private var completed = Option.empty[TestResult]
@@ -61,6 +64,9 @@ private[sbt] final class HostReceipt {
 
   private def start(name: HostSuiteName): Unit = synchronized {
     requireOpen()
+    val thread = Thread.currentThread()
+    require(!activeGroups.contains(thread), "Host listener thread started an overlapping group")
+    activeGroups = activeGroups.updated(thread, HostGroupReceipt(name, SuiteResult.Empty))
     starts = starts.updated(name, starts.getOrElse(name, 0) + 1)
     if (owned.contains(name)) {
       if (!received.contains(name)) received = received.updated(name, HostSuiteCounts.empty)
@@ -69,6 +75,9 @@ private[sbt] final class HostReceipt {
 
   private def record(event: TestEvent): Unit = synchronized {
     requireOpen()
+    val thread = Thread.currentThread()
+    val group = activeGroups.getOrElse(thread, throw new IllegalStateException("Host event has no active listener group"))
+    activeGroups = activeGroups.updated(thread, group.copy(result = group.result + SuiteResult(event.detail)))
     delivered = delivered + HostSuiteCounts.from(SuiteResult(event.detail))
     event.detail.groupBy(detail => HostSuiteName(detail.fullyQualifiedName())).foreach { case (name, details) =>
       if (owned.contains(name)) {
@@ -80,6 +89,13 @@ private[sbt] final class HostReceipt {
 
   private def end(name: HostSuiteName, result: TestResult): Unit = synchronized {
     requireOpen()
+    val thread = Thread.currentThread()
+    val group = activeGroups.getOrElse(thread, throw new IllegalStateException("Host group ended without starting"))
+    require(group.name == name, "Host listener ended a different group")
+    activeGroups -= thread
+    val counts = group.result
+    val finished = new SuiteResult(HostSuiteCounts.overall(counts.result, result), counts.passedCount, counts.failureCount, counts.errorCount, counts.skippedCount, counts.ignoredCount, counts.canceledCount, counts.pendingCount, counts.throwables)
+    groupResults = groupResults.updated(name, groupResults.getOrElse(name, Vector.empty) :+ finished)
     ends = ends.updated(name, ends.getOrElse(name, 0) + 1)
     delivered = delivered.copy(result = HostSuiteCounts.overall(delivered.result, result))
     if (owned.contains(name)) {
@@ -113,13 +129,32 @@ private[sbt] final class HostReceipt {
 
   def close(): Unit = synchronized { closed = true }
 
+  def normalise(output: Tests.Output): Tests.Output = synchronized {
+    requireOpen()
+    var events = output.events
+    groupResults.foreach { case (name, groups) =>
+      if (groups.size > 1) {
+        val merged = groups.foldLeft(SuiteResult.Empty)(_ + _)
+        val original = events.getOrElse(name.value, throw new MessageOnlyException("Missing SDK result for completed duplicate group: " + name.value))
+        if (HostSuiteCounts.from(original) != HostSuiteCounts.from(merged)) {
+          if (!groups.exists(group => HostSuiteCounts.from(group) == HostSuiteCounts.from(original))) throw new MessageOnlyException("SDK duplicate group result differs from every completed group: " + name.value)
+          events = events.updated(name.value, merged)
+        }
+      }
+    }
+    if (events eq output.events) output else output.copy(events = events)
+  }
+
   def verify(output: Tests.Output): Unit = synchronized {
     requireOpen()
     closed = true
     verifyPublication()
     val actual = output.events.collect { case (name, counts) if owned.contains(HostSuiteName(name)) => HostSuiteName(name) -> HostSuiteCounts.from(counts) }
     val returned = output.events.values.foldLeft(HostSuiteCounts.empty)((counts, result) => counts + HostSuiteCounts.from(result))
+    val groups = groupResults.view.mapValues(values => HostSuiteCounts.from(values.foldLeft(SuiteResult.Empty)(_ + _))).toMap
+    val allActual = output.events.map { case (name, counts) => HostSuiteName(name) -> HostSuiteCounts.from(counts) }
     if (expected != starts.keySet.intersect(owned) || starts != ends || actual != received ||
+      allActual != groups || activeGroups.nonEmpty ||
       output.events.keySet.map(HostSuiteName(_)) != starts.keySet || returned != delivered ||
       (output.overall == TestResult.Passed && delivered.result != TestResult.Passed)) {
       throw new MessageOnlyException(s"Incomplete distage host result: selected=$expected started=$starts completed=$ends received=$received returned=$actual delivered=$delivered returnedCounts=$returned overall=${output.overall}")
@@ -175,13 +210,15 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
   def store: FileForkReceiptStore = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).store }
   def completion: HostForkCompletion = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).completion }
 
-  def consume(output: Tests.Output): Unit = {
+  def consume(output: Tests.Output): Tests.Output = {
     val generation = synchronized {
       val active = current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt"))
       current = None
       active
     }
-    generation.receipt.verify(output)
+    val normalised = generation.receipt.normalise(output)
+    generation.receipt.verify(normalised)
+    normalised
   }
 
   def abort(generation: HostReceiptGeneration): Unit = {
@@ -222,7 +259,7 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
 
   def output(task: Task[Tests.Output]): Task[Tests.Output] = sbt.std.TaskExtra.task { enter() }.flatMap { generation =>
     task.result.map { result =>
-      finish(generation) { result.toEither.fold(cause => throw cause, value => { consume(value); value }) }
+      finish(generation) { result.toEither.fold(cause => throw cause, consume) }
     }
   }
 }
@@ -256,13 +293,13 @@ private[sbt] final class HostSelectionObserver(val inherited: Seq[String] => Seq
 
 private[sbt] final class HostResultLogger(val inherited: TestResultLogger, owner: HostReceiptOwner) extends TestResultLogger {
   override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = {
-    val verified = log match {
-      case previous: HostVerifiedResultLog if previous.output eq output => previous
+    val (verified, normalised) = log match {
+      case previous: HostVerifiedResultLog if previous.output eq output => previous -> output
       case other =>
-        owner.consume(output)
-        new HostVerifiedResultLog(other, output)
+        val normalised = owner.consume(output)
+        new HostVerifiedResultLog(other, normalised) -> normalised
     }
-    inherited.run(verified, output, taskName)
+    inherited.run(verified, normalised, taskName)
   }
 }
 
@@ -274,6 +311,7 @@ private[sbt] final class HostVerifiedResultLog(inherited: sbt.util.Logger, val o
 
 private[sbt] object HostReceiptPolicy {
   val owner: SettingKey[HostReceiptOwner] = settingKey[HostReceiptOwner]("Distage host task receipt owner")
+  val normalisedLogger: SettingKey[TestResultLogger] = settingKey[TestResultLogger]("Result logger receiving reconciled group results")
 
   def ownerAt(parent: File): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create((parent / "distage-fork-receipts").toPath.toAbsolutePath))
 
@@ -284,12 +322,12 @@ private[sbt] object HostReceiptPolicy {
     case other => other
   }
 
-  def execution(inherited: Tests.Execution, definitions: Seq[TestDefinition], owner: HostReceiptOwner, full: Boolean): Tests.Execution = {
+  def execution(inherited: Tests.Execution, definitions: Seq[TestDefinition], owner: HostReceiptOwner, full: Boolean, reportFormat: HostJUnitFileFormat): Tests.Execution = {
     val owned = names(definitions)
     val receipt = owner.receipt
     val listener = new HostForkReceiptListener(receipt.configure(owned), receipt, owner.store)
     val inheritedOptions = inherited.options.flatMap {
-      case Tests.Listeners(listeners) => Some(Tests.Listeners(listeners.filterNot(_.isInstanceOf[HostForkReceiptListener])))
+      case Tests.Listeners(listeners) => Some(Tests.Listeners(listeners.filterNot(_.isInstanceOf[HostForkReceiptListener]).map(listener => HostJUnitReports.wrap(listener, receipt, reportFormat))))
       case Tests.Argument(Some(framework), values) if framework == DistageHostPolicy.framework && values.headOption.contains(ForkReceiptArguments.HostDirectoryOption) => None
       case other => Some(other)
     }

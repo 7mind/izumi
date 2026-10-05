@@ -11,6 +11,7 @@ private[sbt] object HostSettings {
   def settings: Seq[Def.Setting[?]] = Seq(
     distageBuildId := thisProjectRef.value.build.toString,
     distageTargetId := thisProjectRef.value.project + "/" + configuration.value.name,
+    HostJUnitReports.format := Def.uncached { HostJUnitFileFormat.configured(sys.props.get(HostJUnitFileFormat.Property), sys.env.get(HostJUnitFileFormat.Environment)) },
     testFrameworks ~= { frameworks => if (frameworks.contains(DistageHostPolicy.framework)) frameworks else frameworks :+ DistageHostPolicy.framework },
     loadedTestFrameworks := Def.uncached { loadedTestFrameworks.value.map { case (key, framework) => key -> HostCompletionFramework.wrap(framework) } },
     distageCatalogueId := Def.uncached { DistageHostPolicy.catalogueId(definedTests.value) },
@@ -29,11 +30,13 @@ private[sbt] object HostSettings {
       val filter = DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testSelected / testFilter).value, streams.value.log)
       new HostSelectionObserver(filter, HostReceiptPolicy.names(definedTests.value), (testQuick / HostReceiptPolicy.owner).value)
     },
-    testSelected / testExecution := Def.uncached { HostReceiptPolicy.execution((testSelected / testExecution).value, definedTests.value, (testSelected / HostReceiptPolicy.owner).value, full = false) },
-    testQuick / testExecution := Def.uncached { HostReceiptPolicy.execution((testQuick / testExecution).value, definedTests.value, (testQuick / HostReceiptPolicy.owner).value, full = false) },
-    test / testExecution := Def.uncached { HostReceiptPolicy.execution((test / testExecution).value, definedTests.value, (executeTests / HostReceiptPolicy.owner).value, full = true) },
+    testSelected / testExecution := Def.uncached { HostReceiptPolicy.execution((testSelected / testExecution).value, definedTests.value, (testSelected / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value) },
+    testQuick / testExecution := Def.uncached { HostReceiptPolicy.execution((testQuick / testExecution).value, definedTests.value, (testQuick / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value) },
+    test / testExecution := Def.uncached { HostReceiptPolicy.execution((test / testExecution).value, definedTests.value, (executeTests / HostReceiptPolicy.owner).value, full = true, HostJUnitReports.format.value) },
     testSelected / testResultLogger := HostReceiptPolicy.logger((testSelected / testResultLogger).value, (testSelected / HostReceiptPolicy.owner).value),
     testQuick / testResultLogger := HostReceiptPolicy.logger((testQuick / testResultLogger).value, (testQuick / HostReceiptPolicy.owner).value),
+    testSelected / HostReceiptPolicy.normalisedLogger := HostReceiptPolicy.logger((testSelected / testResultLogger).value, (testSelected / HostReceiptPolicy.owner).value),
+    testQuick / HostReceiptPolicy.normalisedLogger := HostReceiptPolicy.logger((testQuick / testResultLogger).value, (testQuick / HostReceiptPolicy.owner).value),
     HostTaskBoundary.input(testOnly, testSelected / HostReceiptPolicy.owner),
     HostTaskBoundary.input(testSelected, testSelected / HostReceiptPolicy.owner),
     HostTaskBoundary.input(testQuick, testQuick / HostReceiptPolicy.owner),

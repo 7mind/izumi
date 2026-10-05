@@ -180,6 +180,7 @@ def main():
     parser.add_argument('--evidence-dir', type=Path, required=True)
     parser.add_argument('--artifact-version', required=True)
     parser.add_argument('--scala-version', choices=['3.9.0','2.13.18'], required=True)
+    parser.add_argument('--expected-overlap-report', choices=['rejected','complete'], required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve(); out.mkdir()
     shutil.copy2(__file__,out/'driver.py')
@@ -194,7 +195,7 @@ def main():
     failure_modes = [*exit_modes,'exit-one']
     modes = ['single','serial','overlap','empty',*failure_modes,'recovery']
     for mode in modes:
-        request = 'rejectExit' if mode in failure_modes else 'rejectOverlap' if mode == 'overlap' else 'testOnly fixture.SuiteA fixture.SuiteB'
+        request = 'rejectExit' if mode in failure_modes else 'rejectOverlap' if mode == 'overlap' and args.expected_overlap_report == 'rejected' else 'testOnly fixture.SuiteA fixture.SuiteB'
         commands += ['prepareGroups '+mode,request,'captureGroups '+mode]
     commands += ['show Test / dependencyClasspath']
     argv = ['direnv','exec',str(args.repo_root.resolve()),'sh','-c','exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"','fork-command-groups','-Dfixture.scala-version='+args.scala_version,'-Dfixture.artifact-version='+args.artifact_version,'-Dfixture.audit-root='+str(build/'audit'),'-Dfixture.captures='+str(out/'cases'),*commands]
@@ -249,7 +250,7 @@ def main():
             xml_cases = [n for report in reports for n in report.findall('.//testcase')]
             output = (audit/'host.output').read_text() if (audit/'host.output').exists() else None
             rejected = (audit/'host.rejected').is_file()
-            if mode in [*failure_modes,'overlap']:
+            if mode in failure_modes or (mode == 'overlap' and args.expected_overlap_report == 'rejected'):
                 if not rejected: failures.append('Incomplete command accepted: '+mode)
             else:
                 if rejected: failures.append('Successful control rejected: '+mode)
@@ -259,11 +260,12 @@ def main():
                 wanted = '\n'.join(s+'\tPassed\t'+str(n)+'\t0\t0\t0' for s,n in expected.items() if n)
                 if output != wanted: failures.append('Public output differs: '+mode)
                 if mode in ['single','serial','recovery'] and sorted((n.attrib['classname'],n.attrib['name']) for n in xml_cases) != [(s,'body-'+str(i)) for s in expected for i in range(1,4)]: failures.append('XML identities differ: '+mode)
+                if mode == 'overlap' and sorted((n.attrib['classname'],n.attrib['name']) for n in xml_cases) != sorted([('fixture.SuiteA','body-'+str(i)) for i in range(1,4)] * 2): failures.append('Overlapping XML identities differ')
                 if mode == 'empty' and xml_cases: failures.append('Empty selection produced XML cases')
             cases.append(dict(mode=mode,bodies=len(rows),pids=sorted(pids),output=output,xmlCases=len(xml_cases),rejected=rejected))
         if len(parents)!=1: failures.append('Host session changed')
     for row in inputs: assert sha(row['path']) == row['sha256']
-    result = dict(exit=0 if not failures else 1,actualExit=actual,scala=args.scala_version,heldShutdown=observations,cases=cases,failures=failures,scope='Serial and overlapping foreign groups, empty selection, Runtime.halt(0), System.exit(0/1) rejection, sibling shutdown drain and same-session recovery. Overlapping-suite Output/JUnit overwrite is explicitly rejected and remains an unresolved SDK reporting domain.')
+    result = dict(exit=0 if not failures else 1,actualExit=actual,scala=args.scala_version,expectedOverlapReport=args.expected_overlap_report,heldShutdown=observations,cases=cases,failures=failures,scope='Serial and overlapping foreign groups, empty selection, Runtime.halt(0), System.exit(0/1) rejection, sibling shutdown drain and same-session recovery. Overlapping-suite reports follow the explicit expected-overlap-report contract.')
     (out/'completion.json').write_text(json.dumps(result,indent=2)+'\n'); print(json.dumps(result),flush=True)
     raise SystemExit(result['exit'])
 

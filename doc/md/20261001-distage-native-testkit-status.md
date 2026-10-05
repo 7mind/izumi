@@ -82,25 +82,25 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
 | 2d.2 | in progress | Target terminal records and missing-suite Error/Output/XML reconciliation pass12 current in-process/fork controls on Scala2.13/3, with same-session recovery. Complete target/failure domain and final evaluation remain open. |
 | 2d.3 | in progress | The preceding SBT2/Scala2.13+3 full/selected/repeat/quick checks pass, including the15 owned quick cases and the foreign stock skip. The current exit-agent correction separately passes selected/grouped and mixed repeat controls. Earlier SDK1/Scala2.12 matrices are historical. Complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | The current published batch retains foreign task successes and original task Errors in Output/JUnit on both supported compilers. Serial groups and mixed repeat controls pass. Overlapping-suite SDK map/JUnit replacement is rejected rather than restored; the reproduced early System.exit(0) deadlock remains corrected. Complete reporting, history and final evaluation remain open. |
+| 2d.4 | in progress | Current published forked duplicate-group controls preserve six body outcomes in custom public Output and one suite XML file on both supported compilers and both JUnit filename formats. Serial/mixed/history controls pass. Full in-process duplicate-group domain, complete failure reporting and final evaluation remain open. |
 | 2d.5 | in progress | The current94-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns, changed suite/scanned-implementation digests and same-session launch-failure recovery on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
 | 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
 | 2d.10 | in progress | Current published checks restore held foreign delivery and reject Runtime.halt(0) and System.exit(0/1) during foreign tasks on Scala2.13/3. Zero-exit commands wait for a held sibling's shutdown, clean up and recover in the same session. The packaged agent passes29 exit controls on JDK17/21/25. Complete failure/cancellation/recovery and final evaluation remain open. |
-| 2d.11 | in progress | Current supported-lane batch passes174 SBT2 controls on Scala2.13/3: history, multi-project/configuration, concurrent host windows, exits, mapped-task omission, owned and foreign task-exception reports/recovery. Complete failure/input inventory and final evaluation stay open. |
+| 2d.11 | in progress | Current batch passes190 SBT2 controls on Scala2.13/3: history, multi-project/configuration, concurrent host windows, exits, mapped-task omission, task errors and repeated foreign groups in standard/legacy JUnit layouts. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | not started | No evaluation point passed yet. |
 | 2d.13 | in progress | Patterns, configured exclusion and forks pass the plugin checkpoint below; ordered-filter compatibility question, remaining host contracts and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
-| 2d.15 | in progress | Original foreign frameworks execute once with unchanged successful event payloads in current mixed fork/history controls on Scala2.13/3. The public task guard now retains six body successes plus the original foreign task Error in process and forked. The startup agent preserves held batches and rejects premature exits. Overlap reporting, complete mixed domain and final evaluation remain open. |
+| 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap50 and18 shared memory/filesystem public task checks cover serialized handlers, original event/throwable identities, late callback rejection, owned/foreign task exception projection and descendant tasks. Current host batches pass; complete streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap50,18 task checks,20 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Bootstrap fixtures project a provider finalization failure as a host error. Prior published SDK2 host cleanup rejects the command but still caches five suite successes. Production SDK2 task-scoped digest omission prevents owned stock success publication in the recorded three-Scala published checkpoint:216 body/XML cases, full/input cleanup faults and recovery/repeat, foreign history/no-op preserved. Controlled cache-put failure and registration retention reject the copied-source adapter alternative. The owner's2026-10-05 support revision retires SDK1 and Scala2.12 obligations; their counterexamples remain historical evidence. Tracked closure, complete teardown/failure domain and final evaluation on the supported lanes remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
-| 2d.20 | in progress | Omitted-suite reproduction establishes the measured need for public loaded-framework wrapping in process: target-only code has lost the original selected definition. Foreign task-Throwable controls also measure SDK null-selector/report loss without the public guard. The ledger records the substitution and174 bounded current controls; complete historical0a domain and final evaluation remain open. |
+| 2d.20 | in progress | The ledger records measured needs for public framework/task wrapping and public SDK stock-input setting templates: omitted selected definitions, SDK task-Throwable loss and custom result loggers seeing overwritten group maps. Current190 controls pass. Whole historical0a domain, custom input-initializer composition and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current body/JUnit controls retain normal mixed and held delivery; selected-suite omission and owned/foreign task exceptions produce visible Errors with original causes. Owned target terminal records reconcile. Premature exits remain rejected after sibling drain. Overlap reporting, callback/cancellation/finalization domains and final evaluation remain open. |
+| 2d.22 | in progress | Current body/JUnit controls retain normal mixed/held delivery, omissions and owned/foreign task Errors. Repeated fork groups retain all six outcomes in custom Output and one XML file; equal-total foreign status swaps reject. Premature exits reject after sibling drain. Complete callback/cancellation/finalization domains and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -14134,3 +14134,136 @@ checks. Earlier29 JDK17/21/25 exit-origin controls remain historical evidence.
 No whole step or final item is marked done. Overlapping-suite aggregation/XML,
 complete callback/cancellation/finalization domains, streaming, actual JS/Native
 hosts and later steps remain open. No push or PR was made.
+
+
+## 2026-10-05: repeated groups retain Output/XML;190 SBT2 controls
+
+Commit: the commit containing this entry, parent
+`a3269579a3fcf88516d8b08377621da3c13768c3`.
+Items2d.4/11/13/15/17/20/22 remain in progress. The preceding goal turn made
+verified progress through that parent commit. No live test job was inherited.
+
+Fail-first command, repeated separately for Scala3.9.0 and2.13.18:
+
+```sh
+python3 -B test-fixtures/sbt-worker-receipt-race/verify-command-groups.py \
+  --repo-root . --artifact-version 1.3.0-SNAPSHOT --scala-version 3.9.0 \
+  --expected-overlap-report complete \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-overlap-report-repro-first-3.9.0
+```
+
+Both actual SBT processes and drivers exit1 at the expected overlap guard.
+Each has six CREATE_NEW SuiteA body receipts from two actual workers, but only
+three cases in custom public Output and its single XML file. The definitive
+records are `observed-defect.json` and `run.log` in both reproduction directories;
+the driver also notes unreached later shutdown controls. Terminal SHA256s:
+`b6212a55dc3fcb661bd0dd9b84daf1faf50fd4a1f5891e3d20dda67aefa06275`
+and `50075029efd95541f22923505752f41293792f21de00db66c926f51700445a94`.
+
+A second fail-first check exposes a related reconciliation gap: two foreign
+suites deliver different statuses, but swapping those statuses in returned
+Output preserves aggregate totals and passes the old receipt. The new check
+exits1 because the expected MessageOnlyException is absent, not because of a
+compile failure. Exact argv/source hashes and log are in
+`sbt2-overlap-receipt-repro-first`; terminal SHA256:
+`faa0fc17c955144390753e822a7c2b331076289c35c31157d25782a467d79506`.
+
+The receipt now captures each public SDK group on its callback thread, as the
+pinned in-process and fork notification paths deliver start/event/end there.
+It accumulates statuses and original Throwables by group, retaining foreign
+nested event identities. Output reconciliation compares each group's statuses,
+not only global totals. Repeated names merge only when the overwritten SDK
+value matches an actual completed contribution; already complete Output keeps
+its identity, and unrelated truncation still rejects. Command-scoped state
+contains no singleton or thread-local registry.
+
+The stock JUnit listener receives its original callbacks once. At each completed
+group, a wrapper reads its just-written XML and atomically replaces it with the
+command's accumulated XML for that suite. Testcase selectors, causes, properties,
+output and durations survive; one group remains unchanged, and a new command
+starts with empty accumulation. It emits no replayed or late listener events.
+Both standard and legacy filenames use SBT's configured
+`sbt.testing.legacyreport` property/environment behavior, read at the settings
+boundary and passed explicitly. A failed report publication is retained by the
+receipt, so an SDK listener exception cannot become a successful command.
+
+Pinned public-source provenance is in `sbt2-overlap-sdk-source-first/sources.json`
+and its downloaded source tree. The inspected APIs are
+[Tests](https://github.com/sbt/sbt/blob/v2.0.9/main-actions/src/main/scala/sbt/Tests.scala),
+[TestReportListener](https://github.com/sbt/sbt/blob/v2.0.9/testing/src/main/scala/sbt/TestReportListener.scala),
+[JUnitXmlTestsListener](https://github.com/sbt/sbt/blob/v2.0.9/testing/src/main/scala/sbt/JUnitXmlTestsListener.scala)
+and [Defaults](https://github.com/sbt/sbt/blob/v2.0.9/main/src/main/scala/sbt/Defaults.scala).
+No issue was filed; the previous tracker search and minimal upstream report
+remain recorded above.
+
+The first producer's59 checks pass, but its actual eight-control consumer exits0
+while the verifier exits1: XML and the standard logger retain six outcomes, yet
+an outer custom result logger observes the original three-entry SDK map before
+delegating. That measured limitation is captured in
+`sbt2-overlap-report-verification-first-3.9.0`, SHA256
+`f239c4fcf585dddcea6a8d51392ddfc97b477a41c343f81548e3f909d96d7a10`.
+
+The corrected standard input binding uses public `Defaults.testTasks` settings
+and public `Def.Setting.mapReferenced` to redirect only the result-logger key to
+an outer reconciler. The checked SDK keys have InputTask[TestResult] definitions;
+casts are confined to those checked existential SDK settings/keys. The SDK's
+original parser, filtering, task orchestration and classloader-finally body stay
+in its initializer. Custom result loggers receive reconciled Output before they
+read it, and inherited opaque logger chains still verify once. This substitution
+is justified under2d.20 by the captured custom-logger failure. Composition with
+arbitrary earlier custom input-task initializers is not established here; that
+compatibility domain remains open.
+
+Producer command:
+
+```sh
+direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"' build \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostJUnitReportsTest /srv/nvme/tmp/izumi-impl/sbt2-overlap-report-build-second/xml-checks' \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostReceiptTest /srv/nvme/tmp/izumi-impl/sbt2-overlap-report-build-second/receipt-checks' \
+  'sbt-distage-testkit/Test/runMain izumi.distage.sbt.target.TaskCompletenessTest /srv/nvme/tmp/izumi-impl/sbt2-overlap-report-build-second/task-checks' \
+  'sbt-distage-testkit/publishLocal'
+```
+
+Actual exit0:21 shared memory/filesystem XML checks,20 receipt checks and18 task
+checks pass. Exact argv and source hashes are in that producer's commands.json.
+The plugin is the only republished artifact.
+
+One large frozen-input batch in `sbt2-overlap-report-regression-first` runs ten
+independent drivers with three SBT processes at a time. All drivers and actual
+SBT processes exit0. Its190 controls comprise94 history cases,20 multi-project
+scenarios/80 context checks,8 host-limit commands,12 omissions,12 owned task
+errors,12 foreign task errors and32 grouping/exclusion/premature-exit/drain/
+recovery controls across both compilers and both JUnit layouts. Exact argv,
+environment deltas and driver/input hashes are in commands.json and
+frozen-inputs.json; completion SHA256:
+`bed8a82a2055d754cc853900f31fcb61f105e7d7f058f43aaf5616df67a17979`.
+The two legacy drivers use `SBT_TESTING_LEGACYREPORT=always`.
+
+All four repeated-group captures execute six SuiteA bodies in two distinct
+workers, return Passed6 to the custom logger, and retain the six original
+case identities in exactly one suite XML file with tests6. Following commands
+recover in the same SBT session with fresh workers. Existing premature exits
+still reject, wait for the held sibling, and clean command roots. Those negative
+process-death controls still lose the dying worker's body reports; this checkpoint
+does not claim their complete structured-error domain.
+
+Independent audit:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-overlap-report-audit-first.py
+```
+
+Actual exit0:190 controls,59 producer markers, unchanged production inputs and
+four exact body/Output/XML overlap captures. Terminal SHA256:
+`72c8840b1f8e37f29efc2835eb3135ba910c5e88fba854088a79d65d68d040ee`.
+The plugin's86 class/TASTy payloads match compiled outputs, all20 target Java
+classes retain version61.0, and every production source matches its published
+source JAR. JAR SHA256:
+`96816a3c6ad55678b1188332c0e937e902b2d6c710b325914f9e2d9a294ba3c9`;
+record: `sbt2-overlap-report-regression-first/qualified-publication.json`.
+
+No whole step or final item is marked done. In-process repeated-group fixtures,
+complete callback/cancellation/finalization and initializer-composition domains,
+streaming, actual JS/Native hosts and later steps remain open. Portable/Native
+modules and unchanged shutdown instrumentation are not separately rerun; no
+push or PR was made.
