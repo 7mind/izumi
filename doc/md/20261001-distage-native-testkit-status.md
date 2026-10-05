@@ -14,6 +14,14 @@ The owner's explicit factory-API answer also permits non-import migration edits
 for custom loader hooks under 2b.10. Ordinary suites retain imports-only
 migration; O.1 and the complete hook inventory remain required.
 
+Further owner instruction, 2026-10-05: exclude IDE implementation and validation
+from this run; step 4 and IDE-specific evaluation remain deferred, not passed.
+Shared protocol/streaming and JVM/JS/Native runner requirements remain in scope.
+The owner also authorized rebasing onto `origin/develop` at a verified milestone
+with no tasks in flight, replaying commits after `5be95fb6`. Rebase integration
+and subsequent verification are recorded below; earlier captures retain their
+original commits and do not establish correctness of changed combined code.
+
 This ledger follows the fixed [acceptance checklist](20261001-distage-native-testkit-acceptance.md).
 Partial sub-step evidence does not establish completion of its parent step or
 any final evaluation point. All final items must be checked again on the final
@@ -112,12 +120,12 @@ head. The spike reports are design evidence, not implementation verification.
 | 2e.8 | not started | No evaluation point passed yet. |
 | 3.1 | not started | No evaluation point passed yet. |
 | 3.2 | not started | No evaluation point passed yet. |
-| 4.1 | not started | No evaluation point passed yet. |
-| 4.2 | not started | No evaluation point passed yet. |
-| 4.3 | not started | No evaluation point passed yet. |
-| 4.4 | not started | No evaluation point passed yet. |
-| 4.5 | not started | No evaluation point passed yet. |
-| 4.6 | not started | No evaluation point passed yet. |
+| 4.1 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
+| 4.2 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
+| 4.3 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
+| 4.4 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
+| 4.5 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
+| 4.6 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 5.1 | not started | No evaluation point passed yet. |
 | 5.2 | not started | No evaluation point passed yet. |
 | 5.3 | not started | No evaluation point passed yet. |
@@ -14267,3 +14275,144 @@ complete callback/cancellation/finalization and initializer-composition domains,
 streaming, actual JS/Native hosts and later steps remain open. Portable/Native
 modules and unchanged shutdown instrumentation are not separately rerun; no
 push or PR was made.
+
+
+## 2026-10-05: develop rebase and combined-code verification
+
+Integration commit: the commit containing this entry, parent
+`08ccde7a1e300483a8eb9cafa1b73c276462ff22`.
+IDE implementation and validation are excluded from this run by the owner;
+their acceptance definitions remain intact and deferred.
+
+The preceding checkpoint was committed at
+`e35dace95f6e02da2933868456e2a3775b80baab`. Its post-commit proof verifies the
+clean worktree and all nine committed file contents:
+`/srv/nvme/tmp/izumi-impl/sbt2-overlap-report-local-commit-first/completion.json`,
+SHA256 `bf6aae7534044b3e1cacd27dbc8867a33af038982f86f7c1bb41223cebc764bf`.
+No test or agent task remained in flight when the rebase began.
+
+The local backup branch
+`backup/native-testkit-before-develop-rebase-20261005` retains that old head.
+Normal fetch first failed host-key verification; HTTPS was also rewritten to SSH
+by existing global configuration. The successful command changes only the
+per-command URL rewrite, not persistent configuration:
+
+```sh
+git -c url.https://github.com/7mind/.insteadOf=https://github.com/7mind/ \
+  fetch --no-tags https://github.com/7mind/izumi.git develop:refs/remotes/origin/develop
+git rebase --onto origin/develop 5be95fb6309c4b0cb9dbea37ed84c0db0a8ff870
+```
+
+The inspected upstream head is
+`ad30dd5d5d6d9006040ac75bb4e426cbb29b46cd`. All 101 subsequent local commits
+were replayed without skips; the rebase ends at the integration parent above.
+Evidence lives under `/srv/nvme/tmp/izumi-impl/develop-rebase-20261005/`:
+`generated-conflicts.log`, `commit-map.json`, and `upstream-retention.json`.
+The retention audit verifies 125 non-overlapping upstream files and nine moved
+upstream tests byte for byte. One additional moved test changes only its
+AnyWordSpec import. The 27 overlapping paths were reconciled separately.
+Upstream Docker hooks, resources, dependency changes, and version
+`1.3.0-M5-SNAPSHOT` are retained. All 14 tracked SBT host implementation/test
+files remain byte-identical to the pre-rebase checkpoint. Historic ledger hashes
+continue identifying their original commits, not the rebased equivalents.
+
+Generated-file conflicts were deferred until the final generator inputs were
+merged, then regenerated with the pinned command:
+
+```sh
+direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'
+```
+
+The first combined `Test/compile` fails with the expected source incompatibilities:
+the stale Native IzSha256Hash object lacks the current IzHashFunction.id member,
+and the new upstream JS SHA test cannot find its moved vectors helper.
+The stale Native implementation is removed as intended by the original port;
+the JS test moves into fundamentals-platform-test with only its AnyWordSpec
+import changed. All three upstream test bodies are retained. Exact argv/logs:
+`build-first/command.json` and `build-first/run.log`.
+
+A separate Scala 3.9 compiler reproduction rejects the leftover Native
+`scala.collection.compat` import after upstream removed the dependency. Its
+actual compiler exit is 1 with `value compat is not a member of collection`;
+`compat-import-repro` retains the input, argv and log. Removing that import
+aligns Native with the already migrated JVM/JS sources.
+Inspection also establishes that the protocol's 3.8.4 scalacOptions lost
+`-Wunused:all`, `-release:17`, `-Xmax-inlines:64`, and `-source:3.8` because the
+upstream shared flags now select 3.9.0. A protocol-specific generator setting
+restores those options. The inspection command itself exits 0; its failed
+required-options postcondition is explicit in `protocol-options-reproduction.json`.
+The second generation exits 0. Generated source/build inputs then remain frozen.
+
+The large `validation-first` command completes clean Native output removal and
+all `+Test/compile` rounds: 2.13.18 on 101 projects, 3.8.4 on five projects,
+and 3.9.0 on 98 projects. The 21 XML, 20 receipt and 18 task producer checks all
+pass. The Scala 2.13 JVM fundamentals runtime phase also passes, including 410
+BIO cases. The command then exits 1: subset `+fundamentals-jvm/test` skips the
+protocol's 3.8.4 cross round and leaves it on 2.13 when switching to 3.9.
+This is recorded as an invocation limitation; no Scala mismatch exemption was
+added. The full command is not reported as passed. The bounded compile/producer
+postconditions are in `compile-producer-checks.json`; all frozen inputs match.
+
+Two fresh sequential runtime batches avoid that subset-cross state. Exact argv
+are in `runtime-3.9.0/command.json` and `runtime-2.13.18/command.json`.
+Each runs JS fundamentals, Native platform tests, Native BIO tests and the Native
+distage runner; the 3.9 batch also runs JVM fundamentals. The preceding phase
+already tested the 2.13 JVM fundamentals. Both runtime batches exit 0, with no
+changed inputs. Each Native distage runner reports 516 provider checks and the
+parallel cancellation control passes with both acquired resources released.
+These commands use ordinary SBT test selection; their counts do not establish a
+complete uncached repository test inventory.
+
+The publication command is:
+
+```sh
+direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"' build \
+  'set ThisBuild / insideCI := true' '+publishLocal'
+```
+
+Actual exit 0 at `publication/completion.json`, with frozen inputs unchanged.
+The combined artifacts publish at `1.3.0-M5-SNAPSHOT`. The plugin's 86 class/TASTy
+payloads match current compiled outputs, its 20 target Java classes retain
+version 61.0, and all ten production sources match the source JAR. Qualified
+publication record: `consumers-second/qualified-publication.json`; plugin JAR
+SHA256 `c252273383e77fd5d8736eeb3df780c4300bb98e7c06859fbe999c08db1efd2e`.
+
+The post-rebase consumer command is:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/develop-rebase-20261005/consumers.py
+python3 -B /srv/nvme/tmp/izumi-impl/develop-rebase-20261005/audit.py
+```
+
+The first harness attempt pre-created the drivers' output directories, violating
+their fresh-directory precondition. All ten drivers exit 1 before launching SBT;
+the `consumers` directory retains those FileExistsError logs. Removing that
+harness pre-creation and using fresh `consumers-second` directories corrects the
+invocation. No production or driver source changes were needed.
+
+The terminal batch runs ten independent drivers with three SBT processes at a
+time. Every driver and actual SBT process exits 0. Its 190 controls comprise
+94 history cases, 20 multi-project scenarios with 80 context checks, eight
+host-limit commands, 12 omissions, 12 owned task errors, 12 foreign task errors,
+and 32 grouping/exclusion/process-exit/drain/recovery controls across both
+supported compilers and both JUnit layouts. Exact argv, environment changes,
+driver hashes, artifact hashes and frozen source inputs are in
+`consumers-second/commands.json`, `frozen-inputs.json` and `completion.json`.
+All frozen inputs remain unchanged. The two legacy drivers explicitly set
+`SBT_TESTING_LEGACYREPORT=always`.
+
+The independent audit exits 0, verifies the 190 controls and 59 producer markers,
+and checks all four overlap captures against the actual body receipts, custom
+Output and exact XML testcase identities. Each executes six SuiteA bodies in
+two workers and retains all six results in one suite XML file. Audit completion
+SHA256: `0bcb42d32cedc4651daca7c6181277444344894dd26a18016d6e37e67aeb5301`.
+
+No tasks remain in flight at the integration commit. Its post-commit command
+is `python3 -B /srv/nvme/tmp/izumi-impl/develop-rebase-20261005/verify-commit.py`;
+the resulting `commit-proof.json` checks the clean worktree, upstream ancestry,
+retained backup, committed compiled-input bytes and unchanged consumer artifact
+inputs. This records source provenance without claiming another runtime run.
+No whole step or final item is marked done. Full uncached test inventories,
+in-process duplicate groups, callback/cancellation/finalization and custom input
+composition domains, streaming, production JS/Native hosts, coverage, migration
+and final reviews remain open. IDE work remains deferred. No push or PR was made.

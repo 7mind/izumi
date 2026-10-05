@@ -22,6 +22,11 @@ session-aware factory API. This is the sole non-import migration exception in
 2b.10; O.1 still requires preserving planning, environment merging, memoization,
 and effect execution.
 
+Further owner instruction, 2026-10-05: IDE implementation and IDE validation are
+excluded from this run. Step 4 and IDE-specific checks remain deferred, not done.
+Their definitions below are retained for a later run. Shared engine, protocol,
+streaming, and JVM/JS/Native host requirements remain in scope.
+
 Where an item and the plan differ on what must be achieved, the stricter of the
 two applies; the plan defers work only through its open decisions. This file
 alone defines when and where an item is evaluated. Its evaluation points,

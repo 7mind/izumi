@@ -30,6 +30,13 @@ baseline. Historical SBT 1/Scala 2.12 measurements below remain evidence of
 past experiments, not current support requirements. All shared correctness
 requirements and evaluation points remain in force.
 
+Further owner revision, 2026-10-05: exclude IDE implementation and validation
+from this run. Step 4 and IDE-specific checks remain deferred, not completed;
+shared runner/protocol/streaming work continues. Rebase the implementation branch
+onto `origin/develop` at a verified milestone with no tasks in flight, replaying
+only commits after the inspected baseline `5be95fb6` above. Validate the combined
+code before advancing acceptance claims.
+
 ## Evidence and implications
 
 The [issue report](https://github.com/7mind/izumi/issues/2361) records lost tests

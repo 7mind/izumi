@@ -15,6 +15,14 @@ The owner also authorizes migrating custom plugin-loader hooks to the explicit
 session-aware factory API. Acceptance item 2b.10 permits those additional hook
 edits; ordinary suites retain imports-only migration, and O.1 remains required.
 
+The owner's further 2026-10-05 instruction excludes IDE implementation and IDE
+validation from this run. Step 4 and IDE-specific evaluation remain deferred,
+not passed. Shared engine, protocol, streaming, and runner requirements remain
+in scope. The owner also authorizes rebasing this branch onto `origin/develop`
+after a verified milestone with no tasks in flight, replaying the commits after
+`5be95fb6309c4b0cb9dbea37ed84c0db0a8ff870`. Preserve the pre-rebase branch locally
+and validate the combined code before treating prior checks as current evidence.
+
 ## Definition of done
 
 The [acceptance checklist](20261001-distage-native-testkit-acceptance.md) is the
@@ -76,7 +84,8 @@ is done. The fallback, if no release appears, is the owner's choice (the plan's
 - **Commits.** Work on `wip/distage-test-runner-and-scala-native`. Commit each
   verified sub-step locally, with a message that states what was verified. Do
   not push, open pull requests, force-push, rewrite history, or change
-  `develop`.
+  `develop`. The owner's explicit rebase authorization above is the exception
+  to the history-rewrite restriction; no push is authorized.
 - **Generated build.** Never hand-edit `build.sbt`, `project/plugins.sbt`, or
   `project/build.properties`.
   Change `sbtgen/Deps.scala`, `project/Versions.scala`, or

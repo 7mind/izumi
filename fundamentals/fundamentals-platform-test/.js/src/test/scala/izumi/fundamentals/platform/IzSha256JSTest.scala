@@ -3,7 +3,7 @@ package izumi.fundamentals.platform
 import izumi.fundamentals.platform.Sha256TestVectors.{binaryVectors, textVectors}
 import izumi.fundamentals.platform.bytes.IzBytes.*
 import izumi.fundamentals.platform.crypto.IzSha256
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import java.nio.charset.StandardCharsets
 import scala.scalajs.js

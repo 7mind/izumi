@@ -820,6 +820,10 @@ object Izumi {
         depends = Seq.empty,
         platforms = Targets.protocol,
         settings = assertionFixtureSettings ++ Seq(
+          "scalacOptions" ++= Seq(
+            SettingKey(Some(scalaSbt2Plugin), None) := Projects.root.scala3Options("3.8") ++ Projects.root.wconfOverrides,
+            SettingKey.Default := Const.EmptySeq,
+          ),
           "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.protocol.ProtocolFixtures\")".raw,
         ),
       ),

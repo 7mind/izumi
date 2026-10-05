@@ -7,7 +7,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 import com.github.sbt.git.SbtGit.GitKeys._
 
-lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-basics"))
+lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-basics"))
   .settings(
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
@@ -191,11 +191,21 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform).crossType
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-basicsJVM` = `fundamentals-basics`.jvm
 lazy val `fundamentals-basicsJS` = `fundamentals-basics`.js
+lazy val `fundamentals-basicsNative` = `fundamentals-basics`.native
 
-lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functional"))
+lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functional"))
   .dependsOn(
     `fundamentals-basics` % "test->compile;compile->compile"
   )
@@ -382,11 +392,21 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform).cross
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-functionalJVM` = `fundamentals-functional`.jvm
 lazy val `fundamentals-functionalJS` = `fundamentals-functional`.js
+lazy val `fundamentals-functionalNative` = `fundamentals-functional`.native
 
-lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-collections"))
+lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-collections"))
   .dependsOn(
     `fundamentals-basics` % "test->compile;compile->compile",
     `fundamentals-functional` % "test->compile;compile->compile"
@@ -574,11 +594,661 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform).cros
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-collectionsJVM` = `fundamentals-collections`.jvm
 lazy val `fundamentals-collectionsJS` = `fundamentals-collections`.js
+lazy val `fundamentals-collectionsNative` = `fundamentals-collections`.native
 
-lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-orphans"))
+lazy val `fundamentals-assertions` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-assertions"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testOptions := Seq.empty,
+    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
+    Test / test := (Test / testFull).value,
+    Test / mainClass := {
+      val options = (Test / scalacOptions).value
+      val pointOnly = options.contains("-Yrangepos:false")
+      Some(if (pointOnly) "izumi.fundamentals.assertions.AssertionFixturesWithoutRanges" else "izumi.fundamentals.assertions.AssertionFixtures")
+    },
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / scalaJSUseMainModuleInitializer := true,
+    Test / scalaJSUseTestModuleInitializer := false
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-assertionsJVM` = `fundamentals-assertions`.jvm
+lazy val `fundamentals-assertionsJS` = `fundamentals-assertions`.js
+lazy val `fundamentals-assertionsNative` = `fundamentals-assertions`.native
+
+lazy val `fundamentals-assertions-cats` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-assertions-cats"))
+  .dependsOn(
+    `fundamentals-assertions` % "test->compile;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testOptions := Seq.empty,
+    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
+    Test / test := (Test / testFull).value,
+    Test / mainClass := Some("izumi.fundamentals.assertions.cats.CatsAssertionFixtures"),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / scalaJSUseMainModuleInitializer := true,
+    Test / scalaJSUseTestModuleInitializer := false
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-assertions-catsJVM` = `fundamentals-assertions-cats`.jvm
+lazy val `fundamentals-assertions-catsJS` = `fundamentals-assertions-cats`.js
+lazy val `fundamentals-assertions-catsNative` = `fundamentals-assertions-cats`.native
+
+lazy val `fundamentals-assertions-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-assertions-bio"))
+  .dependsOn(
+    `fundamentals-assertions` % "test->compile;compile->compile",
+    `fundamentals-bio` % "test->compile;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testOptions := Seq.empty,
+    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
+    Test / test := (Test / testFull).value,
+    Test / mainClass := Some("izumi.fundamentals.assertions.bio.BIOAssertionFixtures"),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / scalaJSUseMainModuleInitializer := true,
+    Test / scalaJSUseTestModuleInitializer := false
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-assertions-bioJVM` = `fundamentals-assertions-bio`.jvm
+lazy val `fundamentals-assertions-bioJS` = `fundamentals-assertions-bio`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+    )
+  )
+lazy val `fundamentals-assertions-bioNative` = `fundamentals-assertions-bio`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+    )
+  )
+
+lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-orphans"))
   .dependsOn(
     `fundamentals-basics` % "test->compile;compile->compile"
   )
@@ -770,11 +1440,21 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform).crossTyp
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-orphansJVM` = `fundamentals-orphans`.jvm
 lazy val `fundamentals-orphansJS` = `fundamentals-orphans`.js
+lazy val `fundamentals-orphansNative` = `fundamentals-orphans`.native
 
-lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-language"))
+lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-language"))
   .dependsOn(
     `fundamentals-basics` % "test->compile;compile->compile"
   )
@@ -970,11 +1650,21 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform).crossTy
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-languageJVM` = `fundamentals-language`.jvm
 lazy val `fundamentals-languageJS` = `fundamentals-language`.js
+lazy val `fundamentals-languageNative` = `fundamentals-language`.native
 
-lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform"))
+lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform"))
   .dependsOn(
     `fundamentals-functional` % "test->compile;compile->compile",
     `fundamentals-basics` % "test->compile;compile->compile",
@@ -1167,6 +1857,15 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform).crossTy
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
 lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
@@ -1175,8 +1874,14 @@ lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
       "org.scala-js" %% "scala-js-macrotask-executor" % V.scalajs_macrotask_executor
     )
   )
+lazy val `fundamentals-platformNative` = `fundamentals-platform`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
+    )
+  )
 
-lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functoid"))
+lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functoid"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-language` % "test->compile;compile->compile",
@@ -1367,11 +2072,21 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform).crossTy
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-functoidJVM` = `fundamentals-functoid`.jvm
 lazy val `fundamentals-functoidJS` = `fundamentals-functoid`.js
+lazy val `fundamentals-functoidNative` = `fundamentals-functoid`.native
 
-lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-json-circe"))
+lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-json-circe"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile"
   )
@@ -1390,14 +2105,11 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
       "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
-      "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-literal" % V.circe % Test
+      "io.circe" %% "circe-core" % V.circe
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "io.circe" %% "circe-derivation" % V.circe_derivation % Test,
-      "io.circe" %% "circe-generic" % V.circe % Test
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
     ) else Seq.empty },
     libraryDependencies ++= {
       val version = scalaVersion.value
@@ -1553,8 +2265,6 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
-    libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
-    libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -1573,11 +2283,1336 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform).cross
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-json-circeJVM` = `fundamentals-json-circe`.jvm
 lazy val `fundamentals-json-circeJS` = `fundamentals-json-circe`.js
+lazy val `fundamentals-json-circeNative` = `fundamentals-json-circe`.native
 
-lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-bio"))
+lazy val `fundamentals-test-support` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-test-support"))
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true,
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-test-supportJVM` = `fundamentals-test-support`.jvm
+  .dependsOn(
+    `distage-test-runnerJVM` % "test->compile;compile->compile"
+  )
+lazy val `fundamentals-test-supportJS` = `fundamentals-test-support`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck
+    )
+  )
+lazy val `fundamentals-test-supportNative` = `fundamentals-test-support`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck
+    )
+  )
+
+lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform-test"))
+  .dependsOn(
+    `fundamentals-platform` % "test->compile",
+    `fundamentals-test-support` % "test->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "io.github.classgraph" % "classgraph" % V.classgraph % Provided
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true,
+    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value,
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-platform-test-jvm", "--catalogue-id", "fundamentals-platform-test-catalogue")
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-platform-testJVM` = `fundamentals-platform-test`.jvm
+lazy val `fundamentals-platform-testJS` = `fundamentals-platform-test`.js
+lazy val `fundamentals-platform-testNative` = `fundamentals-platform-test`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time-tzdb" % V.scala_java_time % Test
+    )
+  )
+
+lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-collections-test"))
+  .dependsOn(
+    `fundamentals-collections` % "test->compile",
+    `fundamentals-test-support` % "test->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true,
+    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-collections-test-jvm", "--catalogue-id", "fundamentals-collections-test-catalogue")
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-collections-testJVM` = `fundamentals-collections-test`.jvm
+lazy val `fundamentals-collections-testJS` = `fundamentals-collections-test`.js
+lazy val `fundamentals-collections-testNative` = `fundamentals-collections-test`.native
+
+lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-language-test"))
+  .dependsOn(
+    `fundamentals-language` % "test->compile",
+    `fundamentals-test-support` % "test->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true,
+    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-language-test-jvm", "--catalogue-id", "fundamentals-language-test-catalogue")
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-language-testJVM` = `fundamentals-language-test`.jvm
+lazy val `fundamentals-language-testJS` = `fundamentals-language-test`.js
+lazy val `fundamentals-language-testNative` = `fundamentals-language-test`.native
+
+lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-json-circe-test"))
+  .dependsOn(
+    `fundamentals-json-circe` % "test->compile",
+    `fundamentals-test-support` % "test->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "io.circe" %% "circe-literal" % V.circe % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+      "io.circe" %% "circe-generic" % V.circe % Test
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true,
+    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
+    libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always,
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-json-circe-test-jvm", "--catalogue-id", "fundamentals-json-circe-test-catalogue"),
+    Test / unmanagedSourceDirectories += file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / unmanagedSourceDirectories += file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / unmanagedSourceDirectories ++= { if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile) else Seq.empty }
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-json-circe-testJVM` = `fundamentals-json-circe-test`.jvm
+  .settings(
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      "io.circe" %% "circe-derivation" % V.circe_derivation % Test
+    ) else Seq.empty }
+  )
+lazy val `fundamentals-json-circe-testJS` = `fundamentals-json-circe-test`.js
+  .settings(
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      "io.circe" %% "circe-derivation" % V.circe_derivation % Test
+    ) else Seq.empty }
+  )
+lazy val `fundamentals-json-circe-testNative` = `fundamentals-json-circe-test`.native
+
+lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-bio-test"))
+  .dependsOn(
+    `fundamentals-bio` % "test->compile",
+    `fundamentals-test-support` % "test->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "org.typelevel" %% "cats-core" % V.cats % Test,
+      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+      "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
+      "org.typelevel" %% "cats-effect-testkit" % V.cats_effect % Test,
+      "org.typelevel" %% "discipline-core" % V.discipline % Test,
+      "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+      ("org.typelevel" %% "scalac-compat-annotation" % V.scalac_compat_annotation).platform(Platform.jvm) % Provided
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true,
+    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-bio-test-jvm", "--catalogue-id", "fundamentals-bio-test-catalogue")
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `fundamentals-bio-testJVM` = `fundamentals-bio-test`.jvm
+lazy val `fundamentals-bio-testJS` = `fundamentals-bio-test`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+    )
+  )
+lazy val `fundamentals-bio-testNative` = `fundamentals-bio-test`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+    )
+  )
+
+lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-bio"))
   .dependsOn(
     `fundamentals-language` % "test->compile;compile->compile",
     `fundamentals-orphans` % "test->compile;compile->compile",
@@ -1604,14 +3639,11 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
       "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
       "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
       "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-interop-tracer" % V.zio_interop_cats,
-      "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
-      "org.typelevel" %% "cats-effect-testkit" % V.cats_effect % Test,
-      "org.typelevel" %% "discipline-core" % V.discipline % Test,
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
+      "dev.zio" %% "zio-interop-tracer" % V.zio_interop_cats
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      ("org.typelevel" %% "scalac-compat-annotation" % V.scalac_compat_annotation).platform(Platform.jvm) % Provided
     ) else Seq.empty }
   )
   .settings(
@@ -1777,16 +3809,483 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-bioJVM` = `fundamentals-bio`.jvm
 lazy val `fundamentals-bioJS` = `fundamentals-bio`.js
+lazy val `fundamentals-bioNative` = `fundamentals-bio`.native
+
+lazy val `distage-test-protocol` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-test-protocol"))
   .settings(
     libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-parser" % V.circe
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testOptions := Seq.empty,
+    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
+    Test / test := (Test / testFull).value,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "3.8.4") => Seq(
+        "-source:3.8",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17",
+        "-Wconf:cat=deprecation:warning",
+        "-Wconf:msg=legacy-binding:silent",
+        "-Wconf:msg=nowarn:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / mainClass := Some("izumi.distage.testkit.protocol.ProtocolFixtures"),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.8.4",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.8.4",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / scalaJSUseMainModuleInitializer := true,
+    Test / scalaJSUseTestModuleInitializer := false
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.8.4",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `distage-test-protocolJVM` = `distage-test-protocol`.jvm
+lazy val `distage-test-protocolJS` = `distage-test-protocol`.js
+lazy val `distage-test-protocolNative` = `distage-test-protocol`.native
+
+lazy val `distage-test-runner` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-test-runner"))
+  .dependsOn(
+    `fundamentals-assertions` % "test->compile;compile->compile",
+    `distage-test-protocol` % "test->compile;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+    ) else Seq.empty }
+  )
+  .settings(
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument("-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testOptions := Seq.empty,
+    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
+    Test / test := (Test / testFull).value,
+    Test / mainClass := Some("izumi.distage.testkit.runner.BaseRunnerFixtures"),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .jvmSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head
+  )
+  .jsSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / scalaJSUseMainModuleInitializer := true,
+    Test / scalaJSUseTestModuleInitializer := false
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
+  .enablePlugins(SitePreviewPlugin)
+lazy val `distage-test-runnerJVM` = `distage-test-runner`.jvm
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-sbt" % "test-interface" % V.sbt_test_interface
     )
   )
+lazy val `distage-test-runnerJS` = `distage-test-runner`.js
+lazy val `distage-test-runnerNative` = `distage-test-runner`.native
 
-lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-core-api"))
+lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-core-api"))
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-functoid` % "test->compile;compile->compile",
@@ -1985,9 +4484,19 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform).crossType(Cr
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-core-apiJVM` = `distage-core-api`.jvm
 lazy val `distage-core-apiJS` = `distage-core-api`.js
+lazy val `distage-core-apiNative` = `distage-core-api`.native
 
 lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-proxy-bytebuddy"))
   .dependsOn(
@@ -2168,7 +4677,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
   )
   .enablePlugins(SitePreviewPlugin)
 
-lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-framework-api"))
+lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-framework-api"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile"
   )
@@ -2356,14 +4865,25 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform).crossTy
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-framework-apiJVM` = `distage-framework-api`.jvm
 lazy val `distage-framework-apiJS` = `distage-framework-api`.js
+lazy val `distage-framework-apiNative` = `distage-framework-api`.native
 
-lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-core"))
+lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-core"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
-    `fundamentals-platform` % "test->test;compile->compile"
+    `fundamentals-platform` % "test->compile;compile->compile",
+    `fundamentals-platform-test` % "test->compile,test"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -2554,6 +5074,15 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossT
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-coreJVM` = `distage-core`.jvm
   .dependsOn(
@@ -2565,8 +5094,14 @@ lazy val `distage-coreJS` = `distage-core`.js
       "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
     )
   )
+lazy val `distage-coreNative` = `distage-core`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+    )
+  )
 
-lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))
+lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile"
@@ -2755,6 +5290,15 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform).cros
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
   .settings(
@@ -2779,8 +5323,17 @@ lazy val `distage-extension-configJS` = `distage-extension-config`.js
       "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
     )
   )
+lazy val `distage-extension-configNative` = `distage-extension-config`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-generic" % V.circe,
+      "io.circe" %% "circe-parser" % V.circe % Test,
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+    )
+  )
 
-lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-logstage"))
+lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-logstage"))
   .dependsOn(
     `distage-extension-config` % "test->compile;compile->compile",
     `distage-core-api` % "test->compile;compile->compile",
@@ -2972,11 +5525,21 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform).cr
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-extension-logstageJVM` = `distage-extension-logstage`.jvm
 lazy val `distage-extension-logstageJS` = `distage-extension-logstage`.js
+lazy val `distage-extension-logstageNative` = `distage-extension-logstage`.native
 
-lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-plugins"))
+lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-plugins"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile",
@@ -3168,10 +5731,19 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform).cro
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-extension-pluginsJVM` = `distage-extension-plugins`.jvm
   .dependsOn(
-    `fundamentals-platformJVM` % "test->compile,test"
+    `fundamentals-platform-testJVM` % "test->compile,test"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -3182,8 +5754,9 @@ lazy val `distage-extension-pluginsJVM` = `distage-extension-plugins`.jvm
     )
   )
 lazy val `distage-extension-pluginsJS` = `distage-extension-plugins`.js
+lazy val `distage-extension-pluginsNative` = `distage-extension-plugins`.native
 
-lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-framework"))
+lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-framework"))
   .dependsOn(
     `distage-extension-logstage` % "test->compile;compile->compile",
     `logstage-rendering-circe` % "test->compile;compile->compile",
@@ -3392,9 +5965,25 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-frameworkJVM` = `distage-framework`.jvm
 lazy val `distage-frameworkJS` = `distage-framework`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-parser" % V.circe
+    )
+  )
+lazy val `distage-frameworkNative` = `distage-framework`.native
   .settings(
     libraryDependencies ++= Seq(
       "io.circe" %% "circe-parser" % V.circe
@@ -3590,7 +6179,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
   )
   .enablePlugins(SitePreviewPlugin)
 
-lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-core"))
+lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-core"))
   .dependsOn(
     `distage-framework` % "test->compile;compile->compile"
   )
@@ -3759,6 +6348,11 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testOptions := Seq.empty,
+    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
+    Test / test := (Test / testFull).value,
+    Test / mainClass := Some("izumi.distage.testkit.spec.SessionEnvironmentFixtures"),
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -3775,13 +6369,27 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform).crossTyp
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / scalaJSUseMainModuleInitializer := true,
+    Test / scalaJSUseTestModuleInitializer := false
+  )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / mainClass := Some("izumi.distage.testkit.spec.NativeTestkitFixtures"),
+    Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-testkit-coreJVM` = `distage-testkit-core`.jvm
 lazy val `distage-testkit-coreJS` = `distage-testkit-core`.js
+lazy val `distage-testkit-coreNative` = `distage-testkit-core`.native
 
-lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-runner"))
+lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-runner"))
   .dependsOn(
     `distage-testkit-core` % "test->compile;compile->compile",
     `distage-test-runner` % "test->compile;compile->compile",
@@ -3790,7 +6398,6 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossT
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
@@ -3862,61 +6469,9 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossT
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.21") => Seq(
-        "-Wconf:any:error",
-        "-release:17",
-        "-explaintypes",
-        "-language:higherKinds",
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        "-Ypartial-unification",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
-      )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -3941,26 +6496,57 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossT
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions ++= { if (scalaVersion.value.startsWith("3.")) Seq("-source:3.7", "-Xkind-projector:underscores", "-release:17", "-Yretain-trees", "-no-indent", "-explain", "-explain-types", "-explain-cyclic", "-Xmax-inlines:64", "-Ybackend-parallelism", "1", "-Wopt:all", "-Wrecurse-with-default", "-Wshadow:private-shadow", "-Wwrong-arrow", if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning", "-Wenum-comment-discard", "-Wimplausible-patterns", "-Wnonunit-statement", "-WunstableInlineAccessors", "-Wunused:all", "-Wvalue-discard", "-Wconf:any:verbose", "-Wconf:name=UnusedNonUnitValue:silent", "-Wconf:name=ValueDiscarding:silent", "-Wconf:msg=eta-expanded even though:silent", "-Wconf:msg=Ignoring .this. qualifier:silent", "-Wconf:msg=.this. qualifier will be deprecated:silent", "-Wconf:msg=scala.compiletime.uninitialized:silent", "-Wconf:msg=`using` clause:silent", "-Wconf:msg=The syntax ..function:silent", "-Wconf:msg=method contains is not declared infix:silent", "-Wconf:msg=method in is not declared infix:silent") else Seq.empty },
-    scalacOptions ++= { if (scalaVersion.value == "3.9.0") Seq("-Ximport-suggestion-timeout:0") else Seq.empty },
     scalacOptions -= "-Wconf:any:warning",
-    scalacOptions += "-Wconf:cat=deprecation:warning",
-    scalacOptions += "-Wconf:msg=legacy-binding:silent",
-    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.21") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
       case (false, "2.13.18") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
@@ -3981,21 +6567,20 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossT
     Test / testOptions := Seq.empty,
     Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
     Test / test := (Test / testFull).value,
-    Test / mainClass := Some("izumi.distage.testkit.runner.di.DistageProviderFixtures")
+    Test / mainClass := Some("izumi.distage.testkit.runner.di.DistageProviderFixtures"),
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
     crossScalaVersions := Seq(
       "3.9.0",
-      "2.13.18",
-      "2.12.21"
+      "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head
   )
   .jsSettings(
     crossScalaVersions := Seq(
       "3.9.0",
-      "2.13.18",
-      "2.12.21"
+      "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
@@ -4003,13 +6588,24 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform).crossT
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-testkit-runnerJVM` = `distage-testkit-runner`.jvm
 lazy val `distage-testkit-runnerJS` = `distage-testkit-runner`.js
+lazy val `distage-testkit-runnerNative` = `distage-testkit-runner`.native
 
 lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-scalatest"))
   .dependsOn(
     `distage-testkit-core` % "test->compile;compile->compile",
+    `fundamentals-assertions` % "test->compile;compile->compile",
     `distage-core` % "test->compile;compile->compile",
     `distage-extension-plugins` % "test->compile;compile->compile",
     `distage-framework` % "test->test;compile->compile"
@@ -4403,7 +6999,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
   )
   .enablePlugins(SitePreviewPlugin)
 
-lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("logstage/logstage-core"))
+lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("logstage/logstage-core"))
   .dependsOn(
     `fundamentals-bio` % "test->compile;compile->compile",
     `fundamentals-platform` % "test->compile;compile->compile"
@@ -4596,6 +7192,15 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform).crossType(Cross
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `logstage-coreJVM` = `logstage-core`.jvm
 lazy val `logstage-coreJS` = `logstage-core`.js
@@ -4604,8 +7209,14 @@ lazy val `logstage-coreJS` = `logstage-core`.js
       "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
     )
   )
+lazy val `logstage-coreNative` = `logstage-core`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
+    )
+  )
 
-lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).crossType(CrossType.Pure).in(file("logstage/logstage-rendering-circe"))
+lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("logstage/logstage-rendering-circe"))
   .dependsOn(
     `logstage-core` % "test->test;compile->compile"
   )
@@ -4798,9 +7409,19 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform).cros
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
+  .nativeSettings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    coverageEnabled := false,
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+  )
   .enablePlugins(SitePreviewPlugin)
 lazy val `logstage-rendering-circeJVM` = `logstage-rendering-circe`.jvm
 lazy val `logstage-rendering-circeJS` = `logstage-rendering-circe`.js
+lazy val `logstage-rendering-circeNative` = `logstage-rendering-circe`.native
 
 lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-slf4j"))
   .dependsOn(
@@ -5169,12 +7790,23 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `fundamentals-basicsJVM` % "test->compile;compile->compile",
     `fundamentals-functionalJVM` % "test->compile;compile->compile",
     `fundamentals-collectionsJVM` % "test->compile;compile->compile",
+    `fundamentals-assertionsJVM` % "test->compile;compile->compile",
+    `fundamentals-assertions-catsJVM` % "test->compile;compile->compile",
+    `fundamentals-assertions-bioJVM` % "test->compile;compile->compile",
     `fundamentals-orphansJVM` % "test->compile;compile->compile",
     `fundamentals-languageJVM` % "test->compile;compile->compile",
     `fundamentals-platformJVM` % "test->compile;compile->compile",
     `fundamentals-functoidJVM` % "test->compile;compile->compile",
     `fundamentals-json-circeJVM` % "test->compile;compile->compile",
+    `fundamentals-test-supportJVM` % "test->compile;compile->compile",
+    `fundamentals-platform-testJVM` % "test->compile;compile->compile",
+    `fundamentals-collections-testJVM` % "test->compile;compile->compile",
+    `fundamentals-language-testJVM` % "test->compile;compile->compile",
+    `fundamentals-json-circe-testJVM` % "test->compile;compile->compile",
+    `fundamentals-bio-testJVM` % "test->compile;compile->compile",
     `fundamentals-bioJVM` % "test->compile;compile->compile",
+    `distage-test-protocolJVM` % "test->compile;compile->compile",
+    `distage-test-runnerJVM` % "test->compile;compile->compile",
     `distage-core-apiJVM` % "test->compile;compile->compile",
     `distage-core-proxy-bytebuddy` % "test->compile;compile->compile",
     `distage-framework-apiJVM` % "test->compile;compile->compile",
@@ -5443,7 +8075,6 @@ lazy val `sbt-distage-testkit` = project.in(file("sbt-plugins/sbt-distage-testki
   )
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-collection-compat" % V.collection_compat,
       "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
@@ -5456,7 +8087,8 @@ lazy val `sbt-distage-testkit` = project.in(file("sbt-plugins/sbt-distage-testki
       "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
       "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
-      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test,
+      "net.bytebuddy" % "byte-buddy" % V.bytebuddy
     ),
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
       compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
@@ -5514,61 +8146,9 @@ lazy val `sbt-distage-testkit` = project.in(file("sbt-plugins/sbt-distage-testki
     },
     Test / testOptions += Tests.Argument("-oDF"),
     closeClassLoaders := false,
-    exportJars := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.12.21") => Seq(
-        "-Wconf:any:error",
-        "-release:17",
-        "-explaintypes",
-        "-language:higherKinds",
-        "-Xsource:3",
-        "-P:kind-projector:underscore-placeholders",
-        "-Ypartial-unification",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Xlint:adapted-args",
-        "-Xlint:by-name-right-associative",
-        "-Xlint:constant",
-        "-Xlint:delayedinit-select",
-        "-Xlint:doc-detached",
-        "-Xlint:inaccessible",
-        "-Xlint:infer-any",
-        "-Xlint:missing-interpolator",
-        "-Xlint:nullary-override",
-        "-Xlint:nullary-unit",
-        "-Xlint:option-implicit",
-        "-Xlint:package-object-classes",
-        "-Xlint:poly-implicit-overload",
-        "-Xlint:private-shadow",
-        "-Xlint:stars-align",
-        "-Xlint:type-parameter-shadow",
-        "-Xlint:unsound-match",
-        "-opt-warnings:_",
-        "-Ywarn-extra-implicit",
-        "-Ywarn-adapted-args",
-        "-Ywarn-dead-code",
-        "-Ywarn-inaccessible",
-        "-Ywarn-infer-any",
-        "-Ywarn-nullary-override",
-        "-Ywarn-nullary-unit",
-        "-Ywarn-numeric-widen",
-        "-Ywarn-unused-import",
-        "-Ywarn-value-discard",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
-      )
       case (_, "2.13.18") => Seq(
         "-Wconf:any:error",
-        "-release:17",
         "-explaintypes",
         "-P:kind-projector:underscore-placeholders",
         if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
@@ -5593,26 +8173,57 @@ lazy val `sbt-distage-testkit` = project.in(file("sbt-plugins/sbt-distage-testki
         "-Wconf:msg=package.object.inheritance:silent",
         "-Wconf:msg=not.a.valid.main.method:silent",
         "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent"
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
       )
       case (_, _) => Seq.empty
     } },
-    scalacOptions ++= { if (scalaVersion.value.startsWith("3.")) Seq("-source:3.7", "-Xkind-projector:underscores", "-release:17", "-Yretain-trees", "-no-indent", "-explain", "-explain-types", "-explain-cyclic", "-Xmax-inlines:64", "-Ybackend-parallelism", "1", "-Wopt:all", "-Wrecurse-with-default", "-Wshadow:private-shadow", "-Wwrong-arrow", if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning", "-Wenum-comment-discard", "-Wimplausible-patterns", "-Wnonunit-statement", "-WunstableInlineAccessors", "-Wunused:all", "-Wvalue-discard", "-Wconf:any:verbose", "-Wconf:name=UnusedNonUnitValue:silent", "-Wconf:name=ValueDiscarding:silent", "-Wconf:msg=eta-expanded even though:silent", "-Wconf:msg=Ignoring .this. qualifier:silent", "-Wconf:msg=.this. qualifier will be deprecated:silent", "-Wconf:msg=scala.compiletime.uninitialized:silent", "-Wconf:msg=`using` clause:silent", "-Wconf:msg=The syntax ..function:silent", "-Wconf:msg=method contains is not declared infix:silent", "-Wconf:msg=method in is not declared infix:silent") else Seq.empty },
-    scalacOptions ++= { if (scalaVersion.value == "3.9.0") Seq("-Ximport-suggestion-timeout:0") else Seq.empty },
     scalacOptions -= "-Wconf:any:warning",
-    scalacOptions += "-Wconf:cat=deprecation:warning",
-    scalacOptions += "-Wconf:msg=legacy-binding:silent",
-    scalacOptions += "-Wconf:msg=nowarn:silent",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
     Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:scalatest-version=${V.scalatest}",
       s"-Xmacro-settings:is-ci=${insideCI.value}"
     ),
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.12.21") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
       case (false, "2.13.18") => Seq(
         "-opt:l:inline",
         "-opt-inline-from:izumi.**"
@@ -5631,12 +8242,55 @@ lazy val `sbt-distage-testkit` = project.in(file("sbt-plugins/sbt-distage-testki
     Test / packageDoc / publishArtifact := false,
     sbtPlugin := true,
     sbtPluginPublishLegacyMavenStyle := false,
+    crossScalaVersions := Seq("3.8.4"),
+    scalaVersion := crossScalaVersions.value.head,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "3.8.4") => Seq(
+        "-source:3.8",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17",
+        "-Wconf:cat=deprecation:warning",
+        "-Wconf:msg=legacy-binding:silent",
+        "-Wconf:msg=nowarn:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    pluginCrossBuild / sbtVersion := "2.0.9",
     crossScalaVersions := Seq(
-      "3.8.4",
-      "2.12.21"
+      "3.8.4"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    pluginCrossBuild / sbtVersion := { scalaBinaryVersion.value match { case "2.12" => "1.13.0"; case "3" => "2.0.9"; case other => sys.error("Unsupported distage plugin Scala version: " + other) } },
+    pluginCrossBuild / sbtVersion := "2.0.9",
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5872,22 +8526,58 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .aggregate(
     `fundamentals-basicsJVM`,
     `fundamentals-basicsJS`,
+    `fundamentals-basicsNative`,
     `fundamentals-functionalJVM`,
     `fundamentals-functionalJS`,
+    `fundamentals-functionalNative`,
     `fundamentals-collectionsJVM`,
     `fundamentals-collectionsJS`,
+    `fundamentals-collectionsNative`,
+    `fundamentals-assertionsJVM`,
+    `fundamentals-assertionsJS`,
+    `fundamentals-assertionsNative`,
+    `fundamentals-assertions-catsJVM`,
+    `fundamentals-assertions-catsJS`,
+    `fundamentals-assertions-catsNative`,
+    `fundamentals-assertions-bioJVM`,
+    `fundamentals-assertions-bioJS`,
+    `fundamentals-assertions-bioNative`,
     `fundamentals-orphansJVM`,
     `fundamentals-orphansJS`,
+    `fundamentals-orphansNative`,
     `fundamentals-languageJVM`,
     `fundamentals-languageJS`,
+    `fundamentals-languageNative`,
     `fundamentals-platformJVM`,
     `fundamentals-platformJS`,
+    `fundamentals-platformNative`,
     `fundamentals-functoidJVM`,
     `fundamentals-functoidJS`,
+    `fundamentals-functoidNative`,
     `fundamentals-json-circeJVM`,
     `fundamentals-json-circeJS`,
+    `fundamentals-json-circeNative`,
+    `fundamentals-test-supportJVM`,
+    `fundamentals-test-supportJS`,
+    `fundamentals-test-supportNative`,
+    `fundamentals-platform-testJVM`,
+    `fundamentals-platform-testJS`,
+    `fundamentals-platform-testNative`,
+    `fundamentals-collections-testJVM`,
+    `fundamentals-collections-testJS`,
+    `fundamentals-collections-testNative`,
+    `fundamentals-language-testJVM`,
+    `fundamentals-language-testJS`,
+    `fundamentals-language-testNative`,
+    `fundamentals-json-circe-testJVM`,
+    `fundamentals-json-circe-testJS`,
+    `fundamentals-json-circe-testNative`,
+    `fundamentals-bio-testJVM`,
+    `fundamentals-bio-testJS`,
+    `fundamentals-bio-testNative`,
     `fundamentals-bioJVM`,
-    `fundamentals-bioJS`
+    `fundamentals-bioJS`,
+    `fundamentals-bioNative`
   )
 
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
@@ -5901,11 +8591,20 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
     `fundamentals-basicsJVM`,
     `fundamentals-functionalJVM`,
     `fundamentals-collectionsJVM`,
+    `fundamentals-assertionsJVM`,
+    `fundamentals-assertions-catsJVM`,
+    `fundamentals-assertions-bioJVM`,
     `fundamentals-orphansJVM`,
     `fundamentals-languageJVM`,
     `fundamentals-platformJVM`,
     `fundamentals-functoidJVM`,
     `fundamentals-json-circeJVM`,
+    `fundamentals-test-supportJVM`,
+    `fundamentals-platform-testJVM`,
+    `fundamentals-collections-testJVM`,
+    `fundamentals-language-testJVM`,
+    `fundamentals-json-circe-testJVM`,
+    `fundamentals-bio-testJVM`,
     `fundamentals-bioJVM`
   )
 
@@ -5920,12 +8619,49 @@ lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js
     `fundamentals-basicsJS`,
     `fundamentals-functionalJS`,
     `fundamentals-collectionsJS`,
+    `fundamentals-assertionsJS`,
+    `fundamentals-assertions-catsJS`,
+    `fundamentals-assertions-bioJS`,
     `fundamentals-orphansJS`,
     `fundamentals-languageJS`,
     `fundamentals-platformJS`,
     `fundamentals-functoidJS`,
     `fundamentals-json-circeJS`,
+    `fundamentals-test-supportJS`,
+    `fundamentals-platform-testJS`,
+    `fundamentals-collections-testJS`,
+    `fundamentals-language-testJS`,
+    `fundamentals-json-circe-testJS`,
+    `fundamentals-bio-testJS`,
     `fundamentals-bioJS`
+  )
+
+lazy val `fundamentals-native` = (project in file(".agg/fundamentals-fundamentals-native"))
+  .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
+    publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true
+  )
+  .aggregate(
+    `fundamentals-basicsNative`,
+    `fundamentals-functionalNative`,
+    `fundamentals-collectionsNative`,
+    `fundamentals-assertionsNative`,
+    `fundamentals-assertions-catsNative`,
+    `fundamentals-assertions-bioNative`,
+    `fundamentals-orphansNative`,
+    `fundamentals-languageNative`,
+    `fundamentals-platformNative`,
+    `fundamentals-functoidNative`,
+    `fundamentals-json-circeNative`,
+    `fundamentals-test-supportNative`,
+    `fundamentals-platform-testNative`,
+    `fundamentals-collections-testNative`,
+    `fundamentals-language-testNative`,
+    `fundamentals-json-circe-testNative`,
+    `fundamentals-bio-testNative`,
+    `fundamentals-bioNative`
   )
 
 lazy val `distage` = (project in file(".agg/distage-distage"))
@@ -5937,26 +8673,41 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
   )
   .enablePlugins(SitePreviewPlugin)
   .aggregate(
+    `distage-test-protocolJVM`,
+    `distage-test-protocolJS`,
+    `distage-test-protocolNative`,
+    `distage-test-runnerJVM`,
+    `distage-test-runnerJS`,
+    `distage-test-runnerNative`,
     `distage-core-apiJVM`,
     `distage-core-apiJS`,
+    `distage-core-apiNative`,
     `distage-core-proxy-bytebuddy`,
     `distage-framework-apiJVM`,
     `distage-framework-apiJS`,
+    `distage-framework-apiNative`,
     `distage-coreJVM`,
     `distage-coreJS`,
+    `distage-coreNative`,
     `distage-extension-configJVM`,
     `distage-extension-configJS`,
+    `distage-extension-configNative`,
     `distage-extension-logstageJVM`,
     `distage-extension-logstageJS`,
+    `distage-extension-logstageNative`,
     `distage-extension-pluginsJVM`,
     `distage-extension-pluginsJS`,
+    `distage-extension-pluginsNative`,
     `distage-frameworkJVM`,
     `distage-frameworkJS`,
+    `distage-frameworkNative`,
     `distage-framework-docker`,
     `distage-testkit-coreJVM`,
     `distage-testkit-coreJS`,
+    `distage-testkit-coreNative`,
     `distage-testkit-runnerJVM`,
     `distage-testkit-runnerJS`,
+    `distage-testkit-runnerNative`,
     `distage-testkit-scalatestJVM`,
     `distage-testkit-scalatestJS`,
     `distage-testkit-scalatest-sbt-module-filtering-test`
@@ -5970,6 +8721,8 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .aggregate(
+    `distage-test-protocolJVM`,
+    `distage-test-runnerJVM`,
     `distage-core-apiJVM`,
     `distage-core-proxy-bytebuddy`,
     `distage-framework-apiJVM`,
@@ -5993,6 +8746,8 @@ lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
     SettingKey[Boolean]("ide-skip-project") := true
   )
   .aggregate(
+    `distage-test-protocolJS`,
+    `distage-test-runnerJS`,
     `distage-core-apiJS`,
     `distage-framework-apiJS`,
     `distage-coreJS`,
@@ -6003,6 +8758,27 @@ lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
     `distage-testkit-coreJS`,
     `distage-testkit-runnerJS`,
     `distage-testkit-scalatestJS`
+  )
+
+lazy val `distage-native` = (project in file(".agg/distage-distage-native"))
+  .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
+    publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true
+  )
+  .aggregate(
+    `distage-test-protocolNative`,
+    `distage-test-runnerNative`,
+    `distage-core-apiNative`,
+    `distage-framework-apiNative`,
+    `distage-coreNative`,
+    `distage-extension-configNative`,
+    `distage-extension-logstageNative`,
+    `distage-extension-pluginsNative`,
+    `distage-frameworkNative`,
+    `distage-testkit-coreNative`,
+    `distage-testkit-runnerNative`
   )
 
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
@@ -6016,8 +8792,10 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .aggregate(
     `logstage-coreJVM`,
     `logstage-coreJS`,
+    `logstage-coreNative`,
     `logstage-rendering-circeJVM`,
     `logstage-rendering-circeJS`,
+    `logstage-rendering-circeNative`,
     `logstage-adapter-slf4j`,
     `logstage-sink-slf4j`
   )
@@ -6046,6 +8824,18 @@ lazy val `logstage-js` = (project in file(".agg/logstage-logstage-js"))
   .aggregate(
     `logstage-coreJS`,
     `logstage-rendering-circeJS`
+  )
+
+lazy val `logstage-native` = (project in file(".agg/logstage-logstage-native"))
+  .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
+    publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true
+  )
+  .aggregate(
+    `logstage-coreNative`,
+    `logstage-rendering-circeNative`
   )
 
 lazy val `docs` = (project in file(".agg/doc-docs"))
@@ -6121,6 +8911,19 @@ lazy val `izumi-js` = (project in file(".agg/.agg-js"))
     `fundamentals-js`,
     `distage-js`,
     `logstage-js`
+  )
+
+lazy val `izumi-native` = (project in file(".agg/.agg-native"))
+  .settings(
+    crossScalaVersions := Nil,
+    libraryDependencies := Nil,
+    publish / skip := true,
+    SettingKey[Boolean]("ide-skip-project") := true
+  )
+  .aggregate(
+    `fundamentals-native`,
+    `distage-native`,
+    `logstage-native`
   )
 
 lazy val `izumi` = (project in file("."))
