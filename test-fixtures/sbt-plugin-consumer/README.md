@@ -277,3 +277,22 @@ Run Scala2.13.18 separately. Each compiler checks twelve commands in process
 and twelve with forks. These Behavioral-Active, Effectual-GoodCommunication
 controls retain original selection exceptions and confirm that a later command
 recovers; they do not substitute for the complete host acceptance gate.
+
+`verify-runtime-inputs.py` changes a property between commands and an environment
+variable between SBT sessions while retaining compiled target files, stock test
+digests and the same local cache. The acquired DI resource records both current
+values. Incremental `test` and `testQuick` must rerun owned suites with the
+`untracked-input-closure` decision, and each command must acquire and release a
+fresh resource.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-runtime-inputs.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/runtime-inputs-example
+```
+
+Run Scala2.13.18 separately. Each compiler checks twelve commands across two
+environment values and both JVM modes. These Behavioral-Active,
+Effectual-GoodCommunication controls verify property/environment freshness;
+other extension policies retain their own acceptance requirements.

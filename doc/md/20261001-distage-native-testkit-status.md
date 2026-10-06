@@ -93,16 +93,16 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.4 | in progress | Published forked and in-process foreign duplicate-group controls preserve six body outcomes in custom public Output and one suite XML file on both supported compilers and both JUnit filename formats. In-process serial/parallel configurations, exclusions and same-session recovery pass24 additional controls below. Complete owned/foreign failure domain and final evaluation remain open. |
 | 2d.5 | in progress | The current94-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns, changed suite/scanned-implementation digests and same-session launch-failure recovery on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
 | 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
-| 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
+| 2d.7 | in progress | The current524-context checkpoint includes24 property/environment controls on both compilers/modes: unchanged compiled payloads and stock digests,384 exact body/XML cases and24 fresh resources. External UTF-8, activation and memoization controls also pass below; extension policies and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | Sixteen current SBT2 concurrency controls verify three overlapping bodies per suite, distinct thread/PID receipts and exact listener/XML identities on Scala2.13/3, in process and forked, with host limits one/two. The independent audit reconciles240 bodies/XML cases, sixteen released resources and eight distinct fork targets. Complete concurrency domain and final evaluation remain open. |
-| 2d.10 | in progress | Current432-command checkpoint includes28 actual-client, eight partial-delivery, six repeated-fork-group and twelve completed-foreign cancellation/recovery controls across both supported compilers. Held finalizers/callbacks are joined; repeated cancellations preserve30 selected marked XML outcomes and all group callbacks. Active-foreign cancellation, complete failure domain and final evaluation remain open. |
-| 2d.11 | in progress | Current correction passes432 SBT2 controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption,28 actual-client, eight partial-delivery, six repeated-fork-group, twelve mixed-framework and52 selection-reason commands. Complete failure/input inventory and final evaluation stay open. |
+| 2d.10 | in progress | Current524-context checkpoint includes28 actual-client, eight partial-delivery, six repeated-fork-group, twelve completed-foreign and twelve active-foreign cancellation/recovery controls across both compilers/modes. Held finalizers/callbacks are joined and exact owned/foreign outcomes reconcile; remaining platform and final evaluations stay open. |
+| 2d.11 | in progress | All43 drivers pass524 current SBT2 command contexts on Scala2.13/3 with independent audits of bodies, events, XML, lifetimes and recorded process shutdown. The checkpoint adds opaque selection and property/environment cases to the preceding452 controls. Complete extension/client inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
-| 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged event payloads. Twelve additional real-client commands preserve completed foreign bodies/events/XML through owned cancellation and same-session recovery on both compilers/modes below. Active-foreign cancellation, complete failure domains and final evaluation remain open. |
-| 2d.16 | in progress | The corrected published plugin passes52 selection controls within the completed432-command regression checkpoint on Scala2.13/3, both modes: twelve cached, twelve request and24 configured reason checks, with28 physical no-op commands. The independent audit reconciles240 bodies/XML cases and twelve resource lifetimes below. Complete input inventory and final evaluation remain outstanding. |
+| 2d.15 | in progress | Current524-context checkpoint preserves original foreign frameworks/events exactly once, including twelve completed-foreign and twelve active-foreign cancellation/recovery commands on both compilers/modes. Active cancellation retains36 original foreign events and216 owned/foreign XML cases; remaining platform and final evaluations stay open. |
+| 2d.16 | in progress | Current524-context checkpoint includes52 selection-reason controls and48 opaque filter/exception/recovery controls on both compilers/modes. Audits reconcile cached/request/configured exclusions, actual predicate calls and physical no-ops without counting excluded tests as executed. Final evaluation remains outstanding. |
 | 2d.17 | in progress | Bootstrap61 checks per compiler plus120 host/store contracts include28 memory/file projections of repeated and partially delivered groups, selector/duration/failure identity and process/count rejection. Fourteen real-client partial/repeated commands reconcile300 callbacks without omissions, duplicates or late delivery. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | in progress | Four public SBT discovery/fingerprint controls pass in process and forked on both supported compilers, with94 host execution/inspection cases,558 physical bodies and574 XML cases. Complete mode/sharing inventory and final evaluation remain open. |
@@ -16393,3 +16393,110 @@ source/publication inputs. Evidence:
 `Observe final opaque selection filters; verify 176 SBT controls`.
 A fresh full M5 producer/consumer checkpoint, remaining inventories and whole
 phase/final evaluations remain outstanding. IDE is owner-deferred.
+
+### Fresh full producer and extended JVM consumer batch
+
+The fresh producer command
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-producer-first.py`
+actually returns0 on parent `5a8eb99a14f5a4a872ee982b28b831e6c4bdafc7`, with
+all1,527 recorded inputs unchanged. Besides the existing protocol219,
+base802 and bootstrap61 checks per supported compiler and host/store contracts,
+it executes the session-environment143 and distage-provider639 JVM checks on
+each compiler. Core and higher runner publications are included this time.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-qualify-first.py`
+returns0 for nine published artifacts. Every class/TASTy payload matches its
+compiled output: plugin160, protocol309/240, base158/107, core249/198 and
+higher runner65/41. All135 publication files are frozen under
+`sbt2-opaque-selection-qualified-publication-first/manifest.json`. Plugin SHA:
+`1154dabc163baa77e0b340a1ae08e83e053ad27aff64fd1f82ef8cd86eb37489`.
+All29 Java target-package classes match the separately qualified candidate,
+retaining the bounded JDK17/25 agent evidence. The initial snapshot controller
+expects28 classes after its byte comparisons pass; correcting that count
+assumption preserves the same135 snapshots and verifies the observed29 classes.
+
+The new runtime-input fixture retains identical suite/plugin bytecode while
+changing a property inside an SBT session and an inherited environment variable
+between two SBT processes. Scanned DI resources record the actual values;
+public stock suite digests must remain unchanged and incremental runs must
+report explicit conservative reruns. Both JVM modes and both compilers are
+included, adding24 contexts to the preceding452 and48 opaque controls.
+
+The first43-driver wrapper returns1 with inputs unchanged. Its two runtime
+fixtures fail during build loading because an untyped cleanup lambda resolves
+against the zero-argument overload; no runtime-input command executes. Explicit
+zero-argument setup/cleanup callbacks address that fixture error. The second
+wrapper also returns1 with frozen inputs unchanged. Both SBT processes execute
+their six alpha commands successfully, with fresh input-bearing resources and
+unchanged stock digests, but the controller expects a `pluginConsumer` output
+directory instead of the observed normalized `pluginconsumer`. The fixture now
+records public `Test / classDirectory`, rather than guessing a path. Both
+pre-correction drivers, source hashes, commands and actual failures are archived
+under their respective wrapper directories. No production correction occurs.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-runtime-regression-third.py`
+is now running43 drivers/524 command contexts with1,714 frozen input records.
+The actual completed active-foreign drivers return0; remaining drivers and the
+independent full-batch audit are pending. The new fixture remains uncommitted
+until its complete runtime contract passes. No whole phase or final gate closes.
+
+## 2026-10-06: completed524-context JVM checkpoint and real target candidate
+
+The third43-driver wrapper actually terminates0, with all43 driver exits0 and
+all1,714 frozen input records unchanged. Its nine qualified M5 publications
+remain byte-for-byte unchanged through the independent audits:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-general-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-prior-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-mixed-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-selection-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-active-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-concurrency-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-opaque-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-runtime-input-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-combined-audit-third.py
+```
+
+All return0. The concurrency controller first stops on its stale39-driver
+expectation; its archived pre-correction script and actual43-driver completion
+identify that controller error. The corrected count retains every body/event,
+resource, publication and process check. The combined audit accounts for
+354 general,14 partial/repeated,12 completed-foreign,52 reason,12 active-foreign,
+16 concurrency,48 opaque and24 runtime-input contexts, subtracting the eight
+in-process concurrency contexts already in the general domain:524 distinct
+command contexts. All230 recorded host/target PIDs are gone. It rechecks
+1,527 producer inputs,1,714 consumer input records and135 publication files.
+Evidence: `sbt2-opaque-selection-runtime-regression-third/extended-audit.json`,
+SHA-256 `9a84c7ddcc2ec1291c724eb8c7560f727fdc1678224d15a532a42fbe64261bb2`.
+
+The new tracked runtime-input verifier passes its full contract on both
+compilers. The independent24-context audit reconciles384 exact body/XML IDs
+and24 distinct acquired/released resources across both environment epochs and
+JVM modes. All30 Scala3 class/TASTy payloads and17 Scala2 class payloads remain
+unchanged between epochs. Stock suite digests remain unchanged, while every
+incremental owned-suite run records `untracked-input-closure`. This checkpoint
+is committed as `Verify runtime input freshness and 524 SBT controls`.
+
+While those JVM inputs remain frozen, a separate scratch candidate exercises
+the pinned JS1.22.0 and Native0.5.12 adapters with the real portable
+`TestApplication` and published base runner. Selected and full commands on
+Scala3.9 actually terminate0 on real Node and Native processes. The target
+serializes suite task definitions and reconstructs suite factories through the
+platform reflection API. A dedicated nested-event channel carries schema4
+frames to the host projection; ordinary body stdout is separate. Four streams
+reconcile42 starts,42 completions and42 logical outcomes, with contiguous
+sequence numbers and matching Finished/Completed outcomes. Final full-run XML
+contains15 exact successful cases on each platform.
+
+Candidate path: `2e-portable-target-candidate-first`, actual log
+`run-seventh.log`, input manifest `command-seventh.json`, independent evidence
+`candidate-audit.json`, SHA-256
+`aee49d704a05965e3b19c2e7939101b74c68fab3c401cfe77efacd46329ce69a`.
+Its earlier terminal failures are archived separately: build dependency syntax,
+platform source scope, unsupported minimal-closure UUID generation on JS/Native,
+Native's nullary `Runner.args`, and a fixture executable/work-directory name
+collision. None changes production code. This candidate establishes the
+measured target seam, not production2e completion: DI effects, failures,
+streaming-before-completion, cancellation, platform host policy and both-compiler
+production integration remain open. No whole phase or final gate closes.
