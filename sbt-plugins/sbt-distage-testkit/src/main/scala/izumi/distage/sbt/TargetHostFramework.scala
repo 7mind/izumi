@@ -13,7 +13,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 
 /** Projects a platform SDK aggregate onto ordinary, independently scheduled SBT suite tasks. */
-private[sbt] final class TargetHostFramework(platform: Framework) extends Framework {
+private[sbt] final class TargetHostFramework(val platform: Framework) extends Framework {
   override def name(): String = platform.name()
   override def fingerprints(): Array[Fingerprint] = platform.fingerprints()
 

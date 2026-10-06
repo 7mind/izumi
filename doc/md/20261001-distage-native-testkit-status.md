@@ -16954,3 +16954,62 @@ exited the expected 1 with the same causal
 No fixture inputs changed. Both tasks still use the JVM launcher, which is not
 in either target artifact. The next correction routes inspection through the
 platform SDK and the portable application. No inspection gate is passed yet.
+
+
+## 2026-10-06: production SDK list/plan inspection checkpoint
+
+The preceding target provider validation is local commit `20f899de2`.
+The eight fail-first inspection commands recorded above all failed with the
+JVM-only InspectionLauncher class missing from the target artifacts. The
+production companion settings now route `Test / distageList` and
+`Test / distagePlan` through the SDK-loaded target framework. A target task
+handles a validated inspection operation, announces discovery for run ownership,
+then asks the portable application to resolve or plan. It returns through
+control-channel cleanup before SDK completion. The host validates the expected
+response and uses the same `DISTAGE_INSPECTION` JSON output contract as the JVM
+launcher. Inspections do not execute bodies. Normal test execution retains its
+existing default operation and suite projection.
+
+- The initial compilation command in
+  `/srv/nvme/tmp/izumi-impl/2e-target-inspection-compile-first.log` exited 0:
+  `sbt-distage-testkit/Test/compile`, `distage-test-runnerJS/compile`, and
+  `distage-test-runnerNative/compile`, with the pinned batch SBT/JDK invocation.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-inspection-producer-first.py`
+  exited 0. Exact SBT commands and 1,604 frozen input hashes are recorded in
+  `command.json`; none changed. The six runner lanes passed 802 checks each,
+  and the 22-case host and all 106 existing receipt/report checks passed.
+  All nine private `1.3.0-M5-target-inspection-SNAPSHOT` publications were
+  qualified against compiled class/TASTy/IR and source bytes. Only local private
+  publications changed.
+- The tracked `verify-inspection.py` prepares four independent consumer builds
+  and uses the public production companion plugins directly. Its successful
+  cases are list/plan for all 15 tests, list/plan for one suite's three tests,
+  and list/plan for one explicit test. Plan requests also verify disabled
+  memoization in the effective settings. Two failed unknown-suite requests
+  must remain failed; an ordinary full execution then proves the SDK is usable.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-inspection-consumers-first.py`
+  ran that fixture and the ordinary recovery fixture against the new private
+  publications on JS/Native and both compilers. Controller, both tracked
+  drivers, and all eight actual SBT children exited 0. There are 24 successful
+  inspection responses, eight rejected requests, and four later successful
+  executions (60 physical/XML bodies). Every inspection precedes the explicit
+  execution marker without any body or held-resource acquisition output.
+  The separate normal/cancel/recovery batch completed 12 contexts and 180
+  physical/XML bodies, with all 20 suite cancellation errors. Fixture/publication
+  records stayed unchanged: 316 inspection records and 320 recovery records.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-target-inspection-audit-first.py` exited 0.
+  It independently reads exact source/publication hashes, commands, logs,
+  protocol selections, memoization settings, rejected-command markers, XML,
+  subsequent execution streams, and all 28 recorded inspection/execution run
+  identities. Audit SHA-256:
+  `ec579ec46bef0ca9d8033fe12d367b1bf998074ac38d6a9e5d537ef044b63e97`.
+  The independent recovery audit also exited 0 and checks all 12 complete fresh
+  streams, exact body/XML identities, and 20 cancellation errors.
+
+This fixes the reproduced platform-launcher defect and verifies the specified
+inspection/selection paths at this checkpoint. It does not close the full 2e
+host-policy matrix or final gate: DI effect inspection through every SDK mode,
+all invalidation/filter histories, repository runner takeover, remaining
+coverage/migration gates, and required whole-phase reviews remain open. IDE is
+still deferred. No tasks from these batches remain in flight. The next entry
+records this checkpoint's local commit ID; nothing was pushed.

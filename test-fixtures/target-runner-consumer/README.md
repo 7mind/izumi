@@ -45,6 +45,13 @@ matching logical protocol ID and class-owner XML entry. The launch scenario
 requires five suite errors, no target bodies for the failed command, and a
 successful fresh application after disarming the malformed option.
 
+`verify-inspection.py` checks the production `Test / distageList` and
+`Test / distagePlan` input tasks. Use the same required arguments as the failure
+driver, omit `--scenario`, and supply matching runtime/plugin versions. It
+compares full, suite-only, and individual-test selections, effective memoization
+overrides, unknown-suite rejection, absence of body/resource activity during
+inspection, and a successful ordinary test command afterward.
+
 These are Behavioral-Active, Effectual, Good-Communication process checks.
 The held callbacks are plain Futures; this fixture does not establish DI effect
 interruption, Lifecycle finalization, complete platform host policy or browser

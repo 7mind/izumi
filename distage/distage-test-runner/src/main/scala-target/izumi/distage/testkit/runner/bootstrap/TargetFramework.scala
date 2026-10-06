@@ -48,7 +48,19 @@ private[bootstrap] final class TargetRunner(arguments: Array[String], remoteArgu
     require(port > 0 && port <= MaximumControlPort, "Target control port is outside its valid range")
     port
   }
-  private val requestArguments = portIndices.headOption.fold(arguments.toVector)(index => arguments.toVector.patch(index, Nil, 2))
+  private val invocationArguments = portIndices.headOption.fold(arguments.toVector)(index => arguments.toVector.patch(index, Nil, 2))
+  private val OperationArgument = "--distage-operation"
+  private val operationIndices = invocationArguments.indices.filter(index => invocationArguments(index) == OperationArgument)
+  require(operationIndices.size <= 1, "Duplicate target operation")
+  private val operation = operationIndices.headOption.fold[RequestOperation](RequestOperation.Execute) { index =>
+    require(index + 1 < invocationArguments.size, "Missing target operation")
+    invocationArguments(index + 1) match {
+      case "list" => RequestOperation.Resolve
+      case "plan" => RequestOperation.Plan
+      case _ => throw new IllegalArgumentException("Target inspection operation must be list or plan")
+    }
+  }
+  private val requestArguments = operationIndices.headOption.fold(invocationArguments)(index => invocationArguments.patch(index, Nil, 2))
   private val request = RequestArguments.parse(requestArguments).fold(error => throw new IllegalArgumentException(error.message), value => value)
   private val applications = scala.collection.mutable.Map.empty[RunId, TestApplication]
   private var spent = false
@@ -60,7 +72,7 @@ private[bootstrap] final class TargetRunner(arguments: Array[String], remoteArgu
     requireActive()
     validate(definitions.toVector)
     if (definitions.isEmpty) Array.empty
-    else Array(new TargetTask(definitions.toVector.sortBy(_.fullyQualifiedName()), request, controlPort, this, reconstructed = false))
+    else Array(new TargetTask(definitions.toVector.sortBy(_.fullyQualifiedName()), request, operation, controlPort, this, reconstructed = false))
   }
 
   def serializeTask(task: Task, serialize: TaskDef => String): String = synchronized {
@@ -81,7 +93,7 @@ private[bootstrap] final class TargetRunner(arguments: Array[String], remoteArgu
     val definitions = cursor.get[Vector[String]]("definitions").fold(throw _, value => value).map(deserialize)
     require(definitions.nonEmpty, "Serialized target task has no suites")
     validate(definitions)
-    new TargetTask(definitions, request, controlPort, this, reconstructed = true)
+    new TargetTask(definitions, request, operation, controlPort, this, reconstructed = true)
   }
 
   def receiveMessage(frame: String): Option[String] = {
@@ -132,6 +144,7 @@ private[bootstrap] final class TargetRunner(arguments: Array[String], remoteArgu
 private[bootstrap] final class TargetTask(
   val definitions: Vector[TaskDef],
   request: RunRequest,
+  operation: RequestOperation,
   controlPort: Option[Int],
   val owner: TargetRunner,
   reconstructed: Boolean,
@@ -167,8 +180,13 @@ private[bootstrap] final class TargetTask(
     consume()
     implicit val ec: ExecutionContext = owner.runtime.context
     val suiteOwners = scala.collection.mutable.Map.empty[SuiteId, TaskDef]
+    var discovered = false
     val output = new ProtocolOutput {
       override def accept(message: ProtocolMessage): Unit = handler.synchronized {
+        message match {
+          case _: ProtocolMessage.Discovered => discovered = true
+          case _ => ()
+        }
         val definition = message match {
           case ProtocolMessage.Event(_, RunEvent.TestStarted(_, test)) => suiteOwners(test.suite)
           case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, result)) => suiteOwners(result.id.suite)
@@ -198,7 +216,14 @@ private[bootstrap] final class TargetTask(
       case None => Future.successful(new TargetControl { override def close(): Future[Unit] = Future.unit })
     }
     control.flatMap { connection =>
-      application.accept(ProtocolMessage.Request(RequestOperation.Execute, application.run, request)).transformWith { result =>
+      val response = operation match {
+        case RequestOperation.Execute => application.accept(ProtocolMessage.Request(operation, application.run, request))
+        case _ => application.accept(ProtocolMessage.Discover(application.run, request.identity.build, request.identity.target)).flatMap { _ =>
+          if (handler.synchronized(discovered)) application.accept(ProtocolMessage.Request(operation, application.run, request))
+          else Future.unit
+        }
+      }
+      response.transformWith { result =>
         connection.close().flatMap(_ => Future.fromTry(result))
       }
     }.andThen { case _ => owner.end(application) }
