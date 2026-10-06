@@ -217,6 +217,28 @@ before starting the next. These Behavioral-Active, Effectual-GoodCommunication
 controls cover already completed foreign tests; cancellation during an active
 foreign test requires separate validation.
 
+`verify-active-foreign-cancellation.py` holds the foreign task after all fifteen
+owned bodies have completed and their shared resource has been released. It
+reads the public `Test / target` directory to verify owned stream/XML completion
+before sending real client cancellation. The command stays pending until the
+foreign gate is released. All three foreign bodies, original event fields and
+successful XML outcomes must survive, alongside the already successful owned
+results. A subsequent command must recover with fresh run/resource identities.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-active-foreign-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/active-foreign-cancellation-example
+```
+
+Run Scala2.13.18 separately. Each compiler checks normal execution, cancellation
+and recovery in process and forked. The original foreign framework follows the
+owned framework; its bounded task ignores interruption while waiting for the
+explicit gate. These Behavioral-Active, Effectual-GoodCommunication controls
+exercise active foreign cancellation after owned completion; they do not close
+the complete mixed-framework failure domain.
+
 `verify-selection-reasons.py` verifies distinct stock suite digests, warms the
 foreign success cache, and exercises cached skips, negative request patterns,
 configured exclusions and filters, multiple includes and ordered filter unions.

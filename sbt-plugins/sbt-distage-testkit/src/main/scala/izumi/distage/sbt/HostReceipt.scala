@@ -1,10 +1,10 @@
 package izumi.distage.sbt
 
 import izumi.distage.testkit.protocol.{FileForkReceiptStore, FileForkRunReports, ForkProcessId, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
-import izumi.distage.sbt.target.TaskCompleteness
+import izumi.distage.sbt.target.{ForeignRunReports, TaskCompleteness}
 
 import sbt._
-import sbt.testing.{Event, Status, SuiteSelector, TestSelector}
+import sbt.testing.{AnnotatedFingerprint, Event, Fingerprint, NestedSuiteSelector, NestedTestSelector, Status, SubclassFingerprint, SuiteSelector, TestSelector, TestWildcardSelector}
 
 import scala.util.control.NonFatal
 import scala.jdk.CollectionConverters._
@@ -14,13 +14,26 @@ private[sbt] sealed trait HostEventSelector
 private[sbt] object HostEventSelector {
   case object Suite extends HostEventSelector
   final case class Test(name: String) extends HostEventSelector
+  final case class NestedSuite(name: String) extends HostEventSelector
+  final case class NestedTest(suite: String, name: String) extends HostEventSelector
+  final case class Wildcard(value: String) extends HostEventSelector
+}
+private[sbt] sealed trait HostEventFingerprint
+private[sbt] object HostEventFingerprint {
+  final case class Subclass(module: Boolean, name: String, noArgs: Boolean) extends HostEventFingerprint
+  final case class Annotation(module: Boolean, name: String) extends HostEventFingerprint
+  def from(value: Fingerprint): HostEventFingerprint = value match {
+    case subclass: SubclassFingerprint => Subclass(subclass.isModule(), subclass.superclassName(), subclass.requireNoArgConstructor())
+    case annotation: AnnotatedFingerprint => Annotation(annotation.isModule(), annotation.annotationName())
+    case other => throw new IllegalArgumentException("Unsupported event fingerprint: " + other)
+  }
 }
 private[sbt] final case class HostEventFailure(className: String, message: String) {
   def matches(actual: HostEventFailure): Boolean = actual.message == message || actual.message == className + ": " + message
 }
-private[sbt] final case class HostEventIdentity(name: String, selector: HostEventSelector, status: Status, duration: Long, failure: Option[HostEventFailure]) {
+private[sbt] final case class HostEventIdentity(name: String, fingerprint: HostEventFingerprint, selector: HostEventSelector, status: Status, duration: Long, failure: Option[HostEventFailure]) {
   def matches(actual: HostEventIdentity): Boolean = {
-    name == actual.name && selector == actual.selector && status == actual.status && duration == actual.duration &&
+    name == actual.name && fingerprint == actual.fingerprint && selector == actual.selector && status == actual.status && duration == actual.duration &&
       ((failure, actual.failure) match {
         case (Some(expected), Some(received)) => expected.matches(received)
         case (None, None) => true
@@ -33,13 +46,16 @@ private[sbt] object HostEventIdentity {
     val selector = event.selector() match {
       case _: SuiteSelector => HostEventSelector.Suite
       case test: TestSelector => HostEventSelector.Test(test.testName())
-      case other => throw new IllegalArgumentException("Unsupported owned event selector: " + other)
+      case nested: NestedSuiteSelector => HostEventSelector.NestedSuite(nested.suiteId())
+      case nested: NestedTestSelector => HostEventSelector.NestedTest(nested.suiteId(), nested.testName())
+      case wildcard: TestWildcardSelector => HostEventSelector.Wildcard(wildcard.testWildcard())
+      case other => throw new IllegalArgumentException("Unsupported event selector: " + other)
     }
     val failure = if (event.throwable().isDefined) {
       val cause = event.throwable().get()
       Some(HostEventFailure(cause.getClass.getName, cause.getMessage))
     } else None
-    HostEventIdentity(event.fullyQualifiedName(), selector, event.status(), event.duration(), failure)
+    HostEventIdentity(event.fullyQualifiedName(), HostEventFingerprint.from(event.fingerprint()), selector, event.status(), event.duration(), failure)
   }
 }
 private[sbt] final case class HostGroupIdentity(counts: HostSuiteCounts, events: Vector[HostEventIdentity]) {
@@ -121,7 +137,7 @@ private[sbt] final class HostReceipt {
     requireOpen()
     val thread = Thread.currentThread()
     val group = activeGroups.getOrElse(thread, throw new IllegalStateException("Host event has no active listener group"))
-    val identities = if (owned.contains(group.name)) event.detail.iterator.map(HostEventIdentity.from).toVector else Vector.empty
+    val identities = event.detail.iterator.map(HostEventIdentity.from).toVector
     activeGroups = activeGroups.updated(thread, group.copy(result = group.result + SuiteResult(event.detail), events = group.events ++ identities))
     delivered = delivered + HostSuiteCounts.from(SuiteResult(event.detail))
     event.detail.groupBy(detail => HostSuiteName(detail.fullyQualifiedName())).foreach { case (name, details) =>
@@ -142,7 +158,7 @@ private[sbt] final class HostReceipt {
     val counts = group.result
     val finished = new SuiteResult(HostSuiteCounts.overall(counts.result, result), counts.passedCount, counts.failureCount, counts.errorCount, counts.skippedCount, counts.ignoredCount, counts.canceledCount, counts.pendingCount, counts.throwables)
     groupResults = groupResults.updated(name, groupResults.getOrElse(name, Vector.empty) :+ finished)
-    if (owned.contains(name)) groupIdentities = groupIdentities.updated(name, groupIdentities.getOrElse(name, Vector.empty) :+ HostGroupIdentity(HostSuiteCounts.from(finished), group.events))
+    groupIdentities = groupIdentities.updated(name, groupIdentities.getOrElse(name, Vector.empty) :+ HostGroupIdentity(HostSuiteCounts.from(finished), group.events))
     ends = ends.updated(name, ends.getOrElse(name, 0) + 1)
     delivered = delivered.copy(result = HostSuiteCounts.overall(delivered.result, result))
     if (owned.contains(name)) {
@@ -261,6 +277,7 @@ private[sbt] final class HostReceipt {
 private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val store: FileForkReceiptStore) {
   val completion = new HostForkCompletion(store.directory)
   var reports = Option.empty[HostForkReports]
+  var foreignReports = Option.empty[HostForeignForkReports]
 }
 
 private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStore, hostProcess: ForkProcessId) {
@@ -288,6 +305,7 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
   def configureReports(definitions: Seq[TestDefinition], listeners: Seq[TestReportListener]): Unit = synchronized {
     val generation = current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt"))
     generation.reports = Some(new HostForkReports(new FileForkRunReports(generation.store.directory), new TaskCompleteness.FileCompletionStore(generation.store.directory), definitions, listeners, generation.receipt, hostProcess))
+    generation.foreignReports = Some(new HostForeignForkReports(new ForeignRunReports.FileStore(generation.store.directory), listeners, generation.receipt))
   }
 
   def requestForkCancellation(): Unit = {
@@ -301,7 +319,11 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
     val generations = synchronized { pending }
     generations.filter(_.receipt.isInterrupted).foreach { generation =>
       val admissions = generation.completion.cancel()
-      if (admissions.nonEmpty) generation.reports.getOrElse(throw new IllegalStateException("Admitted fork has no host reports")).cancel(admissions)
+      if (admissions.nonEmpty) {
+        generation.reports.getOrElse(throw new IllegalStateException("Admitted fork has no host reports")).cancel(admissions)
+        generation.completion.awaitShutdown(admissions)
+        generation.foreignReports.getOrElse(throw new IllegalStateException("Admitted fork has no foreign host reports")).cancel(admissions)
+      }
     }
   }
 

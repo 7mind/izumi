@@ -176,6 +176,7 @@ public final class ForkCompletionAgent extends Thread {
             if (TaskCompleteness.isOutermostRunnerTasks()) {
                 Path directory = Paths.get(java.util.Objects.requireNonNull(System.getProperty(DIRECTORY_PROPERTY), "Missing target command ownership"));
                 tasks = TaskCompleteness.normalise(definitions, tasks, new TaskCompleteness.FileCompletionStore(directory));
+                tasks = TaskCompleteness.captureForeign(tasks, new ForeignRunReports.FileStore(directory));
             }
         }
     }

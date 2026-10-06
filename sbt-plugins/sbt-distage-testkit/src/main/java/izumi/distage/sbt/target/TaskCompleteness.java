@@ -41,7 +41,7 @@ public final class TaskCompleteness {
             .limit(2).count() == 1);
     }
 
-    public record SuiteName(String value) {
+    public record SuiteName(String value) implements java.io.Serializable {
         public SuiteName {
             Objects.requireNonNull(value, "Missing target suite identity");
             if (value.isEmpty() || value.indexOf('\t') >= 0 || value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0 || !StandardCharsets.UTF_8.newEncoder().canEncode(value)) {
@@ -144,6 +144,21 @@ public final class TaskCompleteness {
         return guarded;
     }
 
+    public static Task[] captureForeign(Task[] tasks, ForeignRunReports.Store store) {
+        Objects.requireNonNull(store, "Missing foreign target report store");
+        Task[] captured = new Task[tasks.length];
+        for (int index = 0; index < tasks.length; index++) {
+            Task task = tasks[index];
+            captured[index] = isOwned(task.taskDef()) ? task : captureForeign(task, store, new SuiteName(task.taskDef().fullyQualifiedName()));
+        }
+        return captured;
+    }
+
+    private static Task captureForeign(Task task, ForeignRunReports.Store store, SuiteName owner) {
+        Task original = task instanceof GuardedTask guarded ? guarded.delegate : task;
+        return new GuardedTask(original, new ForeignReportScope(store, owner, new SuiteName(task.taskDef().fullyQualifiedName())));
+    }
+
     private static Task protect(Task task) {
         return task instanceof GuardedTask ? task : new GuardedTask(task, new ForeignScope());
     }
@@ -154,17 +169,39 @@ public final class TaskCompleteness {
     }
 
     private interface TaskScope {
-        void record(Status status);
+        void record(Event event);
         Task[] children(Task[] tasks);
         void failed();
         void finish();
     }
 
-    private static final class ForeignScope implements TaskScope {
-        @Override public void record(Status status) {}
+    private static class ForeignScope implements TaskScope {
+        @Override public void record(Event event) {}
         @Override public Task[] children(Task[] tasks) { return protect(tasks); }
         @Override public void failed() {}
         @Override public void finish() {}
+    }
+
+    private static final class ForeignReportScope extends ForeignScope {
+        private final ForeignRunReports.Store store;
+        private final SuiteName owner;
+        private final SuiteName group;
+        private final List<ForeignRunReports.EventSnapshot> events = new ArrayList<>();
+
+        private ForeignReportScope(ForeignRunReports.Store store, SuiteName owner, SuiteName group) {
+            this.store = store;
+            this.owner = owner;
+            this.group = group;
+        }
+
+        @Override public synchronized void record(Event event) { events.add(ForeignRunReports.EventSnapshot.from(event)); }
+        @Override public Task[] children(Task[] tasks) {
+            Objects.requireNonNull(tasks, "Task returned no child task array");
+            Task[] captured = new Task[tasks.length];
+            for (int index = 0; index < tasks.length; index++) captured[index] = captureForeign(tasks[index], store, owner);
+            return captured;
+        }
+        @Override public synchronized void finish() { store.publish(new ForeignRunReports.Report(UUID.randomUUID(), owner, group, ProcessHandle.current().pid(), events)); }
     }
 
     private static final class CompletionScope implements TaskScope {
@@ -181,8 +218,9 @@ public final class TaskCompleteness {
             for (Status status : Status.values()) counts.put(status, 0);
         }
 
-        @Override public synchronized void record(Status status) {
+        @Override public synchronized void record(Event event) {
             if (remaining <= 0) throw new IllegalStateException("Event emitted after target suite terminal");
+            Status status = event.status();
             counts.put(status, Math.addExact(counts.get(status), 1));
         }
 
@@ -264,7 +302,7 @@ public final class TaskCompleteness {
             if (closed) throw new IllegalStateException("Event emitted after target task terminal");
             try {
                 delegate.handle(event);
-                completion.record(event.status());
+                completion.record(event);
             } catch (Throwable cause) { callbackFailed = true; throw cause; }
         }
 

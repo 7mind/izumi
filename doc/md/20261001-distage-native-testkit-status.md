@@ -16172,3 +16172,157 @@ returns0. This verified fixture substep is committed locally as
 Active foreign-task cancellation, opaque extension/filter controls, remaining
 inventories, production JS/Native hosts, coverage, migration and phase/final
 evaluation remain open. IDE is owner-deferred; no push is authorized.
+
+## 2026-10-06: active foreign-task cancellation reproduction
+
+Parent head: `a4401f4f996eff2387ce514dd7a6df161bd6451b`. The public client
+fixture starts five owned suites and an original foreign framework. All fifteen
+owned bodies complete and release their shared resource; the foreign task holds
+its second event before delivery. The client sends actual `sbt/cancelRequest`,
+proves the command has not returned while held, then releases the foreign task.
+
+The first wrapper returns1 because the fixture assumes `target/test-reports`;
+the consumer actually uses `target/out/jvm/scala-*/cancellation`. No cancellation
+was sent in that attempt. The corrected fixture records public `Test / target`
+and passes its prerequisite before cancellation. The fresh command
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-cancellation-second.py`
+returns1: both drivers return1, both SBT servers exit0, all80 frozen inputs remain
+unchanged. Each driver passes the three in-process normal/cancel/recovery
+commands and forked normal control. Forked cancellation then fails for the
+expected `ACTIVE_FOREIGN_EVENT_PAYLOAD_CHANGED` reason on Scala3.9.0/2.13.18.
+Both captures contain all three literal foreign bodies, zero foreign callbacks,
+zero foreign XML cases and fifteen successful owned XML cases. The release
+gate is observed held and then released on the actual fork target PID.
+
+Evidence is retained under `sbt2-active-foreign-cancellation-second`;
+`reproduction-source-manifest.json` binds fourteen pre-correction source files
+to their archived bytes and the parent head. The corresponding first-attempt
+source archive preserves the earlier fixture error. No acceptance item closes.
+
+The pinned SBT2.0.9 `ForkTests.React.blockForResponse` is interruptible;
+`mainTestTask` unregisters its listener in `finally`. `ForkTestMain.runTest`
+batches a foreign task's events only after its execute call returns. The
+existing recovery stores owned run outcomes but no foreign payloads, explaining
+the observed loss. Public tracker search did not identify a matching issue;
+the GitHub issue-search page was unavailable. Draft report extension: with a
+foreign test task held after owned suites finish, cancelling the host wait
+unregisters the result listener before the foreign task's original successful
+event batch arrives. All three foreign bodies execute but no foreign listener
+or JUnit result is retained. No upstream issue was filed.
+
+Correction under test: retain per-task foreign event snapshots in the admitted
+worker, await normal worker shutdown, reconcile already-delivered group event
+identities and replay only missing batches through the original host listeners.
+Original target events continue to the stock handler. Both fingerprints,
+selectors, status, duration and stock-style remote failure chains are retained.
+Memory/file storage and projection contracts accompany the actual-process
+reproduction. Wider regression and correction verification remain pending.
+
+### Opaque selection wrappers: reproduced public failures
+
+While the452-command cancellation regression remains frozen and in flight, a
+read-only public process probe wraps `Test / testSelected / testFilter` in an
+ordinary opaque closure. It delegates each inherited predicate and rejects
+SuiteC. The probe uses public input tasks and `.result` to capture both failures
+and then runs full recovery; it does not alter production inputs.
+
+The first probe wrapper fails during fixture build loading: SBT2 requires
+`Def.uncached` for the task that depends on an uncached `Result[TestResult]`.
+No selection reproduction occurred there. A fresh corrected wrapper
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-reproduction-second.py`
+returns1 with both SBT processes exiting0 and all recorded inputs unchanged.
+On both Scala3.9.0/2.13.18, `testOnly *Suite*` executes exactly twelve owned
+bodies plus three foreign bodies, emits fifteen successful XML cases and
+excludes SuiteC, but returns `Incomplete distage host result` because the inner
+observer incorrectly expects the suite rejected by the outer user closure.
+`testQuick *Suite*` then returns `Distage host task has no active receipt`
+before any body or XML case: the opaque inherited closure retains the selected
+input's observer while quick has another receipt owner. Baseline and full
+recovery each pass with eighteen cases and one acquired/released resource.
+
+`sbt2-opaque-selection-reproduction-second/reproduction-audit.json` independently
+reconciles the four reproduced failures and archived pre-correction source
+hashes. The first/corrected probe drivers and exact commands remain retained.
+No selection correction is applied to the current frozen production inputs;
+the public selection boundary is the next correction domain.
+
+### Foreign report producer and bounded correction controls
+
+The first producer wrapper returns1 with frozen inputs unchanged. Its memory
+foreign-report contract passes70 event variants, but the file contract rejects
+`TestWildcardSelector.equals` after reconstruction. Inspection of the pinned
+public test-interface1.0 bytecode confirms that this equality method compares
+wildcard string references. The wildcard text is preserved; reference equality
+is not a valid payload oracle. The first producer archives21 plugin source
+inputs before the correction. The contract now compares each public selector
+field, and host event identities use explicit nested-suite, nested-test and
+wildcard values alongside suite/test selectors and both fingerprint kinds.
+
+Commands return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-producer-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-qualify-second.py
+```
+
+The producer passes the existing219 protocol,802 base and61 bootstrap checks
+per supported compiler, existing120 host/store contracts,22 new memory/file
+foreign-projection contracts and two foreign storage contracts covering70 event
+variants each. All producer input bytes remain unchanged at completion. Five
+local publications match their compiled class/TASTy payloads: plugin160,
+protocol309/240 and base158/107. Plugin JAR SHA-256:
+`2d446d75f2ef3a25a7a71a88e9e0bccf021c8f892a68bc467d9c0f6d80b9e774`.
+All75 publication files are frozen under
+`sbt2-active-foreign-qualified-publication-second/manifest.json`.
+
+The39-driver consumer wrapper
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-regression-second.py`
+is running452 command controls with1,649 frozen consumer input records. It
+includes the preceding432 contexts, eight additional forked concurrency
+contexts and twelve active-foreign commands. The two active-foreign drivers
+have actually terminated0, each passing six normal/cancel/recovery commands
+in process and forked, with SBT exit0 and no changed inputs. The formerly
+missing three foreign events/XML outcomes are retained through cancellation,
+while all fifteen already completed owned outcomes remain successful. These
+are bounded driver results; the full parent, independent audits, commit and
+phase/final acceptance remain pending. Opaque selection failures above remain
+a separate reproduced correction domain.
+
+### Verified active-foreign cancellation checkpoint: 452 commands
+
+The parent consumer wrapper has now actually terminated0: all39 drivers return0
+and all1,649 frozen consumer input records remain unchanged. Independent audits
+also return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-regression-third-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-prior-domain-audit-third-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-mixed-domain-audit-third-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-selection-domain-audit-third-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-domain-audit-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-concurrency-audit-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-active-foreign-combined-audit-second.py
+```
+
+The preceding general audit attempt rejects a stale36-driver assertion after
+all earlier checks pass. The retained third script changes that assertion to
+the actual39-driver contract; no production input changes. The domain counts
+are354 general,14 partial/repeated,12 completed-foreign,52 selection-reason,
+12 active-foreign and16 concurrency controls, less the eight in-process
+concurrency controls already included in the general domain:452 distinct
+command contexts. The active-foreign audit reconciles180 owned bodies,
+36 foreign bodies and exact original event payloads,216 successful XML cases
+and twelve distinct acquired/released resource lifetimes. The concurrency
+audit reconciles240 body/XML identities and sixteen resource lifetimes.
+
+The combined audit verifies all1,526 unchanged producer inputs and all75
+qualified publication files against their frozen snapshots, and confirms all
+recorded process IDs have terminated. Evidence:
+`sbt2-active-foreign-regression-second/extended-audit.json`, SHA-256
+`e20dd3ca5069025366a2487b8e78f01d82ee465e8613e558b04c42762d019cf4`.
+`git diff --check` returns0. This correction is committed locally as
+`Preserve active foreign results during fork cancellation; verify 452 SBT controls`.
+Its Java agent changes require renewed JDK17/25 verification; old agent-byte
+continuity evidence does not satisfy that gate. Opaque selector correction,
+complete failure/input inventories, JS/Native production hosts, coverage,
+migration and phase/final evaluation remain open. IDE is owner-deferred.

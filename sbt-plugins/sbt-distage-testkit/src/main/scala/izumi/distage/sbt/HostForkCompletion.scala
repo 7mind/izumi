@@ -1,6 +1,6 @@
 package izumi.distage.sbt
 
-import izumi.distage.sbt.target.{ForkCompletionAgent, TaskCompleteness}
+import izumi.distage.sbt.target.{ForeignRunReports, ForkCompletionAgent, TaskCompleteness}
 import izumi.distage.testkit.protocol.ForkProcessId
 import net.bytebuddy.ByteBuddy
 
@@ -26,7 +26,7 @@ private[sbt] final class HostForkCompletion(directory: Path) {
       case Tests.SubProcess(options) =>
         if (!Files.isRegularFile(agent)) packageAgent()
         val prefix = directory.resolve("fork-" + UUID.randomUUID().toString)
-        forks :+= prefix -> HostReceiptPolicy.names(value.tests)
+        forks :+= prefix -> value.tests.map(test => HostSuiteName(test.name)).toSet
         val encoded = Base64.getUrlEncoder.withoutPadding().encodeToString(prefix.toString.getBytes(StandardCharsets.UTF_8))
         val argument = "-javaagent:" + agent + "=" + encoded + ":" + ProcessHandle.current().pid()
         new Tests.Group(value.name, value.tests, Tests.SubProcess(options.withRunJVMOptions(argument +: options.runJVMOptions)), value.tags)
@@ -63,6 +63,18 @@ private[sbt] final class HostForkCompletion(directory: Path) {
     failure.foreach(cause => throw cause)
   }
 
+  def awaitShutdown(admissions: Vector[HostForkAdmission]): Unit = {
+    val admitted = synchronized { forks.map(_._1).filter(prefix => Files.isRegularFile(path(prefix, "entered")) && admissions.exists(_.process.value.toString == read(path(prefix, "entered")))) }
+    admitted.foreach { prefix =>
+      val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(ExitWaitSeconds)
+      while (!Files.isRegularFile(path(prefix, "shutdown")) && !Files.isRegularFile(path(prefix, "failed")) && System.nanoTime() < deadline) {
+        try Thread.sleep(PollMillis)
+        catch { case _: InterruptedException => val _ = Thread.interrupted() }
+      }
+      require(Files.isRegularFile(path(prefix, "shutdown")) && !Files.isRegularFile(path(prefix, "failed")) && read(path(prefix, "exit")) == "0\ttrue", "Fork cancellation did not complete its worker tasks: " + prefix)
+    }
+  }
+
   private def awaitExit(prefix: Path): Unit = {
     val pid = read(path(prefix, "entered")).toLong
     val process = ProcessHandle.of(pid)
@@ -90,7 +102,7 @@ private[sbt] final class HostForkCompletion(directory: Path) {
     val _ = manifest.getMainAttributes.put(Attributes.Name.CLASS_PATH, byteBuddy.toASCIIString + " " + testInterface.toASCIIString)
     val output = new JarOutputStream(Files.newOutputStream(agent), manifest)
     try {
-      Vector(classOf[ForkCompletionAgent], classOf[TaskCompleteness]).flatMap(value => value +: value.getDeclaredClasses.toVector).foreach { agentClass =>
+      Vector(classOf[ForkCompletionAgent], classOf[TaskCompleteness], classOf[ForeignRunReports]).flatMap(value => value +: value.getDeclaredClasses.toVector).foreach { agentClass =>
         val name = agentClass.getName.replace('.', '/') + ".class"
         val source = agentClass.getResourceAsStream("/" + name)
         require(source != null, "Fork completion agent bytecode is missing: " + name)
