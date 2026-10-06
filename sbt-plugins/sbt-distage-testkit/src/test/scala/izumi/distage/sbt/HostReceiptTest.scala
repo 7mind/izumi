@@ -6,6 +6,8 @@ import sbt._
 import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SubclassFingerprint, SuiteSelector}
 
 import java.nio.file.{Files, Paths}
+import java.util.concurrent.{CountDownLatch, TimeUnit}
+import java.util.concurrent.atomic.AtomicReference
 
 object HostReceiptTest {
   private val name = HostSuiteName("fixture.OwnedSuite")
@@ -191,6 +193,104 @@ object HostReceiptTest {
       rejects(classOf[IllegalStateException]) { val _ = current.receipt; () }
     }
 
+    check("close abandoned command generations after result consumption and preserve cancellation") {
+      val first = owner()
+      val consumed = first.enter()
+      first.consume(empty)
+      val active = first.enter()
+      val second = owner()
+      val other = second.enter()
+      val cancellation = new InterruptedException("cancelled command")
+      var callbacks = 0
+      val inherited = new ExecuteProgressAdapter(ExecuteProgress.empty) {
+        override def afterCommand(command: String, result: Either[Throwable, State]): Unit = {
+          require(command == "testOnly fixture.*" && result == Left(cancellation), "Command callback changed")
+          callbacks += 1
+        }
+      }
+      val completion = new HostCommandCompletion(inherited, Seq(first, second))
+      completion.afterCommand("testOnly fixture.*", Left(cancellation))
+      require(callbacks == 1 && cancellation.getSuppressed.length == 1, "Command failure or inherited callback was lost")
+      require(cancellation.getSuppressed.head.getSuppressed.length == 1, "Another owner's incomplete command was lost")
+      require(Seq(consumed, active, other).forall(generation => !Files.exists(generation.store.directory)), "Abandoned command storage survived")
+      Seq(first, second).foreach { current =>
+        rejects(classOf[IllegalStateException]) { val _ = current.receipt; () }
+        current.finishCommand()
+        val fresh = current.enter()
+        require(Seq(consumed, active, other).forall(_.store.directory != fresh.store.directory), "Recovery reused abandoned command storage")
+        current.abort(fresh)
+      }
+    }
+
+    check("distinguish owned task interruption from ordinary cancellation and foreign interruption") {
+      val receipt = new HostReceipt
+      val listener = receipt.configure(Set(name))
+      listener.startGroup(name.value)
+      listener.testEvent(TestEvent(Seq(event(name, Status.Canceled))))
+      require(!receipt.isInterrupted, "A cancelled outcome was mistaken for host task interruption")
+      listener.testEvent(TestEvent(Seq(event(HostSuiteName("fixture.ForeignSuite"), Status.Error, new OptionalThrowable(new InterruptedException("foreign"))))))
+      require(!receipt.isInterrupted, "Foreign task interruption changed distage completion")
+      listener.testEvent(TestEvent(Seq(event(name, Status.Error, new OptionalThrowable(new InterruptedException("owned"))))))
+      require(receipt.isInterrupted, "Owned task interruption was not retained")
+      listener.endGroup(name.value, TestResult.Error)
+      receipt.close()
+    }
+
+    Vector(false, true).foreach { interrupted =>
+      check("join already executing SDK work only after owned interruption=" + interrupted) {
+        val current = owner()
+        val generation = current.enter()
+        val listener = generation.receipt.configure(Set(name))
+        listener.startGroup(name.value)
+        val throwable = if (interrupted) new OptionalThrowable(new InterruptedException("owned")) else new OptionalThrowable
+        listener.testEvent(TestEvent(Seq(event(name, Status.Canceled, throwable))))
+        listener.endGroup(name.value, TestResult.Error)
+        val completion = new HostCommandCompletion(new ExecuteProgressAdapter(ExecuteProgress.empty), Seq(current))
+        val first = sbt.std.TaskExtra.task(())
+        val second = sbt.std.TaskExtra.task(())
+        completion.beforeWork(first)
+        completion.beforeWork(second)
+        val entered = new CountDownLatch(1)
+        val finished = new CountDownLatch(1)
+        val failure = new AtomicReference[Throwable]()
+        val worker = new Thread(() => {
+          entered.countDown()
+          try completion.afterWork(first, Right(Result.Value(())))
+          catch { case cause: Throwable => failure.set(cause) }
+          finally finished.countDown()
+        }, "host-interrupted-work")
+        val WaitSeconds = 5L
+        val HoldMillis = 100L
+        try {
+          worker.start()
+          require(entered.await(WaitSeconds, TimeUnit.SECONDS), "SDK completion worker did not enter")
+          val completed = finished.await(if (interrupted) HoldMillis else TimeUnit.SECONDS.toMillis(WaitSeconds), TimeUnit.MILLISECONDS)
+          require(completed != interrupted, "SDK work completion did not respect the interruption boundary")
+        } finally {
+          completion.afterWork(second, Right(Result.Value(())))
+          worker.join(TimeUnit.SECONDS.toMillis(WaitSeconds))
+          current.abort(generation)
+        }
+        require(!worker.isAlive && failure.get() == null, "SDK work was not joined cleanly: " + failure.get())
+      }
+    }
+
+    check("close abandoned commands when an inherited command callback throws") {
+      val current = owner()
+      val generation = current.enter()
+      val failure = new IllegalStateException("inherited command callback")
+      val inherited = new ExecuteProgressAdapter(ExecuteProgress.empty) {
+        override def afterCommand(command: String, result: Either[Throwable, State]): Unit = throw failure
+      }
+      val completion = new HostCommandCompletion(inherited, Seq(current))
+      var observed = Option.empty[Throwable]
+      try completion.afterCommand("test", Left(new InterruptedException("cancelled")))
+      catch { case cause: Throwable => observed = Some(cause) }
+      require(observed.contains(failure), "Inherited command callback failure was replaced")
+      require(failure.getSuppressed.length == 1 && !Files.exists(generation.store.directory), "Callback failure prevented command cleanup")
+      current.finishCommand()
+    }
+
     check("rebind inherited selection observers to the current configuration") {
       val inheritedOwner = owner()
       val inherited = new HostSelectionObserver(arguments => Seq(candidate => arguments.contains(candidate)), Set(name), inheritedOwner)
@@ -338,7 +438,9 @@ object HostReceiptTest {
 
   private def output(counts: SuiteResult): Tests.Output = Tests.Output(counts.result, Map(name.value -> counts), Nil)
 
-  private def event(suite: HostSuiteName, state: Status): Event = new Event {
+  private def event(suite: HostSuiteName, state: Status): Event = event(suite, state, new OptionalThrowable)
+
+  private def event(suite: HostSuiteName, state: Status, cause: OptionalThrowable): Event = new Event {
     override def fullyQualifiedName(): String = suite.value
     override def fingerprint(): Fingerprint = new SubclassFingerprint {
       override def isModule(): Boolean = false
@@ -347,7 +449,7 @@ object HostReceiptTest {
     }
     override def selector(): Selector = new SuiteSelector
     override def status(): Status = state
-    override def throwable(): OptionalThrowable = new OptionalThrowable
+    override def throwable(): OptionalThrowable = cause
     override def duration(): Long = 0L
   }
 }

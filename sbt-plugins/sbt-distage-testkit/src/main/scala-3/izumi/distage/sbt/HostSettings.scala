@@ -8,6 +8,13 @@ import sbt.complete.DefaultParsers.spaceDelimited
 import sbt.util.{Digest, Logger}
 
 private[sbt] object HostSettings {
+  def globalSettings: Seq[Def.Setting[?]] = Seq(
+    Global / commandProgress := Seq(new HostCommandCompletion(
+      ExecuteProgress2.aggregate(commandProgress.value),
+      HostReceiptPolicy.owner.?.all(ScopeFilter(inAnyProject, inAnyConfiguration, inTasks(testSelected, testQuick, executeTests))).value.flatten.distinct,
+    )),
+  )
+
   def settings: Seq[Def.Setting[?]] = Seq(
     distageBuildId := thisProjectRef.value.build.toString,
     distageTargetId := thisProjectRef.value.project + "/" + configuration.value.name,

@@ -41,6 +41,7 @@ private[sbt] final class HostReceipt {
   private var delivered = HostSuiteCounts.empty
   private var completed = Option.empty[TestResult]
   private var publicationFailure = Option.empty[Throwable]
+  private var interrupted = false
   private var closed = false
 
   def configure(names: Set[HostSuiteName]): TestsListener = synchronized {
@@ -81,6 +82,7 @@ private[sbt] final class HostReceipt {
     delivered = delivered + HostSuiteCounts.from(SuiteResult(event.detail))
     event.detail.groupBy(detail => HostSuiteName(detail.fullyQualifiedName())).foreach { case (name, details) =>
       if (owned.contains(name)) {
+        if (details.exists(detail => detail.throwable().isDefined && detail.throwable().get().isInstanceOf[InterruptedException])) interrupted = true
         val counts = HostSuiteCounts.from(SuiteResult(details))
         received = received.updated(name, received.getOrElse(name, HostSuiteCounts.empty) + counts)
       }
@@ -128,6 +130,8 @@ private[sbt] final class HostReceipt {
   }
 
   def close(): Unit = synchronized { closed = true }
+
+  def isInterrupted: Boolean = synchronized { interrupted }
 
   def normalise(output: Tests.Output): Tests.Output = synchronized {
     requireOpen()
@@ -197,11 +201,13 @@ private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val sto
 
 private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStore) {
   private var current = Option.empty[HostReceiptGeneration]
+  private var pending = Vector.empty[HostReceiptGeneration]
 
   def enter(): HostReceiptGeneration = synchronized {
     require(current.isEmpty, "Overlapping distage host task admission")
     val generation = new HostReceiptGeneration(new HostReceipt, createStore())
     current = Some(generation)
+    pending :+= generation
     generation
   }
 
@@ -209,6 +215,11 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
 
   def store: FileForkReceiptStore = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).store }
   def completion: HostForkCompletion = synchronized { current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt")).completion }
+  def hasPending: Boolean = synchronized { pending.nonEmpty }
+  def hasInterruption: Boolean = {
+    val generations = synchronized { pending }
+    generations.exists(_.receipt.isInterrupted)
+  }
 
   def consume(output: Tests.Output): Tests.Output = {
     val generation = synchronized {
@@ -225,6 +236,23 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
     synchronized { if (current.contains(generation)) current = None }
     generation.receipt.close()
     generation.store.close()
+    synchronized { pending = pending.filterNot(_ eq generation) }
+  }
+
+  def finishCommand(): Unit = {
+    val unfinished = synchronized { pending }
+    if (unfinished.nonEmpty) {
+      val failure = new MessageOnlyException("Incomplete distage host command completion")
+      unfinished.foreach { generation =>
+        try generation.completion.finish(commit = false)
+        catch { case cause: Throwable => failure.addSuppressed(cause) }
+        finally {
+          try abort(generation)
+          catch { case cause: Throwable => failure.addSuppressed(cause) }
+        }
+      }
+      throw failure
+    }
   }
 
   private def finish[A](generation: HostReceiptGeneration)(operation: => A): A = {

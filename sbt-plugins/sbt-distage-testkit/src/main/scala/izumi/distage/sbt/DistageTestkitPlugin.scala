@@ -17,5 +17,7 @@ object DistageTestkitPlugin extends AutoPlugin {
     def distageTestSettings: Seq[Def.Setting[?]] = HostSettings.settings
   }
 
+  override def globalSettings: Seq[Def.Setting[?]] = HostSettings.globalSettings
+
   override def projectSettings: Seq[Def.Setting[?]] = inConfig(Test)(autoImport.distageTestSettings)
 }

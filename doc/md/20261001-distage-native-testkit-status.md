@@ -96,19 +96,19 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
-| 2d.10 | in progress | Current interruption correction passes20 published cancellation/normal/recovery commands on Scala2.13/3, in process and forked, with held finalizers and same-session incremental recovery below. Premature-exit controls also pass the326-command batch. The unchanged target-agent classes retain the preceding29 JDK17/21/25 exit controls. Complete SBT-client cancellation/failure/recovery domain and final evaluation remain open. |
-| 2d.11 | in progress | Current correction passes326 SBT2 command controls on Scala2.13/3: the preceding230 general controls,36 resource/body controls,40 stock callback comparisons and20 cancellation/normal/recovery controls below. Complete failure/input inventory and final evaluation stay open. |
+| 2d.10 | in progress | Current340-command checkpoint includes14 real in-process client controls with held finalizers and same-boundary recovery, plus20 task-interruption/normal/recovery controls on both supported compilers. Stock and distage forked-client reproductions fail to reach target finalization; a public transport prototype joins it but loses JUnit reports. Complete cancellation/failure domain and final evaluation remain open. |
+| 2d.11 | in progress | Current correction passes340 SBT2 command controls on Scala2.13/3:230 general controls,36 resource/body controls,40 stock callback comparisons,20 task-interruption controls and14 actual in-process client controls. Complete failure/input inventory, forked client cancellation and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap58 checks per compiler,18 task checks,20 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap61 checks per compiler,18 task checks,25 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current326-command batch retains preceding body/JUnit/error controls and all15 selected cancellation outcomes per interrupted run, including finalizer failures. Cancellation commands reject, retain complete XML and recover with fresh resources below. Complete host-callback outcomes, SBT-client cancellation and final evaluation remain open. |
+| 2d.22 | in progress | Current340-command batch preserves selected logical outcomes and complete report counts, including actual in-process cancellation with finalizer failures and recovery. Independent reproductions expose stock JUnit rendering of cancelled cases as passed and lost forked-client reports. Both projection corrections, complete host-callback outcomes and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -15146,3 +15146,184 @@ batch exit 143; seven verified owned process identities, none left running.
 Captures: `sbt2-client-cancellation-regression-first/superseded-processes.json`
 and `superseded.json`. Their successful individual controls do not establish
 a complete current-head host regression pass. No whole phase is closed.
+
+## 2026-10-06: join interrupted SDK reporting; isolate stock fork cancellation
+
+Commit: the commit containing this entry, parent
+`2c5ebe022e1742861d1a640050c146bf84fc76fe`.
+Items 2d.10/11/17/22 remain in progress. No whole phase is closed.
+
+The public diagnostic capture
+`sbt2-client-cancellation-public-diagnostics-second-3.9/` records all five
+framework task exits and event batches with cleared interrupt flags, before
+SBT reporting encounters another interruption. The pinned 2.0.9
+`EvaluateTask.runTask` first calls `shutdownImpl(true)` for cancellation, then
+calls `shutdownImpl(false)` from the execution engine's `finally`; both shut
+its worker pool down with `shutdownNow`. The source and callback trace support
+that second interruption as the cause of the empty XML reports. Merely clearing
+interrupts inside `Task.execute` does not protect subsequent SDK reporting.
+
+Public `ExecuteProgress2.afterWork` prototypes establish the useful boundary:
+a worker decrements the already-executing work count before joining its
+siblings, so the first completed SDK future cannot trigger another shutdown
+while siblings report. It never waits for all selected suite tasks to start.
+`sbt2-client-cancellation-report-fence-first-3.9/` passes seven in-process
+normal/cancellation/recovery controls and a normal fork, then fails at the first
+forked cancellation with `CLIENT_FINALIZER_DID_NOT_ENTER` (actual exit 1).
+A `stop()`-triggered variant still fails with empty XML (actual exit 1).
+The narrower interruption-event variant passes all seven in-process controls
+(actual exit 0):
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-client-cancellation-interruption-fence-first.py   --repo-root /home/pavel/work/safe/7mind/izumi   --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-client-cancellation-interruption-fence-first-3.9   --artifact-version 1.3.0-M5-SNAPSHOT --scala-version 3.9.0
+```
+
+The production candidate retains an actual `InterruptedException` received for
+an owned suite in its command receipt, joins already-executing SDK work in the
+public callback, and keeps abandoned generations owned until command cleanup.
+Ordinary cancelled outcomes and foreign interruptions do not enable this
+barrier. Three receipt controls cover that distinction and require interrupted
+work to stay pending until an already-running sibling finishes. The inherited
+command callback, original exception and cleanup failures remain observable.
+The real-client fixture defaults to both execution modes; its explicit
+`--execution-mode inprocess` option isolates this checkpoint without changing
+the forked acceptance obligation.
+
+Commands:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-client-inprocess-producer-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-client-inprocess-qualify-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-client-inprocess-regression-first.py
+```
+
+Producer and publication qualification exit 0, with frozen source inputs
+unchanged: 219 protocol, 802 base and 61 bootstrap checks per supported
+compiler; 21 XML, 25 receipt and 18 task-boundary checks. All five published
+binary payloads match compiled outputs. Plugin JAR SHA-256:
+`ed816b95aff0b5c6fcd54bbb139a635021ac01ccbde81f1be7e0655308394ce6`.
+The combined consumer batch exits 0: all 28 drivers pass and all frozen
+production/fixture/publication inputs remain unchanged. Its independent audit
+also exits 0 and reconciles 340 command controls: the preceding 326 controls
+plus 14 real in-process SBT-client controls, seven per supported compiler.
+The latter include four actual cancellations, held finalizers, four immediate
+same-`testOnly` recoveries and full/incremental recovery. Together the audited
+resource/body/task/client controls have 70 distinct runs, 70 distinct resource
+acquisition attempts and 66 successful acquisitions; four expected acquisition
+failures acquire nothing. The earlier eight task-interruption cancellation
+controls remain separate from the four actual-client cancellations.
+
+Independent audit command:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-client-inprocess-regression-audit.py
+```
+
+Audit completion SHA-256:
+`748a32b1dda016f91eb9b231d644772aefb81a18f3b6aa1e32d9113fa441d22c`.
+The 75 published files are preserved byte-for-byte under
+`sbt2-client-inprocess-qualified-publication/`, with a source/snapshot/hash
+manifest. All 20 target-agent/guard classes also match the preceding qualified
+publication exactly, preserving the applicability of its 29 JDK17/21/25 exit
+controls. This checkpoint verifies reporting delivery and command ownership;
+it does not close forked client cancellation or the cancelled-case JUnit status
+gap below.
+
+### Minimal public reproduction and draft upstream report
+
+Title: **SBT 2.0.9 cancellation returns while its forked test worker remains
+in the test body.** No issue has been filed.
+
+Tracker searches are retained in `sbt2-client-cancellation-tracker-search/`.
+Queries cover `ClosedByInterruptException`, JUnit cancellation, cancellation
+reporting, fork/worker cancellation and fork/InterruptedException. The historical
+[discussion in sbt/sbt#3252](https://github.com/sbt/sbt/issues/3252#issuecomment-378150961)
+asks about forwarding cancellation to forked tests; it does not establish a
+current fix. The separately inspected #9845 concerns interrupt flags during
+thin-client output and is a different failure mode.
+
+Environment: SBT 2.0.9, JDK 21.0.9, Linux, Scala 3.9.0, test-interface 1.0.
+The standalone fixture has no distage plugin, izumi dependency, Java agent or
+effect runtime. Its public `sbt.testing.Framework` returns one suite task,
+which writes its process ID, sleeps while a release file is absent, and writes
+a finalization marker in `finally`. The driver starts a local SBT server, runs
+that suite with `Test / fork := true`, waits for body entry, then sends the
+actual public `sbt/cancelRequest` with `__CancelAll`.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-stock-fork-cancellation-first.py   --repo-root /home/pavel/work/safe/7mind/izumi   --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-stock-fork-cancellation-first
+```
+
+Observed: cancellation is accepted, the original execution returns JSON-RPC
+error -33000, and the target never enters `finally` during the following
+30 seconds. Actual exit 1, expected failure
+`STOCK_FORK_FINALIZER_DID_NOT_ENTER`. `observation.json` records the response
+and missing marker; `target-threads.txt` shows the task still sleeping.
+The driver contains the complete independent framework/build/client sources,
+records exact argv, and releases or terminates only its own process group.
+
+Requested upstream behavior: cancellation should reach the admitted forked
+worker, and the command should retain ownership through target finalization.
+Pinned `ForkTests.scala` catches host interruption by leaving its awaited
+response, closes the worker connection and unregisters its response listener;
+`WorkerMain.java` executes one request and has no cancellation request path.
+Those inspected sources are retained under
+`sbt2-client-cancellation-sdk-source/`. This SDK limitation requires an explicit
+owned cancellation/reporting path in the distage integration; it does not
+justify narrowing 2d cancellation or declaring it complete. Changing only
+`BootstrapRunner.done()` would not address the captured failure, because no
+shutdown hook ran before the command returned.
+
+### Additional cancellation evidence; acceptance still open
+
+The scratch public-callback prototype
+`sbt2-client-fork-cancellation-transport-first-3.9/` exits 0 for two controls:
+actual forked client cancellation and same-boundary recovery. An explicit file
+signal requests interruption in the target's public framework wrapper; the
+host's public `afterWork` callback waits for the target's framed terminal
+response. The held finalizer is joined, all 15 logical outcomes are cancelled,
+and recovery uses fresh resources. This prototype deliberately verifies only
+cancellation transport/lifetime: the cancelled run has zero selected JUnit
+cases because stock SBT already closed its worker listener. It is not a full
+forked cancellation pass. Production still needs owned target cancellation and
+report projection before completing the interrupted SDK work.
+
+A separate fail-first check detects another report gap in the real in-process
+client captures: all 15 protocol outcomes are Cancelled, but their selected
+JUnit cases have neither a skipped element nor a failure/error element. The
+suite has run-level errors, so the command fails, but individual cases look
+passed. Pinned `JUnitXmlTestsListener.scala` handles Ignored/Skipped/Pending and
+omits Canceled from both its skipped count and its case-status rendering.
+Source inspection and captured reports establish this omission; no correction
+is included in the current reporting-join checkpoint.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancelled-junit-status-before/reproduce.py
+```
+
+Actual exit 1, expected failure `CANCELLED_JUNIT_CASES_LOOK_PASSED: 15`.
+`completion.json` retains the protocol count, XML count and zero skipped count.
+Fixing this projection and verifying distinguishable cancellation outcomes
+remain required under 2d.22/O.28.
+
+Draft upstream report: **JUnitXmlTestsListener renders Canceled events as
+successful test cases.** No issue has been filed. Tracker searches
+`repo:sbt/sbt Canceled JUnitXmlTestsListener` and
+`repo:sbt/sbt cancelled junit skipped` return zero matches; exact query/response
+captures are `sbt2-client-cancellation-tracker-search/{5,6}.json`.
+
+A separate minimal build under `sbt2-stock-cancelled-junit-first/build/` calls
+only the public stock JUnit listener with one `Status.Canceled` event. It has
+no distage dependency or plugin. The listener writes one bare testcase and
+`skipped="0"`. The expected projection is a non-successful cancelled case;
+a JUnit skipped marker is an appropriate base representation, with cancellation
+metadata retained by the distage projection.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-stock-cancelled-junit-first/run.py
+```
+
+Actual exit 1 for the intended assertion
+`STOCK_CANCELLED_JUNIT_CASE_LOOKS_PASSED`; `command.json`, `run.log`, generated
+XML and `completion.json` retain the independent reproduction. This confirms
+the SDK renderer omission separately from interruption/report-delivery failure.
