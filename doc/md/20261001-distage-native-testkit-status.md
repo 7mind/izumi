@@ -16919,3 +16919,38 @@ host-policy histories and filtering, target inspection tasks, real DI/effect
 and Lifecycle fixtures, repository runner takeover, whole-phase evaluation,
 coverage/migration/final gates, and IDE's explicitly deferred work. The next
 checkpoint records this sub-step's local commit ID. Nothing was pushed.
+
+
+## 2026-10-06: target DI/effect provider checkpoint
+
+The preceding target ownership/failure correction is local commit `b6ceb3f4f`.
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-target-provider-batch-first.py` ran
+`distage-testkit-runnerJS/Test/testFull` and
+`distage-testkit-runnerNative/Test/testFull` first on Scala 3.9.0 and then on
+2.13.18, with `ThisBuild / insideCI := true`. The exact SBT argv and input hashes
+are in `command.json`; actual batch exit is 0 and all 1,556 compiler input
+hashes remained unchanged. All four actual provider executions passed 516
+checks (2,064 total), including the real Identity/Cats/BIO/environment frontends,
+DI resources and configuration, assertion transport, cancellation, held and
+failing releases, planning and registration failures, and portable factory
+ownership cases. Each lane emitted the verified four-effect assertion marker;
+both JS completion markers and both Native executor-termination markers exist.
+The evidence head is `b6ceb3f4f03f3e05829c73270f9e84052386616b`.
+Independent audit SHA-256:
+`9de45792aab5ac546de64a2cfcb4a9817e7446576ce2ae17347d463cb6030cec`.
+
+This is real target provider execution, rather than effect-library linkage or
+plain callback evidence. It does not close 2e: the effects have not yet been
+combined with every SBT host policy/history fixture, and the platform-specific
+JVM plugin-ownership fixture is explicitly a no-op on JS/Native; the complete
+custom-hook/import migration audit and other O.1 requirements remain open.
+
+The parallel read-only inspection reproduction used the published production
+plugins and target runners: `python3 -B
+/srv/nvme/tmp/izumi-impl/2e-target-inspection-reproduction-first.py`.
+All eight actual SBT children (list and plan, both targets, both compilers)
+exited the expected 1 with the same causal
+`ClassNotFoundException: izumi.distage.testkit.runner.InspectionLauncher`.
+No fixture inputs changed. Both tasks still use the JVM launcher, which is not
+in either target artifact. The next correction routes inspection through the
+platform SDK and the portable application. No inspection gate is passed yet.
