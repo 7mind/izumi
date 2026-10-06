@@ -26,8 +26,23 @@ CONTROLS = '''
 val changeExternalInput = inputKey[Unit]("Change the owned untracked DI input")
 val verifyNoRun = inputKey[Unit]("Verify a physical stock incremental no-op")
 val verifyInspectionParent = inputKey[Unit]("Verify the inspection fork sentinel is absent from the SBT process")
+val verifyExclusiveRegistration = inputKey[Unit]("Verify suites have one execution registration and the application has none")
 val changeScannedImplementation = taskKey[Unit]("Edit an implementation reached only through plugin scanning")
 val changeSuiteClass = taskKey[Unit]("Edit a suite class before incremental execution")
+verifyExclusiveRegistration := {
+  val parsed = spaceDelimited("case fork").parsed
+  require(parsed.size == 2 && Set("true", "false").contains(parsed(1)), "Expected registration case and fork mode")
+  val mode = parsed(1).toBoolean
+  require((Test / fork).value == mode, "Registration check used another execution mode")
+  val expected = (Vector("SuiteA", "SuiteB", "SuiteC", "SuiteD", "SuiteE", "ForeignSuite")).map("izumi.fixtures.host." + _)
+  val definitions = (Test / definedTests).value
+  require(definitions.map(_.name).sorted == expected.sorted, "Execution discovery registered an application or lost/duplicated a suite")
+  val fingerprints = (Test / loadedTestFrameworks).value.values.toVector.flatMap(_.fingerprints())
+  val subclasses = fingerprints.collect { case fingerprint: sbt.testing.SubclassFingerprint => fingerprint }
+  require(subclasses.count(fingerprint => !fingerprint.isModule() && fingerprint.superclassName() == "izumi.distage.testkit.runner.TestSuite") == 1, "Owned suites have multiple execution registrations")
+  require(!subclasses.exists(_.superclassName() == "izumi.distage.testkit.runner.TestApplication"), "The containing application has an execution fingerprint")
+  streams.value.log.info("PLUGIN_EXCLUSIVE_REGISTRATION_OK case=" + parsed.head + " suites=6 application=absent fork=" + mode)
+}
 changeScannedImplementation := {
   val source = baseDirectory.value / "src/test/scala/izumi/fixtures/host/FixturePlugin.scala"
   val before = "private def implementationRevision: String = " + '"' + "one" + '"'
@@ -213,6 +228,7 @@ def commands(sbt_version):
     sequence, expected = ["clean"], []
     if sbt_version == "2.0.9":
         sequence.extend(["verifyDistinctStockDigests", "show Test / definedTestDigests"])
+    sequence.append("verifyExclusiveRegistration inprocess false")
     selected_id = dict(target="pluginConsumer/test", suite="izumi.fixtures.host.SuiteC", path=["equal display name", "should", "first"], variant=None)
     selected_json = json.dumps(selected_id, separators=(",", ":")).replace(" ", "\\u0020")
     selected_options = "--test-id " + json.dumps(selected_json) + " --memoization disabled"
@@ -291,6 +307,7 @@ def commands(sbt_version):
     case("configured-exclusion", quick, "SuiteA SuiteB SuiteD SuiteE", 1, "beta")
     sequence.append('set Test / testOptions ~= (_.filterNot(_.isInstanceOf[Tests.Exclude]))')
     sequence.append("set Test / fork := true")
+    sequence.append("verifyExclusiveRegistration fork true")
     inspect("fork-list", "Test / distageList", "", 15, "pluginConsumer/test")
     inspect("fork-selected-plan", "Test / distagePlan", selected_options, 1, "pluginConsumer/test")
     selected("fork-individual", "testOnly *SuiteC", "beta")
@@ -447,6 +464,13 @@ def main():
             for diagnostic in ["RejectedExecutionException:", "NoClassDefFoundError:", "ClassNotFoundException:", "Exception in thread "]:
                 if diagnostic in raw:
                     failures.append("Unexpected runtime diagnostic: " + diagnostic)
+            registration_checks = []
+            for case_name, fork in [("inprocess", "false"), ("fork", "true")]:
+                marker = f"PLUGIN_EXCLUSIVE_REGISTRATION_OK case={case_name} suites=6 application=absent fork={fork}"
+                count = raw.count(marker + "\n")
+                if count != 1:
+                    failures.append("Missing unique execution registration check: " + marker)
+                registration_checks.append(dict(case=case_name, fork=fork == "true", suites=6, applicationRegistered=False, markerCount=count))
             if "DISTAGE_CACHE_DECISION suite=izumi.fixtures.host.SuiteC decision=rerun reason=untracked-input-closure" not in raw:
                 failures.append("Explicit conservative cache decision missing")
             history_markers = ["PLUGIN_HISTORY_EDIT_OK kind=scanned-implementation revision=two", "PLUGIN_SCANNED_DIGESTS_UNCHANGED_OK", "PLUGIN_HISTORY_EDIT_OK kind=suite-class revision=4", "PLUGIN_CHANGED_SUITE_DIGEST_OK"]
@@ -461,7 +485,8 @@ def main():
                 if raw.index("PLUGIN_STOCK_DIGESTS_OK suites=5 distinct=5\n") > raw.index("TARGET_BOOTSTRAP_PREPARED case=list\n"):
                     failures.append("Stock suite digest precondition ran after a fixture case")
             outcome = dict(sbt=sbt_version, scala=scala_version, actualExit=code, expectedCases=len(expected), validationFailures=failures,
-                           stockDigestPairs=digests, distinctStockSuiteDigests=len(digests) == 5 and len(set(d for _, d in digests)) == 5, historyMarkers=history_markers)
+                           stockDigestPairs=digests, distinctStockSuiteDigests=len(digests) == 5 and len(set(d for _, d in digests)) == 5, historyMarkers=history_markers,
+                           registrationChecks=registration_checks)
             (lane / "completion.json").write_text(json.dumps(outcome, indent=2) + "\n")
             outcomes.append(outcome)
             print(json.dumps(outcome), flush=True)

@@ -105,11 +105,11 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.16 | not started | No evaluation point passed yet. |
 | 2d.17 | in progress | Bootstrap61 checks per compiler,18 task checks,25 receipt checks,31 XML,14 report-store,eight host-projection and four public report-failure checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
-| 2d.19 | not started | No evaluation point passed yet. |
+| 2d.19 | in progress | Four public SBT discovery/fingerprint controls pass in process and forked on both supported compilers, with94 host execution/inspection cases,558 physical bodies and574 XML cases. Complete mode/sharing inventory and final evaluation remain open. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
 | 2d.22 | in progress | Current354-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
-| 2d.23 | not started | No evaluation point passed yet. |
+| 2d.23 | in progress | Current audit passes eighteen resolved Compile classpaths and eighteen published POMs across all runner layers/platforms/supported compilers;46 production sources import no SBT implementation. JVM variants use only the public test interface. Production Node/Native target host execution and final evaluation remain open. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
 | 2e.3 | not started | No evaluation point passed yet. |
@@ -15538,3 +15538,63 @@ all1518 producer inputs,1631 consumer inputs and75 frozen publication files.
 There are no changed inputs. `git diff --check` also exits0. This verified
 sub-step is committed locally as `Complete owned fork cancellation; verify 354 SBT controls`,
 with parent `6bd25b6ee6fe74a0baa49c4cb889e5c5e4279d67`. No push is authorized.
+
+## 2026-10-06: exclusive JVM execution registration and portable dependencies
+
+The cancellation checkpoint is local commit
+`5d6ee94baa709648e14a820de6b5f000df0c6d9b`. Its postcommit guard exits0,
+rechecking1518 producer inputs and1631 consumer inputs with a clean worktree.
+The following bounded checkpoint adds public host acceptance checks without
+changing production code. Items2d.19/23 remain in progress; no phase is closed.
+
+The consumer fixture queries the public SBT `definedTests` and
+`loadedTestFrameworks` tasks before in-process execution and again after enabling
+forked execution. It requires exactly the five owned suites and one foreign
+suite, one owned suite fingerprint, and no containing-application fingerprint.
+Existing body/resource/report controls continue to check execution and sharing;
+the registration assertions alone do not establish sharing correctness.
+
+Commands:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-matrix.py \
+  --artifact-version 1.3.0-M5-SNAPSHOT --sbt-version 2.0.9 \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-exclusive-registration-first
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-registration-root-audit-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-host-boundary-audit-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-host-boundary-classpath-audit-first.py
+```
+
+Both consumer processes exit0:47 execution/inspection cases each and two
+registration checks each. The independent public-data audit exits0 with94
+cases,558 physical body records and574 XML cases, checking literal suite/body
+identities and XML names/outcomes. The extra XML cases are the prescribed
+launch/selection failures, not additional executed bodies. All1518 producer
+inputs,10 fixture inputs and75 frozen/current published files remain identical.
+Evidence is in `sbt2-exclusive-registration-first/root-audit.json` and the
+per-compiler case directories, commands, completion records and logs there.
+
+The dependency capture runs eighteen `Compile/fullClasspath` commands in one
+SBT2/JDK21 batch: protocol/base/higher runner, JVM/JS/Native, Scala3/2.13. It
+exits0 and preserves108 frozen source/build inputs. The audit checks the actual
+resolved paths and eighteen current published POMs. None contains an SBT
+implementation dependency or ScalaTest/Scalactic; the base/protocol project
+closures retain their required boundaries. The JVM base/higher paths include
+the public `org.scala-sbt:test-interface`, which is not an SBT implementation.
+The46 production source import checks find only two public `sbt.testing`
+imports, both in JVM source sets. The Scala3 protocol retains its3.8.4 closure.
+Evidence is in `sbt2-host-boundary-audit-first/{command.json,completion.json,
+source-import-audit.json,audit.json,run.log}`. Its run-log SHA-256 is
+`d04b282cad9e1cc347992f4b017fec5ea3532af081fcabc1f89f2ef46fc292d2`.
+POM checks establish dependency metadata, not fresh binary-payload equality for
+all eighteen publications.
+
+The checkpoint is committed locally as
+`Verify exclusive JVM registration and portable dependency boundaries`, with
+parent `5d6ee94baa709648e14a820de6b5f000df0c6d9b`. `git diff --check` exits0.
+Complete mode/sharing coverage and the final evaluation of2d.19 remain open;
+the production Node/Native host requirements in2d.23 remain open. Item2d.16
+still needs explicit selection-reason verification. The wider cancellation
+domain,2e, coverage, migration, final lanes and independent reviews remain open.
+IDE stays deferred; no push is authorized.
