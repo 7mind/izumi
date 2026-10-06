@@ -188,7 +188,10 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform, NativePla
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -197,7 +200,10 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform, NativePla
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -389,7 +395,10 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -398,7 +407,10 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -591,7 +603,10 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, Nati
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -600,7 +615,10 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, Nati
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -799,7 +817,10 @@ lazy val `fundamentals-assertions` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false
@@ -810,7 +831,10 @@ lazy val `fundamentals-assertions` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -1008,7 +1032,10 @@ lazy val `fundamentals-assertions-cats` = crossProject(JVMPlatform, JSPlatform, 
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false
@@ -1019,7 +1046,10 @@ lazy val `fundamentals-assertions-cats` = crossProject(JVMPlatform, JSPlatform, 
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -1219,7 +1249,10 @@ lazy val `fundamentals-assertions-bio` = crossProject(JVMPlatform, JSPlatform, N
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false
@@ -1230,7 +1263,10 @@ lazy val `fundamentals-assertions-bio` = crossProject(JVMPlatform, JSPlatform, N
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -1437,7 +1473,10 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform, NativePl
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -1446,7 +1485,10 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform, NativePl
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -1647,7 +1689,10 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -1656,7 +1701,10 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -1854,7 +1902,10 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -1863,8 +1914,12 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    coverageExcludedPackages := Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]crypto[.]OpenSSLDigest.*").filter(_.nonEmpty).mkString(";")
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
@@ -2069,7 +2124,10 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -2078,7 +2136,10 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -2280,7 +2341,10 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -2289,7 +2353,10 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform, Nativ
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -2482,7 +2549,10 @@ lazy val `fundamentals-test-support` = crossProject(JVMPlatform, JSPlatform, Nat
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -2491,7 +2561,10 @@ lazy val `fundamentals-test-support` = crossProject(JVMPlatform, JSPlatform, Nat
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -2691,7 +2764,10 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -2703,7 +2779,10 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -2909,7 +2988,10 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -2921,7 +3003,10 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -3122,7 +3207,10 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -3134,7 +3222,10 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -3340,7 +3431,10 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -3353,7 +3447,10 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -3575,7 +3672,10 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -3587,7 +3687,10 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
     libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
@@ -3802,7 +3905,10 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -3811,8 +3917,12 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    coverageExcludedPackages := Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]uuid[.]__SecureRandomPlatformSpecific[.$]sysrandom.*").filter(_.nonEmpty).mkString(";")
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-bioJVM` = `fundamentals-bio`.jvm
@@ -4047,7 +4157,10 @@ lazy val `distage-test-protocol` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false
@@ -4058,7 +4171,10 @@ lazy val `distage-test-protocol` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -4257,7 +4373,10 @@ lazy val `distage-test-runner` = crossProject(JVMPlatform, JSPlatform, NativePla
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false,
@@ -4269,7 +4388,10 @@ lazy val `distage-test-runner` = crossProject(JVMPlatform, JSPlatform, NativePla
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Compile / unmanagedSourceDirectories += file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile
   )
@@ -4489,7 +4611,10 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -4498,7 +4623,10 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -4870,7 +4998,10 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -4879,7 +5010,10 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform, NativeP
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5079,7 +5213,10 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -5088,7 +5225,10 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5295,7 +5435,10 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -5304,7 +5447,10 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5530,7 +5676,10 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -5539,7 +5688,10 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5736,7 +5888,10 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -5745,7 +5900,10 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5970,7 +6128,10 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -5979,7 +6140,10 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
   )
@@ -6376,7 +6540,10 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform, NativePl
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false
@@ -6387,7 +6554,10 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform, NativePl
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
     Test / mainClass := Some("izumi.distage.testkit.spec.NativeTestkitFixtures"),
     Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
@@ -6591,7 +6761,10 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform, Native
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
     Test / scalaJSUseTestModuleInitializer := false
@@ -6602,7 +6775,10 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform, Native
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -6816,7 +6992,10 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .enablePlugins(SitePreviewPlugin)
@@ -7197,7 +7376,10 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -7206,7 +7388,10 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)
@@ -7414,7 +7599,10 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
   )
   .nativeSettings(
@@ -7423,7 +7611,10 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := false,
+    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
+    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
+    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
   )
   .enablePlugins(SitePreviewPlugin)

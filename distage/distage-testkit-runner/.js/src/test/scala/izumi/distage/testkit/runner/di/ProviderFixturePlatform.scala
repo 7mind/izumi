@@ -6,7 +6,7 @@ import scala.scalajs.js.timers.{clearTimeout, setTimeout}
 import scala.util.{Failure, Success}
 
 private[di] object ProviderFixturePlatform {
-  private final val CompletionTimeout = 30.seconds
+  private final val CompletionTimeout = 2.minutes
 
   def pluginOwnership(context: ExecutionContext, verify: (String, Boolean) => Unit): Future[Unit] = {
     val _ = (context, verify)

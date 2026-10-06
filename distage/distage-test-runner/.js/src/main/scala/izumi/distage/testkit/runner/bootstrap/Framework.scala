@@ -5,19 +5,20 @@ import izumi.distage.testkit.runner.TestApplication
 
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.scalajs.js
+import scala.scalajs.js.annotation.JSGlobalScope
 
 final class Framework extends TargetFramework(new JsTargetRuntime)
 
 private[bootstrap] final class JsTargetRuntime extends TargetRuntime {
   override val context: ExecutionContext = scala.scalajs.concurrent.JSExecutionContext.queue
-  override def newRunId(): RunId = RunId(js.Dynamic.global.crypto.randomUUID().asInstanceOf[String])
+  override def newRunId(): RunId = RunId(TargetGlobals.crypto.randomUUID())
   override def await(completion: Future[Unit]): Unit = throw new UnsupportedOperationException("JS tasks require the asynchronous execution callback")
 
   override def openControl(port: Int, application: TestApplication): Future[TargetControl] = {
     implicit val ec: ExecutionContext = context
     val ready = Promise[TargetControl]()
     val closed = Promise[Unit]()
-    val socket = js.Dynamic.global.require("net").connect(port, "127.0.0.1")
+    val socket = TargetGlobals.require("net").connect(port, "127.0.0.1")
     var pending = ""
     var closing = false
     var failure = Option.empty[Throwable]
@@ -67,4 +68,16 @@ private[bootstrap] final class JsTargetRuntime extends TargetRuntime {
     }): js.Function0[Unit])
     ready.future
   }
+}
+
+@js.native
+@JSGlobalScope
+private[bootstrap] object TargetGlobals extends js.Object {
+  def crypto: TargetCrypto = js.native
+  def require(module: String): js.Dynamic = js.native
+}
+
+@js.native
+private[bootstrap] trait TargetCrypto extends js.Object {
+  def randomUUID(): String = js.native
 }

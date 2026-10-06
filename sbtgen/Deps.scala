@@ -246,6 +246,14 @@ object Izumi {
   object Targets {
     val targetScala3 = Seq(scala300, scala213)
 
+    private val portableCoverageSettings = Seq(
+      "coverageEnabled" := """(ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2.")""".raw,
+      "libraryDependencies" := """ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value)""".raw,
+    ) ++ Seq("Compile", "Test").map { configuration =>
+      "scalacOptions" in SettingScope.Raw(s"$configuration / compile") ++=
+        s"""Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(($configuration / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty }""".raw
+    }
+
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala3,
@@ -254,8 +262,7 @@ object Izumi {
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
       language = targetScala3,
-      settings = Seq(
-        "coverageEnabled" := false,
+      settings = portableCoverageSettings ++ Seq(
         "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
@@ -271,8 +278,7 @@ object Izumi {
     private val nativePlatform = PlatformEnv(
       platform = Platform.Native,
       language = targetScala3,
-      settings = Seq(
-        "coverageEnabled" := false,
+      settings = portableCoverageSettings ++ Seq(
         // The target test interface must match the Native plugin's host adapter.
         "libraryDependencySchemes" += """"org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always""".raw,
       ),
@@ -709,7 +715,9 @@ object Izumi {
           Projects.fundamentals.collections in Scope.Compile.all,
 //          Projects.fundamentals.reflection in Scope.Compile.all,
         ),
-        settings = Seq.empty,
+        settings = Seq(
+          "coverageExcludedPackages" in (SettingScope.Project, Platform.Native) := """Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]crypto[.]OpenSSLDigest.*").filter(_.nonEmpty).mkString(";")""".raw,
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.functoid,
@@ -816,7 +824,9 @@ object Izumi {
           Projects.fundamentals.collections,
           Projects.fundamentals.basics,
         ),
-        settings = Seq.empty,
+        settings = Seq(
+          "coverageExcludedPackages" in (SettingScope.Project, Platform.Native) := """Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]uuid[.]__SecureRandomPlatformSpecific[.$]sysrandom.*").filter(_.nonEmpty).mkString(";")""".raw,
+        ),
         platforms = Targets.cross,
       ),
     )),

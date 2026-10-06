@@ -118,8 +118,8 @@ head. The spike reports are design evidence, not implementation verification.
 | 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
 | 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. The corrected production host additionally passes24 tracked real DI finalizer-cancellation/recovery histories across both compilers/platforms and host limits one/two. Complete effect interruption and final evaluation remain open. |
 | 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
-| 3.1 | not started | No evaluation point passed yet. |
-| 3.2 | not started | No evaluation point passed yet. |
+| 3.1 | in progress | The fresh current-artifact six-lane consumer matrix verifies18 reports and exact branch witnesses. Current repository instrumentation passes all twelve assertion/base/higher controls on JVM Scala3.9/2.13 and JS/Native Scala2.13, with six JVM reports. Final-head evaluation and phase review remain outstanding. |
+| 3.2 | in progress | Independent audit verifies twelve current normal assertion/base-runner publications after coverageOff, without instrumentation references or Scoverage POM dependencies. The earlier consumer fixture verifies twelve normal publications. Full repository publication and final evaluation remain open. |
 | 4.1 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.2 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.3 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
@@ -17856,3 +17856,368 @@ known executed/unexecuted branch witnesses, the complete portable assertion
 fixtures, both compilers and in-process/fork execution. It runs an ordinary
 baseline before instrumented execution and finishes by cleaning with coverage
 Off before normal fixture publication. Coverage success is not yet claimed.
+
+
+## 2026-10-06: initial JVM coverage and normal publication pilot
+
+The tracked SDK cancellation checkpoint is local commit `d94d8f173`; no push
+was performed. Its independent held-boundary audit report SHA256 values are
+`09ccaa93555c3a342608b692abe949f90dc1a061112957f9f8a00f337dbb5012`
+(limit1) and
+`52198acbd019707b210b8e64364eadc3214653f3a4ca8c8e4decafdcbb5f46e8`
+(limit2).
+
+`python3 -B /srv/nvme/tmp/izumi-impl/3-coverage-jvm-pilot-first.py` completed
+all four actual SBT processes and controller at0, with unchanged frozen inputs.
+Each lane runs an ordinary and then instrumented baseline with two module
+bodies and all86 assertion fixture checks; both Scala3.9 and Scala2.13 succeed
+in process and forked. Scoverage generates per-module and aggregate reports.
+Scala3.9 warns that `semantics` has5,569 tree nodes, beyond its3,000-node
+instrumentation threshold, and skips that method. Successful execution does
+not establish coverage of that skipped method. This is an observed compiler
+limitation, not the historical NoDenotation crash.
+
+The pilot's final coverageOff/clean correctly removes instrumentation before
+eight normal fixture publications. Independent audit compares each published
+class/TASTy payload with the normal compiled output, checks for instrumentation
+references and Scoverage POM dependencies, and returns0. Its report is
+`3-coverage-jvm-pilot-first/independent-normal-publication-audit.json`.
+However, that clean also removed detailed XML coverage reports before the
+branch oracle inspected them. Therefore exact executed/unexecuted branch
+coverage is unverified in this capture; console percentages do not satisfy3.1.
+
+The subsequent `3-coverage-jvm-pilot-second.py` freezes a fresh template, adds a
+small macro witness exercising both success and AssertionFailure, and captures
+all detailed coverage XML before coverageOff/clean and normal publication.
+It is running the same four lanes. No whole coverage or runner gate is closed.
+
+
+The report-preserving coverage fixture required two harness corrections:
+SBT2 PathFinder.get requires `()`, and the capture task must disable aggregation
+because all generated outputs reside beneath the root target directory. The
+second pilot failed build loading for the first correction; the third ran all
+ordinary/instrumented bodies and generated/captured the detailed root reports,
+then failed the redundant child capture tasks. These actual exits1 are not
+reported as passing producers. The fourth pilot disables capture aggregation
+and runs the complete baseline/coverage/capture/normal-publication pipeline.
+
+The portable second pilot passes ordinary Scala2.13 JS/Native execution,
+including all86 assertion controls, before failing when coverage is enabled.
+Scoverage2.4.4 requests unpublished
+`scalac-scoverage-reporter_sjs1_2.13:2.5.2` and
+`scalac-scoverage-serializer_sjs1_2.13:2.5.2`, and analogous Native0.5 artifacts.
+Both actual SBT exits are1; no portable coverage is claimed. Its pinned plugin
+source adds these compiler-side dependencies with binary crossing:
+https://raw.githubusercontent.com/scoverage/sbt-scoverage/v2.4.4/src/main/scala/scoverage/ScoverageSbtPlugin.scala
+The third portable experiment preserves the runtime dependencies but pins those
+two artifacts to explicit JVM binary coordinates in the private compiler-plugin
+configuration. This is a measured compatibility experiment, not a committed
+production correction or proof of portable support. No scope is narrowed.
+
+
+The fourth JVM coverage pilot returned actual exit0 for all four SBT processes
+and the controller, with unchanged frozen inputs. Independent audit returns0
+for12 detailed per-module/aggregate reports,16 physical body executions (eight
+ordinary and eight instrumented), all86 assertion checks per execution mode,
+and eight normal publications without instrumentation references or Scoverage
+POM dependencies. Known branch witnesses have exactly one executed branch and
+one unexecuted branch, with50% branch coverage, in both compilers and launch
+modes. Forked runs have four distinct physical worker PIDs per lane, whereas
+the in-process lane uses one. The smaller MacroWitness exercises successful and
+failed assertions in the instrumented compile pipeline and has100% branch
+coverage. Scala3 records its `check` method; Scala2 records the caller while
+omitting the macro-expanded `check` body. Neither behavior establishes coverage
+of every generated macro instruction. Independent report SHA256:
+`9929a1a14ee45d5213d9a8ebae68aff63147ec3b98e6c0e5ae7ad47261b899e9`.
+The complete command manifest is
+`3-coverage-jvm-pilot-fourth/commands.json`.
+
+The portable third and fourth experiments expose the same inappropriate
+platform crossing successively for the compiler domain and full-version compiler
+plugin after reporter/serializer coordinates are corrected. Both return actual
+exit1 before instrumented execution; ordinary JS/Native baselines continue to
+pass. The fifth experiment pins all four compiler-side coordinates to JVM,
+using the full Scala compiler suffix for `scalac-scoverage-plugin` and the binary
+suffix for domain/reporter/serializer. Runtime coordinates remain untouched.
+This preserves all supported target obligations; no portable coverage claim or
+production compatibility change is made yet. A durable coverage fixture and
+complete normal repository publication/CI gates remain outstanding.
+
+
+The portable fifth experiment and its independent audit both return0 for JS
+and Native Scala2.13.18. All six detailed reports match the known50% branch
+witnesses, both86-check assertion runs pass per target, and four normal
+class/NIR/SJSIR publications contain no instrumentation or Scoverage POM
+references. Independent audit SHA256:
+`db943b33ad5840c0090cc217bcc103663b5364e9c820f69abc7ed74fec69a6c0`.
+The sixth experiment repeats this pipeline using the production
+`project/ScoverageCompilerDependencies.scala` and the generated platform's
+Scala2-only coverage policy; both actual SBT processes and controller return0.
+
+The tracked, unified fixture command is:
+
+```sh
+python3 -B test-fixtures/coverage-consumer/verify.py \
+  --repo-root "$PWD" \
+  --artifact-version 1.3.0-M5-target-policy-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-abort-host-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 --platform jvm js native \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/3-coverage-tracked-matrix-first
+```
+
+All six actual SBT processes and controller return0 with unchanged frozen
+inputs. The embedded and independent audits verify18 detailed reports and12
+normal publications. Independent report SHA256:
+`7730610bc436376a265a7b70109ce10bf744aa122961a650213f38de8823debf`.
+A separate fail-first CLI reproduction shows a Scala3/Native-only request
+erroneously returning0 with zero lanes. Only afterward, the driver rejects a
+request with no supported combination; the corrected exact reproduction exits2
+with the expected domain diagnostic. Scala3 JS/Native coverage is not claimed.
+
+Generated build inputs now use the verified compiler dependency helper and
+allow coverage on Scala2 JS/Native. Generation via
+`direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`
+returns0. An earlier attempt using unsupported `--test` returns1 before
+changing generated files; it is not passing generation evidence.
+
+The real repository's six-control portable coverage batch first reproduces
+Scala.js dynamic global-name compilation errors at both `crypto` and `require`
+in the target Framework. Only after actual exit1, these accesses move to typed
+JSGlobalScope facades. The next batch exposes a fatal dead-code warning for a
+native val initializer; the getter facade avoids an instrumented initializer.
+The third batch passes the assertion/base-runner controls, then fails expansion
+of PlatformGuards' version macro. The captured stack is
+`ScalaReleaseMaterializer.scalaReleaseMacro -> ScalaRelease.parse ->
+scoverage.Invoker -> scalajssupport.File -> js.Dynamic.global.selectDynamic`:
+instrumented shared macro support invokes the target coverage runtime while
+executing in the JVM compiler. This is a reproduced compiler/runtime-boundary
+constraint, not a failing runner result.
+
+The narrow mitigation excludes the ScalaRelease model/helper from JS/Native
+instrumentation, preserving existing user exclusions and all runtime/macro
+behavior. Its version macros execute that helper on JVM, and target coverage
+cannot run there. Coverage for this exact helper/model remains absent on those
+targets; the exclusion is explicit and emitted in generated settings. JVM
+coverage is unaffected. The repository correction is still uncommitted, and
+the next full portable controls must pass before claiming its checkpoint.
+
+
+The fourth real repository portable batch returns actual exit1 while expanding
+CodePositionMaterializer's application point ID helper. Its captured stack is
+`CodePositionMaterializerMacro.getApplicationPointIdImpl -> scoverage.Invoker
+-> scalajssupport.File`; the target coverage runtime again executes in the JVM
+compiler. Only after this failure, the explicit JS/Native exclusion additionally
+names CodePositionMaterializer. This is a disclosed coverage gap for those
+compiler helpers, not evidence that their instructions are instrumented. The
+fifth batch repeats the six full portable controls and normal recompilation;
+its results are not yet known. Generation after the additional exclusion exits0.
+
+Two minimal public SBT2/Scoverage builds, independent of izumi, confirm ordinary
+JS/Native compilation succeeds and coverage compilation fails resolving
+platform-crossed compiler dependencies. Both actual child exits are1 as expected;
+the reproduction controller and independent audit exit0. Captures:
+`3-scoverage-platform-public-reproduction/`, audit SHA256
+`a02e94677926a963b20b1fac770ec1ee207df87fc8af58f7a28fc872437eb65b`.
+The [unsubmitted public reproduction and report draft](20261006-scoverage-sbt2-platform-resolution-draft.md)
+records the pinned versions, source, command, expected result and observed
+resolver failure. Upstream tracker searches found no matching report; no issue
+has been filed.
+
+The fifth real repository batch returns actual exit1 at
+`SourcePositionMaterializerMacro.literal -> scoverage.Invoker ->
+scalajssupport.File`, called by CodePositionMaterializer's expansion. Captures:
+`3-coverage-root-portable-controls-fifth/command.json`, `run.log` and
+`completion.json`. The six-control batch passes both assertion checks and both
+826-check base runner controls before this compilation failure. After inspecting
+the helper, the explicit portable exclusion also names
+SourceFilePositionMaterializer; its omitted coverage is disclosed alongside
+the preceding two helpers. No runtime semantic change is made.
+
+A read-only source occurrence inventory for step5 is captured in
+`5-current-facility-inventory-first/inventory.json`: among repository
+`src/test` Scala sources,65 files still contain `org.scalatest`,20 contain
+compile-time assertion facility names,17 contain `TestFailedException`, and
+one contains the ScalaMock ScalaTest integration. This inventory includes
+textual occurrences and is not a discovered/executed test-count baseline.
+It establishes that retirement remains incomplete; it does not close5.4/5.8
+or substitute for the plan's facility-by-facility migration reconciliation.
+
+The sixth real repository portable batch returns actual exit1 with all frozen
+compiler inputs unchanged. The captured next JVM macro stack is
+`MacroParametersImpl.projectVersionMacro -> attr -> getAttr ->
+scoverage.Invoker -> scalajssupport.File`. After inspecting the implementation,
+the fundamentals-platform target settings explicitly exclude that compiler-only
+implementation. This additional gap is named in generated JS/Native exclusions;
+normal macro behavior remains covered by the existing runner/engine controls.
+Exact command/input hashes and result: `3-coverage-root-portable-controls-sixth/`.
+
+The seventh real repository portable batch returns actual exit1 with unchanged
+frozen inputs. Both distage-core and extension-config fail when constructor
+macros initialize `izumi.distage.constructors.DebugProperties`, which invokes
+the target Scoverage runtime in JVM. Captures:
+`3-coverage-root-portable-controls-seventh/`.
+
+The repeated failures establish a general host/target runtime boundary, not
+independent runtime defects in the helper methods. The next candidate therefore
+removes the successive package exclusions and supplies a JVM Scoverage runtime
+only in the private compiler configuration. Scala2 macro classpaths replace
+the target runtime jar with that host runtime, retaining the target runtime
+on ordinary compilation/linking classpaths. No helpers are omitted from the
+candidate's coverage policy. It must pass the real portable controls before
+being treated as a correction.
+
+The eighth real repository candidate returns actual exit1 during build loading,
+with frozen inputs unchanged: SBT2 dependency classpaths contain
+HashedVirtualFileRef, not File. The correction uses the public fileConverter
+to obtain each path. This is build-definition compatibility evidence, not a
+passing macro runtime check. The independent minimal JS macro build reproduces
+the target-runtime crash after ordinary success. The matching Native baseline
+returns0, so the JS failure must not be generalized as an observed Native
+failure. Both platform macro runtimes will be checked separately.
+
+The corrected minimal public macro builds both return actual exit0 for ordinary
+and instrumented compilation. Independent audit additionally checks the helper
+class retains its Invoker call and has a measurement file written during JVM
+macro execution; it returns0, SHA256
+`f97aa6feef3985cbb7ea95c552f119b4a042c34b8239422ac2dbfa5ae8618e48`.
+Captures: `3-scoverage-macro-host-runtime-public-second/`. The first minimal
+controller returns1 because its Native-failure expectation is contradicted by
+actual Native success and its first corrected JS build has the virtual-file
+type error. Neither is passing evidence for that first controller. The public
+report draft includes the macro source and observed Native comparison. The
+ninth real portable batch uses the corrected private JVM runtime and separate
+Compile/Test macro classpaths, with no package exclusions; it remains in flight.
+
+The ninth real portable batch compiles the complete higher JS runner with the
+JVM macro runtime, but actual exit1 occurs during execution: its fixture's
+30-second watchdog expires after progressing through the ownership controls.
+The exact generated program is then run directly under Node with a preload
+that extends only a30000ms timer to180000ms. The probe verifies exactly one
+matching timer, all523 checks and the terminal completion marker; actual exit0
+occurs after39.225s. Captures: `3-coverage-js-watchdog-probe/`. This demonstrates
+finite completion beyond the former harness deadline rather than a deadlock.
+Only after that probe, the JS fixture's named CompletionTimeout changes to
+two minutes. A combined batch will repeat all six instrumented portable
+controls, both JVM compiler controls/reports, and twelve normal publications.
+
+The first combined coverage/publication batch returns actual exit1 with all
+frozen compiler inputs unchanged. All portable assertion/base checks and the
+523-check instrumented JS provider pass. Native higher compilation then rejects
+instrumentation inserted into the two C extern declarations: OpenSSLDigest.SHA256
+and __SecureRandomPlatformSpecific.sysrandom.getentropy. Both exact diagnostics
+are `methods in extern objects must have extern body`. The wrappers retain
+real Scala bodies; the declarations have none. After that captured failure,
+only these two Native extern objects are excluded, preserving existing user
+exclusions. No Scala wrapper or macro helper is excluded. Captures:
+`3-coverage-root-jvm-and-publication-first/`. The next combined batch repeats
+the same domain with this explicit foreign-function boundary.
+
+The minimal public Native extern fail-first child returns actual1 for the exact
+extern-body diagnostic after its ordinary entropy call succeeds. The corrected
+child returns actual0 and performs that call both ordinarily and instrumented.
+Independent audit additionally confirms the Scala wrapper retains its Invoker
+call and the extern class does not; audit exits0, SHA256
+`2dc3fc6ca4d87988ad3df90dd1989df295e44d83d749d457cc48f978050043a7`.
+Captures: `3-scoverage-native-extern-public-second/`. The earlier prototype's
+Scala2 import failure and the subsequent missing corrected-template copy are
+recorded infrastructure failures, not passing controller evidence. The public
+report draft now includes the minimal source and correction. The first extern
+generator edit also introduced a duplicate settings argument and returned1;
+removing that duplicate and regenerating returns0 before the next root batch.
+
+
+## 2026-10-06: verified repository coverage and normal publication checkpoint
+
+The combined producer command is
+`python3 -B /srv/nvme/tmp/izumi-impl/3-coverage-root-jvm-and-publication-second.py`.
+Its exact SBT argv, evaluated commit and1,632 compiler-input hashes are captured
+in `3-coverage-root-jvm-and-publication-second/command.json`. Actual SBT and
+controller exits are0, and every frozen compiler input is unchanged.
+
+All twelve instrumented controls pass: assertions86 and base runner826 on JVM
+Scala2.13.18/3.9.0 and JS/Native Scala2.13.18; higher provider523 on each portable
+target and646 on each JVM compiler. The JVM bootstrap/file/registration controls
+also complete. Six detailed JVM coverage reports are generated and independently
+parsed, with positive statement and invocation counts and current timestamps.
+These repository percentages are measurements, not the fixture branch oracle.
+
+After coverageOff, twelve normal assertion/base-runner artifacts are locally
+published as `1.3.0-M5-coverage-runtime-SNAPSHOT`, across both compilers and all
+three targets. Embedded and independent audits check publication hashes,
+class/TASTy/NIR/SJSIR byte equality with current normal outputs, absence of
+instrumentation references, and absence of Scoverage POM dependencies. Portable
+base-runner source jars also match the current target bootstrap sources.
+Independent report:
+`3-coverage-root-jvm-and-publication-second/independent-root-coverage-publication-audit.json`,
+SHA256 `6e5a132beda9071a3ca4a3f2b2f3230bcd51328fd326c6b07d8784bfb4941130`.
+
+Scala3.9 skips instrumentation of AssertionMacro.expand (3,422 tree nodes) and
+CatsEffectInstancesModule.usingAsync (3,078), above its3,000-node threshold.
+Their compilation and the behavioral controls succeed, but those omitted method
+bodies have no coverage claim. The previously observed large consumer assertion
+fixture omission remains separately documented. Native excludes only the two
+C extern objects; their Scala wrappers and all macro helpers remain eligible
+for instrumentation. JS uses a native global facade so compiler instrumentation
+does not rewrite required literal global lookups. The fixture's two-minute
+watchdog follows the captured39.225s finite-completion reproduction.
+
+Two fresh consumer batches are now in flight against these qualified artifacts:
+
+```sh
+python3 -B test-fixtures/coverage-consumer/verify.py \
+  --repo-root "$PWD" --artifact-version 1.3.0-M5-coverage-runtime-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-abort-host-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 --platform jvm js native \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/3-coverage-tracked-matrix-second
+python3 -B test-fixtures/target-runner-consumer/verify-policy.py \
+  --repo-root "$PWD" --artifact-version 1.3.0-M5-coverage-runtime-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-abort-host-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/3-coverage-sdk-policy-current-first
+```
+
+The first repeats the known branch oracle, aggregate/module reports and normal
+fixture publication across six supported lanes. The second exercises actual
+SDK target control sockets/run IDs and72 stock task-policy contexts across four
+portable compiler/target lanes. Their completion is not claimed yet. Full
+repository normal publication, final-head gates and phase review remain open.
+
+
+The fresh current-artifact consumer batches above have now completed. Every
+actual SBT process and both controllers exit0 with unchanged frozen inputs.
+The coverage matrix independently verifies six lanes,18 detailed reports,
+known executed/unexecuted branch identities and twelve clean normal fixture
+publications. Independent report SHA256:
+`257e285ad5a929166b933904fae3339d54aa01815ac926e9b5686444e895f2c8`,
+`3-coverage-tracked-matrix-second/independent-coverage-publication-audit.json`.
+
+The actual SDK policy matrix independently verifies72 contexts,724 physical
+body executions and68 distinct application run identities across all four
+JS/Native compiler lanes. This exercises the new JS global facade through the
+production target's UUID creation and real control socket, not only compilation.
+Independent report SHA256:
+`8646e9a797d51de2bbdc740e265ad79760defd9968ec1650c12fdaaee1142d41`,
+`3-coverage-sdk-policy-current-first/independent-sdk-policy-audit.json`.
+The first ad-hoc policy audit invocation lacked the fixture's import path and
+exits1 before audit execution; adding that path allows the unchanged verifier
+to complete at0. It is not a producer failure.
+
+A repeat generator command returns0 and leaves build.sbt, project/plugins.sbt
+and project/build.properties byte-identical. Captures:
+`3-coverage-generator-consistency-first/command.json`, `run.log`,
+`completion.json`. `git diff --check` and Python AST parsing also return0.
+This is a verified coverage sub-step for3.1/3.2, not closure of their final-head
+acceptance or proof of all normal repository artifacts. No push is authorized.
+
+## 2026-10-06: logstage migration baseline preparation
+
+The first16-lane baseline attempt records its complete command vector and
+compiler-input hashes in `5-logstage-migration-baseline-first/command.json`.
+Actual SBT and controller exits are1, with all compiler inputs unchanged.
+It fails before tests run: the two JVM-only project IDs are
+`logstage-adapter-slf4j` and `logstage-sink-slf4j`, without a JVM suffix.
+The generated build confirms those exact IDs. The next harness uses them,
+retaining JVM/JS/Native suffixes for cross projects. No baseline counts or
+migration completion are claimed for the failed attempt. The baseline's purpose
+is to record discovered suites and exact per-module JUnit test identities before
+any suite imports or assertion facilities are changed (5.4/5.8).

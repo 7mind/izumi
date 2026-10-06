@@ -912,9 +912,12 @@ For code coverage, first integrate Scoverage and validate collection/reporting
 through every launch mode. The current
 [sbt-scoverage documentation](https://github.com/scoverage/sbt-scoverage)
 supports Scala 2.12/2.13/3, but restricts JS/Native support to Scala 2.
-The repository currently disables JS coverage in its generated settings and
-omits Scala 3 coverage in CI with a compiler-crash comment. Those are observed
-configuration choices, not evidence that every current compiler has that crash.
+The generated settings enable JS/Native coverage on Scala 2 and keep it disabled
+on Scala 3. The [implementation status ledger](20261001-distage-native-testkit-status.md)
+records the validated six-lane consumer matrix, compiler-dependency correction,
+and the validated separate JVM macro/target coverage runtimes.
+Scala 3 coverage remains omitted in CI with a historical compiler-crash comment; that choice
+does not establish that every current compiler has the crash.
 
 | Execution target | Initial coverage strategy |
 | --- | --- |
