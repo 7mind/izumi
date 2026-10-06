@@ -2,7 +2,7 @@ package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.language.Quirks.*
 import scala.annotation.unused
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class QuirksTest extends AnyWordSpec {
   def boom: Int = throw new RuntimeException()

@@ -2,7 +2,7 @@ package izumi.fundamentals.platform.uuid
 
 import izumi.functional.bio.Entropy1
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class Entropy1Test extends AnyWordSpec {
 

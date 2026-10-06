@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform.versions
 
 import izumi.fundamentals.collections.nonempty.NEList
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class VersionTest extends AnyWordSpec {
   "Version.parseSemver" should {

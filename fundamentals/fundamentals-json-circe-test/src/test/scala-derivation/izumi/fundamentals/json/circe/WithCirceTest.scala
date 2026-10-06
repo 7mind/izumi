@@ -4,7 +4,7 @@ import io.circe
 import io.circe.syntax.*
 import io.circe.Codec
 import izumi.fundamentals.json.circe.WithCirceTest.{Cba, Enum, Enum1, Enum2, Nested, Sealed}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 final class WithCirceTest extends AnyWordSpec {
 

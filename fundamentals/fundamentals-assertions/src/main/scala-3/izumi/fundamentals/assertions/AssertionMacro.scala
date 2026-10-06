@@ -5,6 +5,13 @@ import scala.quoted.{Expr, Quotes, Type, Varargs}
 
 @scala.annotation.publicInBinary
 private[assertions] object AssertionMacro {
+  def clued(condition: Expr[Boolean], clue: Expr[Any], receiver: Expr[Assertions])(using Quotes): Expr[Unit] = '{
+    val actualReceiver = $receiver
+    val actualClue = $clue
+    try ${ expand(condition, '{ AssertionContext.standard }, 'actualReceiver) }
+    catch { case failure: AssertionFailure => throw failure.withClue(actualClue) }
+  }
+
   def unary[F[_]: Type](condition: Expr[Boolean], context: Expr[AssertionContext], receiver: Expr[Assertions], suspension: Expr[AssertionSuspension1[F]])(using Quotes): Expr[F[Unit]] =
     '{ val actualReceiver = $receiver; $suspension.suspend(${ expand(condition, context, 'actualReceiver) }) }
 

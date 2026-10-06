@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.language.ScalaRelease
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class ScalaVersionTest extends AnyWordSpec {
   "ScalaVersion" should {

@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.strings.IzString.*
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IzStringTest extends AnyWordSpec {
 

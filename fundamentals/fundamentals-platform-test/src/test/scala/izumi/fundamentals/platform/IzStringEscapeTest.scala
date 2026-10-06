@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.strings.CharEscape
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IzStringEscapeTest extends AnyWordSpec {
 

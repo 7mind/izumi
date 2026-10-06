@@ -1,7 +1,7 @@
 package izumi.functional.bio.test
 
 import izumi.functional.bio.{BlockingIO2, Clock1, Clock2, Clock3, Entropy1, Entropy2, Entropy3, SyncSafe1, SyncSafe2, SyncSafe3}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import scala.annotation.unchecked.uncheckedVariance
 

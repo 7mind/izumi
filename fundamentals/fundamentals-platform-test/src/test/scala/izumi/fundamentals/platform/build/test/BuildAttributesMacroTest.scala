@@ -2,7 +2,7 @@ package izumi.fundamentals.platform.build.test
 
 import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.build.BuildAttributes
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import java.nio.file.Paths
 import java.time.{LocalDateTime, ZoneId, ZoneOffset}

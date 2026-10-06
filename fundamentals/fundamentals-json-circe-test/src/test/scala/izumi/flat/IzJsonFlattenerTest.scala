@@ -3,8 +3,8 @@ package izumi.flat
 import io.circe.Json
 import io.circe.literal.*
 import izumi.fundamentals.json.flat.JsonFlattener
-import org.scalatest.Assertion
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IzJsonFlattenerTest extends AnyWordSpec {
 

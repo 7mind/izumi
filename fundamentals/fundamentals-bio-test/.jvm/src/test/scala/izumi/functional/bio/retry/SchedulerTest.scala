@@ -3,8 +3,8 @@ package izumi.functional.bio.retry
 import izumi.functional.bio.Clock1.ClockAccuracy
 import izumi.functional.bio.retry.RetryPolicy.{ControllerDecision, RetryFunction}
 import izumi.functional.bio.{Clock2, Error2, F, Functor2, IO2, Monad2, Primitives2, Ref2, Temporal2, TemporalInstances, UnsafeRun2}
-import org.scalatest.Assertion
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.testkit.AnyWordSpec
 import zio.IO
 
 import java.time.{Instant, ZoneOffset, ZonedDateTime}

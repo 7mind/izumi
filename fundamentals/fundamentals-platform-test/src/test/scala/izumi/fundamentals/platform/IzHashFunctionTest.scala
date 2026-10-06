@@ -3,7 +3,7 @@ package izumi.fundamentals.platform
 import izumi.fundamentals.platform.Sha256TestVectors.{binaryVectors, textVectors}
 import izumi.fundamentals.platform.bytes.IzBytes.*
 import izumi.fundamentals.platform.crypto.IzHash
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IzHashFunctionTest extends AnyWordSpec {
   "sha256 hash" should {

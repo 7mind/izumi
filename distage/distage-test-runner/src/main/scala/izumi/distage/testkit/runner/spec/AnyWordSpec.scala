@@ -2,10 +2,10 @@ package izumi.distage.testkit.runner.spec
 
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
-import izumi.fundamentals.assertions.Assertions
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.language.implicitConversions
+import scala.util.control.NonFatal
 
 trait TestBody[A] {
   def evaluate(body: => A, executionContext: ExecutionContext): Future[Unit]
@@ -27,7 +27,7 @@ object TestBody extends LowPriorityTestBodies {
   }
 }
 
-abstract class AnyWordSpec extends Assertions with TestSuite {
+abstract class AnyWordSpec extends TestAssertions with TestSuite {
   private final class Registration(val path: Vector[String], val location: SourceLocation, val body: ExecutionContext => Future[Unit])
   private var prefix = Vector.empty[String]
   private var registrations = Vector.empty[Registration]
@@ -38,9 +38,9 @@ abstract class AnyWordSpec extends Assertions with TestSuite {
   protected def suiteName: String = getClass.getSimpleName
   protected final def sessionExecutionContext: ExecutionContext = ownedExecutionContext.getOrElse(throw new IllegalStateException("Execution context is unavailable before session registration"))
 
-  protected implicit final def wordSpecString(text: String): WordSpecString = new WordSpecString(text)
+  implicit final def wordSpecString(text: String): WordSpecString = new WordSpecString(text)
 
-  protected final class WordSpecString(text: String) {
+  final class WordSpecString(text: String) {
     infix def should(body: => Unit): Unit = branch("should", () => body)
     infix def must(body: => Unit): Unit = branch("must", () => body)
     infix def can(body: => Unit): Unit = branch("can", () => body)
@@ -75,7 +75,24 @@ abstract class AnyWordSpec extends Assertions with TestSuite {
 
 abstract class AsyncWordSpec extends AnyWordSpec {
   private val forwardingExecutionContext: ExecutionContext = new ExecutionContext {
-    override def execute(runnable: Runnable): Unit = sessionExecutionContext.execute(runnable)
+    private var tail: Future[Unit] = Future.successful(())
+
+    override def execute(runnable: Runnable): Unit = {
+      val delegate = sessionExecutionContext
+      val completion = Promise[Unit]()
+      val previous = synchronized {
+        val previous = tail
+        tail = completion.future
+        previous
+      }
+      try previous.onComplete { _ =>
+        try runnable.run()
+        catch { case NonFatal(cause) => delegate.reportFailure(cause) }
+        finally { val _ = completion.trySuccess(()) }
+      }(delegate)
+      catch { case NonFatal(cause) => val _ = completion.tryFailure(cause); throw cause }
+    }
+
     override def reportFailure(cause: Throwable): Unit = sessionExecutionContext.reportFailure(cause)
   }
 

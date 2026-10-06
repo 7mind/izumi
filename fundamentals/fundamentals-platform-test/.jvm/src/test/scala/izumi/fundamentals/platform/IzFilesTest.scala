@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.files.IzFiles
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import java.nio.file.{FileSystemNotFoundException, Files, Paths}
 import java.util.concurrent.TimeUnit

@@ -1,8 +1,8 @@
 package izumi.functional.bio.test
 
 import izumi.functional.bio.*
-import org.scalatest.Assertion
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.testkit.AnyWordSpec
 import zio.ZIO
 
 import scala.annotation.nowarn

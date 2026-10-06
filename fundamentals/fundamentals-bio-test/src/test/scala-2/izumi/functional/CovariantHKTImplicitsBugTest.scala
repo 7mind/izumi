@@ -1,7 +1,7 @@
 package izumi.functional
 
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.{AssertionFailure => TestFailedException}
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class CovariantHKTImplicitsBugTest extends AnyWordSpec {
 

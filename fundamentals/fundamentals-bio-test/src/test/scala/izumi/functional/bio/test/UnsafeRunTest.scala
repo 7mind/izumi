@@ -2,7 +2,7 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.{Exit, UnsafeRun2}
 import izumi.functional.bio.data.InterruptAction
-import org.scalatest.wordspec.AsyncWordSpec
+import izumi.fundamentals.testkit.AsyncWordSpec
 import zio.{Executor, ZEnvironment, ZIO}
 
 import java.util.concurrent.atomic.AtomicInteger

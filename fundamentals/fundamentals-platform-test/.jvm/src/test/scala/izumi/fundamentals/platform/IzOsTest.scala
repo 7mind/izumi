@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.os.{IzOs, OsType}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IzOsTest extends AnyWordSpec {
 

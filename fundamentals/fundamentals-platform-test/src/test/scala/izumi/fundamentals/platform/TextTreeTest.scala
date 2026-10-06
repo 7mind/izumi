@@ -3,7 +3,7 @@ package izumi.fundamentals.platform
 import izumi.fundamentals.platform.TextTreeTest.*
 import izumi.fundamentals.platform.strings.TextTree
 import izumi.fundamentals.platform.strings.TextTree.*
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import scala.language.implicitConversions
 

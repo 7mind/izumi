@@ -1,7 +1,7 @@
 package izumi.functional.bio.data
 
 import izumi.functional.bio.{F, IO2, UnsafeRun2}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 import zio.IO
 
 import java.util.concurrent.atomic.AtomicReference

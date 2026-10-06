@@ -6,7 +6,7 @@ import izumi.fundamentals.platform.files.IzZip
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.LoadablePathReference
 import izumi.fundamentals.platform.jvm.IzJvm
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IzZipTest extends AnyWordSpec {
 

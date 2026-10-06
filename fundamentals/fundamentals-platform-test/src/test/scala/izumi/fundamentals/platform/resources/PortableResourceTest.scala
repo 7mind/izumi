@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.resources
 
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class PortableResourceTest extends AnyWordSpec {
   "PortableResource.embedResources" should {

@@ -2,8 +2,8 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.{Concurrent2, Fork2, Panic2, Primitives2, UnsafeRun2}
 import izumi.reflect.TagKK
-import org.scalatest.Assertion
-import org.scalatest.wordspec.AsyncWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.testkit.AsyncWordSpec
 
 import scala.concurrent.ExecutionContext
 

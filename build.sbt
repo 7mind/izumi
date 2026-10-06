@@ -77,7 +77,7 @@ lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform, NativePla
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -278,7 +278,7 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, Nativ
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -480,7 +480,7 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, Nati
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -679,7 +679,7 @@ lazy val `fundamentals-assertions` = crossProject(JVMPlatform, JSPlatform, Nativ
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -892,7 +892,7 @@ lazy val `fundamentals-assertions-cats` = crossProject(JVMPlatform, JSPlatform, 
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -1103,7 +1103,7 @@ lazy val `fundamentals-assertions-bio` = crossProject(JVMPlatform, JSPlatform, N
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -1326,7 +1326,7 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform, NativePl
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -1536,7 +1536,7 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform, NativeP
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -1743,7 +1743,7 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativeP
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -1958,7 +1958,7 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform, NativeP
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -2169,7 +2169,7 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform, Nativ
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -2298,6 +2298,9 @@ lazy val `fundamentals-json-circeJS` = `fundamentals-json-circe`.js
 lazy val `fundamentals-json-circeNative` = `fundamentals-json-circe`.native
 
 lazy val `fundamentals-test-support` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-test-support"))
+  .dependsOn(
+    `distage-test-runner` % "test->compile;compile->compile"
+  )
   .settings(
     libraryDependencies ++= Seq(
       "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
@@ -2367,7 +2370,7 @@ lazy val `fundamentals-test-support` = crossProject(JVMPlatform, JSPlatform, Nat
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -2493,45 +2496,8 @@ lazy val `fundamentals-test-support` = crossProject(JVMPlatform, JSPlatform, Nat
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-test-supportJVM` = `fundamentals-test-support`.jvm
-  .dependsOn(
-    `distage-test-runnerJVM` % "test->compile;compile->compile"
-  )
 lazy val `fundamentals-test-supportJS` = `fundamentals-test-support`.js
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest-core" % V.scalatest,
-      "org.scalatest" %% "scalatest-diagrams" % V.scalatest,
-      "org.scalatest" %% "scalatest-featurespec" % V.scalatest,
-      "org.scalatest" %% "scalatest-flatspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-freespec" % V.scalatest,
-      "org.scalatest" %% "scalatest-funspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-funsuite" % V.scalatest,
-      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest,
-      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest,
-      "org.scalatest" %% "scalatest-propspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest,
-      "org.scalatest" %% "scalatest-wordspec" % V.scalatest,
-      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck
-    )
-  )
 lazy val `fundamentals-test-supportNative` = `fundamentals-test-support`.native
-  .settings(
-    libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest-core" % V.scalatest,
-      "org.scalatest" %% "scalatest-diagrams" % V.scalatest,
-      "org.scalatest" %% "scalatest-featurespec" % V.scalatest,
-      "org.scalatest" %% "scalatest-flatspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-freespec" % V.scalatest,
-      "org.scalatest" %% "scalatest-funspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-funsuite" % V.scalatest,
-      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest,
-      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest,
-      "org.scalatest" %% "scalatest-propspec" % V.scalatest,
-      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest,
-      "org.scalatest" %% "scalatest-wordspec" % V.scalatest,
-      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck
-    )
-  )
 
 lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-platform-test"))
   .dependsOn(
@@ -2609,7 +2575,7 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -2706,7 +2672,7 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
     } },
     Test / packageDoc / publishArtifact := false,
     publish / skip := true,
-    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
@@ -2717,7 +2683,7 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
     ),
     scalaVersion := crossScalaVersions.value.head,
     Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-platform-test-jvm", "--catalogue-id", "fundamentals-platform-test-catalogue")
+    Test / distageTargetId := "fundamentals-platform-test-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -2726,7 +2692,10 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-platform-test-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -2735,9 +2704,12 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-platform-test-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-platform-testJVM` = `fundamentals-platform-test`.jvm
 lazy val `fundamentals-platform-testJS` = `fundamentals-platform-test`.js
 lazy val `fundamentals-platform-testNative` = `fundamentals-platform-test`.native
@@ -2822,7 +2794,7 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -2919,7 +2891,7 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
     } },
     Test / packageDoc / publishArtifact := false,
     publish / skip := true,
-    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -2929,7 +2901,7 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
     ),
     scalaVersion := crossScalaVersions.value.head,
     Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-collections-test-jvm", "--catalogue-id", "fundamentals-collections-test-catalogue")
+    Test / distageTargetId := "fundamentals-collections-test-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -2938,7 +2910,10 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-collections-test-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -2947,9 +2922,12 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-collections-test-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-collections-testJVM` = `fundamentals-collections-test`.jvm
 lazy val `fundamentals-collections-testJS` = `fundamentals-collections-test`.js
 lazy val `fundamentals-collections-testNative` = `fundamentals-collections-test`.native
@@ -3029,7 +3007,7 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -3126,7 +3104,7 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
     } },
     Test / packageDoc / publishArtifact := false,
     publish / skip := true,
-    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -3136,7 +3114,7 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
     ),
     scalaVersion := crossScalaVersions.value.head,
     Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-language-test-jvm", "--catalogue-id", "fundamentals-language-test-catalogue")
+    Test / distageTargetId := "fundamentals-language-test-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -3145,7 +3123,10 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-language-test-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -3154,9 +3135,12 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-language-test-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-language-testJVM` = `fundamentals-language-test`.jvm
 lazy val `fundamentals-language-testJS` = `fundamentals-language-test`.js
 lazy val `fundamentals-language-testNative` = `fundamentals-language-test`.native
@@ -3238,7 +3222,7 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -3335,7 +3319,7 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
     } },
     Test / packageDoc / publishArtifact := false,
     publish / skip := true,
-    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / distageBuildId := "izumi-repository",
     libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
     libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
@@ -3347,7 +3331,7 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
     ),
     scalaVersion := crossScalaVersions.value.head,
     Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-json-circe-test-jvm", "--catalogue-id", "fundamentals-json-circe-test-catalogue"),
+    Test / distageTargetId := "fundamentals-json-circe-test-jvm",
     Test / unmanagedSourceDirectories += file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile
   )
   .jsSettings(
@@ -3358,6 +3342,9 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-json-circe-test-js",
     Test / unmanagedSourceDirectories += file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile
   )
   .nativeSettings(
@@ -3368,9 +3355,12 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-json-circe-test-native",
     Test / unmanagedSourceDirectories ++= { if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile) else Seq.empty }
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-json-circe-testJVM` = `fundamentals-json-circe-test`.jvm
   .settings(
     libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
@@ -3470,7 +3460,7 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -3567,7 +3557,7 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
     } },
     Test / packageDoc / publishArtifact := false,
     publish / skip := true,
-    Test / testOptions := Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -3577,7 +3567,7 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
     ),
     scalaVersion := crossScalaVersions.value.head,
     Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / testOptions += Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "fundamentals-bio-test-jvm", "--catalogue-id", "fundamentals-bio-test-catalogue")
+    Test / distageTargetId := "fundamentals-bio-test-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -3586,7 +3576,10 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-bio-test-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -3595,9 +3588,12 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / distageTargetId := "fundamentals-bio-test-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-bio-testJVM` = `fundamentals-bio-test`.jvm
 lazy val `fundamentals-bio-testJS` = `fundamentals-bio-test`.js
   .settings(
@@ -3695,7 +3691,7 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -3895,7 +3891,7 @@ lazy val `distage-test-protocol` = crossProject(JVMPlatform, JSPlatform, NativeP
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -4145,7 +4141,7 @@ lazy val `distage-test-runner` = crossProject(JVMPlatform, JSPlatform, NativePla
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -4382,7 +4378,7 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -4589,7 +4585,7 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -4763,7 +4759,7 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform, NativeP
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -4972,7 +4968,7 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -5188,7 +5184,7 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -5423,7 +5419,7 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -5629,7 +5625,7 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -5863,7 +5859,7 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -6091,7 +6087,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -6264,7 +6260,7 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform, NativePl
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -6479,7 +6475,7 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform, Native
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -6709,7 +6705,7 @@ lazy val `distage-testkit-scalatest` = crossProject(JVMPlatform, JSPlatform).cro
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -6910,7 +6906,7 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -7090,7 +7086,7 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -7307,7 +7303,7 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -7514,7 +7510,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -7697,7 +7693,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -7920,7 +7916,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -8155,7 +8151,7 @@ lazy val `sbt-distage-testkit-js` = project.in(file("sbt-plugins/sbt-distage-tes
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -8381,7 +8377,7 @@ lazy val `sbt-distage-testkit-native` = project.in(file("sbt-plugins/sbt-distage
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -8608,7 +8604,7 @@ lazy val `sbt-distage-testkit` = project.in(file("sbt-plugins/sbt-distage-testki
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(
@@ -8831,7 +8827,7 @@ lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
         case _ => Seq.empty
       }
     },
-    Test / testOptions += Tests.Argument("-oDF"),
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
     closeClassLoaders := false,
     scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
       case (_, "2.13.18") => Seq(

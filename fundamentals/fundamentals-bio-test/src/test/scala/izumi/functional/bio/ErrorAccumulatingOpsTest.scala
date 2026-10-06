@@ -2,7 +2,7 @@ package izumi.functional.bio
 
 import izumi.functional.bio.impl.MiniBIO
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import scala.annotation.unused
 

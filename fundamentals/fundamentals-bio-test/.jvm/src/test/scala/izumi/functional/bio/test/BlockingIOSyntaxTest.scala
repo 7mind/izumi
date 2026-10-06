@@ -1,7 +1,7 @@
 package izumi.functional.bio.test
 
 import izumi.functional.bio.{BlockingIO2, F, Functor2}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 import zio.{IO, ZIO}
 
 class BlockingIOSyntaxTest extends AnyWordSpec {

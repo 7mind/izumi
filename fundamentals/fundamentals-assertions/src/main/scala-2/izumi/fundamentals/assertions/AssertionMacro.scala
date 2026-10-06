@@ -4,6 +4,13 @@ import scala.collection.mutable.ArrayBuffer
 import scala.reflect.macros.blackbox
 
 object AssertionMacro {
+  def clued(c: blackbox.Context)(condition: c.Expr[Boolean], clue: c.Expr[Any]): c.Expr[Unit] = {
+    import c.universe._
+    val assertion = standard(c)(condition)
+    val actualClue = TermName(c.freshName("assertionClue"))
+    c.Expr[Unit](q"{ val $actualClue = $clue; try $assertion catch { case failure: _root_.izumi.fundamentals.assertions.AssertionFailure => throw failure.withClue($actualClue) } }")
+  }
+
   def standard(c: blackbox.Context)(condition: c.Expr[Boolean]): c.Expr[Unit] = {
     expand(c)(condition, standardContext(c), c.prefix.tree)
   }

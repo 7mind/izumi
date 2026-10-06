@@ -1,8 +1,8 @@
 package izumi.functional.bio
 
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 import izumi.fundamentals.platform.language.IzScala
-import org.scalatest.exceptions.TestFailedException
+import izumi.fundamentals.assertions.{AssertionFailure => TestFailedException}
 
 class BIOAmbiguityTest extends AnyWordSpec {
 

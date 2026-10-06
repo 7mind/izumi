@@ -2,7 +2,7 @@ package izumi.functional
 
 import izumi.functional.IzEither.*
 import izumi.fundamentals.collections.nonempty.{NEList, NESet}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IzEitherTest extends AnyWordSpec {
   import scala.collection.Factory

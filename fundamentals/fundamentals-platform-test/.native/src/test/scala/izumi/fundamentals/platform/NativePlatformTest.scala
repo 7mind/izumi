@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform
 
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 import izumi.fundamentals.platform.bytes.IzBytes.*
 import izumi.fundamentals.platform.crypto.IzHash
 

@@ -2,7 +2,7 @@ package izumi.fundamentals.platform
 
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.MaterializedResource
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import java.net.URLClassLoader
 import java.nio.charset.StandardCharsets

@@ -1,6 +1,6 @@
 package izumi.fundamentals.platform.uuid
 
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import java.nio.ByteBuffer
 

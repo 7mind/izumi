@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform.cli
 
 import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RawFlag, RawValue, RoleAppArgs, RoleArgs}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class CliParserTest extends AnyWordSpec {
 

@@ -2,7 +2,7 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.{Async2, F}
 import izumi.reflect.TagKK
-import org.scalatest.Assertion
+import izumi.distage.testkit.runner.spec.Assertion
 
 import java.util.concurrent.CompletableFuture
 import scala.concurrent.Promise

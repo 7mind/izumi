@@ -2,8 +2,8 @@ package izumi.fundamentals.platform.resources
 
 import io.github.classgraph.ClassGraph
 import izumi.fundamentals.platform.files.IzFiles
-import org.scalatest.Assertion
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}

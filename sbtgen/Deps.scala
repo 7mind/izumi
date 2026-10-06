@@ -445,7 +445,7 @@ object Izumi {
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
-      "testOptions" in SettingScope.Test += """Tests.Argument("-oDF")""".raw,
+      "testOptions" in SettingScope.Test += """Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")""".raw,
       // sbt 2.0.5+ closes the adhoc test ClassLoader once the test task completes. The ZIO and
       // cats-effect runtimes keep their worker threads alive past that point (ZIO's global
       // `Runtime.default` scheduler cannot be shut down at all), so the next class load on any of
@@ -602,14 +602,24 @@ object Izumi {
     "scalaJSUseTestModuleInitializer" in (SettingScope.Test, Platform.Js) := false,
   )
 
+  private val fundamentalsTestPlugins = Plugins(enabled = Seq(Plugin("_root_.izumi.distage.sbt.DistageTestkitPlugin")))
+
   private def fundamentalsTestSettings(targetName: String): Seq[SettingDef] = Seq(
     "skip" in SettingScope.Raw("publish") := true,
-    "testOptions" in SettingScope.Test := """Seq(Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"))""".raw,
     "testFrameworks" in (SettingScope.Test, Platform.Jvm) :=
       """Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
-    "testOptions" in (SettingScope.Test, Platform.Jvm) +=
-      s"""Tests.Argument(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), "--build-id", "izumi-repository", "--target-id", "$targetName-jvm", "--catalogue-id", "$targetName-catalogue")""".raw,
-  )
+    "testFrameworks" in (SettingScope.Test, Platform.Js) :=
+      """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
+    "testFrameworks" in (SettingScope.Test, Platform.Native) :=
+      """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
+    "distageBuildId" in SettingScope.Test := "izumi-repository",
+    "libraryDependencies" in (SettingScope.Project, Platform.Js) ~=
+      """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+    "libraryDependencies" in (SettingScope.Project, Platform.Native) ~=
+      """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+  ) ++ Seq(Platform.Jvm -> "jvm", Platform.Js -> "js", Platform.Native -> "native").map { case (platform, suffix) =>
+    "distageTargetId" in (SettingScope.Test, platform) := s"$targetName-$suffix"
+  }
 
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
@@ -726,30 +736,34 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.testSupport,
-        libs = scalatest_all.flatMap(library => Seq(library in Scope.Compile.js, library in Scope.Compile.native)),
-        depends = Seq(Projects.distage.testRunner in Scope.Compile.jvm),
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.testRunner in Scope.Compile.all),
         settings = Seq("skip" in SettingScope.Raw("publish") := true),
       ),
       Artifact(
         name = Projects.fundamentals.platformTest,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(scala_reflect, fast_classpath_scanner in Scope.Provided.all, scala_java_time_tzdb in Scope.Test.native),
         depends = Seq(Projects.fundamentals.platform, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
         settings = fundamentalsTestSettings("fundamentals-platform-test") ++ testResourcesOnCompileClasspath,
       ),
       Artifact(
         name = Projects.fundamentals.collectionsTest,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(scala_reflect),
         depends = Seq(Projects.fundamentals.collections, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
         settings = fundamentalsTestSettings("fundamentals-collections-test"),
       ),
       Artifact(
         name = Projects.fundamentals.languageTest,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(scala_reflect),
         depends = Seq(Projects.fundamentals.language, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
         settings = fundamentalsTestSettings("fundamentals-language-test"),
       ),
       Artifact(
         name = Projects.fundamentals.jsonCirceTest,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(scala_reflect) ++ Seq(
           circe_derivation_scala2 in Scope.Test.jvm.scalaVersion(ScalaVersionScope.AllScala2),
           circe_derivation_scala2 in Scope.Test.js.scalaVersion(ScalaVersionScope.AllScala2),
@@ -773,6 +787,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.fundamentals.bioTest,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(scala_reflect, scalac_compat_annotation) ++ allMonadsTest ++
           Seq(cats_effect_laws, cats_effect_testkit, discipline, zio_managed, zio_interop_cats).map(_ in Scope.Test.all) ++
           Seq(scala_java_time in Scope.Test.js, scala_java_time in Scope.Test.native),

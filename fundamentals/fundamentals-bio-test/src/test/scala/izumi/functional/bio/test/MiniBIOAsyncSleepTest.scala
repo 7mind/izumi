@@ -2,7 +2,7 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.bio.{Exit, F}
-import org.scalatest.wordspec.AsyncWordSpec
+import izumi.fundamentals.testkit.AsyncWordSpec
 
 import scala.concurrent.{ExecutionContext, Promise}
 import scala.concurrent.duration.*

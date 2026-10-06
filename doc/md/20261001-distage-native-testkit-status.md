@@ -17013,3 +17013,122 @@ all invalidation/filter histories, repository runner takeover, remaining
 coverage/migration gates, and required whole-phase reviews remain open. IDE is
 still deferred. No tasks from these batches remain in flight. The next entry
 records this checkpoint's local commit ID; nothing was pushed.
+
+
+## 2026-10-06: fundamentals runner takeover preparation
+
+The preceding SDK inspection checkpoint is local commit `9a092e1d5`.
+Items 2e.1, 2b.10 and O.1 remain in progress. This sub-step migrates the five
+fundamentals test projects to the base runner on JS and Native; JVM retains its
+ScalaTest law suites until step 5. Ordinary WordSpec suites migrate on JVM too.
+The repository meta-build compiles the production base/JS/Native plugins and
+portable protocol directly from this checkout. No published self-dependency is
+introduced. Generated settings enable those plugins, retain distinct target
+identities, remove ScalaTest-family dependencies from JS/Native, and scope the
+existing `-oDF` argument to ScalaTest. Generation used `--js --native`.
+
+Before suite migration, the baseline drivers
+`/srv/nvme/tmp/izumi-impl/2e-fundamentals-baseline-first.py` and
+`2e-fundamentals-baseline-second.py` captured all five projects on all three
+platforms. The Scala 3.9.0 SBT child exited 0 with 119 XML reports and 1,240
+cases; the Scala 2.13.18 child exited 0 with 121 reports and 1,238 cases. Their
+compiler inputs remained unchanged. The first controller was terminated while
+its broad report scan delayed the subsequent compiler lane; its already
+completed Scala 3 child/result remains valid. The second driver uses a bounded
+report glob and reruns only Scala 2.13. The complete baseline is 2,478 cases.
+Scala 2.13 Native JSON already has two cases because its circe-derivation lane
+is unavailable; migration must preserve that baseline, not manufacture parity
+with the other platforms.
+
+The retained assertion helpers now provide interception, explicit failures,
+compilation assertions and reference inequality for universal-trait receivers.
+Clued assertions expand at the caller on both compilers and retain structured
+expression diagnostics, rendering context, stack, cause and suppressed errors.
+The shared test-support WordSpec wrappers delegate to the base runner.
+A direct comparison of all 48 changed test source files against HEAD confirms
+that test bodies are unchanged; only imports and the guard helper's inherited
+assertion trait differ.
+
+Failed broad batches `2e-fundamentals-migrated-first` through `thirteenth` are
+preserved under `/srv/nvme/tmp/izumi-impl/`, with exact argv, frozen inputs and
+logs. All recorded SBT child exits are 1; the tenth retry was stopped before
+productive work and has no terminal completion JSON. None establishes a full
+gate. The observed failures, in order, were the root `izumi` project shadowing
+the plugin package; a fixture type typo; missing local lexical context in a
+Scala 3 compilation assertion; the absent clue overload; loss of the caller
+expression through an inline wrapper; private macro access across artifacts;
+the unscoped ScalaTest option reaching the new framework; missing reference
+inequality for `Factory`; fixture typing errors; an incomplete fixture repair;
+an unnecessary `eq` helper's Object erasure collision; protected WordSpec DSL
+access from a self-typed mixin; and the asynchronous BIO callback race. The
+corrections use the root-qualified plugin, transparent compile assertions,
+caller expansion in the core macro, framework-scoped arguments, only the
+required `ne` helper, public DSL access and serialized default async callbacks.
+
+Two targeted reproductions distinguish the runtime defects from macro defects:
+`2e-factory-reference-reproduction/{Raw,Macro}.log` both show the same receiver
+typing failure. The pinned ScalaTest legacy comparison succeeds and prints
+`LEGACY_NULL_FACTORY_NON_NULL=true`, showing that its reference conversion
+compares a wrapper for a null Factory. The replacement checks the underlying
+reference instead. `2e-async-serialization-reproduction-before.log` exits 1
+with callback order `1,3,2`, failing the required `1,2,3` ordering. The thirteenth
+batch also captures MiniBIOAsyncTest's `parTraverse_` failure (5 completions
+instead of 6). Pinned ScalaTest sources establish its serial default callback
+context. The new per-suite callback queue uses the session-owned execution
+context and preserves serial submission, including reentrant submissions.
+No BIO implementation or existing test expectation was changed.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-fundamentals-migrated-compile-first.py`
+passed all 42 Test/compile commands on both supported compilers, with unchanged
+input hashes. Its later execution commands exited 1 because a preceding
+Scala 2.13 switch left the excluded protocol project on Scala 2 while the
+runner returned to Scala 3.9. The execution driver now explicitly resets
+`++3.8.4` before `++3.9.0`; this changes command sequencing, not source inputs.
+The complete execution and identity audit is recorded in the next checkpoint.
+
+
+## 2026-10-06: verified fundamentals runner takeover checkpoint
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-fundamentals-migrated-execution-first.py`
+exited 0. Its SBT child also exited 0, with all 1,608 compiler-input hashes
+unchanged. The exact argv and hashes are in `command.json`. The batch resets the
+protocol compiler, cleans moved Native outputs, and runs assertions, runner and
+all five fundamentals test projects on JVM/JS/Native, first Scala 3.9.0 then
+2.13.18, followed by all twenty JS/Native dependency-classpath queries.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-fundamentals-migration-audit.py
+/srv/nvme/tmp/izumi-impl/2e-fundamentals-migrated-execution-first` exits 0.
+It independently verifies the actual producer exit, current source hashes,
+exact baseline compiler/platform/project/suite/test-name multiplicities,
+all captured XML and twenty completed schema-4 SDK streams. The streams have
+unique run IDs, no failures or cancellation, and successful results matching
+the corresponding XML counts. No shown JS/Native classpath contains ScalaTest,
+Scalactic or ScalaTestPlus. The schema envelope was checked directly before
+running the audit; an initial premature invocation only found that the producer
+had not yet written completion.json. No producer result was rewritten.
+
+Measured results:
+
+| Compiler | Platform | Platform / collections / language / JSON / BIO cases |
+| --- | --- | --- |
+| 3.9.0 | JVM | 166 / 33 / 1 / 7 / 438 |
+| 3.9.0 | JS | 151 / 33 / 1 / 7 / 100 |
+| 3.9.0 | Native | 153 / 33 / 1 / 7 / 109 |
+| 2.13.18 | JVM | 166 / 33 / 1 / 7 / 439 |
+| 2.13.18 | JS | 151 / 33 / 1 / 7 / 101 |
+| 2.13.18 | Native | 153 / 33 / 1 / 2 / 110 |
+
+The 240 XML reports contain exactly the baseline's 2,478 test cases. All six
+assertion fixture runs pass 86 checks each; all six runner fixture runs pass
+826 checks each, including the twenty-four new frontend/serialization checks.
+The unchanged BIO `parTraverse_` case now passes, as does reentrant default
+callback ordering, on every supported platform/compiler. `git diff --check`
+passes. Independent audit SHA-256:
+`ef4fcd02a684a4518f74b25893e20278c97ebe4bc13c3f028b9e954c0f71983b`.
+
+This establishes the repository takeover at this source checkpoint for 2e.1
+and the specified imports-only migration behavior under 2b.10/O.1. It does not
+close their final evaluation points, the remaining custom-loader audit, or a
+whole phase. Full target host-policy histories, coverage, complete ScalaTest
+retirement and final-head gates remain open. IDE remains deferred. The batch
+has completed; nothing was pushed. The next entry records its local commit ID.

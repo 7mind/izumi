@@ -4,7 +4,7 @@ import izumi.functional.bio.PrimitivesLocal2
 import izumi.functional.bio.data.{Morphism1, Morphism2, Morphism3}
 import izumi.functional.bio.retry.{RetryPolicy, Scheduler2}
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 import scala.annotation.unused
 import scala.concurrent.duration.*

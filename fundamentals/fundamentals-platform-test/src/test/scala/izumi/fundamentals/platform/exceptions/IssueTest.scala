@@ -1,7 +1,7 @@
 package izumi.fundamentals.platform.exceptions
 
 import izumi.fundamentals.platform.exceptions.Issue.IssueContext
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class IssueTest extends AnyWordSpec {
   "issue" should {

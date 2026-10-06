@@ -1,7 +1,7 @@
 package izumi.functional.bio.data
 
 import izumi.functional.bio.{Async2, F, PrimitivesLocal2, UnsafeRun2}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.testkit.AnyWordSpec
 
 class FiberLocalTestZIO
   extends FiberLocalTestBase[zio.IO](
