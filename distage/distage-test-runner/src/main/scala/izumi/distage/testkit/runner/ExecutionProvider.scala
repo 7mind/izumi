@@ -10,7 +10,7 @@ import scala.util.control.NonFatal
 
 final case class ProviderId(value: String) extends AnyVal
 
-trait TestSuite {
+trait TestSuite extends TestSuitePlatform {
   def register(context: RegistrationContext): RegisteredSuite
 }
 

@@ -113,7 +113,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
 | 2e.3 | not started | No evaluation point passed yet. |
-| 2e.4 | not started | No evaluation point passed yet. |
+| 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
 | 2e.5 | not started | No evaluation point passed yet. |
 | 2e.6 | not started | No evaluation point passed yet. |
 | 2e.7 | not started | No evaluation point passed yet. |
@@ -16500,3 +16500,53 @@ collision. None changes production code. This candidate establishes the
 measured target seam, not production2e completion: DI effects, failures,
 streaming-before-completion, cancellation, platform host policy and both-compiler
 production integration remain open. No whole phase or final gate closes.
+
+## 2026-10-06: production suite retention and target loading
+
+`TestSuite` now extends the platform retention marker. JVM supplies an empty
+marker; JS and Native annotate it with their pinned reflective-instantiation
+annotation, which applies to concrete descendants. Ordinary plain and distage
+suite definitions therefore need no additional annotation. The two target
+loaders construct a fresh retained suite, reject a missing class explicitly and
+reject a retained value of another type. No dependency or generated build file
+changes.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/2e-suite-retention-producer-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-suite-retention-consumers-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-suite-retention-consumer-audit-second.py
+```
+
+All actually terminate0. The producer executes802 base-runner checks on each of
+six JVM/JS/Native × Scala3.9/2.13 lanes, then publishes six private
+`1.3.0-M5-target-retention-SNAPSHOT` artifacts. Every class/TASTy/JS-IR/Native-IR
+payload in those artifacts matches the current compiled output; the new
+platform marker/loader sources match the source JARs. Payload counts are
+160/200/360 on Scala3 and108/162/318 on Scala2, in JVM/JS/Native order.
+The committed dependency coordinates remain unchanged.
+
+The published consumer contains no reflective-instantiation annotations. Its
+fixture framework requires every executing task to have been reconstructed
+from serialized identities, rather than reusing the controller task. It also
+checks fresh suite instances on repeated target lookup and exact missing-suite
+rejection. Each compiler executes selected-two and full-five commands on actual
+Node and Native processes: eight contexts,84 physical bodies,84 exact XML cases
+and84 logical outcomes. Eight schema4 streams have contiguous sequences, exact
+start/completion IDs, fresh run IDs and matching Finished/Completed outcomes.
+
+The first consumer controller accidentally gives both compilers the final
+loop's build directory. One process fails with a boot-socket collision; the
+Scala3 process completes its four target commands0. That controller failure is
+archived under `2e-suite-retention-consumer-first/controller-failure.json`.
+The fresh second controller gives each compiler a distinct directory; both
+finish0 with unchanged inputs. No production correction follows that error.
+
+Independent evidence:
+`2e-suite-retention-consumer-second/independent-audit.json`, SHA-256
+`7c90fb118e1e235363ba3ed827476dfe748d52767e2e7cd33542ce05723e54f4`.
+The audit rechecks all1,532 producer inputs and129 consumer/publication records.
+This sub-step is committed as `Retain and load target suites; verify six runner
+lanes and real JS/Native consumers`. The fixture framework/host projection is
+still test infrastructure; production target-framework/host integration,
+DI/effect/failure/cancellation controls and complete2e evaluation remain open.
+No whole phase or final gate closes.
