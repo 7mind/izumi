@@ -101,8 +101,8 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
-| 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
-| 2d.16 | not started | No evaluation point passed yet. |
+| 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged event payloads. Twelve additional real-client commands preserve completed foreign bodies/events/XML through owned cancellation and same-session recovery on both compilers/modes below. Active-foreign cancellation, complete failure domains and final evaluation remain open. |
+| 2d.16 | in progress | The sixteen-command public fixture reproduces missing cached/request/configured exclusion reasons with SBT exit0 and driver exit1 below. Production correction and final evaluation remain outstanding. |
 | 2d.17 | in progress | Bootstrap61 checks per compiler plus120 host/store contracts include28 memory/file projections of repeated and partially delivered groups, selector/duration/failure identity and process/count rejection. Fourteen real-client partial/repeated commands reconcile300 callbacks without omissions, duplicates or late delivery. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | in progress | Four public SBT discovery/fingerprint controls pass in process and forked on both supported compilers, with94 host execution/inspection cases,558 physical bodies and574 XML cases. Complete mode/sharing inventory and final evaluation remain open. |
@@ -15768,3 +15768,84 @@ parent `6c0c18d01d91d70cbe6670433bf2c3b0e705e564`. `git diff --check` returns0.
 Mixed foreign-framework cancellation, remaining2d inventories, production
 Node/Native hosts, coverage, migration and phase/final evaluations remain open.
 IDE stays owner-deferred; no push is allowed.
+
+## 2026-10-06: completed foreign tests survive owned cancellation
+
+The repeated-fork checkpoint is local commit
+`377bd4208a8c3247df2300da4d3d4eef824c6bce`. Production code and its qualified
+publications are unchanged in this substep. No whole phase is closed.
+
+The first mixed-framework fixture passes its in-process normal/cancel/recovery
+commands and forked normal command on both compilers, then times out before
+sending forked cancellation: the owned body is active but the foreign framework
+has not started. Inspection of pinned SBT2.0.9 `ForkTestMain.runTests` shows that
+it awaits each framework's tasks before starting the next framework. This is a
+failed fixture prerequisite, not a reproduced runner defect. The archived
+`driver-before.py` retains the original input bytes under
+`sbt2-mixed-client-cancellation-first/`. Cleanup initially stops the parent but
+leaves its owned targets waiting; their verified receipt directories receive
+cooperative cancellation. PIDs1628057/1628112 are subsequently absent from /proc.
+The revised fixture cancels a pending command before queuing shutdown on failure.
+
+The corrected fixture puts the foreign framework first, so its completion is a
+deterministic prerequisite in the same group. Both modes then complete three
+foreign tests before the first owned body is cancelled. Commands:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-mixed-client-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-mixed-client-cancellation-second/3.9.0
+python3 -B test-fixtures/sbt-plugin-consumer/verify-mixed-client-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-mixed-client-cancellation-second/2.13.18
+```
+
+The two-compiler batch wrapper `sbt2-mixed-client-cancellation-second.py` returns0.
+Each driver and SBT server returns0 after six commands: normal, actual-client
+cancellation and same-session recovery, in process and forked. Every cancelled
+command remains pending while the owned finalizer is held, then reports a
+cancellation error and publishes fifteen marked cancelled selected outcomes.
+All three foreign bodies, their complete public event field vectors and their
+successful XML outcomes remain unchanged. Foreign bodies run in the same target
+process as the owned body. No foreign callback occurs after command completion.
+
+The independent capture audit
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-mixed-client-cancellation-second-audit.py`
+returns0. It checks twelve commands,124 owned body records,180 owned selected XML
+outcomes,36 foreign bodies,36 foreign callback payloads and36 foreign XML outcomes.
+All twelve acquired resources are released, and all twelve run/resource identities
+are distinct. Its1594 frozen records cover1518 producer inputs,75 publication
+files and the new driver. Generated consumer inputs also remain unchanged; all
+recorded host/target PIDs, including both failed-prerequisite targets, are absent
+from /proc. Command/RPC records, bodies, protocol streams, XML, completions and
+`root-audit.json` remain in the named capture directory. The preceding368-command
+regression checkpoint remains applicable to the byte-identical production inputs
+and publications; the new twelve controls extend its domain without rerunning it.
+
+This substep establishes cancellation after the foreign framework has completed,
+not cancellation inside an active foreign task. The latter, complete2d failure
+and configuration inventories, production Node/Native hosts, coverage, migration
+and final evaluations remain open. IDE stays owner-deferred; no push is permitted.
+
+### Selection-reason reproduction
+
+A separate public-process fixture runs sixteen commands on Scala3.9, both modes,
+with verified distinct stock suite digests. Warm/explicit runs, cached skips,
+negative request patterns, `Tests.Exclude`, `Tests.Filter` and owned-suite request
+exclusions all pass their physical body/resource/XML checks. Command:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-selection-reasons.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-before-first
+```
+
+The SBT process returns0; the fixture returns1 with twelve
+`SELECTION_REASON_MISSING` failures. Its four reason-free warm/explicit cases pass.
+The missing records are the expected cached-success, user-request and
+user-configuration exclusion decisions; no excluded case executes a body.
+Captured source/generated inputs remain unchanged. This reproduces the missing
+2d.16 behavior before any production correction; the item remains in progress.

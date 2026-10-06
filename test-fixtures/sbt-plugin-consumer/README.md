@@ -187,3 +187,24 @@ python3 -B test-fixtures/sbt-plugin-consumer/verify-repeated-fork-cancellation.p
 Run Scala2.13.18 in a separate capture. These are Behavioral-Active,
 Effectual-GoodCommunication regression controls; mixed foreign-framework
 cancellation requires separate validation.
+
+`verify-mixed-client-cancellation.py` completes three tests through their original
+foreign framework before cancelling an active owned body in the same execution
+group. It checks that the foreign body IDs, event fields and successful XML
+outcomes remain unchanged, while all fifteen owned selected outcomes are
+explicitly cancelled. A held owned finalizer keeps the command pending, and a
+subsequent command recovers with fresh resource and run identities.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-mixed-client-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/mixed-cancellation-example
+```
+
+Run Scala2.13.18 separately. Each compiler checks normal execution, cancellation
+and same-session recovery in process and forked. The foreign framework precedes
+the owned framework because SBT's fork runner completes each framework's tasks
+before starting the next. These Behavioral-Active, Effectual-GoodCommunication
+controls cover already completed foreign tests; cancellation during an active
+foreign test requires separate validation.
