@@ -110,11 +110,11 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
 | 2d.22 | in progress | Current432-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures, completed foreign results and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
 | 2d.23 | in progress | Current audit passes eighteen resolved Compile classpaths and eighteen published POMs across all runner layers/platforms/supported compilers;46 production sources import no SBT implementation. JVM variants use only the public test interface. Production Node/Native target host execution and final evaluation remain open. |
-| 2e.1 | not started | No evaluation point passed yet. |
-| 2e.2 | not started | No evaluation point passed yet. |
-| 2e.3 | not started | No evaluation point passed yet. |
+| 2e.1 | in progress | Local checkpoint 08661a1ae preserves all 2,478 baseline cases across both compilers and all three platforms; JS/Native use the base runner with no ScalaTest-family classpath entries. Final evaluation remains open. |
+| 2e.2 | in progress | Base runner checkpoint passes 826 checks on all six supported lanes; higher provider checkpoint passes 516 checks on each of the four JS/Native compiler lanes. Final evaluation remains open. |
+| 2e.3 | in progress | Target provider checkpoint 20f899de2 executes real DI/effect/configuration and Lifecycle controls on JS/Native under both supported compilers; full SDK integration and final evaluation remain open. |
 | 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
-| 2e.5 | not started | No evaluation point passed yet. |
+| 2e.5 | in progress | Production SDK recovery, attribution and inspection checkpoints pass below. Full target host-policy/history matrix and final evaluation remain open. |
 | 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
 | 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. Production host integration, DI finalization and final evaluation remain open. |
 | 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
@@ -17132,3 +17132,59 @@ close their final evaluation points, the remaining custom-loader audit, or a
 whole phase. Full target host-policy histories, coverage, complete ScalaTest
 retirement and final-head gates remain open. IDE remains deferred. The batch
 has completed; nothing was pushed. The next entry records its local commit ID.
+
+
+The verified fundamentals takeover checkpoint is local commit `08661a1ae`.
+Its compiler inputs match the successful frozen execution/audit recorded above.
+The next target policy batch uses fresh local publications of the changed
+assertion and runner artifacts plus all three production plugins.
+
+
+## 2026-10-06: JS/Native stock task policy checkpoint
+
+Items 2e.5 and the target evaluation of 2d.3, 2d.8, 2d.11, 2d.13 and 2d.16
+remain in progress. The tracked `test-fixtures/target-runner-consumer/verify-policy.py`
+batches eighteen command histories per actual SDK lane: full, two suites,
+wildcard, one explicit test ID, complete-after-partial, incremental, quick,
+selected quick, complete quick, filter, selected filter, exclusion, combined
+filter/exclusion, empty selection, policy reset, serial suite execution, host
+thread limit one, and another complete run. Physical bodies, exact test IDs,
+XML and complete ordered protocol streams must agree. Setup runs before any
+body and cleanup after every body/release; no empty selection launches a run.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-production-policy-producer-first.py`
+exits 0, with actual SBT child 0 and all 1,609 frozen compiler inputs unchanged.
+Exact argv, source hashes and head `08661a1ae` are in `command.json`. Fifteen
+private local `1.3.0-M5-target-policy-SNAPSHOT` publications are qualified against
+compiled class/TASTy/IR bytes: the six changed assertion artifacts, six runner
+artifacts and three production plugins. The existing host and report fixtures
+also pass. The already verified six assertion/runner runtime lanes are reused
+from the source-qualified takeover batch; they are not counted a second time.
+
+`python3 -B test-fixtures/target-runner-consumer/verify-policy.py --repo-root
+/home/pavel/work/safe/7mind/izumi --artifact-version
+1.3.0-M5-target-policy-SNAPSHOT --production-host-version
+1.3.0-M5-target-policy-SNAPSHOT --scala-version 3.9.0 2.13.18 --evidence-dir
+/srv/nvme/tmp/izumi-impl/2e-target-policy-consumers-first` exits 0. All four
+actual SBT children exit 0; all 321 frozen fixture/publication input records
+are unchanged. The four compiler/platform sessions pass 72 command contexts,
+724 physical/XML bodies and 68 completed applications with unique run IDs.
+Each nonempty selection has one application; the four empty selections have no
+body, XML case or SDK stream. Limits two and one and serial suite execution
+finish without waiting for every suite task to start.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-target-policy-independent-audit.py
+/srv/nvme/tmp/izumi-impl/2e-target-policy-consumers-first` exits 0. It uses an
+independent fixed selection table, rereads actual child exits and input hashes,
+checks the exact physical/XML/protocol identities and setup/cleanup ordering,
+and rejects missing or duplicate start/finish events or run identities.
+Independent audit SHA-256:
+`6c2c675990f70ec2d828b39e9bb968cfef650d2bc72d95dbca8f2b9b15753e3f`.
+
+This verifies the specified plain-Future target policy histories. It does not
+establish DI/configuration/scanned-plugin invalidation, foreign-framework
+routing, aggregation/additional configurations, or the whole target matrix.
+The additional-configuration reproductions are still being prepared; their
+first two attempts fail during fixture setup and are not evidence for a
+production correction. Whole-phase and final-head evaluation remain open.
+Nothing was pushed. The next entry records this checkpoint's local commit ID.

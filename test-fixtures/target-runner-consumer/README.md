@@ -56,3 +56,24 @@ These are Behavioral-Active, Effectual, Good-Communication process checks.
 The held callbacks are plain Futures; this fixture does not establish DI effect
 interruption, Lifecycle finalization, complete platform host policy or browser
 transport support.
+
+
+`verify-policy.py` runs eighteen stock-task histories in one SBT session per
+platform/compiler. It uses the published production plugins and matching runner
+artifacts. The cases cover full/selected/wildcard/individual execution,
+`test` and `testQuick` after partial runs, configured filters and exclusions,
+empty selections, policy reset, serial suite scheduling, and host limits two
+then one. Every executed case checks physical test identities, XML, complete
+SDK streams with fresh run IDs, callback lifetime and setup/cleanup ordering.
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-policy.py \
+  --repo-root "$PWD" --artifact-version 1.3.0-M5-target-policy-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-policy-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/target-policy-example
+```
+
+This batch uses plain Future suites. DI/configuration invalidation, scanned
+plugin histories, foreign frameworks and additional configurations require
+separate controls.
