@@ -151,3 +151,11 @@ resource release failure, and quick recovery. It requires the two deliberate
 test-task failures, then reconciles all selected terminal identities, physical
 bodies, XML statuses, run-level finalization errors and fresh resources. A
 controller exit zero requires that capture audit to pass.
+
+`verify-di-cancellation.py` adds `--host-threads 1` or `2` to those required
+arguments. It runs baseline, cancellation and incremental recovery with the
+same seven suites. A memoized Cats Effect resource holds its finalizer for five
+seconds. The host interrupts only after finalization starts, checks that no
+application completion has arrived while the finalizer remains held, and
+requires its exit before the SDK task returns. The audit reconciles completed
+bodies, explicit overall cancellation, XML errors and fresh recovery resources.

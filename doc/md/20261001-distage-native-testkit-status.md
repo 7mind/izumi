@@ -116,7 +116,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
 | 2e.5 | in progress | Production SDK checkpoints verify 72 stock-policy contexts, 44 configuration/aggregation captures, 44 real ScalaCheck mixed histories, inspection and recovery controls. The corrected provider additionally passes64 tracked DI/scanned-plugin histories across both compilers/platforms, including untracked configuration and memoization. The corrected host/provider passes20 DI failure/recovery histories with420 terminal records. Complete target matrix and final evaluation remain open. |
 | 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
-| 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. Production host integration, DI finalization and final evaluation remain open. |
+| 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. The corrected production host additionally passes24 tracked real DI finalizer-cancellation/recovery histories across both compilers/platforms and host limits one/two. Complete effect interruption and final evaluation remain open. |
 | 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
 | 3.1 | not started | No evaluation point passed yet. |
 | 3.2 | not started | No evaluation point passed yet. |
@@ -17810,3 +17810,49 @@ claim about every effect's interruption. No whole acceptance phase is closed.
 This local reporting checkpoint includes the shared provider correction,
 selected-owner-aware host correction, fail-first regressions, and durable DI
 history/failure fixtures. `git diff --check` and Python AST checks pass.
+
+
+## 2026-10-06: tracked SDK held-DI-finalizer cancellation checkpoint
+
+The preceding selected-terminal reporting checkpoint is local commit
+`ba95332a3`. No push was performed. The durable cancellation fixture reuses
+`di-failures` suites and adds only a memoized Cats Effect HeldPlugin resource;
+the owner loader constructs both definitions within its session-owned cache.
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-di-cancellation.py \
+  --repo-root "$PWD" \
+  --artifact-version 1.3.0-M5-target-abort-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-abort-host-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 --host-threads 1 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2e-sdk-di-cancellation-tracked-host-one
+```
+
+Repeat with `--host-threads 2` and evidence directory
+`2e-sdk-di-cancellation-tracked-host-two`. All eight actual SBT processes and
+both controllers returned0, with unchanged immutable inputs. Each matrix
+checks12 histories,252 physical/XML/protocol body outcomes and48 resources;
+combined totals are24 histories,504 outcomes and96 resource lifetimes.
+Cancellation occurs after the memoized Cats Lifecycle finalizer enters. The
+probe verifies it remains held after200ms with no application completion, then
+requires finalizer exit before SDK task return. Every cancelled command retains
+its21 completed successful test results, marks the overall application
+cancelled, and reports seven suite errors. Incremental recovery in the same
+SBT session executes with fresh run IDs and resources. This does not claim
+all effect-body interruption or all target-death domains.
+
+Independent audits verify all frozen inputs and held-boundary ordering;
+SHA256 values are recorded in each evidence directory's
+`independent-held-finalizer-audit.json`. Python syntax and `git diff --check`
+pass. This is a verified fixture checkpoint; whole2e/final acceptance remains
+open.
+
+The next read-only preparation checks the pinned Scoverage2.4.4 documentation:
+https://raw.githubusercontent.com/scoverage/sbt-scoverage/v2.4.4/README.md
+It limits JS/Native coverage to Scala2 and warns that instrumentation is sticky
+and must be disabled with a clean rebuild before normal publication. The
+four-lane JVM pilot is running in `3-coverage-jvm-pilot-first`, using two modules,
+known executed/unexecuted branch witnesses, the complete portable assertion
+fixtures, both compilers and in-process/fork execution. It runs an ordinary
+baseline before instrumented execution and finishes by cleaning with coverage
+Off before normal fixture publication. Coverage success is not yet claimed.
