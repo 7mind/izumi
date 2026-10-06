@@ -17188,3 +17188,112 @@ The additional-configuration reproductions are still being prepared; their
 first two attempts fail during fixture setup and are not evidence for a
 production correction. Whole-phase and final-head evaluation remain open.
 Nothing was pushed. The next entry records this checkpoint's local commit ID.
+
+
+## 2026-10-06: additional target configuration defect reproduced
+
+The preceding policy checkpoint is local commit `deae5ac32`. The target
+configuration requirement under 2d.14/2e.5 remains in progress. The first three
+scratch probes failed while preparing their fixtures: SDK settings absent,
+SDK settings applied to the wrong target project, then source directories
+replaced by later SBT defaults. Those are harness failures, not justification
+for a production patch, and all original logs/results remain preserved.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-additional-config-reproduction-fourth.py`
+exits 0 as a fail-first verifier. Both actual Scala 3.9.0 SBT children exit 1,
+with unchanged fixture/publication hashes. Their ordinary `Integration`
+configuration enables the pinned SDK test settings and public
+`distageTestSettings`, then supplies the same five suite sources. Both discover
+all five suite definitions, but `Integration / distageList` tries to run the
+JVM-only `izumi.distage.testkit.runner.InspectionLauncher` and fails with the
+expected ClassNotFoundException. No test body executes. Commands, frozen
+inputs and causal logs are under `2e-sdk-additional-config-reproduction-fourth/`.
+
+The correction makes `TargetHostSettings` configuration-relative and scopes
+its existing automatic installation with `inConfig(Test)`. Each companion now
+exports an explicit combined custom-configuration setting sequence, including
+its pinned SDK settings, the base host settings and target projection/inspection.
+Scala.js1.22.0 provides public `testConfigSettings`; Scala Native0.5.12 exposes
+`ScalaNativePluginInternal.scalaNativeTestSettings`. Authoritative pinned sources:
+[ScalaJSPlugin1.22.0](https://github.com/scala-js/scala-js/blob/v1.22.0/sbt-plugin/src/main/scala/org/scalajs/sbtplugin/ScalaJSPlugin.scala),
+[ScalaNativePluginInternal0.5.12](https://github.com/scala-native/scala-native/blob/v0.5.12/sbt-scala-native/src/main/scala/scala/scalanative/sbtplugin/ScalaNativePluginInternal.scala).
+
+The tracked configuration driver batches aggregation and stock test tasks for
+two modules and two configurations per target/compiler, plus list/plan in each
+configuration. Its positive validation is pending; no configuration gate is
+passed by this correction alone. No source was patched before the successful
+fail-first probe. Nothing was pushed.
+
+
+Configuration producer: `python3 -B
+/srv/nvme/tmp/izumi-impl/2e-production-config-producer-first.py` exits 0, with
+actual SBT child 0 and all 1,610 input hashes unchanged during the batch.
+It passes the existing host/report controls and qualifies all three fresh
+`1.3.0-M5-target-config-SNAPSHOT` plugin publications against compiled/source
+bytes. The twelve runtime publications from the policy producer remain unchanged.
+
+The first tracked configuration batch has actual child exits 1 in all four
+lanes, with no changed inputs. Its capture helpers were implicitly aggregated,
+so multiple projects attempted the same capture directory. No pass is claimed.
+After all producer/consumer batches using that harness completed, the two
+capture-helper tasks explicitly disabled aggregation. Actual test and inspection
+task aggregation remains enabled. The second configuration batch uses the
+corrected harness, freshly frozen in its consumer manifest.
+
+The ordinary policy regression batch against the corrected plugins is
+`python3 -B test-fixtures/target-runner-consumer/verify-policy.py --repo-root
+/home/pavel/work/safe/7mind/izumi --artifact-version
+1.3.0-M5-target-policy-SNAPSHOT --production-host-version
+1.3.0-M5-target-config-SNAPSHOT --scala-version 3.9.0 2.13.18 --evidence-dir
+/srv/nvme/tmp/izumi-impl/2e-target-policy-consumers-second`. Its controller and
+all four SBT children exit 0, with all 326 captured input records unchanged
+during execution. The independent fixed-table policy auditor passes again:
+72 contexts, 724 physical/XML bodies and 68 fresh complete SDK runs.
+Audit SHA-256:
+`40aa37061c087d96219c3e92eb57bf0bbf46fb84cb014d1b9fff815e52b8cebd`.
+That audit preceded the capture-helper correction; the modified Python harness
+is qualified by the later configuration consumer, not by this earlier snapshot.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-target-config-publication-audit.py`
+exits 0, checks all 1,561 current compiler-source inputs and requalifies all
+fifteen consumed plugin/assertion/runner publications against current compiled
+class/TASTy/IR and captured publication hashes. Python harness sources have
+separate consumer manifests. Publication audit SHA-256:
+`7ff21bb44a647a3a5ad7fb241d02f67dc8063edbe31c3f78de199fa927d98565`.
+
+
+## 2026-10-06: verified SDK configuration and aggregation checkpoint
+
+`python3 -B test-fixtures/target-runner-consumer/verify-configurations.py
+--repo-root /home/pavel/work/safe/7mind/izumi --artifact-version
+1.3.0-M5-target-policy-SNAPSHOT --production-host-version
+1.3.0-M5-target-config-SNAPSHOT --scala-version 3.9.0 2.13.18 --evidence-dir
+/srv/nvme/tmp/izumi-impl/2e-target-config-consumers-second` exits 0. All four
+actual SBT children exit 0 and all captured fixture/publication input hashes
+remain unchanged. The four sessions contain 44 capture histories, 40 execution
+commands and 32 inspection commands. Their executions produce exactly 736
+physical/XML bodies across 72 fresh completed applications, with distinct target
+identities for each module/configuration. The thirty-two list/plan responses
+select fifteen tests each and execute no body or held callback. Later Test and
+Integration execution succeeds in the same sessions.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-target-config-independent-audit.py
+/srv/nvme/tmp/izumi-impl/2e-target-config-consumers-second` exits 0. Its separate
+fixed contract table reconciles exact physical identities, XML ownership,
+protocol target/suite/test IDs, complete contiguous streams, successful terminal
+outcomes and unique run IDs. Audit SHA-256:
+`d44447ea5b1ea2c53a15136bd465c188fca8726b14fc476b352a1252fb012036`.
+The publication audit passes again with unchanged digest
+`7ff21bb44a647a3a5ad7fb241d02f67dc8063edbe31c3f78de199fa927d98565`.
+`git diff --check` passes.
+
+The original additional-configuration ClassNotFoundException is corrected:
+custom configurations now use their actual SDK framework for list/plan and
+ordinary test tasks. The ordinary policy regression's 72 contexts also pass
+against these corrected publications, including filters, exclusions and
+setup/cleanup. These controls verify the specified aggregation/configuration
+and stock policy behavior under 2d.13/2d.14/2e.5 at this checkpoint. They remain
+plain-Future controls; DI/scanned-plugin histories, mixed foreign frameworks,
+complete target matrix and final-head evaluation remain open. The producer and
+all consumer batches have completed. Nothing was pushed. The next entry records
+the local commit ID.

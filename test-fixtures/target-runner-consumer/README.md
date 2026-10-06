@@ -77,3 +77,28 @@ python3 -B test-fixtures/target-runner-consumer/verify-policy.py \
 This batch uses plain Future suites. DI/configuration invalidation, scanned
 plugin histories, foreign frameworks and additional configurations require
 separate controls.
+
+
+`verify-configurations.py` checks two aggregated modules per target, each with
+independent `Test` and `Integration` configurations. Custom configurations use
+`inConfig(Integration)(Defaults.testSettings ++ distageJsTestSettings)` or
+`distageNativeTestSettings` from the corresponding companion's `autoImport`.
+These settings include the pinned SDK's test settings and the distage host
+contract. They must precede fixture source-directory and listener overrides.
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-configurations.py \
+  --repo-root "$PWD" --artifact-version 1.3.0-M5-target-policy-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-config-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/target-configurations-example
+```
+
+The driver checks aggregation, complete and selected runs, quick/incremental
+execution, one explicit test, eight list/plan requests across the four module
+configurations, and later execution. XML ownership and protocol target IDs must
+agree; each module/configuration owns a distinct application and fresh run ID.
+Scala Native0.5.12 exposes its settings through
+`ScalaNativePluginInternal.scalaNativeTestSettings`; the companion uses that
+pinned SDK implementation. The SDK source is available at
+[ScalaNativePluginInternal0.5.12](https://github.com/scala-native/scala-native/blob/v0.5.12/sbt-scala-native/src/main/scala/scala/scalanative/sbtplugin/ScalaNativePluginInternal.scala).
