@@ -15,7 +15,7 @@ private[sbt] final class HostForkCompletion(directory: Path) {
   private final val ExitWaitSeconds = 30L
   private final val PollMillis = 5L
   private val agent = directory.resolve("distage-fork-agent.jar")
-  private var forks = Vector.empty[Path]
+  private var forks = Vector.empty[(Path, Set[HostSuiteName])]
 
   def group(value: Tests.Group): Tests.Group = synchronized {
     value.runPolicy match {
@@ -23,15 +23,24 @@ private[sbt] final class HostForkCompletion(directory: Path) {
       case Tests.SubProcess(options) =>
         if (!Files.isRegularFile(agent)) packageAgent()
         val prefix = directory.resolve("fork-" + UUID.randomUUID().toString)
-        forks :+= prefix
+        forks :+= prefix -> HostReceiptPolicy.names(value.tests)
         val encoded = Base64.getUrlEncoder.withoutPadding().encodeToString(prefix.toString.getBytes(StandardCharsets.UTF_8))
         val argument = "-javaagent:" + agent + "=" + encoded + ":" + ProcessHandle.current().pid()
         new Tests.Group(value.name, value.tests, Tests.SubProcess(options.withRunJVMOptions(argument +: options.runJVMOptions)), value.tags)
     }
   }
 
+  def cancel(): Set[HostSuiteName] = synchronized {
+    if (forks.nonEmpty) {
+      val signal = directory.resolve("cancel")
+      if (!Files.isRegularFile(signal)) publish(signal, "cancel")
+      require(read(signal) == "cancel", "Invalid fork cancellation signal")
+    }
+    forks.filter { case (prefix, _) => Files.isRegularFile(path(prefix, "entered")) }.flatMap(_._2).toSet
+  }
+
   def finish(commit: Boolean): Unit = {
-    val admitted = synchronized { forks.filter(prefix => Files.isRegularFile(path(prefix, "entered"))) }
+    val admitted = synchronized { forks.map(_._1).filter(prefix => Files.isRegularFile(path(prefix, "entered"))) }
     admitted.foreach { prefix =>
       val decision = path(prefix, "decision")
       if (!Files.isRegularFile(decision)) publish(decision, if (commit) "commit" else "abort")

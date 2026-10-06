@@ -96,6 +96,8 @@ def verify(capture,row,runs,resources):
     selected=[n for n in nodes if n.attrib['name'].startswith('same display name should ')]
     assert len(selected)==15,'CLIENT_XML_INCOMPLETE'
     if cancelled:
+        assert all(n.find('skipped') is not None and n.find('skipped').attrib.get('message')=='Cancelled' for n in selected),'CLIENT_CANCELLED_XML_LOOKS_PASSED'
+        assert sum(int(ElementTree.parse(p).getroot().attrib['skipped']) for p in (capture/'test-reports').glob('*.xml'))==15,'CLIENT_CANCELLED_XML_COUNT'
         assert (audit/'release.observed-held').read_text()=='held'
         assert (audit/'body.interrupted').read_text() in pids
         assert 'error' in row['response'] or row['response']['result'].get('exitCode')!=0,'CLIENT_FALSE_SUCCESS'

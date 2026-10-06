@@ -1,6 +1,6 @@
 package izumi.distage.sbt
 
-import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
+import izumi.distage.testkit.protocol.{FileForkReceiptStore, FileForkRunReports, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
 import izumi.distage.sbt.target.TaskCompleteness
 
 import sbt._
@@ -133,6 +133,18 @@ private[sbt] final class HostReceipt {
 
   def isInterrupted: Boolean = synchronized { interrupted }
 
+  def owns(name: HostSuiteName): Boolean = synchronized { owned.contains(name) }
+
+  def selected: Set[HostSuiteName] = synchronized { expected }
+
+  def cancel(): Unit = synchronized { interrupted = true }
+
+  def unreported(name: HostSuiteName): Boolean = synchronized {
+    requireOpen()
+    require(starts.getOrElse(name, 0) == ends.getOrElse(name, 0), "Fork cancellation overlaps an active host report group")
+    ends.getOrElse(name, 0) == 0
+  }
+
   def normalise(output: Tests.Output): Tests.Output = synchronized {
     requireOpen()
     var events = output.events
@@ -197,6 +209,7 @@ private[sbt] final class HostReceipt {
 
 private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val store: FileForkReceiptStore) {
   val completion = new HostForkCompletion(store.directory)
+  var reports = Option.empty[HostForkReports]
 }
 
 private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStore) {
@@ -219,6 +232,22 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
   def hasInterruption: Boolean = {
     val generations = synchronized { pending }
     generations.exists(_.receipt.isInterrupted)
+  }
+
+  def configureReports(definitions: Seq[TestDefinition], listeners: Seq[TestReportListener]): Unit = synchronized {
+    val generation = current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt"))
+    generation.reports = Some(new HostForkReports(new FileForkRunReports(generation.store.directory), new TaskCompleteness.FileCompletionStore(generation.store.directory), definitions, listeners, generation.receipt))
+  }
+
+  def cancelForks(): Unit = {
+    val generations = synchronized { pending }
+    generations.foreach { generation =>
+      val names = generation.completion.cancel()
+      if (names.nonEmpty) {
+        generation.receipt.cancel()
+        generation.reports.getOrElse(throw new IllegalStateException("Admitted fork has no host reports")).cancel(names)
+      }
+    }
   }
 
   def consume(output: Tests.Output): Tests.Output = {
@@ -373,7 +402,9 @@ private[sbt] object HostReceiptPolicy {
       else wrapped :+ Tests.Filters(Seq(capture(_ => true)))
     } else inheritedOptions
     val directory = Tests.Argument(DistageHostPolicy.framework, ForkReceiptArguments.HostDirectoryOption, owner.store.directory.toString, ForkReceiptArguments.CommandCompletionOption)
-    inherited.copy(options = Tests.Listeners(Seq(listener)) +: (options :+ directory))
+    val execution = inherited.copy(options = Tests.Listeners(Seq(listener)) +: (options :+ directory))
+    owner.configureReports(definitions, execution.options.collect { case Tests.Listeners(values) => values }.flatten)
+    execution
   }
 
   def logger(inherited: TestResultLogger, owner: HostReceiptOwner): TestResultLogger = inherited match {

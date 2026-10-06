@@ -1,6 +1,8 @@
 package izumi.distage.sbt
 
 import java.nio.file.{Files, Paths}
+import sbt.{JUnitXmlTestsListener, TestEvent, TestResult}
+import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SubclassFingerprint, TestSelector}
 import scala.xml.Elem
 
 object HostJUnitReportsTest {
@@ -11,6 +13,7 @@ object HostJUnitReportsTest {
     Seq(HostJUnitFileFormat.Standard, HostJUnitFileFormat.Legacy).foreach { format =>
       run("memory", format, new MemoryFiles)
       run("file", format, new FileHostJUnitReports(Files.createDirectory(directory.resolve(format.toString))))
+      listenerChecks(Files.createDirectory(directory.resolve(format.toString + "-listener")), format)
     }
     require(HostJUnitFileFormat.configured(Some("ALWAYS"), None) == HostJUnitFileFormat.Legacy)
     require(HostJUnitFileFormat.configured(None, Some("1")) == HostJUnitFileFormat.Legacy)
@@ -55,6 +58,22 @@ object HostJUnitReportsTest {
     require(files.load(format.filename(left)) == first, "A new command retained prior XML groups")
     println("HOST_JUNIT_CHECK_OK " + mode + " " + format + " fresh command")
 
+    val cancelledCase = <testcase classname="fixture.Nested" name="cancelled" time="1.25"/>
+    val cancellation = report(left, "cancelled-output", cancelledCase)
+    files.replace(format.filename(left), cancellation)
+    new HostJUnitReports(files, format).completedGroup(left, Vector(cancelledCase))
+    val projected = files.load(format.filename(left))
+    require((projected \@ "skipped") == "1" && (projected \ "testcase" \ "skipped" \@ "message") == "Cancelled", "Cancelled case looks passed or loses its status")
+    require((projected \ "system-out") == (cancellation \ "system-out"), "Cancellation projection changed captured output")
+    require((projected \ "testcase" \@ "name") == "cancelled", "Cancellation projection changed its test identity")
+    println("HOST_JUNIT_CHECK_OK " + mode + " " + format + " cancelled outcome and output")
+
+    val ambiguity = cancellation.copy(child = cancellation.child ++ Vector(cancelledCase), attributes = new scala.xml.UnprefixedAttribute("tests", "2", cancellation.attributes.remove("tests")))
+    files.replace(format.filename(left), ambiguity)
+    rejects(new HostJUnitReports(files, format).completedGroup(left, Vector(cancelledCase)))
+    require(files.load(format.filename(left)) == ambiguity, "Ambiguous cancellation modified the report")
+    println("HOST_JUNIT_CHECK_OK " + mode + " " + format + " ambiguous cancellation rejection")
+
     files.replace(format.filename(left), other)
     rejects(fresh.completedGroup(left))
     println("HOST_JUNIT_CHECK_OK " + mode + " " + format + " mismatched report rejection")
@@ -71,6 +90,40 @@ object HostJUnitReportsTest {
     try { failed.completedGroup(left); throw new AssertionError("Report publication unexpectedly succeeded") }
     catch { case cause: IllegalStateException => require(cause eq sentinel, "Original publication failure changed") }
     println("HOST_JUNIT_CHECK_OK " + mode + " " + format + " publication Throwable identity")
+  }
+
+  private def listenerChecks(directory: java.nio.file.Path, format: HostJUnitFileFormat): Unit = {
+    val owned = HostSuiteName("fixture.CancelledSuite")
+    val foreign = HostSuiteName("fixture.ForeignSuite")
+    val receipt = new HostReceipt
+    val _ = receipt.configure(Set(owned))
+    val original = new JUnitXmlTestsListener(directory.toFile, format == HostJUnitFileFormat.Legacy, sbt.util.Logger.Null)
+    val listener = new HostJUnitReportListener(original, new HostJUnitReports(new FileHostJUnitReports(directory), format), receipt)
+    listener.doInit()
+    Seq(owned, foreign).foreach { suite =>
+      listener.startGroup(suite.value)
+      listener.testEvent(TestEvent(Seq(event(suite, "cancelled", Status.Canceled), event(suite, "skipped", Status.Skipped), event(suite, "passed", Status.Success))))
+      listener.endGroup(suite.value, TestResult.Error)
+      val report = scala.xml.XML.loadFile(directory.resolve(format.filename(suite).value).toFile)
+      val byName = (report \ "testcase").map(value => (value \@ "name") -> value).toMap
+      require(byName.size == 3 && (byName("skipped") \ "skipped").size == 1 && (byName("passed") \ "skipped").isEmpty)
+      if (suite == owned) require((report \@ "skipped") == "2" && (byName("cancelled") \ "skipped" \@ "message") == "Cancelled")
+      else require((report \@ "skipped") == "1" && (byName("cancelled") \ "skipped").isEmpty, "Foreign JUnit semantics changed")
+    }
+    println("HOST_JUNIT_CHECK_OK " + format + " public SDK owned cancellation and unchanged foreign outcomes")
+  }
+
+  private def event(suite: HostSuiteName, name: String, value: Status): Event = new Event {
+    override def fullyQualifiedName(): String = suite.value
+    override def fingerprint(): Fingerprint = new SubclassFingerprint {
+      override def isModule(): Boolean = false
+      override def superclassName(): String = "fixture.Suite"
+      override def requireNoArgConstructor(): Boolean = true
+    }
+    override def selector(): Selector = new TestSelector(name)
+    override def status(): Status = value
+    override def throwable(): OptionalThrowable = new OptionalThrowable
+    override def duration(): Long = 1250L
   }
 
   private def report(name: HostSuiteName, output: String, testcase: Elem): Elem = {

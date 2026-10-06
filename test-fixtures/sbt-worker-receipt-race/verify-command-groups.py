@@ -174,6 +174,17 @@ def is_process_alive(pid):
     except ProcessLookupError:
         return False
 
+def held_worker(audit):
+    try:
+        mode = (audit/'mode').read_text()
+        pid = (audit/'worker.held').read_text()
+        if (audit/'mode').read_text() != mode or (audit/'worker.held').read_text() != pid:
+            return None
+        return mode, pid
+    except FileNotFoundError:
+        # prepareGroups removes the preceding command's audit directory before publishing the next mode.
+        return None
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--repo-root', type=Path, required=True)
@@ -207,18 +218,20 @@ def main():
         deadline = time.monotonic() + TIMEOUT_SECONDS
         audit = build/'audit'
         while process.poll() is None and time.monotonic() < deadline:
-            if (audit/'worker.held').exists() and (audit/'mode').read_text() not in observations:
+            held = held_worker(audit)
+            if held is not None and held[0] not in observations:
                 time.sleep(5)
-                mode = (audit/'mode').read_text()
-                pid = (audit/'worker.held').read_text()
+                require_held = held_worker(audit)
+                assert require_held == held, 'Held worker changed before its shutdown observation'
+                mode, pid = held
                 observation = dict(pid=pid,aliveBeforeRelease=is_process_alive(pid),rejectedBeforeRelease=(audit/'host.rejected').exists(),capturedBeforeRelease=(out/'cases'/mode).exists())
                 observations[mode] = observation
                 (out/('held-shutdown-'+mode+'-observation.json')).write_text(json.dumps(observation,indent=2)+'\n')
                 (audit/'worker.allow').write_text('release after frozen shutdown observation\n')
             time.sleep(0.01)
-        if (audit/'worker.held').exists() and (audit/'mode').read_text() not in observations:
-            mode = (audit/'mode').read_text()
-            pid = (audit/'worker.held').read_text()
+        held = held_worker(audit)
+        if held is not None and held[0] not in observations:
+            mode, pid = held
             observation = dict(pid=pid,aliveBeforeRelease=is_process_alive(pid),rejectedBeforeRelease=(audit/'host.rejected').exists(),capturedBeforeRelease=(out/'cases'/mode).exists())
             observations[mode] = observation
             (out/('held-shutdown-'+mode+'-observation.json')).write_text(json.dumps(observation,indent=2)+'\n')

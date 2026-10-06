@@ -96,19 +96,19 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
-| 2d.10 | in progress | Current340-command checkpoint includes14 real in-process client controls with held finalizers and same-boundary recovery, plus20 task-interruption/normal/recovery controls on both supported compilers. Stock and distage forked-client reproductions fail to reach target finalization; a public transport prototype joins it but loses JUnit reports. Complete cancellation/failure domain and final evaluation remain open. |
-| 2d.11 | in progress | Current correction passes340 SBT2 command controls on Scala2.13/3:230 general controls,36 resource/body controls,40 stock callback comparisons,20 task-interruption controls and14 actual in-process client controls. Complete failure/input inventory, forked client cancellation and final evaluation stay open. |
+| 2d.10 | in progress | Current354-command checkpoint includes28 actual-client controls in process and forked on both supported compilers, with held finalizers, marked cancelled XML and same-boundary recovery. Publication/discovery failures join all task projections. Complete cancellation/failure domain and final evaluation remain open. |
+| 2d.11 | in progress | Current correction passes354 SBT2 command controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption and28 actual-client controls covering both execution modes. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap61 checks per compiler,18 task checks,25 receipt checks and21 dual memory/filesystem XML checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap61 checks per compiler,18 task checks,25 receipt checks,31 XML,14 report-store,eight host-projection and four public report-failure checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | not started | No evaluation point passed yet. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current340-command batch preserves selected logical outcomes and complete report counts, including actual in-process cancellation with finalizer failures and recovery. Independent reproductions expose stock JUnit rendering of cancelled cases as passed and lost forked-client reports. Both projection corrections, complete host-callback outcomes and final evaluation remain open. |
+| 2d.22 | in progress | Current354-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
 | 2d.23 | not started | No evaluation point passed yet. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -15327,3 +15327,214 @@ Actual exit 1 for the intended assertion
 `STOCK_CANCELLED_JUNIT_CASE_LOOKS_PASSED`; `command.json`, `run.log`, generated
 XML and `completion.json` retain the independent reproduction. This confirms
 the SDK renderer omission separately from interruption/report-delivery failure.
+
+## 2026-10-06: owned fork cancellation and explicit cancelled JUnit outcomes
+
+Commit: the commit containing this entry, parent
+`6bd25b6ee6fe74a0baa49c4cb889e5c5e4279d67`.
+Items 2d.10/11/17/22 and O.21/24/28 remain in progress. No whole phase is closed.
+
+The preceding stock SDK reproductions establish both failures before this
+correction: client cancellation does not stop the forked target, and the stock
+JUnit listener renders `Status.Canceled` as a bare passed-looking testcase.
+Their public reproductions, tracker searches and draft upstream reports remain
+recorded in the preceding entry. No upstream issue was filed.
+
+The owned target now observes a cancellation signal in its command's explicit
+receipt directory. Its invocation requests application cancellation and joins
+its resources and controller thread. It publishes an immutable terminal
+`ForkRunReport`, containing the common protocol outcome and explicit logical
+suite-to-class bindings. Both the outcome and these bindings cross the process
+boundary as data; no closure or Scala object crosses it. Failure projection is
+shared in the protocol module so the target and host retain the same diagnostic
+cause/suppressed-error rendering.
+
+The public SBT `ExecuteProgress2.afterWork` interruption path requests fork
+cancellation while the original work is still pending. It waits for both the
+common terminal outcome and target suite terminal records, verifies all seven
+status counts, and projects only host groups that have not been delivered.
+Already-delivered groups are not replayed. The inherited listener configuration
+and original suite fingerprints remain in use. This path does not copy private
+SDK worker orchestration and does not wait for every selected suite task to
+start. The previously verified command barrier still joins already-running SDK
+work before allowing another reporting interruption.
+
+The JUnit wrapper preserves original events for all listeners. For owned
+cancelled events it obtains the case identity from the public SDK `TestSuite`
+renderer, and marks the corresponding bare XML case with
+`<skipped message="Cancelled"/>`. It increments the skipped count, preserves
+captured output, and leaves foreign-framework cancellation projection unchanged.
+Missing or ambiguous matches reject publication rather than modifying an
+unidentified case. Its first implementation compared complete XML elements;
+the real SDK listener contract rejected this after serialization. The captured
+first producer exits 1 at that precise assertion. The corrected implementation
+matches rendered case attributes and checks occurrence counts.
+
+Producer/publication commands:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-producer-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-producer-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-qualify-first.py
+```
+
+First producer: actual 1 at the XML identity assertion, frozen inputs unchanged.
+Second producer and qualification: actual 0, all 1,517 frozen inputs unchanged.
+Each supported JVM compiler passes 219 protocol, 802 base-runner and 61 bootstrap
+checks. Additional contracts pass 31 JUnit, 25 receipt, 18 task-boundary, eight
+fork-projection and ten fork-report-store checks. The new report-store and
+projection contracts run against both manual memory stores and actual file
+stores. They verify logical IDs distinct from class names, cancelled statuses,
+finalization diagnostics, unchanged delivered groups, duplicate owners, malformed
+schema/run identities and target-count mismatch rejection. The public SDK JUnit
+controls distinguish owned cancellation from explicit skipping and foreign
+cancellation in both filename formats.
+
+All five published binary payload sets equal their compiled output sets, and
+every binary member matches byte-for-byte. Published payload counts are
+97 plugin, 306 Scala3 protocol, 238 Scala2.13 protocol, 155 Scala3 runner and
+105 Scala2.13 runner. The plugin JAR SHA-256 is
+`277d6c6e2d44f1478469c497ac1dcda1c4a36e3157bd3e92ccadfbd656cb3446`.
+All 75 published files are frozen under
+`sbt2-cancel-report-qualified-publication/`, with source/snapshot/hash manifest.
+All 20 target-agent/guard class files match the preceding qualified publication,
+so its 29 JDK17/21/25 exit controls remain applicable to those unchanged classes.
+
+The actual SBT-client drivers now pass both execution modes on both compilers:
+28 controls, including eight actual cancellations. Cancelled finalizers remain
+held for 250ms with the original exec response absent, then release exactly
+once. All 15 selected logical outcomes and all 15 marked cancelled XML cases are
+present. Finalizer-failure cancellation and immediate same-`testOnly`, full and
+incremental recovery controls pass with fresh resources. Both drivers exit 0.
+Their commands and captures are included in the combined regression driver
+below; no self-interruption proxy is used for these actual-client controls.
+
+The complete combined regression and portable matrix are still being audited:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-regression-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-regression-audit.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-portable-first.py
+```
+
+This remains a bounded cancellation checkpoint. Cancellation of foreign
+framework work, repeated explicit fork groups with the same suite identity,
+partially delivered host groups and the remaining failure/input inventory are
+not closed by the five-suite controls. Repeated suite groups reject ambiguous
+recovery explicitly; no claim of completed cancellation acceptance is made.
+Final phase/final-head evaluation and the deferred IDE checks remain open.
+
+### Reporting failure memoization and regression-driver race
+
+The first combined batch exits 1, with all frozen inputs unchanged: 27 of
+28 drivers pass, while `groups-legacy-3.9.0` fails inside its polling driver
+with `FileNotFoundError` reading `audit/mode` after seeing `worker.held`.
+`prepareGroups` removes and recreates that directory between controls. The
+captured traceback is the failing reproduction. The correction reads a stable
+mode/PID snapshot, treats a concurrently removed snapshot as pending, and checks
+that the held worker remains the same before releasing it. It retains the
+five-second hold and all existing body/report/process assertions. An audit of
+all twelve recorded host/worker PIDs from the failed driver finds none alive.
+
+Review of the new terminal publication path exposed a separate failure that
+could escape before completing the shared invocation promise. The public
+framework reproduction `sbt2-fork-report-memoization-before/direct.py` exits 1
+at `FORK_REPORT_FAILURE_MEMOIZATION_INCOMPLETE: duplicate,publication`.
+Both duplicated logical suite IDs and deletion of the owned report directory
+leave one sibling task pending. The former reports no events; the latter has
+already emitted two body successes. Earlier setup failures (SBT expression,
+required arguments and classpath) are saved separately and are not defect
+reproductions. The successful failing reproduction uses the public framework,
+explicit directory/agent metadata, actual filesystem publication and captured
+commands/source hash.
+
+The correction completes the shared promise with the original failure even
+when publication or final cleanup throws. A failed discovery outcome may retain
+duplicate logical IDs in its suite bindings; only an actual test result without
+a unique suite owner is invalid. This preserves the original Discovery
+failure rather than replacing it with a publication validation failure. The
+new public framework checks require both tasks to finish, retain the original
+phase/diagnostic and execute successful bodies only once after a publication
+fault. They pass on both Scala3.9 and Scala2.13.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-fork-report-memoization-before/direct.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-producer-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-qualify-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-freeze-second.py
+```
+
+The reproduction driver returns 0 only because it verifies the expected child
+exit1, both pending sibling observations and the exact assertion. The child
+itself fails as required. The third producer, qualifier and frozen-publication
+check all exit0. All 1,518 production inputs stay unchanged. Per compiler:
+219 protocol, 802 base and 61 bootstrap checks; additional contracts total
+100:31 JUnit,25 receipt,18 task boundary,eight host fork projections,
+14 report-store and four public framework report-failure checks. Binary counts
+remain 97/306/238/155/105. The plugin JAR SHA-256 is now
+`ca356ca8d5b501a2c8995a1f2aeebf6ad33426854be8bd695fe7c05af70b343d`.
+All 75 published files are frozen in
+`sbt2-cancel-report-qualified-publication-second/`; the 20 unchanged target
+classes still compare exactly with the preceding qualified agent publication.
+
+The portable command below also exits0, with its then-frozen inputs unchanged:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-portable-first.py
+```
+
+It executes eight real protocol/base target lanes: JS and Native on each
+supported compiler. Every lane passes219 protocol and802 base checks.
+`jvm-only-change-proof.json` verifies that the subsequent memoization correction
+changes only JVM source/test inputs; the validated shared/JS/Native inputs stay
+identical. This verifies portability of the shared failure projection change,
+not the still-unimplemented production Node/Native host integration.
+
+The complete second consumer batch and independent audit both pass:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-regression-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-cancel-report-regression-second-audit.py
+```
+
+### Verified combined cancellation checkpoint
+
+The second consumer batch and its independent audit both exit0. All28 drivers
+pass with every frozen production, fixture and publication input unchanged.
+The audit reconciles354 command controls:230 general,36 resource/body,
+40 stock setup/cleanup comparisons,20 SDK-task interruption/normal/recovery and
+28 actual-client controls. Actual-client controls include eight cancellations
+(four per execution mode), finalizer-failure cancellation, immediate same-task
+recovery and full/incremental recovery. These stay separate from the earlier
+eight self-interrupted SDK-task cancellation controls.
+
+The audited resource/body/task/client records contain84 unique runs and84
+resource acquisition attempts, with80 successful acquisitions and four expected
+acquisition failures. All selected logical IDs and XML identities reconcile.
+Cancelled selected cases carry the explicit skipped/Cancelled marker rather
+than appearing passed; host error cases retain finalization/transport failures.
+The audit completion SHA-256 is
+`81ec3786e61546040efae9af813f75c4d7f47cb1f9f5c710eacd671563a429a3`.
+All recorded host/worker PIDs from the28 consumer completion files are absent
+from /proc; the exact inventory is in `audit/process-completion.json`.
+
+The unchanged public before-fix reproduction source is also rerun against the
+corrected compiled outputs (`post-fix.json`, actual0). Both discovery-alias and
+publication-failure cases now report `joined=true pending=0 failures=[]`.
+The discovery case emits two error events; publication failure preserves two
+body success events and adds two terminal transport errors, without relaunch.
+The committed public framework fixture verifies the same behavior on both
+supported compilers.
+
+This checkpoint does not close the remaining foreign/repeated-group/partial
+cancellation domain or the other open2d acceptance items. Production Node and
+Native host integrations, coverage, repository migration, prescribed phase/final
+lanes and independent reviews remain outstanding. IDE stays owner-deferred.
+
+### Local cancellation checkpoint
+
+Immediately before the local commit, `precommit-guard.json` exits0 and rechecks
+all1518 producer inputs,1631 consumer inputs and75 frozen publication files.
+There are no changed inputs. `git diff --check` also exits0. This verified
+sub-step is committed locally as `Complete owned fork cancellation; verify 354 SBT controls`,
+with parent `6bd25b6ee6fe74a0baa49c4cb889e5c5e4279d67`. No push is authorized.
