@@ -10,6 +10,7 @@ import java.util.UUID
 import java.util.concurrent.{Callable, CountDownLatch, Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.jdk.CollectionConverters.*
+import scala.util.control.NonFatal
 
 object TargetHostFrameworkTest {
   private val fingerprint = new SubclassFingerprint {
@@ -20,10 +21,17 @@ object TargetHostFrameworkTest {
 
   def main(arguments: Array[String]): Unit = {
     require(arguments.isEmpty)
-    for (threads <- Vector(1, 2); scenario <- Vector("success", "body-failure", "run-failure", "incomplete", "launch-failure", "bad-sequence", "cancel")) {
-      check(threads, scenario)
+    var failures = Vector.empty[String]
+    for (threads <- Vector(1, 2); scenario <- Vector("success", "body-failure", "run-failure", "incomplete", "launch-failure", "bad-sequence", "cancel", "runner-failure", "tasks-failure", "logical-alias", "bad-owner")) {
+      try check(threads, scenario)
+      catch { case NonFatal(cause) =>
+        val message = s"threads=$threads scenario=$scenario cause=$cause"
+        println("TARGET_HOST_CHECK_FAILURE " + message)
+        failures :+= message
+      }
     }
-    println("TARGET_HOST_FRAMEWORK_CHECK_OK scenarios=14")
+    require(failures.isEmpty, failures.mkString("; "))
+    println("TARGET_HOST_FRAMEWORK_CHECK_OK scenarios=22")
   }
 
   private def check(threads: Int, scenario: String): Unit = {
@@ -44,11 +52,14 @@ object TargetHostFrameworkTest {
         val capturedArgs = args.clone()
         val capturedRemoteArgs = remoteArgs.clone()
         val _ = runners.incrementAndGet()
+        if (scenario == "runner-failure") throw new IllegalStateException("runner launch failed")
         new Runner {
           override def args(): Array[String] = capturedArgs.clone()
           override def remoteArgs(): Array[String] = capturedRemoteArgs.clone()
           override def done(): String = { val _ = completions.incrementAndGet(); "" }
-          override def tasks(selected: Array[TaskDef]): Array[Task] = Array(new Task {
+          override def tasks(selected: Array[TaskDef]): Array[Task] = {
+            if (scenario == "tasks-failure") throw new IllegalStateException("task construction failed")
+            Array(new Task {
             override def taskDef(): TaskDef = selected.head
             override def tags(): Array[String] = Array.empty
             override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
@@ -56,8 +67,9 @@ object TargetHostFrameworkTest {
               if (scenario == "launch-failure") throw new IllegalStateException("launch failed")
               val run = RunId(UUID.randomUUID().toString)
               var sequence = 0L
+              var eventOwner = selected.head.fullyQualifiedName()
               def frame(message: ProtocolMessage): Unit = handler.handle(new Event {
-                override def fullyQualifiedName(): String = selected.head.fullyQualifiedName()
+                override def fullyQualifiedName(): String = eventOwner
                 override def fingerprint(): Fingerprint = TargetHostFrameworkTest.fingerprint
                 override def selector(): Selector = new NestedTestSelector("$distage-protocol-v4", ProtocolCodec.encode(message))
                 override def status(): Status = Status.Success
@@ -76,10 +88,15 @@ object TargetHostFrameworkTest {
                 val results = selected.toVector.flatMap { definition =>
                   (1 to 3).map { index =>
                     val failure = if (scenario == "body-failure" && definition == selected.last && index == 3) Some(error(FailurePhase.Test, "body failed")) else None
-                    TestResult(TestId(BuildTargetId("fixture"), SuiteId(definition.fullyQualifiedName()), Vector("same", index.toString), None), if (failure.isDefined) TestStatus.Failed else TestStatus.Succeeded, failure, 1000000L)
+                    val suite = (if (scenario == "logical-alias") "logical:" else "") + definition.fullyQualifiedName()
+                    TestResult(TestId(BuildTargetId("fixture"), SuiteId(suite), Vector("same", index.toString), None), if (failure.isDefined) TestStatus.Failed else TestStatus.Succeeded, failure, 1000000L)
                   }
                 }
-                results.reverse.foreach { result => emit(RunEvent.TestStarted(run, result.id)); emit(RunEvent.TestCompleted(run, result)) }
+                results.reverse.foreach { result =>
+                  eventOwner = if (scenario == "bad-owner") "fixture.Unselected" else result.id.suite.value.stripPrefix("logical:")
+                  emit(RunEvent.TestStarted(run, result.id))
+                  emit(RunEvent.TestCompleted(run, result))
+                }
                 if (scenario != "incomplete") {
                   if (scenario == "bad-sequence") sequence += 1
                   val failures = if (scenario == "run-failure") Vector(error(FailurePhase.Finalization, "release failed")) else Vector.empty
@@ -90,7 +107,8 @@ object TargetHostFrameworkTest {
               } finally socket.foreach(_.close())
               Array.empty
             }
-          })
+            })
+          }
         }
       }
     }
@@ -118,10 +136,11 @@ object TargetHostFrameworkTest {
       require(!direct.isAlive, "Cancellation did not complete")
       execute(tasks.tail)
     } else execute(tasks)
-    require(launches.get() == 1, "Selected suite tasks relaunched the aggregate")
-    val bodyCount = if (scenario == "launch-failure") 0 else 15
+    val earlyFailure = Set("runner-failure", "tasks-failure").contains(scenario)
+    require(launches.get() == (if (earlyFailure) 0 else 1), "Selected suite tasks relaunched the aggregate")
+    val bodyCount = if (scenario == "launch-failure" || scenario == "bad-owner" || earlyFailure) 0 else 15
     require(observed.count(_.selector().isInstanceOf[TestSelector]) == bodyCount, scenario + ": body event count")
-    val groupFailure = !Set("success", "body-failure").contains(scenario)
+    val groupFailure = !Set("success", "body-failure", "logical-alias").contains(scenario)
     require(observed.count(_.status() == Status.Error) == (if (groupFailure) 5 else 0), scenario + ": suite error count")
     require(observed.count(_.status() == Status.Failure) == (if (scenario == "body-failure") 1 else 0))
     selected.foreach(definition => require(observed.filter(_.selector().isInstanceOf[TestSelector]).count(_.fullyQualifiedName() == definition.fullyQualifiedName()) == (if (bodyCount == 0) 0 else 3)))
@@ -130,13 +149,14 @@ object TargetHostFrameworkTest {
       execute(runner.tasks(selected))
       require(observed.size == 15 && observed.forall(_.status() == Status.Success), "Same-runner recovery failed")
     }
-    require(runner.done().isEmpty && runners.get() == completions.get(), "Platform runners did not complete")
+    require(runner.done().isEmpty && runners.get() - int(scenario == "runner-failure") == completions.get(), "Platform runners did not complete")
     val stream = Files.list(directory)
     val channels = try stream.iterator().asScala.toVector finally stream.close()
-    require(channels.size == (if (scenario == "launch-failure") 0 else if (scenario == "cancel") 2 else 1))
+    require(channels.size == (if (scenario == "launch-failure" || earlyFailure) 0 else if (scenario == "cancel") 2 else 1))
     channels.foreach(path => { val _ = Files.deleteIfExists(path) })
     Files.delete(directory)
   }
 
   private def error(phase: FailurePhase, message: String): Failure = Failure(phase, "fixture.Failure", message, Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)
+  private def int(value: Boolean): Int = if (value) 1 else 0
 }

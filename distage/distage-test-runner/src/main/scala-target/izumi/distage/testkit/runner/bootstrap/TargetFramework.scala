@@ -166,13 +166,31 @@ private[bootstrap] final class TargetTask(
     require(reconstructed, "Target task must be reconstructed from serialized identities")
     consume()
     implicit val ec: ExecutionContext = owner.runtime.context
+    val suiteOwners = scala.collection.mutable.Map.empty[SuiteId, TaskDef]
     val output = new ProtocolOutput {
       override def accept(message: ProtocolMessage): Unit = handler.synchronized {
-        handler.handle(new TargetChannelFrame(taskDef(), ProtocolCodec.encode(message)))
+        val definition = message match {
+          case ProtocolMessage.Event(_, RunEvent.TestStarted(_, test)) => suiteOwners(test.suite)
+          case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, result)) => suiteOwners(result.id.suite)
+          case _ => taskDef()
+        }
+        handler.handle(new TargetChannelFrame(definition, ProtocolCodec.encode(message)))
       }
     }
     val loader = new TargetSuiteLoader
-    val factories = definitions.map(definition => () => loader.load(definition.fullyQualifiedName()))
+    val factories = definitions.map { definition => () => {
+      val original = loader.load(definition.fullyQualifiedName())
+      new TestSuite {
+        override def register(context: RegistrationContext): RegisteredSuite = {
+          val registered = original.register(context)
+          handler.synchronized {
+            require(!suiteOwners.contains(registered.descriptor.id), "Duplicate target logical suite identities")
+            suiteOwners.update(registered.descriptor.id, definition)
+          }
+          registered
+        }
+      }
+    } }
     val application = new TestApplication(owner.runtime.newRunId(), request.identity, factories, ec, output)
     owner.begin(application)
     val control = controlPort match {

@@ -33,17 +33,19 @@ private[sbt] final class TargetHostFramework(platform: Framework) extends Framew
         if (definitions.isEmpty) Array.empty
         else {
           val control = new TargetHostControl
-          try {
+          val aggregate = try {
             val original = platform.runner((invocation.arguments ++ Vector("--distage-control-port", control.port.toString)).toArray, forwardedRemote.toArray, loader)
             groups += original -> control
             val selected = definitions.toVector.sortBy(_.fullyQualifiedName())
             val aggregates = original.tasks(selected.toArray)
             require(aggregates.length == 1, "Target SDK must return one aggregate task for a selected suite group")
-            val group = new TargetHostGroup(selected, aggregates.head, control, invocation.eventDirectory)
-            selected.map(definition => new TargetHostSuiteTask(definition, group): Task).toArray
+            Right(aggregates.head)
           } catch {
-            case NonFatal(cause) => control.close(); throw cause
+            case NonFatal(cause) => Left(cause)
           }
+          val selected = definitions.toVector.sortBy(_.fullyQualifiedName())
+          val group = new TargetHostGroup(selected, aggregate, control, invocation.eventDirectory)
+          selected.map(definition => new TargetHostSuiteTask(definition, group): Task).toArray
         }
       }
       override def done(): String = synchronized {
@@ -58,11 +60,11 @@ private[sbt] final class TargetHostFramework(platform: Framework) extends Framew
 
 private[sbt] final case class TargetHostOutcome(events: Map[String, Vector[Event]], failures: Vector[Throwable])
 
-private[sbt] final class TargetHostGroup(definitions: Vector[TaskDef], aggregate: Task, control: TargetHostControl, directory: Option[Path]) {
+private[sbt] final class TargetHostGroup(definitions: Vector[TaskDef], aggregate: Either[Throwable, Task], control: TargetHostControl, directory: Option[Path]) {
   private var launched = false
   private var outcome = Option.empty[TargetHostOutcome]
 
-  def tags(): Array[String] = aggregate.tags()
+  def tags(): Array[String] = aggregate.fold(_ => Array.empty[String], _.tags())
 
   def execute(loggers: Array[Logger]): TargetHostOutcome = {
     val first = synchronized {
@@ -74,15 +76,19 @@ private[sbt] final class TargetHostGroup(definitions: Vector[TaskDef], aggregate
       val worker = new Thread(() => {
         var result = TargetHostOutcome(Map.empty, Vector(new IllegalStateException("Target aggregate ended without an outcome")))
         try {
-          val buffer = new TargetHostEvents(definitions, control, directory)
-          val failure = try {
-            require(aggregate.execute(buffer, loggers).isEmpty, "Target aggregate returned nested tasks")
-            None
-          } catch {
-            case cause: InterruptedException => Some(cause)
-            case NonFatal(cause) => Some(cause)
+          aggregate match {
+            case Left(cause) => result = TargetHostOutcome(Map.empty, Vector(cause))
+            case Right(task) =>
+              val buffer = new TargetHostEvents(definitions, control, directory)
+              val failure = try {
+                require(task.execute(buffer, loggers).isEmpty, "Target aggregate returned nested tasks")
+                None
+              } catch {
+                case cause: InterruptedException => Some(cause)
+                case NonFatal(cause) => Some(cause)
+              }
+              result = buffer.finish(failure)
           }
-          result = buffer.finish(failure)
         } catch {
           case NonFatal(cause) => result = TargetHostOutcome(Map.empty, Vector(cause))
         } finally {
@@ -111,6 +117,9 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
   private val selected = definitions.map(value => value.fullyQualifiedName() -> value).toMap
   private val events = mutable.LinkedHashMap.empty[String, Vector[Event]]
   private val results = mutable.ArrayBuffer.empty[TestResult]
+  private val owners = mutable.Map.empty[SuiteId, String]
+  private val started = mutable.Set.empty[TestId]
+  private var protocolFailure = Option.empty[Throwable]
   private var sequence = 0L
   private var run = Option.empty[RunId]
   private var finished = Option.empty[RunOutcome]
@@ -119,6 +128,17 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
   private val channel = directory.map(_.resolve(UUID.randomUUID().toString + ".jsonl"))
 
   override def handle(event: Event): Unit = synchronized {
+    if (protocolFailure.isEmpty) {
+      try accept(event)
+      catch {
+        case NonFatal(cause) =>
+          protocolFailure = Some(cause)
+          control.cancel()
+      }
+    }
+  }
+
+  private def accept(event: Event): Unit = {
     require(!closed && terminal.isEmpty, "Target event arrived after application completion")
     event.selector() match {
       case nested: NestedTestSelector if nested.suiteId() == "$distage-protocol-v4" =>
@@ -138,8 +158,14 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
               case other =>
                 require(run.contains(other.run) && finished.isEmpty, "Target event belongs to an inactive application")
                 other match {
+                  case RunEvent.TestStarted(_, test) =>
+                    require(selected.contains(event.fullyQualifiedName()), "Target test owner is not selected")
+                    require(owners.get(test.suite).forall(_ == event.fullyQualifiedName()), "Target logical suite changed its class owner")
+                    owners.update(test.suite, event.fullyQualifiedName())
+                    require(started.add(test), "Duplicate target test start")
                   case RunEvent.TestCompleted(_, result) =>
-                    val definition = selected.getOrElse(result.id.suite.value, throw new IllegalArgumentException("Target result belongs to an unselected suite"))
+                    require(started.contains(result.id) && owners.get(result.id.suite).contains(event.fullyQualifiedName()), "Target completion has no matching test owner")
+                    val definition = selected.getOrElse(event.fullyQualifiedName(), throw new IllegalArgumentException("Target result belongs to an unselected suite"))
                     require(!results.exists(_.id == result.id), "Duplicate target test completion")
                     results += result
                     val projected = new TargetHostTestEvent(definition, result)
@@ -163,10 +189,11 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
 
   def finish(failure: Option[Throwable]): TargetHostOutcome = synchronized {
     closed = true
-    val incomplete = if (terminal.isEmpty && failure.isEmpty) Vector(new IllegalStateException("Target aggregate returned without application completion")) else Vector.empty
+    val effectiveFailure = protocolFailure.orElse(failure)
+    val incomplete = if (terminal.isEmpty && effectiveFailure.isEmpty) Vector(new IllegalStateException("Target aggregate returned without application completion")) else Vector.empty
     val runFailures = terminal.toVector.flatMap(_.failures.map(ProjectedFailure.root))
     val cancelled = terminal.filter(_.cancelled).toVector.map(_ => new InterruptedException("Target application was cancelled"))
-    TargetHostOutcome(events.toMap, failure.toVector ++ incomplete ++ runFailures ++ cancelled)
+    TargetHostOutcome(events.toMap, effectiveFailure.toVector ++ incomplete ++ runFailures ++ cancelled)
   }
 }
 
@@ -231,7 +258,11 @@ private[sbt] final class TargetHostControl {
     run = Some(value)
     sendCancellation()
   }
-  def cancel(): Unit = synchronized { cancelRequested = true; sendCancellation() }
+  def cancel(): Unit = synchronized {
+    cancelRequested = true
+    try sendCancellation()
+    catch { case NonFatal(cause) => failure = Some(cause) }
+  }
   private def sendCancellation(): Unit = {
     failure.foreach(throw _)
     if (cancelRequested && !cancelSent) {

@@ -16816,3 +16816,106 @@ runner takeover, and complete 2e evaluation. Earlier JVM gates are unchanged
 historical evidence, not final-head verification. IDE remains deferred.
 Local commit: the commit containing this checkpoint (recorded immediately below
 in the next verified sub-step).
+
+
+## 2026-10-06: target class ownership, initialization failures, and durable SDK failure fixtures
+
+The previous production host checkpoint is local commit `22cacf4fd`.
+This sub-step corrects two reproduced failures; no whole phase is closed.
+
+The aliased-suite reproduction documented above emitted a logical ID that was
+not a class name. The target now records the selected TaskDef when each fresh
+suite registers, and attaches that class owner to its TestStarted/TestCompleted
+SDK frames. The host keeps logical IDs intact and validates the SDK owner
+against the selected definitions and the matching start. It reports each test
+under its ordinary class name. A host protocol violation is retained as an
+explicit group failure and requests target cancellation instead of throwing
+through the SDK dispatcher; the SDK worker remains owned until cleanup.
+
+The separate fail-first host command was:
+`direnv exec . sh -c 'exec sbt --server -java-home "$JDK21" -batch -J-Xmx6G "$@"'
+repro 'sbt-distage-testkit/Test/runMain izumi.distage.sbt.TargetHostFrameworkTest'`.
+`/srv/nvme/tmp/izumi-impl/2e-host-early-launch-reproduction-first.log`
+records actual exit 1 and four intended failures: SDK runner creation and
+aggregate-task construction each escaped before suite reporting, at thread
+limits one and two. The correction retains that construction result once per
+selected group and returns ordinary tasks that all report it. Successfully
+created SDK runners still receive `done`, and the control listener is closed
+and joined even when no target connected. The corrected 22-case host batch
+also checks malformed sequences, unselected owners, attributed body failures,
+run failures, incomplete terminals, cancellation, recovery, and alias IDs.
+
+Commands and verified results:
+
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-attribution-producer-first.py`:
+  actual exit 0, all 1,601 recorded inputs unchanged during the producer.
+  Exact SBT argv is in its `command.json`: one combined settings override,
+  Scala 3.9.0 then 2.13.18, three runner `Test/testFull` commands and local
+  publications per compiler, an explicit reset to 3.8.4 for the meta protocol,
+  all five host check mains, and three host plugin publications.
+  Six 802-check runner lanes passed (4,812 checks), along with 22 host cases,
+  25 receipt, 31 JUnit, 28 fork-report, and 22 foreign-report checks.
+  Only private `1.3.0-M5-target-attribution-SNAPSHOT` coordinates were published.
+  Qualification covers all nine class/TASTy/IR payloads and relevant sources:
+  plugins 181/3/3 entries; Scala 3 JVM/JS/Native 160/239/449 entries;
+  Scala 2.13 JVM/JS/Native 108/196/398 entries.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-attribution-consumers-first.py`:
+  controller and its three tracked-driver batches exited 0. The exact driver
+  commands in `commands.json` use production artifacts and both compilers,
+  ordinary IDs at host limit two, and aliased IDs at limits one and two.
+  Twelve actual SBT children exited 0, completing 36 normal/cancel/recovery
+  contexts, 540 physical/XML bodies, and 60 suite cancellation errors.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-attribution-body-failure-first.py`:
+  controller exit 0; all four actual SBT children exited the expected 1.
+  Four complete applications ran 60 physical/XML bodies. Only SuiteE's third
+  body failed. Its protocol ID is `logical:candidate.SuiteE`, while its sole
+  failure XML belongs to `candidate.SuiteE`. This distinguishes correct class
+  ownership even when every suite has equal display names.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-attribution-launch-failure-first.py`:
+  all four actual SBT children exited 0 after normal, expected failed SDK
+  initialization, and recovery commands in one session. Its original auditor
+  exited 1 because it expected a diagnostic in the console and expected an
+  unknown-option diagnostic. The intentionally valueless option instead fails
+  the target's argument-shape validation: `Each request option requires one
+  value`. No target application or body starts for that command. The corrected
+  separate audit, `2e-production-attribution-launch-failure-audit-first.py`,
+  exits 0 and checks that exact RPC diagnostic in all 20 suite-error XML
+  entries, eight complete fresh applications and 120 physical/XML bodies.
+  The original failed audit is preserved; its exit is not counted as a pass.
+- The tracked `verify-failures.py` now reproduces both body and SDK initialization
+  failures directly from a fresh build and the supplied private versions.
+  `verify.py` shares build preparation with it and freezes the Python harness
+  files too. README commands describe both scenarios.
+  `python3 -B /srv/nvme/tmp/izumi-impl/2e-tracked-attribution-consumers-first.py`
+  runs the current tracked code: ordinary-ID recovery at limit one, and both
+  failure scenarios at limit two, on JS/Native and both compilers. Controller
+  and all three fixture drivers exited 0. The eight failure children have
+  their expected actual exits (body 1, SDK initialization/recovery 0); the four
+  ordinary recovery children exit 0. These 28 command contexts ran 360
+  physical/XML bodies, 20 cancellation errors, 20 initialization errors,
+  and four correctly attributed body failures. Each tracked batch froze 315
+  fixture/publication input records with no changes.
+- Independent audits for each batch reread commands, logs, frames, XML, and
+  hashes. `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-attribution-combined-audit-first.py`
+  exits 0, requalifies all nine publications against the current compiled
+  outputs, confirms all 1,556 compiler-input hashes still match, and verifies
+  all 2,470 consumer input records. Python harness extraction occurred after
+  the producer, so those changed harness files are qualified by the later
+  tracked batches rather than by the earlier producer snapshot.
+  The combined measured result is 80 command contexts, 72 complete applications
+  with distinct run IDs, 1,080 physical/XML bodies, 80 cancellation errors,
+  40 SDK initialization errors, and eight attributed body failures. The failed
+  initialization contexts have no target stream or resource activity.
+  Combined audit SHA-256:
+  `1dc6c8c5f5668712405dcf7bb6937b06d88e6b0a9352c3ddcb5bb02416e55399`.
+  Two independent tracked-case scripts initially reused `audit.json`; their
+  separate reports are now `independent-audit.json`, and original tracked
+  reports were reconstructed with the unchanged tracked verifier against the
+  captured evidence. No SBT execution result was rewritten.
+
+These results verify the corrected host/target attribution and the specified
+SDK failure/recovery paths at this checkpoint. Still open: complete target
+host-policy histories and filtering, target inspection tasks, real DI/effect
+and Lifecycle fixtures, repository runner takeover, whole-phase evaluation,
+coverage/migration/final gates, and IDE's explicitly deferred work. The next
+checkpoint records this sub-step's local commit ID. Nothing was pushed.

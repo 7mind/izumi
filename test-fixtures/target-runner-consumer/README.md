@@ -25,6 +25,25 @@ and publication hashes and rejects incomplete SDK runs.
 For production host checks, publish `sbt-distage-testkit`,
 `sbt-distage-testkit-js`, and `sbt-distage-testkit-native` with the supplied
 version and add `--production-host-version VERSION` to the command.
+Add `--logical-suite-alias` to check overridden logical IDs while retaining
+ordinary class names in SBT reports.
+
+The companion failure driver checks an attributed failure in SuiteE's third
+body, or malformed SDK runner arguments followed by same-session recovery:
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-failures.py \
+  --repo-root "$PWD" --artifact-version 1.3.0-M5-target-attribution-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-attribution-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 --host-threads 2 --logical-suite-alias \
+  --scenario body --evidence-dir /srv/nvme/tmp/izumi-impl/target-body-example
+```
+
+Use `--scenario launch` with a fresh directory for the initialization failure.
+The body scenario requires actual SBT exit 1, exactly one failed body, and its
+matching logical protocol ID and class-owner XML entry. The launch scenario
+requires five suite errors, no target bodies for the failed command, and a
+successful fresh application after disarming the malformed option.
 
 These are Behavioral-Active, Effectual, Good-Communication process checks.
 The held callbacks are plain Futures; this fixture does not establish DI effect
