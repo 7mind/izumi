@@ -10,9 +10,10 @@ import izumi.logstage.sink.file.FileServiceImpl.RealFile
 import izumi.logstage.sink.file.FileSink.FileIdentity
 import izumi.logstage.sink.file.models.{FileRotation, FileSinkConfig, FileSinkState, LogFile}
 import izumi.logstage.sink.file.{FileService, FileServiceImpl, FileSink}
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.{Assertion, GivenWhenThen}
+import izumi.distage.testkit.runner.spec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
 
+import java.nio.file.{Files, Paths}
 import scala.collection.mutable.ListBuffer
 import scala.util.{Random, Try}
 
@@ -38,7 +39,7 @@ object FileServiceUtils {
 
 }
 
-trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec with GivenWhenThen {
+trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec {
 
   def fileSvcUtils: FileServiceUtils[T]
 
@@ -66,24 +67,24 @@ trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec with GivenWhenThen {
       val prefilledFiles = fileSvcUtils.provideSvc(dummyFolder)
       val randomFileSize = randomInt() + 1
 
-      Given("empty file in storage")
+      println("Given empty file in storage")
       prefilledFiles.withPreparedData {
         List((0, List.empty))
       }
 
       withFileLogger(withoutRotation(policy, randomFileSize, prefilledFiles)) {
         (sink, logger) =>
-          When("new message sends")
+          println("When new message sends")
           logger.info("new")
           val curState = sink.sinkState.get()
-          Then("current file id should be init and size uquals to 1")
+          println("Then current file id should be init and size uquals to 1")
           assert(curState.currentFileId == 0)
           assert(curState.currentFileSize == 1)
       }
 
       val lastPos = randomInt(randomFileSize - 1)
 
-      Given("full and randomly filled files in storage")
+      println("Given full and randomly filled files in storage")
 
       val fullFile = (0, (1 to randomFileSize).map(i => s"msg$i").toList)
       val randomlyFilledData = (1, (1 to lastPos).map(i => s"msg$i").toList)
@@ -94,24 +95,24 @@ trait LoggingFileSinkTest[T <: LogFile] extends AnyWordSpec with GivenWhenThen {
 
       withFileLogger(withoutRotation(policy, randomFileSize, prefilledFiles)) {
         (sink, logger) =>
-          When("new message sends")
+          println("When new message sends")
           logger.info("new")
           val curState = sink.sinkState.get()
-          Then("current file id should be next and size uquals to next after size of randomly filled file")
+          println("Then current file id should be next and size uquals to next after size of randomly filled file")
           assert(curState.currentFileId == 1)
           assert(curState.currentFileSize == lastPos + 1)
       }
 
-      Given("fullfilled file in storage")
+      println("Given fullfilled file in storage")
       prefilledFiles.withPreparedData {
         List(fullFile)
       }
 
       withFileLogger(withoutRotation(policy, randomFileSize, prefilledFiles)) {
         (sink, logger) =>
-          When("new message sends")
+          println("When new message sends")
           logger.info("new")
-          Then("current file id should be next and size uquals to 1")
+          println("Then current file id should be next and size uquals to 1")
           val curState = sink.sinkState.get()
           assert(curState.currentFileId == 1)
           assert(curState.currentFileSize == 1)
@@ -195,7 +196,10 @@ class DummyFileSinkTest extends LoggingFileSinkTest[DummyFile] {
 }
 
 class RealFileSinkTest extends LoggingFileSinkTest[RealFile] {
-  override val fileSvcUtils: FileServiceUtils[RealFile] = (path: String) => new FileServiceImpl(path)
+  override val fileSvcUtils: FileServiceUtils[RealFile] = (path: String) => {
+    val parent = Files.createDirectories(Paths.get(path))
+    new FileServiceImpl(Files.createTempDirectory(parent, "case-").toString)
+  }
 }
 
 object LoggingFileSinkTest {

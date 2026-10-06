@@ -2,7 +2,7 @@ package izumi.logstage.sink
 
 import izumi.logstage.adapter.jul.LogstageJulLogger
 import izumi.logstage.api.IzLogger
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.util.logging.{Level, Logger}
 

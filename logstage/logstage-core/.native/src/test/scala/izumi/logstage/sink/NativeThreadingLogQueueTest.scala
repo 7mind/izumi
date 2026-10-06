@@ -2,7 +2,7 @@ package izumi.logstage.sink
 
 import izumi.logstage.api.{IzLogger, Log, TestSink}
 import izumi.logstage.api.logger.LogSink
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}

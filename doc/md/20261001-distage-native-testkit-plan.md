@@ -1074,6 +1074,13 @@ it by converting the value to an Equalizer first; an independent runtime
 control also passes for a null Factory. Retirement must replace that ineffective
 check rather than preserve the wrapper comparison.
 
+The current tracked-source inventory also includes five platform-specific test
+files using ScalaTest's `GivenWhenThen` informational step descriptions and
+fourteen using `ScalatestGuards`. These additional facilities must be replaced
+during retirement; the complete inventory includes hidden platform directories.
+Their current counts and provenance are recorded in the
+[status ledger](20261001-distage-native-testkit-status.md).
+
 Cancellation and wiring tests are also in scope. User-facing documentation
 migrates as well: 44 lines of the microsite's `distage-testkit.md` page mention
 ScalaTest, and five other pages mention it too.

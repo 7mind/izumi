@@ -8,8 +8,8 @@ import izumi.logstage.api.strict.IzStrictLogger
 import izumi.logstage.macros.EncodingMode
 import logstage.strict.LogIO2Strict
 import logstage.{LogIO2, LogIORaw, LogZIO, LogstageCodec}
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.{Task, ZEnvironment, ZIO}
 import izumi.logstage.api.zioUtil.runZIO
 
@@ -654,7 +654,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
       val logger = IzStrictLogger()
       implicit val ordering: Ordering[Int] = Ordering.Int
       (logger, ordering).discard()
-      val err = intercept[TestFailedException] {
+      val err = intercept[AssertionFailure] {
         assertCompiles("logger.logMethod(Log.Level.Info, true, true)(tc.withContextBoundFunc(1, 1))")
       }
 
@@ -668,7 +668,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
       val logger: LogIO2Strict[zio.IO] = LogIO2Strict.fromLogger(IzLogger())
       implicit val ordering: Ordering[Int] = Ordering.Int
       (logger, ordering).discard()
-      val err = intercept[TestFailedException] {
+      val err = intercept[AssertionFailure] {
         assertCompiles("logger.logMethod(Log.Level.Info, true, true)(tc.withContextBoundFunc(1, 1))")
       }
 
@@ -682,7 +682,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
       val logger: LogIO2Strict[zio.IO] = LogIO2Strict.fromLogger(IzLogger())
       implicit val ordering: Ordering[Int] = Ordering.Int
       (logger, ordering).discard()
-      val err = intercept[TestFailedException] {
+      val err = intercept[AssertionFailure] {
         assertCompiles("logger.logMethodF(Log.Level.Info, true, true)(tc.withContextBoundFuncF(1, 1))")
       }
 

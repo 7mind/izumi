@@ -1,7 +1,7 @@
 package izumi.logstage.api
 
 import izumi.logstage.api.rendering.RenderingPolicy
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LoggerPrintTest extends AnyWordSpec {
   "IzLogger.print" should {

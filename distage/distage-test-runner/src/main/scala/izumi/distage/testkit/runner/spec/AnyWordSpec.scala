@@ -38,7 +38,7 @@ abstract class AnyWordSpec extends TestAssertions with TestSuite {
   protected def suiteName: String = getClass.getSimpleName
   protected final def sessionExecutionContext: ExecutionContext = ownedExecutionContext.getOrElse(throw new IllegalStateException("Execution context is unavailable before session registration"))
 
-  implicit final def wordSpecString(text: String): WordSpecString = new WordSpecString(text)
+  implicit final def wordSpecString(text: String): WordSpecString = new WordSpecString(text.trim)
 
   final class WordSpecString(text: String) {
     infix def should(body: => Unit): Unit = branch("should", () => body)

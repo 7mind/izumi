@@ -7189,7 +7189,8 @@ lazy val `distage-testkit-scalatest-sbt-module-filtering-test` = project.in(file
 lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("logstage/logstage-core"))
   .dependsOn(
     `fundamentals-bio` % "test->compile;compile->compile",
-    `fundamentals-platform` % "test->compile;compile->compile"
+    `fundamentals-platform` % "test->compile;compile->compile",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -7361,6 +7362,9 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -7368,7 +7372,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "logstage-core-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -7380,7 +7385,8 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "logstage-core-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -7392,9 +7398,10 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "logstage-core-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `logstage-coreJVM` = `logstage-core`.jvm
 lazy val `logstage-coreJS` = `logstage-core`.js
   .settings(
@@ -7411,7 +7418,8 @@ lazy val `logstage-coreNative` = `logstage-core`.native
 
 lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("logstage/logstage-rendering-circe"))
   .dependsOn(
-    `logstage-core` % "test->test;compile->compile"
+    `logstage-core` % "test->test;compile->compile",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -7584,6 +7592,9 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -7591,7 +7602,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "logstage-rendering-circe-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -7603,7 +7615,8 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "logstage-rendering-circe-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -7615,16 +7628,18 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "logstage-rendering-circe-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `logstage-rendering-circeJVM` = `logstage-rendering-circe`.jvm
 lazy val `logstage-rendering-circeJS` = `logstage-rendering-circe`.js
 lazy val `logstage-rendering-circeNative` = `logstage-rendering-circe`.native
 
 lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-slf4j"))
   .dependsOn(
-    `logstage-coreJVM` % "test->test;compile->compile"
+    `logstage-coreJVM` % "test->test;compile->compile",
+    `distage-test-runnerJVM` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -7653,6 +7668,7 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "logstage-adapter-slf4j-jvm",
     organization := "io.7mind.izumi",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -7797,16 +7813,20 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Compile / compileOrder := CompileOrder.Mixed,
     Test / compileOrder := CompileOrder.Mixed,
     Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 
 lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j"))
   .dependsOn(
-    `logstage-coreJVM` % "test->test;compile->compile"
+    `logstage-coreJVM` % "test->test;compile->compile",
+    `distage-test-runnerJVM` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -7836,6 +7856,7 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "logstage-sink-slf4j-jvm",
     organization := "io.7mind.izumi",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -7980,9 +8001,12 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 
 lazy val `microsite` = project.in(file("doc/microsite"))
   .dependsOn(

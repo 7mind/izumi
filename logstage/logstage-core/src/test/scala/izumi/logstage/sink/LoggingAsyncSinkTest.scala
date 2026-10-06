@@ -1,7 +1,7 @@
 package izumi.logstage.sink
 
 import izumi.logstage.api.{IzLogger, TestSink}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.concurrent.duration.DurationInt
 

@@ -2,7 +2,7 @@ package logstage
 
 import izumi.logstage.api.Log.LogArg
 import izumi.logstage.api.TestSink
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.*
 import logstage.LogZIO.log
 

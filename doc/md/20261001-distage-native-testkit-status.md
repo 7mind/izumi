@@ -126,14 +126,14 @@ head. The spike reports are design evidence, not implementation verification.
 | 4.4 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.5 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.6 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
-| 5.1 | not started | No evaluation point passed yet. |
+| 5.1 | in progress | Verified logstage checkpoint: all16 resolved update/Test classpaths exclude ScalaTest-family dependencies and use only the base runner. Other modules and full retirement remain outstanding. |
 | 5.2 | not started | No evaluation point passed yet. |
-| 5.3 | not started | No evaluation point passed yet. |
-| 5.4 | not started | No evaluation point passed yet. |
+| 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
+| 5.4 | in progress | Independent logstage migration audit reconciles all16 lanes,94 suite reports and634 successful baseline case identities. Other modules and final-head evaluation remain outstanding. |
 | 5.5 | not started | No evaluation point passed yet. |
 | 5.6 | not started | No evaluation point passed yet. |
 | 5.7 | not started | No evaluation point passed yet. |
-| 5.8 | not started | No evaluation point passed yet. |
+| 5.8 | in progress | assertTypeError and normalized WordSpec names pass all six833-check base controls and both published-consumer probes. Logstage failure/step-note replacements pass; remaining facilities stay open. |
 | 5.9 | not started | No evaluation point passed yet. |
 | O.1 | in progress | Factory migrations preserve the tested eager/captured-definition memoization controls and existing engine/spec fixtures below. Complete planning/merging/memoization/effect inventory and final evaluation outstanding. |
 | O.2 | in progress | Effect APIs have explicit requested return types; runtime checkpoints below. |
@@ -18221,3 +18221,252 @@ retaining JVM/JS/Native suffixes for cross projects. No baseline counts or
 migration completion are claimed for the failed attempt. The baseline's purpose
 is to record discovered suites and exact per-module JUnit test identities before
 any suite imports or assertion facilities are changed (5.4/5.8).
+
+
+The verified coverage checkpoint is local commit `3907277af`. The worktree was
+clean immediately afterward; no push occurred. The corrected logstage baseline
+runs from that commit with exact argv and frozen inputs recorded in
+`5-logstage-migration-baseline-second/command.json`. It remains in flight.
+
+A separate published-consumer probe, `5-type-error-api-fail-first/commands.json`,
+compiles an object extending TestAssertions and calling
+`assertTypeError("val value: String = 1")` against the qualified current base
+runner on Scala2.13.18 and3.9.0. It must fail specifically for the missing method
+before adding its replacement. Existing assertDoesNotCompile accepts parser
+failures too, so it cannot silently replace the narrower type-error facility.
+The Scala3.9 Error API explicitly distinguishes Parser and Typer kinds:
+https://github.com/scala/scala3/blob/3.9.0/library/src/scala/compiletime/testing/Error.scala
+No replacement code or passing probe is claimed yet.
+
+
+The published-consumer type-error probe completes with actual exit1 on both
+compilers, specifically `not found: value assertTypeError` (Scala2.13) and
+`Not found: assertTypeError` (Scala3.9). The controller exits0 after checking
+those exact reasons. Captures: `5-type-error-api-fail-first/commands.json`,
+compiler logs and `completion.json`. No implementation has been added yet.
+
+The earlier65-file source inventory omitted hidden platform directories and
+must not be treated as the complete retirement inventory. A corrected inventory
+uses git ls-files and reads every tracked src/test Scala file, including .jvm,
+.js and .native. It scans363 files and finds106 with ScalaTest package references,
+one with Scalactic references,26 with compile-time assertion facilities,21 with
+TestFailedException, one with ScalaMock integration, five with GivenWhenThen,
+and fourteen with ScalatestGuards. These include textual/comment occurrences,
+not discovered suites or executed test counts. Captures:
+`5-current-facility-inventory-second/inventory.json`, SHA256
+`8349fab2e24bfbc993db7578ee647a9334ccad93246ccb93bfaec36a197fa806`.
+The platform file-sink tests preserve Given/When/Then step descriptions as an
+additional facility obligation; the inventory expands required migration work
+rather than narrowing5.8. The current logstage baseline continues unchanged.
+
+
+## 2026-10-06: logstage pre-migration baseline and candidate replacement
+
+The second baseline producer exits0 with unchanged frozen compiler inputs.
+Its controller then exits1 because it searches each listener base directory
+rather than that listener's nested test-reports directory. A corrected independent
+postprocessor reuses the preserved producer captures without repeating tests.
+It verifies16 lanes,94 suite XML files and634 successful test cases, with exact
+agreement between discovered suite classes and reported suite names and no
+within-lane duplicate test identities. Captures:
+`5-logstage-migration-baseline-second/command.json`, `run.log`, `completion.json`,
+`baseline.json` and `independent-baseline-audit.json`. Baseline SHA256:
+`d519037a4e71eb57121acbaeebd61a9a9e0203fd6db507e9145ee014183e42c2`;
+independent audit SHA256:
+`5d74163290868ff144a4afb1c663db5a9eeb1263217c774293d6b8f4dc0b8b6e`.
+Per compiler, core has105 JVM,94 JS and107 Native cases; rendering has three
+per platform; each JVM-only SLF4J module has one. This is the pre-migration5.4
+baseline, not a completed migration comparison.
+
+Only afterward, the candidate adds assertTypeError to both compiler frontends.
+Scala2 distinguishes ParseException from TypecheckException; Scala3 uses the
+pinned compiler API's Parser/Typer kinds. Both reject successful compilation
+and parser failures through AssertionFailure, while accepting a type-checking
+failure without executing the checked code. Four added runner controls exercise
+lexical members, accepted code, parser rejection and non-execution. Existing
+assertCompiles/assertDoesNotCompile behavior remains separately tested.
+
+All four logstage modules now select the production plain framework, explicitly
+enable its SBT plugin and depend on the base runner only in Test. Their candidate
+settings filter ScalaTest/Scalactic/ScalaTestPlus dependencies. Tracked logstage
+Scala sources contain neither retired package. Suite imports migrate to the
+plain frontend; TestFailedException expectations become AssertionFailure;
+ExampleService inherits TestAssertions. Its strict-macro diagnostic check now
+inspects the original `Implicit search failed` message on both compilers instead
+of the former ScalaTest wrapper's Scala3 `type error` text. The file-sink fixtures
+print the same Given/When/Then descriptions to suite output. Test declarations
+and selected identities are intended to remain unchanged and must be compared.
+Generation with the committed JS/Native flags exits0; diff whitespace checks pass.
+
+The first combined driver is stopped before test execution after a command
+preflight detects its Scala2 publication block following the protocol's3.8.4
+switch. Actual stopped SBT exit143 and controller1, unchanged frozen inputs:
+`5-logstage-migration-first/`. The second command manifest moves those six
+publications before the switch and asserts that ordering before launching SBT.
+It batches six base-runner controls, all sixteen logstage migration lanes,
+resolved update/classpath captures and twelve normal assertion/base-runner
+publications as `1.3.0-M5-logstage-migration-SNAPSHOT`. Exact argv/frozen inputs:
+`5-logstage-migration-second/command.json`. It is in flight; no candidate test,
+publication or reconciliation result is claimed yet.
+
+
+The second combined migration batch returns actual SBT/controller1 with
+unchanged frozen compiler inputs. All three Scala2.13 base-runner lanes pass
+830 controls first, including the four new type-error controls. Compilation then
+fails because both file-sink fixture imports name the Assertion alias in
+fundamentals rather than runner.spec. Inspection of
+`distage-test-runner/src/main/scala/izumi/distage/testkit/runner/spec/package.scala`
+confirms the correct alias is Unit there. Only those two imports are corrected.
+Captures: `5-logstage-migration-second/command.json`, `run.log`, `completion.json`.
+The third combined batch repeats the same full domain with fresh capture paths
+and source hashes: `5-logstage-migration-third/command.json`. It is in flight.
+
+
+The third combined migration batch returns actual SBT/controller1 with unchanged
+compiler inputs. Its three Scala2.13 base-runner controls still pass830 checks.
+All fifteen core JVM suites discover through the owned TestSuite fingerprint;
+execution reports105 tests,103 successful and two failing RealFileSinkTest cases.
+The failed nonempty-file test observes currentFileSize3 instead of1; the rotation
+test observes one pending rotation instead of two. Both services use the same
+physical target/logstage directory while plain test bodies execute concurrently.
+Captures: `5-logstage-migration-third/command.json`, `run.log`, `completion.json`
+and per-suite XML under reports/2.13.18-logstage-coreJVM/test-reports. No completed
+migration or passing consumer publication is claimed.
+
+A separate published-consumer check reproduces word-spec name disagreement
+before changing the DSL. The pinned legacy ScalaTest3.3.0-alpha.2 reports
+`padded scope should padded case` and `scope should case`; the published plain
+runner retains the input padding. Actual SBT exit1 is specifically the
+WORDSPEC_NAME_PARITY_FAILURE after both name vectors print; controller0.
+Captures: `5-word-spec-name-parity-fail-first/command.json`, `run.log`,
+`completion.json`. Only afterward, wordSpecString normalizes text with trim,
+covering both scopes and leaves. Three additional registration controls check
+normalized display names/IDs and suspended bodies. Those new controls and
+published positive comparison remain unverified.
+
+The first attempted one-worker filesystem control changes Scala's global pool
+properties and still returns actual SBT/controller1. Inspection shows the JVM
+bootstrap creates its own Executors.newWorkStealingPool, so those properties do
+not establish serial target execution and the result cannot disprove concurrent
+interference. Captures: `5-logstage-shared-directory-serial-control/`.
+A second control caps target ActiveProcessorCount at1 and adds a scratch-only
+suite that verifies the target's observed processor count. It then selects that
+probe plus the five real-file tests. Exact argv and probe/source hashes:
+`5-logstage-shared-directory-serial-control-second/command.json`. It is in flight;
+no filesystem isolation correction has been applied yet.
+
+
+The second filesystem control returns actual SBT/controller0, unchanged inputs,
+with `TARGET_WORKER_WIDTH processors=1` and exactly six successful results: the
+five real-file cases plus the width probe. This verifies the relevant target
+worker count, unlike the earlier global-pool settings. Its command, source hashes,
+log and completion are in `5-logstage-shared-directory-serial-control-second/`.
+Together with the concurrent105-case failure capture and shared physical path,
+this supports cross-test directory interference. Only afterward, each real-file
+service fixture receives a fresh UUID child directory under its existing path,
+on JVM and Native. Dummy services already have independent in-memory storage.
+The default target executor and production file sink remain unchanged.
+
+The fourth combined migration batch uses normal target concurrency, includes
+all six expected833-check base-runner lanes (four type-error plus three
+normalized-name controls), repeats all sixteen logstage lanes and twelve normal
+publications, and excludes the scratch-only width probe. Its exact command and
+frozen inputs are `5-logstage-migration-fourth/command.json`. It is in flight.
+The normalized-name fixture explicitly receives the existing inline context;
+it introduces no new global execution context dependency.
+
+
+## 2026-10-07: Native file-test isolation correction
+
+The fourth combined logstage migration batch returned actual SBT/controller1,
+with no frozen compiler inputs changed. All three Scala2.13 base-runner lanes
+passed833 checks. Migrated core JVM passed105 cases and JS passed94 cases.
+Native linking failed before its tests: `UUID.randomUUID()` introduced the
+unavailable constructor/type `java.security.SecureRandom`. The exact call chain
+points to `RealFileSinkTest.fileSvcUtils`; capture is
+`/srv/nvme/tmp/izumi-impl/5-logstage-migration-fourth/run.log` and its
+`completion.json`. This is not a successful migration or publication capture.
+
+After inspecting the existing Native bootstrap UUID construction and the Native
+configuration filesystem fixture, the real-file fixtures now use
+`Files.createDirectories` followed by `Files.createTempDirectory(parent, "case-")`.
+Each service gets an atomically created directory under its previous test path;
+this avoids the unavailable SecureRandom call and directory collisions. The
+production sink and executor are unchanged. The fifth combined batch will
+verify the correction, all sixteen baseline identities and normal publications.
+
+The fifth batch now passes all eight Scala2.13 logstage lanes. A read-only
+partial XML comparison confirms47 suite reports and317 successful case identities
+exactly equal the Scala2.13 baseline. All three833-check base-runner controls
+pass, and the six Scala2.13 normal publications finish before switching the
+protocol projects to3.8.4 and runtime projects to3.9.0. The Scala3 half and full
+independent audit remain in flight.
+
+The fresh published Scala2.13 consumer in
+`/srv/nvme/tmp/izumi-impl/5-logstage-published-positive-first/2.13.18` returns
+actual SBT/controller0, unchanged consumer sources, one
+`TYPE_ERROR_PUBLISHED_OK` marker, and equal legacy/plain names
+`[padded scope should padded case|scope should case]`. It reuses the original
+missing-API and name-parity witness source bytes, with the newly published
+version. Runtime controls reject successful compilation and syntax errors and
+verify that a rejected type-check witness never executes. Exact commands and
+completion are in that capture directory's parent. This closes the Scala2.13
+consumer reproduction only; Scala3 and complete facility retirement stay open.
+
+
+## 2026-10-07: verified logstage plain-runner migration checkpoint
+
+The fifth combined producer batch returns actual SBT/controller0 in1200.025s,
+with all1632 frozen compiler inputs unchanged. It verifies six833-check base
+runner controls, all sixteen logstage lanes, and twelve normal assertion/base
+runner publications under `1.3.0-M5-logstage-migration-SNAPSHOT`. Each compiler
+has core JVM105, JS94, Native107, rendering3 on each target, and the two JVM
+SLF4J modules1 each. The scratch worker-width probe is absent.
+
+Exact argv, lane directories, hashes, producer output and completion are in
+`/srv/nvme/tmp/izumi-impl/5-logstage-migration-fifth/`. The independent audit
+script in that directory returns0 and writes
+`independent-migration-audit.json`, SHA256
+`cf29155bfb15d546eb4b4130ccc5aa3319eb0e9113c1887aa2868e8be7276879`.
+It independently compares94 XML suite files and634 successful case identities
+against the captured baseline, checks all sixteen discovery groups, examines
+all sixteen resolved update reports and Test classpaths for ScalaTest-family
+entries, and compares all twelve binary class/TASTy/NIR/Scala.js payloads byte
+for byte with their normal compiler outputs. All twelve POMs and payloads lack
+coverage instrumentation. This verifies these modules; it does not establish
+repository-wide retirement or final acceptance.
+
+Both published-consumer probes return actual SBT/controller0 with unchanged
+consumer inputs and exactly one `TYPE_ERROR_PUBLISHED_OK` marker. Both preserve
+the original fail-first witness sources and produce equal legacy/plain vectors
+`[padded scope should padded case|scope should case]`. They also verify runtime
+rejection of successful compilation and parser failures, and non-execution of
+the rejected witness. Commands, source hashes and both compiler completion
+records are in `5-logstage-published-positive-first/`. The original fail-first
+captures remain intact.
+
+The migration uses only the base runner as a Test dependency in core, rendering,
+adapter and sink; production publication behavior is retained. Real-file tests
+receive atomically created directories after the captured concurrent/serial
+contrast and Native SecureRandom linkage failure. Production executor/sink
+behavior is unchanged. All logstage test sources, including hidden platform
+directories, reference neither `org.scalatest` nor `org.scalactic`.
+
+The next prepared batch captures pre-migration identities for core-api, core,
+extension-config, extension-logstage, extension-plugins and framework, on both
+supported compilers and all three targets:36 lanes. Its compiler inputs and
+head will be refreshed after this local checkpoint commit; no phase is marked
+finally done.
+
+The generator consistency capture `5-logstage-generator-consistency-first/`
+returns actual SBT/controller0 and leaves `build.sbt`, `project/plugins.sbt`,
+and `project/build.properties` byte-identical. `git diff --check` passes.
+The refreshed tracked-source inventory in
+`5-post-logstage-facility-inventory-first/inventory.json` has SHA256
+`2a49e38f3d2ca0569b59196969e5dbb759395c3f0d627d248f35c50998a04abb`:
+86 ScalaTest-package source occurrences,1 Scalactic,25 compilation-assertion
+files,17 old-failure expectation files,1 ScalaMock integration,3 GivenWhenThen,
+and14 guard references. These include comments and are neither suite counts
+nor proof of active coupling; the guard implementation already inherits the
+new framework-neutral TestAssertions. A commented ScalaTest import remains in
+TraverseTest. Exact retirement classification requires inspecting each use.

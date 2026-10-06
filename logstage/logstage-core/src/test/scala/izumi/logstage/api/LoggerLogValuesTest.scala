@@ -7,8 +7,8 @@ import izumi.logstage.api.strict.IzStrictLogger
 import izumi.logstage.api.zioUtil.runZIO
 import logstage.LogIO2
 import logstage.strict.LogIO2Strict
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LoggerLogValuesTest extends AnyWordSpec {
   "Logger.logValues" should {
@@ -54,7 +54,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
 
       val value1 = WithCustomCodec(1)
 
-      val strictCodecErr = intercept[TestFailedException](
+      val strictCodecErr = intercept[AssertionFailure](
         assertCompiles(
           """logger.logValues(Log.Level.Info)(value1, WithCustomCodec(testMethod(1)) -> "add", WithCustomCodec(1) -> "constant")"""
         )
@@ -130,7 +130,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
 
       val value1 = WithCustomCodec(1)
 
-      val strictCodecErr = intercept[TestFailedException](
+      val strictCodecErr = intercept[AssertionFailure](
         assertCompiles(
           """logger.logValues(Log.Level.Info)(value1, WithCustomCodec(testMethod(1)) -> "add", WithCustomCodec(1) -> "constant")"""
         )

@@ -4,7 +4,7 @@ import izumi.logstage.api.IzLogger
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.sink.ConsoleSink.ColoredConsoleSink
 import logstage.{Log, LogQueue}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LoggingConsoleSinkTest extends AnyWordSpec {
   import LoggingConsoleSinkTest._

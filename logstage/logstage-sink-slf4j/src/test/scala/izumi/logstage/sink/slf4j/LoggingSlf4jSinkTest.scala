@@ -3,7 +3,7 @@ package izumi.logstage.sink.slf4j
 import izumi.logstage.api.IzLogger
 import izumi.logstage.api.rendering.RenderingPolicy
 import izumi.logstage.sink.ExampleService
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LoggingSlf4jSinkTest extends AnyWordSpec {
 

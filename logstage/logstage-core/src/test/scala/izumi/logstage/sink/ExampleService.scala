@@ -1,21 +1,18 @@
 package izumi.logstage.sink
 
+import izumi.distage.testkit.runner.spec.TestAssertions
 import izumi.functional.bio.SyncSafe1
-import izumi.fundamentals.platform.language.IzScala
+import izumi.fundamentals.assertions.AssertionFailure
 import izumi.logstage.api.IzLogger
 import izumi.logstage.sink.ExampleService.ExampleDTO
 import logstage.{Crit, Info, LogIO, Message}
 import logstage.strict.LogIOStrict
-import org.scalatest.Assertions
-import org.scalatest.exceptions.TestFailedException
 
 import scala.annotation.nowarn
 import scala.util.Random
 
-class ExampleService(logger: IzLogger) {
+class ExampleService(logger: IzLogger) extends TestAssertions {
   val field: String = "a value"
-
-  import org.scalatest.Assertions.assert
 
   @nowarn("msg=missing interpolator")
   def start(): Unit = {
@@ -145,16 +142,11 @@ class ExampleService(logger: IzLogger) {
   private def runStrict(): Unit = {
     import izumi.logstage.api.Fixture.*
     val logStrict: LogIOStrict[Function0] = LogIOStrict.fromLogger(logger)
-    import Assertions.*
 
-    val exc = intercept[TestFailedException] {
+    val exc = intercept[AssertionFailure] {
       assertCompiles("""logStrict.crit(s"Suspended message: clap your hands! ${NoInstance(1)}")""")
     }
-    if (IzScala.scalaRelease.major == 3) {
-      assert(exc.getMessage() contains "type error")
-    } else {
-      assert(exc.getMessage() contains "Implicit search failed")
-    }
+    assert(exc.getMessage() contains "Implicit search failed")
 
     val basic = {
       val instance = YesInstance(1)

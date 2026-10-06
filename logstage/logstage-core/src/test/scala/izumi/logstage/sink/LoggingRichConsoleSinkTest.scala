@@ -6,7 +6,7 @@ import izumi.logstage.api.rendering.logunits.{BasicStyleTag, LogFormat, StyleTag
 import izumi.logstage.api.rendering.logunits.StyleTag.{Bold, ColorTag, Italic, Reversed, Underlined}
 import izumi.logstage.sink.ConsoleSink.RichConsoleSink
 import logstage.ConfigurableLogRouter
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LoggingRichConsoleSinkTest extends AnyWordSpec {
   import LoggingRichConsoleSinkTest.*

@@ -627,6 +627,14 @@ object Izumi {
     "distageTargetId" in (SettingScope.Test, platform) := s"$targetName-$suffix"
   }
 
+  private def plainSuiteSettings(targetName: String): Seq[SettingDef] = Seq(
+    "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+    "testFrameworks" in SettingScope.Test := """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
+    "distageBuildId" in SettingScope.Test := "izumi-repository",
+  ) ++ Seq(Platform.Jvm -> "jvm", Platform.Js -> "js", Platform.Native -> "native").map { case (platform, suffix) =>
+    "distageTargetId" in (SettingScope.Test, platform) := s"$targetName-$suffix"
+  }
+
   final lazy val fundamentals = Aggregate(
     name = Projects.fundamentals.id,
     artifacts = withTestResourcesOnCompileClasspath(Seq(
@@ -1028,16 +1036,19 @@ object Izumi {
     artifacts = withTestResourcesOnCompileClasspath(Seq(
       Artifact(
         name = Projects.logstage.core,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(scala_reflect) ++
           allCatsOptional ++ allZioOptional ++
           Seq(scala_java_time in Scope.Compile.js, scala_java_time in Scope.Compile.native),
         depends = Seq(
           Projects.fundamentals.bio,
           Projects.fundamentals.platform,
-        ).map(_ in Scope.Compile.all),
+        ).map(_ in Scope.Compile.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
+        settings = plainSuiteSettings("logstage-core"),
       ),
       Artifact(
         name = Projects.logstage.renderingCirce,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(
           circe_core in Scope.Compile.all,
           circe_parser in Scope.Test.all,
@@ -1046,14 +1057,16 @@ object Izumi {
           cats_effect in Scope.Test.all,
           zio_core in Scope.Test.all,
         ),
-        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
+        settings = plainSuiteSettings("logstage-rendering-circe"),
       ),
       Artifact(
         name = Projects.logstage.adapterSlf4j,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(slf4j_api in Scope.Compile.all),
-        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.jvm,
-        settings = Seq(
+        settings = plainSuiteSettings("logstage-adapter-slf4j") ++ Seq(
           "compileOrder" in SettingScope.Compile := "CompileOrder.Mixed".raw,
           "compileOrder" in SettingScope.Test := "CompileOrder.Mixed".raw,
           "classLoaderLayeringStrategy" in SettingScope.Test := "ClassLoaderLayeringStrategy.Flat".raw,
@@ -1061,9 +1074,11 @@ object Izumi {
       ),
       Artifact(
         name = Projects.logstage.sinkSlf4j,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(slf4j_api in Scope.Compile.all, slf4j_simple in Scope.Test.jvm),
-        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+        depends = Seq(Projects.logstage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.jvm,
+        settings = plainSuiteSettings("logstage-sink-slf4j"),
       ),
     )),
     pathPrefix = Projects.logstage.basePath,

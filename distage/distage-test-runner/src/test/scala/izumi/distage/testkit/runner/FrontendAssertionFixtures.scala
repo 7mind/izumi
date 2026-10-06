@@ -14,6 +14,9 @@ object FrontendAssertionFixtures {
     override def markBody(): Unit = mark()
   }
   private final class CallbackSuite extends AsyncWordSpec
+  private final class PaddedSuite(mark: () => Unit) extends AnyWordSpec {
+    " padded scope " should { " padded case " in { mark() } }
+  }
 
   private final class Checks extends TestAssertions {
     private val memberValue = 7
@@ -47,6 +50,15 @@ object FrontendAssertionFixtures {
       verify(intercept[AssertionFailure](assertCompiles("val value =")).getMessage.nonEmpty, "Syntax errors follow the same compilation assertion contract")
       assertCompiles("evaluations += 1")
       verify(evaluations == 2, "Compilation assertions never execute the checked code")
+
+      assertTypeError("val value: String = memberValue")
+      verify(memberValue == 7, "Type-error assertions see enclosing members")
+      val acceptedType = intercept[AssertionFailure](assertTypeError("val value: Int = memberValue"))
+      verify(acceptedType.getMessage.contains("compilation succeeded"), "Type-error assertions reject successful compilation")
+      val parsedType = intercept[AssertionFailure](assertTypeError("val value ="))
+      verify(parsedType.getMessage.contains("parsing failed"), "Type-error assertions reject syntax failures")
+      assertTypeError("evaluations += 1; val value: String = memberValue")
+      verify(evaluations == 2, "Type-error assertions never execute the checked code")
 
       var conditions = 0
       var clues = 0
@@ -87,6 +99,10 @@ object FrontendAssertionFixtures {
       override def execute(task: Runnable): Unit = task.run()
       override def reportFailure(cause: Throwable): Unit = throw cause
     }
+    val padded = new PaddedSuite(() => { bodies += 1 }).register(new RegistrationContext(BuildTargetId("padded-name-fixture"), inlineContext))
+    verify(padded.tests.map(_.displayName) == Vector("padded scope should padded case"), "Plain word specifications trim scope and leaf names like the legacy frontend")
+    verify(padded.tests.head.id.path == Vector("padded scope", "should", "padded case"), "Normalized word-spec identities match their display names")
+    verify(bodies == 0, "Name normalization and discovery leave bodies suspended")
     val suite = new CallbackSuite
     val _ = suite.register(new RegistrationContext(BuildTargetId("serial-callback-fixture"), inlineContext))
     var order = Vector.empty[Int]

@@ -5,8 +5,8 @@ import izumi.fundamentals.platform.language.{CodePosition, IzScala, SourceFilePo
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
 import izumi.logstage.api.strict.IzStrictLogger
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 import scala.util.Random
@@ -110,7 +110,7 @@ class BasicLoggingTest extends AnyWordSpec {
 
       (logger, x, y).discard()
 
-      val err = intercept[TestFailedException] {
+      val err = intercept[AssertionFailure] {
         assertCompiles(""" logger.info(s"got $x + $y") """)
       }: @nowarn("msg=possible missing interpolator")
       assert(err.getMessage().contains("Implicit search failed"))
@@ -129,12 +129,12 @@ class BasicLoggingTest extends AnyWordSpec {
 
       (rawStrictLogger, strictLogger, x, y).discard()
 
-      val err1 = intercept[TestFailedException] {
+      val err1 = intercept[AssertionFailure] {
         assertCompiles(""" strictLogger.withCustomContext("x" -> x, "y" -> y) """)
       }
       assert(err1.getMessage().contains("StrictEncoded"))
 
-      val err2 = intercept[TestFailedException] {
+      val err2 = intercept[AssertionFailure] {
         assertCompiles(""" rawStrictLogger.withCustomContext("x" -> x, "y" -> y) """)
       }
       assert(err2.getMessage().contains("StrictEncoded"))
