@@ -87,6 +87,13 @@ public final class ForkCompletionAgent extends Thread {
         new AgentBuilder.Default().ignore(none()).disableClassFormatChanges()
             .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
             .with(new CompletionListener(agent))
+            .type(hasSuperType(named("sbt.testing.Framework")).and(not(isInterface())))
+            .transform((builder, type, loader, module, domain) -> builder
+                .visit(Advice.to(FrameworkArguments.class).on(named("runner").and(takesArguments(String[].class, String[].class, ClassLoader.class)))))
+            .installOn(instrumentation);
+        new AgentBuilder.Default().ignore(none()).disableClassFormatChanges()
+            .with(AgentBuilder.RedefinitionStrategy.RETRANSFORMATION)
+            .with(new CompletionListener(agent))
             .type(hasSuperType(named("sbt.testing.Runner")).and(not(isInterface())))
             .transform((builder, type, loader, module, domain) -> builder
                 .visit(Advice.to(RunnerTasks.class).on(named("tasks").and(takesArguments(TaskDef[].class)).and(returns(Task[].class)))))
@@ -178,6 +185,18 @@ public final class ForkCompletionAgent extends Thread {
                 tasks = TaskCompleteness.normalise(definitions, tasks, new TaskCompleteness.FileCompletionStore(directory));
                 tasks = TaskCompleteness.captureForeign(tasks, new ForeignRunReports.FileStore(directory));
             }
+        }
+    }
+
+    public static final class FrameworkArguments {
+        @Advice.OnMethodEnter
+        public static void enter(@Advice.Argument(value = 0, readOnly = false) String[] arguments) {
+            TaskGroups.Invocation invocation = TaskGroups.parse(arguments);
+            if (invocation.directory() != null) {
+                Path directory = Paths.get(java.util.Objects.requireNonNull(System.getProperty(DIRECTORY_PROPERTY), "Missing task group ownership"));
+                if (!directory.equals(invocation.directory())) throw new IllegalArgumentException("Task group ownership differs from fork admission");
+            }
+            arguments = invocation.arguments();
         }
     }
 

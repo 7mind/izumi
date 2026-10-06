@@ -57,13 +57,13 @@ private[sbt] object HostSettings {
       }, streams.value.log)
     },
     testSelected / testExecution := Def.uncached {
-      HostSelectionPolicy.configured(HostReceiptPolicy.execution((testSelected / testExecution).value, definedTests.value, (testSelected / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value), definedTests.value, streams.value.log)
+      HostSelectionPolicy.configured(HostReceiptPolicy.execution((testSelected / testExecution).value, definedTests.value, loadedTestFrameworks.value.keys.toVector, (testSelected / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value), definedTests.value, streams.value.log)
     },
     testQuick / testExecution := Def.uncached {
-      HostSelectionPolicy.configured(HostReceiptPolicy.execution((testQuick / testExecution).value, definedTests.value, (testQuick / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value), definedTests.value, streams.value.log)
+      HostSelectionPolicy.configured(HostReceiptPolicy.execution((testQuick / testExecution).value, definedTests.value, loadedTestFrameworks.value.keys.toVector, (testQuick / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value), definedTests.value, streams.value.log)
     },
     test / testExecution := Def.uncached {
-      HostSelectionPolicy.configured(HostReceiptPolicy.execution((test / testExecution).value, definedTests.value, (executeTests / HostReceiptPolicy.owner).value, full = true, HostJUnitReports.format.value), definedTests.value, streams.value.log)
+      HostSelectionPolicy.configured(HostReceiptPolicy.execution((test / testExecution).value, definedTests.value, loadedTestFrameworks.value.keys.toVector, (executeTests / HostReceiptPolicy.owner).value, full = true, HostJUnitReports.format.value), definedTests.value, streams.value.log)
     },
     testSelected / testResultLogger := HostReceiptPolicy.logger((testSelected / testResultLogger).value, (testSelected / HostReceiptPolicy.owner).value),
     testQuick / testResultLogger := HostReceiptPolicy.logger((testQuick / testResultLogger).value, (testQuick / HostReceiptPolicy.owner).value),

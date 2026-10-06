@@ -1,6 +1,6 @@
 package izumi.distage.sbt
 
-import izumi.distage.sbt.target.{ForeignRunReports, ForkCompletionAgent, TaskCompleteness}
+import izumi.distage.sbt.target.{ForeignRunReports, ForkCompletionAgent, TaskCompleteness, TaskGroups}
 import izumi.distage.testkit.protocol.ForkProcessId
 import net.bytebuddy.ByteBuddy
 
@@ -102,7 +102,7 @@ private[sbt] final class HostForkCompletion(directory: Path) {
     val _ = manifest.getMainAttributes.put(Attributes.Name.CLASS_PATH, byteBuddy.toASCIIString + " " + testInterface.toASCIIString)
     val output = new JarOutputStream(Files.newOutputStream(agent), manifest)
     try {
-      Vector(classOf[ForkCompletionAgent], classOf[TaskCompleteness], classOf[ForeignRunReports]).flatMap(value => value +: value.getDeclaredClasses.toVector).foreach { agentClass =>
+      Vector(classOf[ForkCompletionAgent], classOf[TaskCompleteness], classOf[ForeignRunReports], classOf[TaskGroups]).flatMap(value => value +: value.getDeclaredClasses.toVector).foreach { agentClass =>
         val name = agentClass.getName.replace('.', '/') + ".class"
         val source = agentClass.getResourceAsStream("/" + name)
         require(source != null, "Fork completion agent bytecode is missing: " + name)

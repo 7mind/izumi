@@ -75,7 +75,7 @@ python3 -B test-fixtures/target-runner-consumer/verify-policy.py \
 ```
 
 This batch uses plain Future suites. DI/configuration invalidation, scanned
-plugin histories, foreign frameworks and additional configurations require
+plugin histories, mixed frameworks and additional configurations use
 separate controls.
 
 
@@ -102,3 +102,20 @@ Scala Native0.5.12 exposes its settings through
 `ScalaNativePluginInternal.scalaNativeTestSettings`; the companion uses that
 pinned SDK implementation. The SDK source is available at
 [ScalaNativePluginInternal0.5.12](https://github.com/scala-native/scala-native/blob/v0.5.12/sbt-scala-native/src/main/scala/scala/scalanative/sbtplugin/ScalaNativePluginInternal.scala).
+
+`verify-mixed.py` runs eleven histories with five runner suites and three
+ScalaCheck1.19.0 properties. It checks that mixed and foreign-only selections
+execute each property once, that stock incremental caching remains effective
+for ScalaCheck, and that owned suites rerun after partial selections. Exclusions,
+serial scheduling and host limits one/two are covered. Physical bodies, complete
+owned event streams and exact XML identities must agree. Stock SBT uses separate
+synthetic child groups for the ScalaCheck property XML, while aggregating their
+result counts under the parent suite.
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-mixed.py \
+  --repo-root "$PWD" --artifact-version 1.3.0-M5-target-policy-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-mixed-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/target-mixed-example
+```

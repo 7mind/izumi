@@ -114,7 +114,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2e.2 | in progress | Base runner checkpoint passes 826 checks on all six supported lanes; higher provider checkpoint passes 516 checks on each of the four JS/Native compiler lanes. Final evaluation remains open. |
 | 2e.3 | in progress | Target provider checkpoint 20f899de2 executes real DI/effect/configuration and Lifecycle controls on JS/Native under both supported compilers; full SDK integration and final evaluation remain open. |
 | 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
-| 2e.5 | in progress | Production SDK recovery, attribution and inspection checkpoints pass below. Full target host-policy/history matrix and final evaluation remain open. |
+| 2e.5 | in progress | Production SDK checkpoints verify 72 stock-policy contexts, 44 configuration/aggregation captures, 44 real ScalaCheck mixed histories, inspection and recovery controls. Full DI/scanned-plugin histories, complete target matrix and final evaluation remain open. |
 | 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
 | 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. Production host integration, DI finalization and final evaluation remain open. |
 | 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
@@ -17297,3 +17297,201 @@ plain-Future controls; DI/scanned-plugin histories, mixed foreign frameworks,
 complete target matrix and final-head evaluation remain open. The producer and
 all consumer batches have completed. Nothing was pushed. The next entry records
 the local commit ID.
+
+
+## 2026-10-06: nested foreign SDK task reporting defect reproduced
+
+The additional SDK configuration checkpoint is local commit `d8d27fefc`.
+The new mixed-framework fixture uses ScalaCheck1.19.0, the same version observed
+in all four repository JS/Native dependency classpaths. Its first invocation
+failed before SBT because Python cannot import the hyphenated policy filename
+as `verify_policy`; the exact ModuleNotFoundError is preserved in
+`2e-target-mixed-import-before.log`. The driver now loads that module explicitly.
+
+`python3 -B test-fixtures/target-runner-consumer/verify-mixed.py --repo-root
+/home/pavel/work/safe/7mind/izumi --artifact-version
+1.3.0-M5-target-policy-SNAPSHOT --production-host-version
+1.3.0-M5-target-config-SNAPSHOT --scala-version 3.9.0 2.13.18 --evidence-dir
+/srv/nvme/tmp/izumi-impl/2e-target-mixed-consumers-first` reproduces a production
+receipt defect. All four actual SBT children exit 1 with unchanged captured
+inputs. All fifteen owned bodies and all three foreign property bodies succeed,
+but HostReceipt rejects the completed result as `Incomplete distage host result`.
+ScalaCheck's nested tasks produce listener groups ForeignProperties-0/-1/-2
+besides their parent, whereas SBT aggregates their results under parent names.
+The existing receipt compares those two distinct identities directly.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-scalacheck-stock-report-reproduction-first.py`
+runs the same three properties through the unmodified SDKs without distage
+plugins on Scala3.9.0. Both JS and Native actual children exit 0. Listener
+traces confirm the synthetic child group names and unchanged foreign event
+identities. Pinned SBT2.0.9 source confirms its explicit mapping in
+`createNestedRunnables`/`toTask`:
+[Tests.scala](https://github.com/sbt/sbt/blob/v2.0.9/main-actions/src/main/scala/sbt/Tests.scala).
+
+The correction captures listener/result identities from the executable SPI
+hierarchy, supplies that mapping to the receipt as an explicit store dependency,
+and reconciles every group through its recorded result identity. It retains
+strict event/count/status and completion checks. It does not infer ancestry
+from suffixes or drop foreign groups. A private framework argument supplies the
+per-command mapping directory; the host wrapper and fork agent remove it before
+calling the original framework. The fork agent also captures task mappings,
+and its packaged classes include the new store. Producer, mixed-target and
+forked JVM verification are pending. 2d.15/2e.5 remain in progress; no reporting
+gate is passed by the patch alone. Nothing was pushed.
+
+
+## 2026-10-06: mixed task hierarchy producer qualification
+
+The first producer driver, `/srv/nvme/tmp/izumi-impl/2e-production-mixed-producer-first.py`,
+returns actual SBT exit 1 with unchanged inputs. The existing publication-failure
+control reproduces a regression: receipt normalization reads task mappings from
+the already closed directory before checking the recorded publication failure,
+masking its original cause with `Cannot read task group mappings`. Normalization
+now checks the recorded publication failure before accessing task mappings.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-production-mixed-producer-second.py`
+returns actual SBT exit 0; all 1,612 captured source/build inputs are unchanged.
+TargetHostFrameworkTest, HostReceiptTest, HostJUnitReportsTest,
+HostForkReportsTest and HostForeignForkReportsTest pass, including the original
+publication-cause regression control and the nested listener/result identity
+control. Three private `1.3.0-M5-target-mixed-SNAPSHOT` plugin publications pass
+class/TASTy payload comparison and exact Scala/Java source comparison with this
+producer. Existing policy runtime publications are reused unchanged.
+
+Mixed JS/Native and JVM consumer verification remains in flight. The first
+ScalaCheck JVM preparation returns actual exit 1 in both compiler lanes because
+it retains manual identity arguments alongside the plugin's generated arguments;
+`Request requires exactly one --build-id` is preserved in
+`2e-scalacheck-jvm-consumer-first`. This is fixture setup failure, not evidence
+about nested task reconciliation. The second driver removes the manual identity
+block and records `show Test / testOptions` before execution. The broader JVM
+regression uses an explicitly recorded effective copy of the tracked matrix
+with the existing qualified `1.3.0-M5-SNAPSHOT` runtime and these new private
+plugins; it does not claim a newly published final-head JVM runtime.
+
+
+## 2026-10-06: mixed SDK and JVM checkpoints; distinct fork child regression
+
+`2e-target-mixed-consumers-second` has four actual SBT exits 0 and unchanged
+captured inputs. Its original post-run controller exits 1 because it incorrectly
+classifies stock synthetic foreign XML groups as owned XML. Before changing the
+tracked driver, the corrected independent fixed-table auditor verifies all
+44 histories, 504 owned cases, 72 foreign properties and 40 completed owned
+applications; SHA-256 `339562fad004af42ad8b29ea349cbda6ceb4ac9656aed0984e845709632719ec`.
+The XML check now requires the exact parent/child groups and property identities,
+including stock child classnames. A fresh end-to-end run,
+`2e-target-mixed-consumers-third`, returns controller exit 0, all four actual SBT
+exits 0 and unchanged inputs with the same counts. Independent audit SHA-256:
+`af83674860ac7582646aee18d59a3e045ae03595495ae1b2709b16dd2000d3a0`.
+
+`2e-scalacheck-jvm-consumer-second` has successful eighteen-body execution in
+both compiler lanes but fails its fixture assertion on stock synthetic child
+classnames. The third driver corrects those identities and passes all
+in-process histories, then exposes SBT's reuse of an untracked JVM-option
+setting: forked bodies write into an old fixture audit directory. Its captured
+output includes FileAlreadyExistsException on that old directory. The fourth
+driver makes the owned audit path an explicit `set Test / javaOptions` command
+input. It returns controller exit 0, both actual SBT exits 0 and unchanged
+fixture/publication inputs: 32 histories, 432 physical/XML cases and 24 matched
+shared DI acquisitions/releases, including forked ScalaCheck nested tasks.
+These drivers live under `/srv/nvme/tmp/izumi-impl` with their exact command
+manifests, completion and audit files.
+
+The first broader JVM adapter corrupts a build splice by changing its input
+length after calculating offsets. `2e-mixed-jvm-regression-first` exits 1 at
+build load (`testFramons`); it establishes no runtime claim. The second effective
+adapter performs the version replacement after the splice. Both actual compiler
+lanes exit 0, all 94 expected contexts pass with empty validationFailures,
+distinct initial stock suite digests, scanned-implementation and suite-class
+invalidation, in-process/forked exclusive discovery, selected IDs, launch
+failure/recovery and additional-configuration inspection. This checkpoint uses
+`target-mixed` plugins and the existing published M5 runtime; final evaluation
+remains open.
+
+Before committing, `/srv/nvme/tmp/izumi-impl/2e-foreign-child-name-reproduction-first.py`
+reproduces another defect in the new fork mapping. A nested foreign task whose
+actual TaskDef name is its parent's name plus `-0` passes in process, but the
+forked command exits the expected 1 with `Incomplete distage host result`:
+18 delivered cases become 21 returned cases. The mapping incorrectly applies
+host-generated ancestry to a real fork child name. SBT2's fork worker sends
+actual task names for both listener groups and result keys:
+[ForkTestMain.java](https://github.com/sbt/sbt/blob/v2.0.9/worker/src/main/java/sbt/internal/worker1/ForkTestMain.java),
+[ForkTests.scala](https://github.com/sbt/sbt/blob/v2.0.9/main-actions/src/main/scala/sbt/ForkTests.scala).
+The fork agent now retains original group identities; the host wrapper continues
+capturing the host's explicit synthetic hierarchy. Argument stripping remains
+in the fork agent. Producer and corrected-fork checks are pending; this recorded
+regression is not passed by the correction alone.
+
+
+## 2026-10-06: corrected mixed-framework publications verified
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-production-mixed-producer-third.py`
+returns actual SBT exit 0 with all 1,612 captured inputs unchanged. The five
+producer control programs pass. Three private
+`1.3.0-M5-target-mixed-fork-SNAPSHOT` plugin publications pass class/TASTy and
+exact Scala/Java source qualification. The combined publication auditor,
+`2e-target-mixed-fork-publication-audit.py`, verifies these three plugins and
+twelve unchanged policy runtimes against current compiled payloads and all
+1,562 non-Python compiler input hashes. Audit SHA-256:
+`2c8c385bdc23536e2a6a557bf49b4683d3073a2c6dea06143beec3cc18dd5d14`.
+
+The distinct-child reproduction now passes with these new plugins:
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-foreign-child-name-reproduction-second.py`
+returns actual SBT exit 0 with unchanged inputs. Both in-process and forked
+commands report exactly eighteen successful cases. The independent audit
+reconciles the final eighteen physical bodies and eighteen XML cases, including
+the foreign child's actual `ForeignSuite-0` classname, and retains both command
+summaries. Audit SHA-256:
+`22dce921bc99600b3c0fa82f5f2ffd7b12af75c48a1001d6da412235c67e5a5e`.
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-scalacheck-jvm-consumer-fifth.py`
+returns controller exit 0, both actual SBT exits 0 and unchanged fixture and
+publication inputs. Its thirty-two in-process/forked histories verify 372 owned
+cases, sixty foreign properties and twenty-four matched DI acquisitions/releases.
+`2e-scalacheck-jvm-independent-audit.py` independently reconstructs the fixed
+contract table and reconciles the 432 physical/XML cases; SHA-256
+`727488f7798d016a6f714b652d1968a5aebd09afb4cf389ef974646b0fe55ec0`.
+
+`python3 -B test-fixtures/target-runner-consumer/verify-mixed.py --repo-root
+/home/pavel/work/safe/7mind/izumi --artifact-version
+1.3.0-M5-target-policy-SNAPSHOT --production-host-version
+1.3.0-M5-target-mixed-fork-SNAPSHOT --scala-version 3.9.0 2.13.18 --evidence-dir
+/srv/nvme/tmp/izumi-impl/2e-target-mixed-consumers-fourth` returns controller exit 0,
+four actual SBT exits 0 and unchanged inputs. The corrected tracked verifier
+and independent contract auditor reconcile forty-four histories, 504 owned
+cases, seventy-two foreign properties and forty completed owned applications,
+including foreign-only execution, caching, serial dispatch and host limits.
+Independent audit SHA-256:
+`b638e2458659a6d130bd75f430dde54cc9d1671fc03d9940d949733bcea55d0a`.
+
+The correction now respects each executor's actual result-key rule: the host
+wrapper records SBT's synthetic listener/result hierarchy, while the fork worker
+keeps its actual task names. No suffix guessing or event omission is used.
+Production cancellation/recovery regression remains in flight on both host
+limits. Complete SDK DI/history coverage and final evaluation remain open.
+
+
+## 2026-10-06: mixed-framework cancellation regression and local milestone
+
+The tracked `verify.py` driver is rerun with runtime version
+`1.3.0-M5-target-policy-SNAPSHOT`, host version
+`1.3.0-M5-target-mixed-fork-SNAPSHOT`, both Scala versions, logical-suite aliases,
+and host thread limits one and two. Evidence directories are
+`/srv/nvme/tmp/izumi-impl/2e-mixed-cancellation-host-one` and
+`2e-mixed-cancellation-host-two`; each commands.json records the complete argv.
+Both controllers exit 0, all eight actual SBT children exit 0, and every captured
+fixture/publication input is unchanged. Each batch verifies twelve commands,
+180 physical bodies, 180 XML body cases and twenty explicit suite cancellation
+errors. Together they preserve 360 successful body results and forty
+cancellation errors across twenty-four commands. All held callbacks release,
+all twenty-four run streams complete with unique identities, and every cancelled
+session executes successfully afterward. `git diff --check` passes.
+
+This verified partial milestone corrects mixed nested-task accounting on the
+host and preserves fork worker identity semantics, original framework arguments,
+stock foreign caching and cancellation recovery. It does not close 2d/2e or the
+final evaluation. The 94-context broader JVM checkpoint precedes the narrow
+fork correction; the corrected publications are directly qualified by the
+fresh 32-context JVM batch, the distinct-child reproduction and the 44-context
+SDK batch. Full final-head gates remain required. No tasks remain in flight;
+nothing was pushed. The next entry records the local commit ID.

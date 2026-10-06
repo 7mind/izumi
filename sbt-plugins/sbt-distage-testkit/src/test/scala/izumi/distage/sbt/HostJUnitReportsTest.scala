@@ -95,7 +95,7 @@ object HostJUnitReportsTest {
   private def listenerChecks(directory: java.nio.file.Path, format: HostJUnitFileFormat): Unit = {
     val owned = HostSuiteName("fixture.CancelledSuite")
     val foreign = HostSuiteName("fixture.ForeignSuite")
-    val receipt = new HostReceipt
+    val receipt = new HostReceipt(new izumi.distage.sbt.target.TaskGroups.MemoryStore)
     val _ = receipt.configure(Set(owned))
     val original = new JUnitXmlTestsListener(directory.toFile, format == HostJUnitFileFormat.Legacy, sbt.util.Logger.Null)
     val listener = new HostJUnitReportListener(original, new HostJUnitReports(new FileHostJUnitReports(directory), format), receipt)

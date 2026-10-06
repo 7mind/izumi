@@ -37,7 +37,7 @@ object HostForeignForkReportsTest {
     store.publish(new ForeignRunReports.Report(UUID.randomUUID(), owner, owner, 101L, events))
     val repeated = Set("partial", "repeated").contains(scenario)
     if (repeated) store.publish(new ForeignRunReports.Report(UUID.randomUUID(), owner, owner, 102L, events))
-    val receipt = new HostReceipt
+    val receipt = new HostReceipt(new izumi.distage.sbt.target.TaskGroups.MemoryStore)
     val received = receipt.configure(Set.empty)
     if (Set("delivered", "partial", "selector", "duration", "fingerprint", "failure", "active").contains(scenario)) {
       val altered = original.updated(0, event(name.value,

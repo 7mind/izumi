@@ -53,7 +53,7 @@ object HostForkReportsTest {
       if (scenario != "duplicates") terminal(process, if (scenario == "group-counts") 4 else 3)
     }
     if (scenario == "terminal-process") terminal(ForkProcessId(999L), 3)
-    val receipt = new HostReceipt
+    val receipt = new HostReceipt(new izumi.distage.sbt.target.TaskGroups.MemoryStore)
     receipt.expect(name)
     val received = receipt.configure(Set(name))
     var events = Vector.empty[Event]

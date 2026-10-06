@@ -1,7 +1,7 @@
 package izumi.distage.sbt
 
 import izumi.distage.testkit.protocol.{FileForkReceiptStore, FileForkRunReports, ForkProcessId, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
-import izumi.distage.sbt.target.{ForeignRunReports, TaskCompleteness}
+import izumi.distage.sbt.target.{ForeignRunReports, TaskCompleteness, TaskGroups}
 
 import sbt._
 import sbt.testing.{AnnotatedFingerprint, Event, Fingerprint, NestedSuiteSelector, NestedTestSelector, Status, SubclassFingerprint, SuiteSelector, TestSelector, TestWildcardSelector}
@@ -88,7 +88,7 @@ private[sbt] object HostSuiteCounts {
   }
 }
 
-private[sbt] final class HostReceipt {
+private[sbt] final class HostReceipt(taskGroups: TaskGroups.Store) {
   private var owned = Set.empty[HostSuiteName]
   private var expected = Set.empty[HostSuiteName]
   private var starts = Map.empty[HostSuiteName, Int]
@@ -214,8 +214,9 @@ private[sbt] final class HostReceipt {
 
   def normalise(output: Tests.Output): Tests.Output = synchronized {
     requireOpen()
+    verifyPublication()
     var events = output.events
-    groupResults.foreach { case (name, groups) =>
+    resultGroups.foreach { case (name, groups) =>
       if (groups.size > 1) {
         val merged = groups.foldLeft(SuiteResult.Empty)(_ + _)
         val original = events.getOrElse(name.value, throw new MessageOnlyException("Missing SDK result for completed duplicate group: " + name.value))
@@ -234,15 +235,24 @@ private[sbt] final class HostReceipt {
     verifyPublication()
     val actual = output.events.collect { case (name, counts) if owned.contains(HostSuiteName(name)) => HostSuiteName(name) -> HostSuiteCounts.from(counts) }
     val returned = output.events.values.foldLeft(HostSuiteCounts.empty)((counts, result) => counts + HostSuiteCounts.from(result))
-    val groups = groupResults.view.mapValues(values => HostSuiteCounts.from(values.foldLeft(SuiteResult.Empty)(_ + _))).toMap
+    val groups = resultGroups.view.mapValues(values => HostSuiteCounts.from(values.foldLeft(SuiteResult.Empty)(_ + _))).toMap
     val allActual = output.events.map { case (name, counts) => HostSuiteName(name) -> HostSuiteCounts.from(counts) }
     if (expected != starts.keySet.intersect(owned) || starts != ends || actual != received ||
       allActual != groups || activeGroups.nonEmpty ||
-      output.events.keySet.map(HostSuiteName(_)) != starts.keySet || returned != delivered ||
+      output.events.keySet.map(HostSuiteName(_)) != starts.keySet.map(resultName) || returned != delivered ||
       (output.overall == TestResult.Passed && delivered.result != TestResult.Passed)) {
       throw new MessageOnlyException(s"Incomplete distage host result: selected=$expected started=$starts completed=$ends received=$received returned=$actual delivered=$delivered returnedCounts=$returned overall=${output.overall}")
     }
   }
+
+  private def resultName(group: HostSuiteName): HostSuiteName = {
+    val matches = taskGroups.mappings().asScala.filter(_.listener().value() == group.value).map(value => HostSuiteName(value.result().value())).toSet
+    require(matches.size <= 1, "Listener group has conflicting task result identities: " + group.value)
+    matches.headOption.getOrElse(group)
+  }
+
+  private def resultGroups: Map[HostSuiteName, Vector[SuiteResult]] =
+    groupResults.toVector.groupBy { case (name, _) => resultName(name) }.map { case (name, groups) => name -> groups.flatMap(_._2) }
 
   private def requireOpen(): Unit = require(!closed, "Host event emitted after receipt completion")
 
@@ -286,7 +296,8 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
 
   def enter(): HostReceiptGeneration = synchronized {
     require(current.isEmpty, "Overlapping distage host task admission")
-    val generation = new HostReceiptGeneration(new HostReceipt, createStore())
+    val store = createStore()
+    val generation = new HostReceiptGeneration(new HostReceipt(new TaskGroups.FileStore(store.directory)), store)
     current = Some(generation)
     pending :+= generation
     generation
@@ -458,13 +469,14 @@ private[sbt] object HostReceiptPolicy {
     case other => other
   }
 
-  def execution(inherited: Tests.Execution, definitions: Seq[TestDefinition], owner: HostReceiptOwner, full: Boolean, reportFormat: HostJUnitFileFormat): Tests.Execution = {
+  def execution(inherited: Tests.Execution, definitions: Seq[TestDefinition], frameworks: Seq[TestFramework], owner: HostReceiptOwner, full: Boolean, reportFormat: HostJUnitFileFormat): Tests.Execution = {
     val owned = names(definitions)
     val receipt = owner.receipt
     val listener = new HostForkReceiptListener(receipt.configure(owned), receipt, owner.store)
     val inheritedOptions = inherited.options.flatMap {
       case Tests.Listeners(listeners) => Some(Tests.Listeners(listeners.filterNot(_.isInstanceOf[HostForkReceiptListener]).map(listener => HostJUnitReports.wrap(listener, receipt, reportFormat))))
       case Tests.Argument(Some(framework), values) if framework == DistageHostPolicy.framework && values.headOption.contains(ForkReceiptArguments.HostDirectoryOption) => None
+      case Tests.Argument(_, values) if values.headOption.contains(TaskGroups.OPTION) => None
       case other => Some(other)
     }
     val options = if (full) {
@@ -481,7 +493,8 @@ private[sbt] object HostReceiptPolicy {
       else wrapped :+ Tests.Filters(Seq(capture(_ => true)))
     } else inheritedOptions
     val directory = Tests.Argument(DistageHostPolicy.framework, ForkReceiptArguments.HostDirectoryOption, owner.store.directory.toString, ForkReceiptArguments.CommandCompletionOption)
-    val execution = inherited.copy(options = Tests.Listeners(Seq(listener)) +: (options :+ directory))
+    val groups = frameworks.map(framework => Tests.Argument(framework, TaskGroups.OPTION, owner.store.directory.toString))
+    val execution = inherited.copy(options = Tests.Listeners(Seq(listener)) +: (options ++ groups :+ directory))
     owner.configureReports(definitions, execution.options.collect { case Tests.Listeners(values) => values }.flatten)
     execution
   }
