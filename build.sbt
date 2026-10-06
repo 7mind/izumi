@@ -4264,7 +4264,8 @@ lazy val `distage-test-runner` = crossProject(JVMPlatform, JSPlatform, NativePla
     coverageEnabled := false,
     scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
     Test / scalaJSUseMainModuleInitializer := true,
-    Test / scalaJSUseTestModuleInitializer := false
+    Test / scalaJSUseTestModuleInitializer := false,
+    Compile / unmanagedSourceDirectories += file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -4273,7 +4274,8 @@ lazy val `distage-test-runner` = crossProject(JVMPlatform, JSPlatform, NativePla
     ),
     scalaVersion := crossScalaVersions.value.head,
     coverageEnabled := false,
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Compile / unmanagedSourceDirectories += file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-test-runnerJVM` = `distage-test-runner`.jvm
@@ -4283,7 +4285,17 @@ lazy val `distage-test-runnerJVM` = `distage-test-runner`.jvm
     )
   )
 lazy val `distage-test-runnerJS` = `distage-test-runner`.js
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-js" % "scalajs-test-interface_2.13" % V.scalajs_test_interface
+    )
+  )
 lazy val `distage-test-runnerNative` = `distage-test-runner`.native
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scala-native" %% "test-interface" % "0.5.12"
+    )
+  )
 
 lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-core-api"))
   .dependsOn(

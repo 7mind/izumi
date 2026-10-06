@@ -32,6 +32,7 @@ object Izumi {
     val doobie = Version.VExpr("V.doobie")
     val classgraph = Version.VExpr("V.classgraph")
     val sbt_test_interface = Version.VExpr("V.sbt_test_interface")
+    val scalajs_test_interface = Version.VExpr("V.scalajs_test_interface")
     val slf4j = Version.VExpr("V.slf4j")
     val typesafe_config = Version.VExpr("V.typesafe_config")
     val bytebuddy = Version.VExpr("V.bytebuddy")
@@ -138,6 +139,8 @@ object Izumi {
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val sbt_test_interface = Library("org.scala-sbt", "test-interface", V.sbt_test_interface, LibraryType.Invariant) in Scope.Compile.jvm
+    final val scalajs_test_interface = Library("org.scala-js", "scalajs-test-interface_2.13", V.scalajs_test_interface, LibraryType.Invariant) in Scope.Compile.js
+    final val native_test_interface = Library("org.scala-native", "test-interface", settings.scalaNativeVersion, LibraryType.Auto) in Scope.Compile.native
     final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.AutoJvm) in Scope.Provided.all.scalaVersion(
       ScalaVersionScope.AllScala3
@@ -829,10 +832,14 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.testRunner,
-        libs = Seq(scala_reflect, sbt_test_interface),
+        libs = Seq(scala_reflect, sbt_test_interface, scalajs_test_interface, native_test_interface),
         depends = Seq(Projects.fundamentals.assertions, Projects.distage.testProtocol),
         platforms = Targets.cross,
         settings = assertionFixtureSettings ++ Seq(
+          "unmanagedSourceDirectories" in (SettingScope.Compile, Platform.Js) +=
+            """file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile""".raw,
+          "unmanagedSourceDirectories" in (SettingScope.Compile, Platform.Native) +=
+            """file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile""".raw,
           "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.runner.BaseRunnerFixtures\")".raw,
         ),
       ),

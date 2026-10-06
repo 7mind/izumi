@@ -38,6 +38,7 @@ object V {
   // java-only dependencies below
   val classgraph = "4.8.181"
   val sbt_test_interface = "1.0"
+  val scalajs_test_interface = "1.22.0"
   val slf4j = "2.0.17"
   val typesafe_config = "1.4.0"
 

@@ -115,9 +115,9 @@ head. The spike reports are design evidence, not implementation verification.
 | 2e.3 | not started | No evaluation point passed yet. |
 | 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
 | 2e.5 | not started | No evaluation point passed yet. |
-| 2e.6 | not started | No evaluation point passed yet. |
-| 2e.7 | not started | No evaluation point passed yet. |
-| 2e.8 | not started | No evaluation point passed yet. |
+| 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
+| 2e.7 | in progress | Actual host interruption reproduces lost SDK events; an owned SDK worker and production target cancellation input preserve all fifteen results, five held releases and cancelled terminal outcomes on both compilers/platforms below. Complete host XML/SDK lifecycle recovery and DI finalization remain open. |
+| 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
 | 3.1 | not started | No evaluation point passed yet. |
 | 3.2 | not started | No evaluation point passed yet. |
 | 4.1 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
@@ -16550,3 +16550,121 @@ lanes and real JS/Native consumers`. The fixture framework/host projection is
 still test infrastructure; production target-framework/host integration,
 DI/effect/failure/cancellation controls and complete2e evaluation remain open.
 No whole phase or final gate closes.
+
+## 2026-10-06: SDK interruption reproduction and production target bootstrap
+
+The direct aggregate candidate fails a real host-thread interruption on both
+pinned adapters (Scala.js1.22.0, Native0.5.12). Each normal control delivers15
+successful bodies/results and five held-callback releases. Each interrupted
+command actually exits1 with `InterruptedException` in `TaskAdapter.execute`:
+15 starts,10 completions,26 contiguous frames, no Finished/Completed and zero
+of the five held releases. Inputs remain unchanged. The first Native control
+was invalid: SBT2 cached its arming task. The fresh second arming task is uncached
+and both lanes record exactly one arming and interruption marker.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-interruption-reproduction-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-interruption-audit-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-worker-retention-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-worker-retention-audit-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-control-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-control-audit-first.py
+```
+
+The reproduction controllers terminate0 while recording the expected actual
+SBT failures1; the three independent audits terminate0. Their evidence SHA-256:
+
+- Direct aggregate: `e7b84923be2237d81ed46c7b7e04a177daeda8f8f3366c6be4905eb40c84412e`.
+- Owned worker: `62bd827100d66961017e1a647bd30436f29dbc548a4fa87030dab4125a678b5e`.
+- Cancellation input: `ee10eb07fa892cd87aaad07d434c3ad251da303f5a663d903ca81fffdafcb5a0`.
+
+The owned worker prevents the host interruption from detaching SDK handlers:
+both interrupted streams deliver15 results, five releases and reconciled
+Finished/Completed. The explicit loopback input then delivers schema4 Cancel to
+the actual application on both targets, and both terminal outcomes record
+`cancelled=true`. The plain Future bodies cooperate by completing their pending
+callbacks; this does not establish interruption of DI effects or real Lifecycle
+finalizers. Stock SBT still omits the first interrupted task's XML (four suites,
+12 cases instead of five/15) and skips SDK `Runner.done`; its adapter warns of an
+active run. These host-reporting/recovery obligations remain open.
+
+Pinned primary SDK sources and hashes are recorded in
+`2e-adapter-sdk-source-first/manifest.json`. Both `TaskAdapter.execute` methods
+await their RPC Future and detach event handlers in `finally`. Their JVM
+`RunnerAdapter` exposes no cancellation method through the inspected public SPI.
+The observed failure is in the direct aggregate design; no SDK defect is claimed.
+
+A separate Node reproduction also establishes that awaiting socket close after
+`end()` deadlocks when the host waits for target task completion before closing
+its peer. `2e-js-control-close-repro-first.js` actually exits1 and logs
+`clientClosed=false`; its corrected `destroy()` variant exits0 and logs true.
+The production JS control joins its local close callback after `destroy()`.
+
+Production now supplies the JS/Native `bootstrap.Framework`, a shared target
+runner/task implementation, and platform runtimes. It retains the SDK task
+serialization seam, reconstructs factories with the production loader, feeds
+the portable `TestApplication`, and carries framed output separately from body
+stdout. JS uses asynchronous task completion. Runner messaging and the optional
+explicit loopback input deliver cancellation to owned active applications.
+The portable engine remains independent of SBT implementation libraries; backend
+bootstrap sources depend only on the platform's public test interface.
+
+The generated build is produced with `--js --native`. The new Scala.js test
+interface uses the SDK's invariant `_2.13` coordinate on both compilers; Native
+uses the pinned0.5.12 platform coordinate. No private fixture version is committed
+as a dependency.
+
+Earlier production attempts are archived separately: first build load fails
+because the generated expression refers to meta-build-only PV; second resolves
+the nonexistent standard JS-suffixed SDK coordinate; third encounters a Native
+Runnable return-type error; fourth a Scala2 discarded dynamic return; fifth an
+unused Native async-overload parameter. All actually terminate1 with unchanged
+recorded inputs. The sixth runs all three Scala2 lanes but fails after the controller switches to3.9 while leaving the excluded protocol project on2.13; the seventh restores the established3.9-first order. These failures do not establish acceptance. The final producer combines
+its setting overrides in one SBT reload.
+
+The first production consumer audit fails its expected54-body count against39:
+`candidate.Suite?` selects no suites under stock SBT. Its JS failure fixture also
+lets the expected exception escape from `setTimeout` instead of failing the
+Promise. Node actually terminates on both compilers with30 frames,14 completions
+and no terminal; the host reports an incomplete failure. These are archived in
+`2e-production-target-consumer-first/controller-failure.json`. No production
+correction follows. The second fixture uses `candidate.Suite*` and completes its
+JS Promise with a failure while retaining its finally release marker.
+
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/2e-production-target-producer-seventh.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-production-target-consumer-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-production-target-consumer-audit-second.py
+```
+
+All controllers/audit actually terminate0. The producer executes802 base checks
+on each of six JVM/JS/Native × Scala3.9/2.13 lanes and publishes six private
+`1.3.0-M5-target-framework-SNAPSHOT` artifacts. All1,535 recorded producer inputs
+remain unchanged. Independent qualification compares every class/TASTy/JS-IR/
+Native-IR payload with the current compiled output and both backend/shared target
+source files with the source JARs. Payload counts are160/237/446 for Scala3 and
+108/194/395 for Scala2, in JVM/JS/Native order.
+
+Eight independent consumer drivers finish with their expected actual SBT exits1:
+four finish on a deliberately interrupted command after four successful normal
+commands; four report one ordinary failed body. The audit rejects SDK transport
+termination in the body-failure controls and checks the exact failure class,
+message and owning logical test. SBT's console need not print the cause; the
+first audit expectation that it must is archived separately, while the corrected
+audit retains the protocol and XML failure checks.
+
+The24 contexts reconcile276 exact physical bodies and276 logical results in
+24 complete schema4 streams. Normal selections of two, five, one and wildcard-five
+suites plus four failing-body controls reconcile216 XML cases. Interrupted streams
+have fifteen results, five held-callback releases, contiguous sequences and
+matching Finished/Completed with `cancelled=true`. All156 consumer/publication
+input records remain unchanged. Evidence:
+`2e-production-target-consumer-second/independent-audit.json`, SHA-256
+`21c0b7c30d41461d424b4cc2a89166b6e73bda82d188231cc9827932e27fbaf2`.
+
+This checkpoint is committed as `Run published target framework on both compilers; verify cancellation and failures`.
+The production target bootstrap is exercised; its host projection remains fixture
+code. Interrupted host XML, SDK completion/reuse, full platform host policy,
+real DI/effect lifecycles, browser input and complete2e/final evaluation remain
+open. No whole phase or final gate closes.
