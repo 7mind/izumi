@@ -16734,3 +16734,85 @@ full selection/history/framework parity, DI/effect lifecycles and browser input
 remain open. This verified fixture checkpoint is committed as
 `Track target cancellation reports and same-session recovery; verify both compilers`.
 No whole phase or final gate closes.
+
+
+## 2026-10-06: production platform host projection checkpoint
+
+This is a verified sub-step of 2e, not a phase or final-head gate closure.
+The production base plugin now projects each SDK aggregate into one ordinary
+SBT task per selected suite. Each invocation owns its SDK runner and loopback
+control endpoint. An owned execution thread retains SDK callbacks until cleanup;
+cancellation becomes suite errors after the body events, so SBT calls `done`
+and records every selected suite. Application failures and missing terminal
+frames also become group errors. The JS and Native companion plugins require
+the corresponding platform plugin and the base plugin, then compose their
+loaded framework through the public SPI. JVM users need no platform plugins.
+Generator changes, not hand edits, produce the two new projects in `build.sbt`.
+
+Commands and evidence (all local; nothing pushed):
+
+- `direnv exec . sh -c 'export JAVA_HOME="$JDK21"; exec bash sbtgen.sc --js --native'`
+  succeeded. The first host compile captured a build-definition reference to
+  meta-only `PV`; the corrected generator uses the existing runtime version
+  pin. The second compile captured a missing `PluginTrigger` import in the
+  companion; the third compiled both companions and passed all 14 host cases.
+  Exact logs: `/srv/nvme/tmp/izumi-impl/2e-production-host-{generate,compile}-*`.
+  The third command then rejected a receipt-check invocation because its
+  required directory argument was omitted; this was a command defect, not
+  verification of receipt behavior.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-host-producer-first.py`:
+  actual exit 0. `command.json` records the exact SBT argv and 1,601 frozen
+  source/build input hashes; none changed during the batch. It passed the
+  14-case target host check, 25 receipt checks, 31 JUnit checks, 28 fork-report
+  checks, and 22 foreign-report checks. It published only the private local
+  `1.3.0-M5-target-host-SNAPSHOT` versions of `sbt-distage-testkit`,
+  `sbt-distage-testkit-js`, and `sbt-distage-testkit-native`.
+  `publications.json` qualifies all jar class/TASTy bytes against the tested
+  outputs (181/3/3 entries), all main source files (14/1/1), and all three
+  expected `sbt.autoplugins` descriptors.
+- `python3 -B test-fixtures/target-runner-consumer/verify.py --repo-root
+  /home/pavel/work/safe/7mind/izumi --artifact-version
+  1.3.0-M5-target-framework-SNAPSHOT --production-host-version
+  1.3.0-M5-target-host-SNAPSHOT --scala-version 3.9.0 2.13.18
+  --host-threads 2 --evidence-dir
+  /srv/nvme/tmp/izumi-impl/2e-production-host-consumer-second`:
+  driver and all four actual SBT children exited 0. On JS and Native with both
+  compilers, a normal command, expected failed cancellation command, and fresh
+  recovery command completed in one SBT session. There are 12 complete schema-4
+  streams with distinct run IDs, 180 physical bodies, 180 XML body cases and
+  20 suite cancellation errors. All 305 fixture/publication input records stayed
+  unchanged. The first consumer batch rejected duplicate identity options:
+  fixture arguments duplicated the base plugin settings. The corrected fixture
+  lets production identity settings supply those options. No production change
+  was made for that fixture configuration failure.
+- `python3 -B /srv/nvme/tmp/izumi-impl/2e-production-host-consumer-audit-second.py`:
+  actual exit 0. The independent audit rereads exact commands, logs, streams,
+  XML, input hashes, and cancellation/recovery identities. SHA-256 of
+  `2e-production-host-consumer-second/independent-audit.json`:
+  `7dd9978352afaedec3ca7aa3f73d4e90f454177a30db1e4720a9258284727ced`.
+  The tracked driver's audit SHA is
+  `fc7d8d2686447e2501c1dce3ddd7efda773a4a9de3e66e226cfd6c109e1020e1`.
+  The independent auditor initially assumed numeric sequence JSON and a literal
+  `SuiteSelector` XML name; archived failures were corrected to the actual
+  schema/SBT representation while retaining exact sequence and case checks.
+
+A separate concrete negative fixture remains open: overriding the protected
+logical `suiteId` to `logical:<class>` causes the host to reject a selected
+suite's results. `/srv/nvme/tmp/izumi-impl/2e-production-host-alias-reproduction-second`
+records actual SBT exit 1, the causal `Target result belongs to an unselected
+suite` exception, 17 frames without a terminal, and five SDK-abort XML errors.
+`reproduction-audit.json` independently confirms that failure. Its first
+attempt failed for the earlier duplicate-identity configuration and is not
+attribution evidence. Its original second-run auditor expected the logical
+error directly in XML, whereas the captured root error aborts SDK dispatch;
+the subsequent audit records both the causal exception and the SDK fallout.
+The next correction must preserve the logical ID while explicitly carrying the
+selected class owner in the SDK event. No alias compatibility gate is passed.
+
+Still open: actual SDK thread-limit-one validation of production bindings,
+logical-ID attribution, launch failures before task execution, full platform
+host-policy histories, inspection, DI/effect/Lifecycle fixtures, repository
+runner takeover, and complete 2e evaluation. Earlier JVM gates are unchanged
+historical evidence, not final-head verification. IDE remains deferred.
+Local commit: the commit containing this checkpoint (recorded immediately below
+in the next verified sub-step).

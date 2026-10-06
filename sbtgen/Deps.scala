@@ -583,6 +583,8 @@ object Izumi {
 
       final lazy val izumi_deps = ArtifactId("sbt-izumi-deps")
       final lazy val distage_testkit = ArtifactId("sbt-distage-testkit")
+      final lazy val distage_testkit_js = ArtifactId("sbt-distage-testkit-js")
+      final lazy val distage_testkit_native = ArtifactId("sbt-distage-testkit-native")
     }
 
   }
@@ -1175,6 +1177,30 @@ object Izumi {
   final lazy val sbtplugins = Aggregate(
     name = Projects.sbtplugins.id,
     artifacts = Seq(
+      Artifact(
+        name = Projects.sbtplugins.distage_testkit_js,
+        libs = Seq.empty,
+        depends = Seq(Projects.sbtplugins.distage_testkit in Scope.Compile.jvm),
+        settings = Projects.sbtplugins.settings ++ Seq(
+          "crossScalaVersions" := Seq("3.8.4"),
+          "scalaVersion" := "crossScalaVersions.value.head".raw,
+          SettingDef.RawSettingDef("""addSbtPlugin("org.scala-js" % "sbt-scalajs" % V.scalajs_test_interface)"""),
+          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+        ),
+        plugins = Plugins(enabled = Seq.empty, disabled = Seq(Plugin("ScoverageSbtPlugin"))),
+      ),
+      Artifact(
+        name = Projects.sbtplugins.distage_testkit_native,
+        libs = Seq.empty,
+        depends = Seq(Projects.sbtplugins.distage_testkit in Scope.Compile.jvm),
+        settings = Projects.sbtplugins.settings ++ Seq(
+          "crossScalaVersions" := Seq("3.8.4"),
+          "scalaVersion" := "crossScalaVersions.value.head".raw,
+          SettingDef.RawSettingDef("""addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.12")"""),
+          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+        ),
+        plugins = Plugins(enabled = Seq.empty, disabled = Seq(Plugin("ScoverageSbtPlugin"))),
+      ),
       Artifact(
         name = Projects.sbtplugins.distage_testkit,
         libs = Seq(bytebuddy in Scope.Compile.jvm),

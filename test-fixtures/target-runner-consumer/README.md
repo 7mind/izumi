@@ -1,8 +1,11 @@
 # Published JS/Native target-runner fixture
 
 The fixture loads the production target bootstrap through Scala.js1.22.0 and
-Scala Native0.5.12, using ordinary unannotated suites. Its host projection is
-test infrastructure. Every lane executes five suites, interrupts the host task
+Scala Native0.5.12, using ordinary unannotated suites. By default its host
+projection is test infrastructure. With `--production-host-version VERSION`,
+it loads the published JS/Native companion SBT plugins instead; the remaining
+host probe only interrupts an ordinary suite task through the public SPI.
+Every lane executes five suites, interrupts the host task
 while target callbacks are pending, checks a failed cancellation command, then
 runs successfully again in the same SBT session.
 
@@ -18,6 +21,10 @@ evidence directory. Repeat with `--host-threads 1` for the serial host control.
 The driver verifies physical body identities, complete framed streams, fresh
 run identities, exact per-suite XML and cancellation errors. It freezes fixture
 and publication hashes and rejects incomplete SDK runs.
+
+For production host checks, publish `sbt-distage-testkit`,
+`sbt-distage-testkit-js`, and `sbt-distage-testkit-native` with the supplied
+version and add `--production-host-version VERSION` to the command.
 
 These are Behavioral-Active, Effectual, Good-Communication process checks.
 The held callbacks are plain Futures; this fixture does not establish DI effect

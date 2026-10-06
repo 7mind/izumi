@@ -22,7 +22,9 @@ def verify(command, out):
     lines = log.splitlines()
     for marker in ['SDK_INTERRUPTION_ARMED', 'SDK_INTERRUPTION_DISARMED', 'SDK_EXPECTED_CANCELLATION_FAILURE']:
         assert lines.count(marker) == 1, (command, marker)
-    assert log.count('SDK_EXECUTION_INTERRUPT') == log.count('SDK_PARENT_INTERRUPTED') == log.count('TARGET_CANCEL_SENT') == 1
+    assert log.count('SDK_EXECUTION_INTERRUPT') == 1
+    if not command['productionHost']:
+        assert log.count('SDK_PARENT_INTERRUPTED') == log.count('TARGET_CANCEL_SENT') == 1
     assert 'Incomplete runs:' not in log and 'RunTerminatedException' not in log and 'RPCCore$ClosedException' not in log
     assert 'Errors 5' in log
     physical = re.findall(r'TARGET_BODY suite=(\S+) test=(\d+) marker=(\d+)', log)
@@ -79,6 +81,7 @@ def main():
     parser.add_argument('--repo-root', type=Path, required=True)
     parser.add_argument('--evidence-dir', type=Path, required=True)
     parser.add_argument('--artifact-version', required=True)
+    parser.add_argument('--production-host-version')
     parser.add_argument('--host-threads', choices=['1', '2'], required=True)
     parser.add_argument('--scala-version', nargs='+', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
@@ -95,7 +98,22 @@ def main():
                 destination = build / path.relative_to(fixture)
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(path, destination)
-                inputs.append(dict(path=str(destination), sha256=sha(destination)))
+            if args.production_host_version:
+                shutil.copyfile(build / 'support/ProductionInterruption.scala', build / 'project/ProductionInterruption.scala')
+                (build / 'project/TransportProjection.scala').unlink()
+                plugins = build / 'project/plugins.sbt'
+                plugins.write_text('\n'.join('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit-' + target + '" % "' + args.production_host_version + '")' for target in ['js', 'native']) + '\n')
+                definition = build / 'build.sbt'
+                text = definition.read_text().replace('TransportJsProjectionPlugin', 'ProductionJsInterruptionPlugin').replace('TransportNativeProjectionPlugin', 'ProductionNativeInterruptionPlugin')
+                text = '\n'.join(line for line in text.splitlines() if not line.strip().startswith('Test / testOptions += Tests.Argument(')) + '\n'
+                text = 'import izumi.distage.sbt.DistageTestkitPlugin.autoImport.*\n' + text
+                text = text.replace('val common = Seq(', 'val common = Seq(\n  Test / distageBuildId := "candidate",\n  Test / distageTargetId := "candidate-" + candidatePlatform.value,\n  Test / distageCatalogueId := "candidate",\n  Test / distageEventDirectory := file(sys.props("candidate.frames")),')
+                definition.write_text(text)
+                for module in ['sbt-distage-testkit', 'sbt-distage-testkit-js', 'sbt-distage-testkit-native']:
+                    publication = Path.home() / '.ivy2/local/io.7mind.izumi' / (module + '_sbt2_3') / args.production_host_version
+                    assert publication.is_dir(), publication
+                    inputs.extend(dict(path=str(path), sha256=sha(path)) for path in publication.rglob('*') if path.is_file())
+            inputs.extend(dict(path=str(path), sha256=sha(path)) for path in build.rglob('*') if path.is_file())
             name = 'distage-test-runner_' + ('sjs1' if platform == 'js' else 'native0.5') + '_' + ('3' if compiler.startswith('3.') else '2.13')
             publication = Path.home() / '.ivy2/local/io.7mind.izumi' / name / args.artifact_version
             assert publication.is_dir(), publication
@@ -108,7 +126,7 @@ def main():
                     '-Dfixture.artifact-version=' + args.artifact_version, '-Dfixture.host-threads=' + args.host_threads,
                     '-Dcandidate.scala=' + compiler, '-Dcandidate.interrupt=false',
                     '-Dcandidate.frames=' + str(build / 'frames'), '-Dcandidate.captures=' + str(build / 'captures'), *cases]
-            commands.append(dict(scala=compiler, platform=platform, cwd=str(build), argv=argv))
+            commands.append(dict(scala=compiler, platform=platform, cwd=str(build), argv=argv, productionHost=bool(args.production_host_version)))
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands), indent=2) + '\n')
 
     def run(command):
