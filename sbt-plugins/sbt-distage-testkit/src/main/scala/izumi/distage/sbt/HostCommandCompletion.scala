@@ -16,7 +16,7 @@ private[sbt] final class HostCommandCompletion(inherited: ExecuteProgress2, owne
   override def afterWork[A](task: TaskId[A], result: Either[TaskId[A], Result[A]]): Unit = {
     try {
       result match {
-        case Right(Result.Inc(failure)) if failure.directCause.exists(_.isInstanceOf[InterruptedException]) => owners.foreach(_.cancelForks())
+        case Right(Result.Inc(failure)) if failure.directCause.exists(_.isInstanceOf[InterruptedException]) => owners.foreach(_.requestForkCancellation())
         case _ => ()
       }
       inherited.afterWork(task, result)
@@ -25,6 +25,7 @@ private[sbt] final class HostCommandCompletion(inherited: ExecuteProgress2, owne
       finishWork()
       // SBT shuts the pool down again after the first worker returns; siblings must finish reporting first.
       synchronized { while (activeWork > 0 && owners.exists(_.hasInterruption)) wait() }
+      owners.foreach(_.completeForkCancellation())
     }
   }
 

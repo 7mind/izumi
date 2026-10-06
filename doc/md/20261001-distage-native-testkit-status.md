@@ -96,19 +96,19 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
-| 2d.10 | in progress | Current354-command checkpoint includes28 actual-client controls in process and forked on both supported compilers, with held finalizers, marked cancelled XML and same-boundary recovery. Eight additional partial-host-delivery controls preserve completed body outcomes, join held callbacks and recover in the same session. Complete cancellation/failure domain and final evaluation remain open. |
-| 2d.11 | in progress | Current correction passes354 SBT2 command controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption and28 actual-client controls covering both execution modes. Complete failure/input inventory and final evaluation stay open. |
+| 2d.10 | in progress | Current368-command checkpoint includes28 actual-client controls, eight partial-delivery controls and six repeated-fork-group commands across both supported compilers. Held finalizers/callbacks are joined; repeated cancellations preserve30 selected marked XML outcomes and all group callbacks. Complete mixed/failure domain and final evaluation remain open. |
+| 2d.11 | in progress | Current correction passes368 SBT2 controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption,28 actual-client, eight partial-delivery and six repeated-fork-group commands. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap61 checks per compiler,18 task checks,25 receipt checks,31 XML,14 report-store,eight host-projection and four public report-failure checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Eight partial-delivery controls additionally reconcile120 listener callbacks without omissions, duplicates or late delivery. Complete streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap61 checks per compiler plus120 host/store contracts include28 memory/file projections of repeated and partially delivered groups, selector/duration/failure identity and process/count rejection. Fourteen real-client partial/repeated commands reconcile300 callbacks without omissions, duplicates or late delivery. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | in progress | Four public SBT discovery/fingerprint controls pass in process and forked on both supported compilers, with94 host execution/inspection cases,558 physical bodies and574 XML cases. Complete mode/sharing inventory and final evaluation remain open. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current354-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
+| 2d.22 | in progress | Current368-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
 | 2d.23 | in progress | Current audit passes eighteen resolved Compile classpaths and eighteen published POMs across all runner layers/platforms/supported compilers;46 production sources import no SBT implementation. JVM variants use only the public test interface. Production Node/Native target host execution and final evaluation remain open. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -15659,3 +15659,112 @@ listener failure or group arrangement. Foreign/repeated explicit-group
 cancellation, selection-reason verification, the remaining2d inventory and final
 evaluation stay open. Production Node/Native host integration, coverage,
 migration, final lanes and reviews remain outstanding. IDE stays deferred.
+
+
+## 2026-10-06: repeated fork-group cancellation checkpoint
+
+The partial-delivery checkpoint is local commit
+`6c0c18d01d91d70cbe6670433bf2c3b0e705e564`. Items2d.9/10/11/17/19/22
+remain in progress; no phase acceptance gate is closed.
+
+Before changing production code, the real-client reproduction
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-cancellation-before-second.py`
+returns1 at `REPEATED_FORK_CANCEL_XML_INCOMPLETE`, with zero selected XML cases.
+Its normal command executes30 bodies and publishes30 selected XML cases from
+two distinct target processes. During cancellation, both processes enter held
+finalizers, both resources release, and both common outcomes contain15 cancelled
+selected results; the host still publishes zero selected XML cases. The SBT
+server exits0 after shutdown, while the reproduction driver fails as required.
+Captured inputs remain unchanged. The earlier first attempt fails on SBT2's
+`testGrouping` codec and is setup evidence, not the reproduced defect.
+
+The focused component reproduction
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-projection-before.py`
+observes child exit1 with `Fork cancellation has ambiguous repeated suite groups`.
+Its wrapper returns0 because it checks that expected failure. Existing positive
+and negative component cases precede the failing repeated-group case. Commands,
+input hashes, outputs and completion records are retained in both named capture
+directories under `/srv/nvme/tmp/izumi-impl/`.
+
+The candidate records a positive process identity in each common run report and
+retains admitted fork process/suite bindings instead of collapsing them to suite
+names. Report schema2 is private to this JVM completion channel; the portable
+protocol remains schema4. In-process host invocations also publish common
+reports, allowing identical completed in-process groups to be consumed before
+matching fork groups in mixed execution. Completed groups retain selector values,
+statuses, durations and failure diagnostics; matching consumes occurrences and
+allows different event order. SDK fork failure wrapping is compared through
+public throwable values. Target terminal status counts reconcile per process
+and per group, with occurrence counts, before any missing host group is emitted.
+Cancellation signaling precedes the existing SDK work barrier; projection waits
+until that work has drained, avoiding overlap with partially delivered groups.
+
+The large producer and publication checks all return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-producer-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-qualify-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-freeze-first.py
+```
+
+All1518 producer inputs stay unchanged. Both supported compilers pass219
+protocol,802 base and61 bootstrap checks. Additional checks total120:31 JUnit,
+25 receipt,18 target task,28 host report projections,14 report-store and four
+public framework report-failure checks. The28 projections run the same behavioral
+contracts against memory and filesystem stores, including repeated/partially
+reported groups, reordered events, in-process reports, invalid processes,
+selector/duration/failure mismatches, per-group count differences and active
+host-group rejection. The five published JAR payload counts are122/309/240/158/107;
+every class/TASTy entry equals its compiled output. All75 publication files are
+frozen. The20 target Java classes remain byte-identical to the preceding qualified
+agent publication, preserving its separately captured JDK exit controls.
+The current plugin JAR SHA-256 is
+`21ead44789b112f4cc1684fc3d0db80679aabd3e4b00060e06e7a43caa371dbd`.
+
+The32-driver combined consumer batch returns0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-regression-first.py
+```
+
+Its completed repeated-fork drivers on Scala3.9/2.13 both return0: normal,
+cancelled and same-session recovery commands retain30 selected XML cases and30
+start/event/end callbacks each. Normal/recovery commands execute30 bodies;
+cancelled commands execute two bodies and preserve both resource lifetimes.
+Both partial-delivery drivers also return0, covering four commands per compiler.
+The complete batch and its independent capture audits pass. Commands:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-new-domain-audit-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-regression-first-audit.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-repeated-fork-extended-audit-first.py
+```
+
+The original354-command domain remains green against the corrected artifacts:
+230 general,36 resource/body,40 stock callback,20 task-interruption and28 real
+client controls. The new audit adds eight partial-delivery and six repeated-fork
+commands, for368 total. Its new-domain public-data audit reconciles244 physical
+bodies,300 selected XML outcomes and300 callbacks, with20 distinct common runs
+and20 distinct acquired/released resources. Twelve repeated-group worker PIDs
+are distinct across the six commands. Both cancelled commands publish all30
+selected outcomes with explicit skipped/Cancelled markers; normal and recovery
+commands publish30 successes each. Partial-delivery cancellation retains completed
+body successes and awaits the held callback. No callback occurs after its command
+response in these controlled cases.
+
+The combined audit completion SHA-256 is
+`62d5cc31c66d1067b5585a9d6af8f597906055707d069ad0b3b9ab8d3ee54fa3`.
+`audit/precommit-guard.json` returns0:1518 producer inputs,1635 consumer input
+records and75 frozen/current publication files remain unchanged. All194 recorded
+host/worker PIDs from the32 driver completion files are absent from /proc.
+The new-domain audit also compares the preceding portable batch's source/build
+inputs with the candidate: only nine JVM source/test files differ. Shared/JS/Native
+inputs are unchanged, so its eight protocol/base portable checks remain applicable;
+this is not production Node/Native host acceptance.
+
+The verified sub-step is committed locally as
+`Preserve repeated fork cancellation reports; verify 368 SBT controls`, with
+parent `6c0c18d01d91d70cbe6670433bf2c3b0e705e564`. `git diff --check` returns0.
+Mixed foreign-framework cancellation, remaining2d inventories, production
+Node/Native hosts, coverage, migration and phase/final evaluations remain open.
+IDE stays owner-deferred; no push is allowed.

@@ -168,3 +168,22 @@ Run Scala2.13.18 in a separate capture. Each compiler checks cancellation and
 recovery in both execution modes. These are Behavioral-Active,
 Effectual-GoodCommunication controls of owned suite reporting; foreign-framework
 and repeated explicit-group cancellation require separate controls.
+
+`verify-repeated-fork-cancellation.py` runs two concurrent fork groups containing
+the same five owned suites. It checks thirty selected outcomes and thirty
+start/event/end callbacks per command, with two distinct target processes and
+two independent shared resource lifetimes. A real client cancellation holds both
+finalizers before permitting release; the command must remain pending, publish
+thirty explicitly cancelled selected XML cases, and recover in the same session.
+The fixture also rejects callbacks after command completion.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-repeated-fork-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/repeated-fork-example
+```
+
+Run Scala2.13.18 in a separate capture. These are Behavioral-Active,
+Effectual-GoodCommunication regression controls; mixed foreign-framework
+cancellation requires separate validation.

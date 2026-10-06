@@ -25,7 +25,7 @@ final class Framework extends SbtFramework {
   override def runner(args: Array[String], remoteArgs: Array[String], testClassLoader: ClassLoader): Runner = {
     val invocation = ForkReceiptArguments.parse(args.toVector, remoteArgs.toVector)
     val request = RequestArguments.parse(invocation.arguments).fold(error => throw new IllegalArgumentException(error.message), value => value)
-    val control = if (invocation.forked && invocation.commandCompletion) invocation.hostDirectory else None
+    val control = if (invocation.commandCompletion) invocation.hostDirectory.map(directory => BootstrapRunContext(directory, ForkProcessId(ProcessHandle.current().pid()), invocation.forked)) else None
     val runner = new BootstrapRunner(args.clone(), invocation.forwardedRemoteArguments.toArray, name => JvmSuiteLoader.load(name, testClassLoader), request, invocation.eventDirectory, control)
     if (invocation.forked) {
       val directory = invocation.hostDirectory.getOrElse(throw new IllegalStateException("Fork receipt activation has no host ownership"))
@@ -41,13 +41,15 @@ final class Framework extends SbtFramework {
   }
 }
 
+private[bootstrap] final case class BootstrapRunContext(directory: Path, process: ForkProcessId, forked: Boolean)
+
 private[bootstrap] final class BootstrapRunner(
   arguments: Array[String],
   remoteArguments: Array[String],
   factory: String => TestSuite,
   request: RunRequest,
   eventDirectory: Option[Path],
-  controlDirectory: Option[Path],
+  controlDirectory: Option[BootstrapRunContext],
 ) extends Runner {
   private var spent = false
   private var activeTasks = 0
@@ -123,7 +125,7 @@ private[bootstrap] final class BootstrapRunner(
   }
 }
 
-private[bootstrap] final class Invocation(request: RunRequest, definitions: Vector[TaskDef], factory: String => TestSuite, eventDirectory: Option[Path], controlDirectory: Option[Path]) {
+private[bootstrap] final class Invocation(request: RunRequest, definitions: Vector[TaskDef], factory: String => TestSuite, eventDirectory: Option[Path], controlDirectory: Option[BootstrapRunContext]) {
   private final val ShutdownPollSeconds = 1L
   val projections: Vector[SuiteProjection] = definitions.map(new SuiteProjection(_))
   private val completion = Promise[Either[Throwable, RunOutcome]]()
@@ -155,7 +157,7 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
     val executionContext = ExecutionContext.fromExecutorService(executor)
     try {
       val result = Using.Manager { use =>
-        controlDirectory.foreach(directory => { val _ = use(new ForkCancellation(directory, () => cancel())) })
+        controlDirectory.filter(_.forked).foreach(context => { val _ = use(new ForkCancellation(context.directory, () => cancel())) })
         val factories = projections.map { projection => () => new TestSuite {
           override def register(context: RegistrationContext): RegisteredSuite = {
             val name = projection.definition.fullyQualifiedName()
@@ -198,7 +200,7 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
         terminal.getOrElse(throw new IllegalStateException("Application returned without a terminal response"))
       }.toEither
       result.foreach { outcome =>
-        controlDirectory.foreach(directory => new FileForkRunReports(directory).publish(ForkRunReport(outcome, projections.map(_.owner))))
+        controlDirectory.foreach(context => new FileForkRunReports(context.directory).publish(ForkRunReport(context.process, outcome, projections.map(_.owner))))
       }
       result
     }

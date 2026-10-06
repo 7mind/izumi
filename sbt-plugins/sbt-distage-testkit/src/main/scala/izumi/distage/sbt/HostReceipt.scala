@@ -1,15 +1,57 @@
 package izumi.distage.sbt
 
-import izumi.distage.testkit.protocol.{FileForkReceiptStore, FileForkRunReports, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
+import izumi.distage.testkit.protocol.{FileForkReceiptStore, FileForkRunReports, ForkProcessId, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
 import izumi.distage.sbt.target.TaskCompleteness
 
 import sbt._
+import sbt.testing.{Event, Status, SuiteSelector, TestSelector}
 
 import scala.util.control.NonFatal
 import scala.jdk.CollectionConverters._
 
 private[sbt] final case class HostSuiteName(value: String)
-private[sbt] final case class HostGroupReceipt(name: HostSuiteName, result: SuiteResult)
+private[sbt] sealed trait HostEventSelector
+private[sbt] object HostEventSelector {
+  case object Suite extends HostEventSelector
+  final case class Test(name: String) extends HostEventSelector
+}
+private[sbt] final case class HostEventFailure(className: String, message: String) {
+  def matches(actual: HostEventFailure): Boolean = actual.message == message || actual.message == className + ": " + message
+}
+private[sbt] final case class HostEventIdentity(name: String, selector: HostEventSelector, status: Status, duration: Long, failure: Option[HostEventFailure]) {
+  def matches(actual: HostEventIdentity): Boolean = {
+    name == actual.name && selector == actual.selector && status == actual.status && duration == actual.duration &&
+      ((failure, actual.failure) match {
+        case (Some(expected), Some(received)) => expected.matches(received)
+        case (None, None) => true
+        case _ => false
+      })
+  }
+}
+private[sbt] object HostEventIdentity {
+  def from(event: Event): HostEventIdentity = {
+    val selector = event.selector() match {
+      case _: SuiteSelector => HostEventSelector.Suite
+      case test: TestSelector => HostEventSelector.Test(test.testName())
+      case other => throw new IllegalArgumentException("Unsupported owned event selector: " + other)
+    }
+    val failure = if (event.throwable().isDefined) {
+      val cause = event.throwable().get()
+      Some(HostEventFailure(cause.getClass.getName, cause.getMessage))
+    } else None
+    HostEventIdentity(event.fullyQualifiedName(), selector, event.status(), event.duration(), failure)
+  }
+}
+private[sbt] final case class HostGroupIdentity(counts: HostSuiteCounts, events: Vector[HostEventIdentity]) {
+  def matches(actual: HostGroupIdentity): Boolean = {
+    var remaining = events
+    counts == actual.counts && actual.events.forall { event =>
+      val index = remaining.indexWhere(_.matches(event))
+      if (index < 0) false else { remaining = remaining.patch(index, Nil, 1); true }
+    } && remaining.isEmpty
+  }
+}
+private[sbt] final case class HostGroupReceipt(name: HostSuiteName, result: SuiteResult, events: Vector[HostEventIdentity])
 
 private[sbt] final case class HostSuiteCounts(result: TestResult, passed: Int, failed: Int, errors: Int, skipped: Int, ignored: Int, canceled: Int, pending: Int) {
   def +(other: HostSuiteCounts): HostSuiteCounts = HostSuiteCounts(
@@ -37,6 +79,7 @@ private[sbt] final class HostReceipt {
   private var ends = Map.empty[HostSuiteName, Int]
   private var activeGroups = Map.empty[Thread, HostGroupReceipt]
   private var groupResults = Map.empty[HostSuiteName, Vector[SuiteResult]]
+  private var groupIdentities = Map.empty[HostSuiteName, Vector[HostGroupIdentity]]
   private var received = Map.empty[HostSuiteName, HostSuiteCounts]
   private var delivered = HostSuiteCounts.empty
   private var completed = Option.empty[TestResult]
@@ -67,7 +110,7 @@ private[sbt] final class HostReceipt {
     requireOpen()
     val thread = Thread.currentThread()
     require(!activeGroups.contains(thread), "Host listener thread started an overlapping group")
-    activeGroups = activeGroups.updated(thread, HostGroupReceipt(name, SuiteResult.Empty))
+    activeGroups = activeGroups.updated(thread, HostGroupReceipt(name, SuiteResult.Empty, Vector.empty))
     starts = starts.updated(name, starts.getOrElse(name, 0) + 1)
     if (owned.contains(name)) {
       if (!received.contains(name)) received = received.updated(name, HostSuiteCounts.empty)
@@ -78,7 +121,8 @@ private[sbt] final class HostReceipt {
     requireOpen()
     val thread = Thread.currentThread()
     val group = activeGroups.getOrElse(thread, throw new IllegalStateException("Host event has no active listener group"))
-    activeGroups = activeGroups.updated(thread, group.copy(result = group.result + SuiteResult(event.detail)))
+    val identities = if (owned.contains(group.name)) event.detail.iterator.map(HostEventIdentity.from).toVector else Vector.empty
+    activeGroups = activeGroups.updated(thread, group.copy(result = group.result + SuiteResult(event.detail), events = group.events ++ identities))
     delivered = delivered + HostSuiteCounts.from(SuiteResult(event.detail))
     event.detail.groupBy(detail => HostSuiteName(detail.fullyQualifiedName())).foreach { case (name, details) =>
       if (owned.contains(name)) {
@@ -98,6 +142,7 @@ private[sbt] final class HostReceipt {
     val counts = group.result
     val finished = new SuiteResult(HostSuiteCounts.overall(counts.result, result), counts.passedCount, counts.failureCount, counts.errorCount, counts.skippedCount, counts.ignoredCount, counts.canceledCount, counts.pendingCount, counts.throwables)
     groupResults = groupResults.updated(name, groupResults.getOrElse(name, Vector.empty) :+ finished)
+    if (owned.contains(name)) groupIdentities = groupIdentities.updated(name, groupIdentities.getOrElse(name, Vector.empty) :+ HostGroupIdentity(HostSuiteCounts.from(finished), group.events))
     ends = ends.updated(name, ends.getOrElse(name, 0) + 1)
     delivered = delivered.copy(result = HostSuiteCounts.overall(delivered.result, result))
     if (owned.contains(name)) {
@@ -143,6 +188,12 @@ private[sbt] final class HostReceipt {
     requireOpen()
     require(starts.getOrElse(name, 0) == ends.getOrElse(name, 0), "Fork cancellation overlaps an active host report group")
     ends.getOrElse(name, 0) == 0
+  }
+
+  def completedGroups(names: Set[HostSuiteName]): Map[HostSuiteName, Vector[HostGroupIdentity]] = synchronized {
+    requireOpen()
+    require(names.forall(name => starts.getOrElse(name, 0) == ends.getOrElse(name, 0)), "Fork cancellation overlaps an active host report group")
+    groupIdentities.filter { case (name, _) => names.contains(name) }
   }
 
   def normalise(output: Tests.Output): Tests.Output = synchronized {
@@ -212,7 +263,7 @@ private[sbt] final class HostReceiptGeneration(val receipt: HostReceipt, val sto
   var reports = Option.empty[HostForkReports]
 }
 
-private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStore) {
+private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStore, hostProcess: ForkProcessId) {
   private var current = Option.empty[HostReceiptGeneration]
   private var pending = Vector.empty[HostReceiptGeneration]
 
@@ -236,17 +287,21 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
 
   def configureReports(definitions: Seq[TestDefinition], listeners: Seq[TestReportListener]): Unit = synchronized {
     val generation = current.getOrElse(throw new IllegalStateException("Distage host task has no active receipt"))
-    generation.reports = Some(new HostForkReports(new FileForkRunReports(generation.store.directory), new TaskCompleteness.FileCompletionStore(generation.store.directory), definitions, listeners, generation.receipt))
+    generation.reports = Some(new HostForkReports(new FileForkRunReports(generation.store.directory), new TaskCompleteness.FileCompletionStore(generation.store.directory), definitions, listeners, generation.receipt, hostProcess))
   }
 
-  def cancelForks(): Unit = {
+  def requestForkCancellation(): Unit = {
     val generations = synchronized { pending }
     generations.foreach { generation =>
-      val names = generation.completion.cancel()
-      if (names.nonEmpty) {
-        generation.receipt.cancel()
-        generation.reports.getOrElse(throw new IllegalStateException("Admitted fork has no host reports")).cancel(names)
-      }
+      if (generation.completion.cancel().nonEmpty) generation.receipt.cancel()
+    }
+  }
+
+  def completeForkCancellation(): Unit = {
+    val generations = synchronized { pending }
+    generations.filter(_.receipt.isInterrupted).foreach { generation =>
+      val admissions = generation.completion.cancel()
+      if (admissions.nonEmpty) generation.reports.getOrElse(throw new IllegalStateException("Admitted fork has no host reports")).cancel(admissions)
     }
   }
 
@@ -370,7 +425,7 @@ private[sbt] object HostReceiptPolicy {
   val owner: SettingKey[HostReceiptOwner] = settingKey[HostReceiptOwner]("Distage host task receipt owner")
   val normalisedLogger: SettingKey[TestResultLogger] = settingKey[TestResultLogger]("Result logger receiving reconciled group results")
 
-  def ownerAt(parent: File): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create((parent / "distage-fork-receipts").toPath.toAbsolutePath))
+  def ownerAt(parent: File): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create((parent / "distage-fork-receipts").toPath.toAbsolutePath), ForkProcessId(ProcessHandle.current().pid()))
 
   def names(definitions: Seq[TestDefinition]): Set[HostSuiteName] = definitions.filter(DistageHostPolicy.isDistage).map(value => HostSuiteName(value.name)).toSet
 

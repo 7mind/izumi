@@ -1,26 +1,35 @@
 package izumi.distage.sbt
 
 import izumi.distage.sbt.target.TaskCompleteness
-import izumi.distage.testkit.protocol.{Failure, FailurePhase, ForkRunReport, ForkRunReports, ForkSuiteOwner, ProjectedFailure, TestStatus}
-import sbt.{MessageOnlyException, SuiteResult, TestDefinition, TestEvent, TestReportListener}
+import izumi.distage.testkit.protocol.{Failure, FailurePhase, ForkProcessId, ForkRunReport, ForkRunReports, ForkSuiteOwner, ProjectedFailure, TestStatus}
+import sbt.{MessageOnlyException, SuiteResult, TestDefinition, TestEvent, TestReportListener, TestResult}
 import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SuiteSelector, TestSelector}
 
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
-private[sbt] final class HostForkReports(reports: ForkRunReports, terminals: TaskCompleteness.CompletionStore, definitions: Seq[TestDefinition], listeners: Seq[TestReportListener], receipt: HostReceipt) {
+private[sbt] final case class HostForkSuite(process: ForkProcessId, name: HostSuiteName)
+private[sbt] final case class HostForkProjection(suite: HostForkSuite, events: Vector[Event]) {
+  val result: SuiteResult = SuiteResult(events)
+  val identity: HostGroupIdentity = HostGroupIdentity(HostSuiteCounts.from(result), events.map(HostEventIdentity.from))
+}
+
+private[sbt] final class HostForkReports(reports: ForkRunReports, terminals: TaskCompleteness.CompletionStore, definitions: Seq[TestDefinition], listeners: Seq[TestReportListener], receipt: HostReceipt, hostProcess: ForkProcessId) {
   private final val WaitSeconds = 60L
   private final val PollMillis = 5L
   private val suites = definitions.filter(DistageHostPolicy.isDistage).map(value => HostSuiteName(value.name) -> value).toMap
   private var finished = false
 
-  def cancel(names: Set[HostSuiteName]): Unit = synchronized {
-    if (!finished && names.nonEmpty) {
-      val expected = names.intersect(receipt.selected)
+  def cancel(admissions: Vector[HostForkAdmission]): Unit = synchronized {
+    if (!finished && admissions.nonEmpty) {
+      require(admissions.map(_.process).distinct.size == admissions.size, "Repeated fork process admission")
+      val selected = receipt.selected
+      val expected = admissions.flatMap(admission => admission.suites.intersect(selected).map(name => HostForkSuite(admission.process, name))).toSet
+      val processes = admissions.map(_.process).toSet + hostProcess
       val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(WaitSeconds)
       def ready: Boolean = {
-        val bound = reports.completed().flatMap(_.owners).map(owner => HostSuiteName(owner.name)).toSet
-        val completed = terminals.completed().asScala.map(value => HostSuiteName(value.suite().value())).toSet
+        val bound = reports.completed().flatMap(report => report.owners.map(owner => HostForkSuite(report.process, HostSuiteName(owner.name)))).toSet
+        val completed = terminals.completed().asScala.map(value => HostForkSuite(ForkProcessId(value.pid()), HostSuiteName(value.suite().value()))).toSet
         expected.subsetOf(bound.intersect(completed))
       }
       while (!ready && System.nanoTime() < deadline) {
@@ -29,27 +38,45 @@ private[sbt] final class HostForkReports(reports: ForkRunReports, terminals: Tas
       }
       if (!ready) throw new MessageOnlyException("Incomplete distage fork cancellation reports: " + expected)
       val completed = reports.completed()
-      val owners = completed.flatMap(_.owners).filter(owner => expected.contains(HostSuiteName(owner.name)))
-      require(owners.map(_.name).distinct.size == owners.size, "Fork cancellation has ambiguous repeated suite groups")
-      completed.foreach { report =>
-        report.owners.filter(owner => expected.contains(HostSuiteName(owner.name))).foreach { owner =>
-          val name = HostSuiteName(owner.name)
-          if (receipt.unreported(name)) {
-            val events = project(report, owner, suites(name))
-            val records = terminals.completed().asScala.filter(_.suite().value() == owner.name).toVector
-            require(records.size == 1, "Fork cancellation has no unique suite terminal")
-            val target = records.head.counts()
-            val received = SuiteResult(events)
-            require(Vector(received.passedCount, received.failureCount, received.errorCount, received.skippedCount, received.ignoredCount, received.canceledCount, received.pendingCount) ==
-              Vector(target.success(), target.failure(), target.error(), target.skipped(), target.ignored(), target.canceled(), target.pending()), "Fork cancellation events differ from the target terminal")
-            listeners.foreach(_.startGroup(owner.name))
-            listeners.foreach(_.testEvent(TestEvent(events)))
-            listeners.foreach(_.endGroup(owner.name, received.result))
-          }
+      require(completed.forall(report => processes.contains(report.process)), "Fork report has no admitted process")
+      require(completed.map(_.outcome.run).distinct.size == completed.size, "Repeated fork run identity")
+      val projections = completed.sortBy(report => (report.process != hostProcess, report.process.value, report.outcome.run.value)).flatMap { report =>
+        report.owners.filter(owner => selected.contains(HostSuiteName(owner.name))).map { owner =>
+          val suite = HostForkSuite(report.process, HostSuiteName(owner.name))
+          require(suite.process == hostProcess || expected.contains(suite), "Fork report has no admitted suite")
+          HostForkProjection(suite, project(report, owner, suites(suite.name)))
         }
+      }
+      val records = terminals.completed().asScala.toVector.filter(value => selected.contains(HostSuiteName(value.suite().value())))
+      require(records.forall(value => value.returnedNormally() && processes.contains(ForkProcessId(value.pid()))), "Fork cancellation has an invalid suite terminal")
+      val target = records.groupMap(value => HostForkSuite(ForkProcessId(value.pid()), HostSuiteName(value.suite().value())))(terminalCounts)
+      val projected = projections.groupMap(_.suite)(_.identity.counts)
+      require(target.keySet == projected.keySet && projected.forall { case (suite, counts) =>
+        counts.groupMapReduce(identity)(_ => 1)(_ + _) == target(suite).groupMapReduce(identity)(_ => 1)(_ + _)
+      }, "Fork cancellation events differ from the target terminal")
+      var missing = projections
+      receipt.completedGroups(selected).foreach { case (name, groups) =>
+        groups.foreach { group =>
+          val index = missing.indexWhere(value => value.suite.name == name && value.identity.matches(group))
+          require(index >= 0, "Completed host group differs from every target report: " + name.value)
+          missing = missing.patch(index, Nil, 1)
+        }
+      }
+      require(missing.forall(_.suite.process != hostProcess), "In-process target report has no completed host group")
+      missing.foreach { projection =>
+        val name = projection.suite.name.value
+        listeners.foreach(_.startGroup(name))
+        listeners.foreach(_.testEvent(TestEvent(projection.events)))
+        listeners.foreach(_.endGroup(name, projection.result.result))
       }
       finished = true
     }
+  }
+
+  private def terminalCounts(record: TaskCompleteness.Completion): HostSuiteCounts = {
+    val counts = record.counts()
+    val result = if (counts.error() > 0) TestResult.Error else if (counts.failure() > 0) TestResult.Failed else TestResult.Passed
+    HostSuiteCounts(result, counts.success(), counts.failure(), counts.error(), counts.skipped(), counts.ignored(), counts.canceled(), counts.pending())
   }
 
   private def project(report: ForkRunReport, owner: ForkSuiteOwner, definition: TestDefinition): Vector[Event] = {

@@ -1,6 +1,6 @@
 package izumi.distage.sbt
 
-import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
+import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkProcessId, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
 
 import sbt._
 import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SubclassFingerprint, SuiteSelector}
@@ -18,7 +18,7 @@ object HostReceiptTest {
     val parent = Paths.get(arguments.head).toAbsolutePath
     require(!Files.exists(parent), "Receipt fixture directory must be new")
     val _ = Files.createDirectories(parent)
-    def owner(): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create(parent))
+    def owner(): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create(parent), ForkProcessId(ProcessHandle.current().pid()))
     check("reject a selected suite omitted by the target") {
       val receipt = new HostReceipt
       receipt.configure(Set(name))

@@ -1,6 +1,7 @@
 package izumi.distage.sbt
 
 import izumi.distage.sbt.target.{ForkCompletionAgent, TaskCompleteness}
+import izumi.distage.testkit.protocol.ForkProcessId
 import net.bytebuddy.ByteBuddy
 
 import sbt.{MessageOnlyException, Tests}
@@ -10,6 +11,8 @@ import java.nio.file.{Files, Path, StandardCopyOption}
 import java.util.{Base64, UUID}
 import java.util.jar.{Attributes, JarEntry, JarOutputStream, Manifest}
 import java.util.concurrent.TimeUnit
+
+private[sbt] final case class HostForkAdmission(process: ForkProcessId, suites: Set[HostSuiteName])
 
 private[sbt] final class HostForkCompletion(directory: Path) {
   private final val ExitWaitSeconds = 30L
@@ -30,13 +33,15 @@ private[sbt] final class HostForkCompletion(directory: Path) {
     }
   }
 
-  def cancel(): Set[HostSuiteName] = synchronized {
+  def cancel(): Vector[HostForkAdmission] = synchronized {
     if (forks.nonEmpty) {
       val signal = directory.resolve("cancel")
       if (!Files.isRegularFile(signal)) publish(signal, "cancel")
       require(read(signal) == "cancel", "Invalid fork cancellation signal")
     }
-    forks.filter { case (prefix, _) => Files.isRegularFile(path(prefix, "entered")) }.flatMap(_._2).toSet
+    forks.collect {
+      case (prefix, names) if names.nonEmpty && Files.isRegularFile(path(prefix, "entered")) => HostForkAdmission(ForkProcessId(read(path(prefix, "entered")).toLong), names)
+    }
   }
 
   def finish(commit: Boolean): Unit = {
