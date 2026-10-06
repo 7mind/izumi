@@ -164,9 +164,11 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
                     owners.update(test.suite, event.fullyQualifiedName())
                     require(started.add(test), "Duplicate target test start")
                   case RunEvent.TestCompleted(_, result) =>
-                    require(started.contains(result.id) && owners.get(result.id.suite).contains(event.fullyQualifiedName()), "Target completion has no matching test owner")
+                    require(started.contains(result.id) || result.status == TestStatus.Cancelled || result.status == TestStatus.Skipped, "Target completion has no matching test start")
                     val definition = selected.getOrElse(event.fullyQualifiedName(), throw new IllegalArgumentException("Target result belongs to an unselected suite"))
+                    require(owners.get(result.id.suite).forall(_ == definition.fullyQualifiedName()), "Target logical suite changed its class owner")
                     require(!results.exists(_.id == result.id), "Duplicate target test completion")
+                    owners.update(result.id.suite, definition.fullyQualifiedName())
                     results += result
                     val projected = new TargetHostTestEvent(definition, result)
                     val name = definition.fullyQualifiedName()

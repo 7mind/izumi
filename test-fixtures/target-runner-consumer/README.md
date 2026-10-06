@@ -119,3 +119,35 @@ python3 -B test-fixtures/target-runner-consumer/verify-mixed.py \
   --scala-version 3.9.0 2.13.18 \
   --evidence-dir /srv/nvme/tmp/izumi-impl/target-mixed-example
 ```
+
+`verify-di.py` runs sixteen histories per target/compiler with plain, Identity,
+Cats Effect and ZIO environment suites. The owner factory uses production
+`StaticPluginLoader.scanCompileTime("candidate.plugins")` in a dependency
+project. Histories change a private scanned implementation, compiled
+configuration and an untracked external file, then exercise `test` and
+`testQuick`. They also cover partial selections, activation, disabled
+memoization and host limits one/two.
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-di.py \
+  --repo-root "$PWD" --artifact-version 1.3.0-M5-target-abort-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-mixed-fork-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/target-di-example
+```
+
+The complete batch checks 64 command histories, 1,060 physical/XML/protocol
+outcomes and 168 resource lifetimes. The driver checks fresh resources and run
+IDs, sharing within each effect, configuration values, one plugin construction
+per command, no acquisition during discovery, and conservative cache decisions
+without compilation for external file changes. Publish the higher runner with
+its transitive dependencies and the three production host plugins first.
+These are Behavioral-Active, Effectual, Good-Communication checks; DI
+cancellation and deliberate finalization failure require separate controls.
+
+`verify-di-failures.py` uses the same required arguments and five histories per
+target/compiler: baseline, Cats body failure, incremental recovery, shared
+resource release failure, and quick recovery. It requires the two deliberate
+test-task failures, then reconciles all selected terminal identities, physical
+bodies, XML statuses, run-level finalization errors and fresh resources. A
+controller exit zero requires that capture audit to pass.

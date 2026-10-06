@@ -41,6 +41,13 @@ private[distage] final class DistageProviderReporter(val tests: Vector[TestDescr
     outcome(failures, cancelled = true)
   }
 
+  def abortRemaining(failures: Vector[Failure]): ProviderOutcome = synchronized {
+    require(failures.nonEmpty, "Abnormal engine termination requires a failure")
+    val reporting = active
+    tests.filterNot(test => results.contains(test.id)).foreach(test => complete(TestResult(test.id, TestStatus.Cancelled, Some(failures.head), 0L), reporting))
+    outcome(failures, cancelled = false)
+  }
+
   override def beginScope(id: ScopeId): Unit = ()
   override def endScope(id: ScopeId): Unit = ()
   override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()

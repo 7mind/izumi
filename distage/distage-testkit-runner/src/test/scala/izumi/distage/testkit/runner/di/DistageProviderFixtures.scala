@@ -61,6 +61,7 @@ object DistageProviderFixtures {
         .flatMap(_ => transport(checks, context, failRelease = true, sameCause = true))
         .flatMap(_ => skipped(checks))
         .flatMap(_ => reporterInvariants(checks))
+        .flatMap(_ => abortedReporting(checks))
         .flatMap(_ => SpecFrontendFixtures.run(context, checks.verify))
         .flatMap(_ => SpecInterruptionFixtures.run(context, checks.verify))
         .flatMap(_ => SpecCancellationFixtures.run(context, checks.verify))
@@ -222,6 +223,32 @@ object DistageProviderFixtures {
         checks.verify("distinct failed cancellation events retain their failure occurrences", outcome.failures.size == fixture.ids.size)
       }
     }
+  }
+
+  private def abortedReporting(checks: Checks): Future[Unit] = {
+    val tests = Vector.tabulate(2) { index =>
+      val id = TestId(BuildTargetId("provider-target"), SuiteId("AbortedReporterSuite"), Vector(index.toString), None)
+      TestDescriptor(id, id.path.mkString, SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
+    }
+    val reporter = new DistageProviderReporter(tests)
+    var events = Vector.empty[ProviderEvent]
+    reporter.begin(RunExecutionContext(RunId("aborted-reporter"), new Cancellation, event => { events :+= event }))
+    val meta = FullMeta(TestMeta(EngineTestId(tests.head.id.path, EngineSuiteId(tests.head.id.suite.value)), SourceFilePosition("DistageProviderFixtures.scala", 1), 0L), SuiteMeta(EngineSuiteId(tests.head.id.suite.value), tests.head.id.suite.value, tests.head.id.suite.value))
+    val timing = Timing(OffsetDateTime.now(ZoneOffset.UTC), Duration.Zero)
+    val scope = izumi.distage.testkit.model.ScopeId(IzUUID.generateTimeUUID())
+    reporter.testStatus(scope, 0, meta, EngineStatus.Instantiating(izumi.distage.model.plan.Plan.empty, timing, logPlan = false))
+    reporter.testStatus(scope, 0, meta, EngineStatus.Succeed(IndividualTestResult.TestSuccess(meta, timing, timing, timing)))
+    val completed = reporter.outcome(Vector.empty, cancelled = false).results.head
+    val failure = RunnerFailure.fromThrowable(FailurePhase.Finalization, new IllegalStateException("controlled aborted finalizer"))
+    checks.verify("aborted reporting rejects termination without a failure", Try(reporter.abortRemaining(Vector.empty)).isFailure)
+    val outcome = reporter.abortRemaining(Vector(failure))
+    checks.verify("aborted finalization terminalizes every selected test", outcome.results.map(_.id) == tests.map(_.id))
+    checks.verify("aborted finalization preserves completed body results", outcome.results.head == completed && completed.status == TestStatus.Succeeded)
+    checks.verify("aborted finalization cancels the unexecuted remainder with its cause", outcome.results.last.status == TestStatus.Cancelled && outcome.results.last.failure.contains(failure))
+    checks.verify("aborted finalization preserves its failure without external cancellation", outcome.failures == Vector(failure) && !outcome.cancelled)
+    checks.verify("aborted finalization emits exactly one completion per selected test", events.collect { case ProviderEvent.TestCompleted(result) => result } == outcome.results)
+    checks.verify("aborted finalization starts only the attempted test", events.collect { case ProviderEvent.TestStarted(id) => id } == Vector(tests.head.id))
+    Future.successful(())
   }
 
   private def reporterInvariants(checks: Checks): Future[Unit] = {

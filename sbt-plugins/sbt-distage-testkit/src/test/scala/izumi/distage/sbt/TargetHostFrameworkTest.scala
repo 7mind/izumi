@@ -22,7 +22,7 @@ object TargetHostFrameworkTest {
   def main(arguments: Array[String]): Unit = {
     require(arguments.isEmpty)
     var failures = Vector.empty[String]
-    for (threads <- Vector(1, 2); scenario <- Vector("success", "body-failure", "run-failure", "incomplete", "launch-failure", "bad-sequence", "cancel", "runner-failure", "tasks-failure", "logical-alias", "bad-owner")) {
+    for (threads <- Vector(1, 2); scenario <- Vector("success", "body-failure", "run-failure", "incomplete", "launch-failure", "bad-sequence", "cancel", "runner-failure", "tasks-failure", "logical-alias", "bad-owner", "cancel-before-start", "skip-before-start", "success-before-start", "bad-unstarted-owner")) {
       try check(threads, scenario)
       catch { case NonFatal(cause) =>
         val message = s"threads=$threads scenario=$scenario cause=$cause"
@@ -31,7 +31,7 @@ object TargetHostFrameworkTest {
       }
     }
     require(failures.isEmpty, failures.mkString("; "))
-    println("TARGET_HOST_FRAMEWORK_CHECK_OK scenarios=22")
+    println("TARGET_HOST_FRAMEWORK_CHECK_OK scenarios=30")
   }
 
   private def check(threads: Int, scenario: String): Unit = {
@@ -88,13 +88,18 @@ object TargetHostFrameworkTest {
                 val results = selected.toVector.flatMap { definition =>
                   (1 to 3).map { index =>
                     val failure = if (scenario == "body-failure" && definition == selected.last && index == 3) Some(error(FailurePhase.Test, "body failed")) else None
-                    val suite = (if (scenario == "logical-alias") "logical:" else "") + definition.fullyQualifiedName()
-                    TestResult(TestId(BuildTargetId("fixture"), SuiteId(suite), Vector("same", index.toString), None), if (failure.isDefined) TestStatus.Failed else TestStatus.Succeeded, failure, 1000000L)
+                    val suite = (if (Set("logical-alias", "cancel-before-start", "skip-before-start").contains(scenario)) "logical:" else "") + definition.fullyQualifiedName()
+                    val status = scenario match {
+                      case "cancel-before-start" | "bad-unstarted-owner" => TestStatus.Cancelled
+                      case "skip-before-start" => TestStatus.Skipped
+                      case _ => if (failure.isDefined) TestStatus.Failed else TestStatus.Succeeded
+                    }
+                    TestResult(TestId(BuildTargetId("fixture"), SuiteId(suite), Vector("same", index.toString), None), status, failure, 1000000L)
                   }
                 }
                 results.reverse.foreach { result =>
-                  eventOwner = if (scenario == "bad-owner") "fixture.Unselected" else result.id.suite.value.stripPrefix("logical:")
-                  emit(RunEvent.TestStarted(run, result.id))
+                  eventOwner = if (Set("bad-owner", "bad-unstarted-owner").contains(scenario)) "fixture.Unselected" else result.id.suite.value.stripPrefix("logical:")
+                  if (!Set("cancel-before-start", "skip-before-start", "success-before-start", "bad-unstarted-owner").contains(scenario)) emit(RunEvent.TestStarted(run, result.id))
                   emit(RunEvent.TestCompleted(run, result))
                 }
                 if (scenario != "incomplete") {
@@ -138,9 +143,15 @@ object TargetHostFrameworkTest {
     } else execute(tasks)
     val earlyFailure = Set("runner-failure", "tasks-failure").contains(scenario)
     require(launches.get() == (if (earlyFailure) 0 else 1), "Selected suite tasks relaunched the aggregate")
-    val bodyCount = if (scenario == "launch-failure" || scenario == "bad-owner" || earlyFailure) 0 else 15
+    if (Set("cancel-before-start", "skip-before-start").contains(scenario)) {
+      val causes = observed.filter(_.status() == Status.Error).map(_.throwable().get().getMessage)
+      require(causes.isEmpty, scenario + ": valid unstarted completion rejected: " + causes.mkString("; "))
+      val status = if (scenario == "cancel-before-start") Status.Canceled else Status.Skipped
+      require(observed.size == 15 && observed.forall(_.status() == status), scenario + ": unstarted completion projection")
+    }
+    val bodyCount = if (Set("launch-failure", "bad-owner", "success-before-start", "bad-unstarted-owner").contains(scenario) || earlyFailure) 0 else 15
     require(observed.count(_.selector().isInstanceOf[TestSelector]) == bodyCount, scenario + ": body event count")
-    val groupFailure = !Set("success", "body-failure", "logical-alias").contains(scenario)
+    val groupFailure = !Set("success", "body-failure", "logical-alias", "cancel-before-start", "skip-before-start").contains(scenario)
     require(observed.count(_.status() == Status.Error) == (if (groupFailure) 5 else 0), scenario + ": suite error count")
     require(observed.count(_.status() == Status.Failure) == (if (scenario == "body-failure") 1 else 0))
     selected.foreach(definition => require(observed.filter(_.selector().isInstanceOf[TestSelector]).count(_.fullyQualifiedName() == definition.fullyQualifiedName()) == (if (bodyCount == 0) 0 else 3)))

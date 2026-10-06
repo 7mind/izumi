@@ -150,7 +150,11 @@ final class DistageExecutionProvider(
                   case FutureFailure(cause) => failed(cause)
                 }
                 val failures = executionFailures ++ RunnerFailure.unreported(executionFailures, interruptionFailures)
-                Success(if (cancelled) reporter.cancelRemaining(failures) else reporter.outcome(failures, cancelled = false))
+                Success(
+                  if (cancelled) reporter.cancelRemaining(failures)
+                  else if (executionFailures.nonEmpty) reporter.abortRemaining(failures)
+                  else reporter.outcome(failures, cancelled = false)
+                )
               }
             }
           }

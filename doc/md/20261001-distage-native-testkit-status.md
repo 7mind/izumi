@@ -111,10 +111,10 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.22 | in progress | Current432-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures, completed foreign results and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
 | 2d.23 | in progress | Current audit passes eighteen resolved Compile classpaths and eighteen published POMs across all runner layers/platforms/supported compilers;46 production sources import no SBT implementation. JVM variants use only the public test interface. Production Node/Native target host execution and final evaluation remain open. |
 | 2e.1 | in progress | Local checkpoint 08661a1ae preserves all 2,478 baseline cases across both compilers and all three platforms; JS/Native use the base runner with no ScalaTest-family classpath entries. Final evaluation remains open. |
-| 2e.2 | in progress | Base runner checkpoint passes 826 checks on all six supported lanes; higher provider checkpoint passes 516 checks on each of the four JS/Native compiler lanes. Final evaluation remains open. |
+| 2e.2 | in progress | Base runner checkpoint passes 826 checks on all six supported lanes; The corrected higher provider passes523 checks on each of the four JS/Native compiler lanes and646 on each JVM compiler lane. Final evaluation remains open. |
 | 2e.3 | in progress | Target provider checkpoint 20f899de2 executes real DI/effect/configuration and Lifecycle controls on JS/Native under both supported compilers; full SDK integration and final evaluation remain open. |
 | 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
-| 2e.5 | in progress | Production SDK checkpoints verify 72 stock-policy contexts, 44 configuration/aggregation captures, 44 real ScalaCheck mixed histories, inspection and recovery controls. Full DI/scanned-plugin histories, complete target matrix and final evaluation remain open. |
+| 2e.5 | in progress | Production SDK checkpoints verify 72 stock-policy contexts, 44 configuration/aggregation captures, 44 real ScalaCheck mixed histories, inspection and recovery controls. The corrected provider additionally passes64 tracked DI/scanned-plugin histories across both compilers/platforms, including untracked configuration and memoization. The corrected host/provider passes20 DI failure/recovery histories with420 terminal records. Complete target matrix and final evaluation remain open. |
 | 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
 | 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. Production host integration, DI finalization and final evaluation remain open. |
 | 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
@@ -17495,3 +17495,318 @@ fork correction; the corrected publications are directly qualified by the
 fresh 32-context JVM batch, the distinct-child reproduction and the 44-context
 SDK batch. Full final-head gates remain required. No tasks remain in flight;
 nothing was pushed. The next entry records the local commit ID.
+
+
+## 2026-10-06: next SDK DI publication batch in progress
+
+The mixed-framework milestone is local commit `b3448cde9`. Its working tree
+postcondition is clean, and `git merge-base --is-ancestor origin/develop HEAD`
+returns 0. The earlier authorized rebase remains incorporated. The cancellation
+batch audit hashes are `6e5942875aa973a2984db9e73b82cf6cc95a66ca4245d5a810de15811cad78aa`
+(host one) and `5f2aec1be2c1ba347bab62208aa564ca9db970d18b5d80ab74d183a1c3ddcf7e`
+(host two).
+
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-provider-publication-first.py` is running
+one SBT2 batch on this head. Its command manifest freezes 1,612 compiler/build
+inputs and records the Compile dependency graph derived from generated build
+settings: twenty-four modules, with two protocol publications on Scala3.8.4 and
+ninety-two JS/Native runtime publications on Scala3.9.0/2.13.18. The private
+version is `1.3.0-M5-target-provider-SNAPSHOT`. Documentation artifacts are
+explicitly omitted for these private fixture publications; this is not the
+normal publication acceptance gate. The batch also runs assertion, base-runner
+and real provider controls on each target/compiler combination.
+
+Observed partial progress: both Scala3.9 provider programs have passed 516
+checks, with JS completion and Native executor-termination markers. Dependency
+publication is still in progress. No final producer result, publication graph
+qualification or SDK DI consumer result is claimed yet.
+
+The next fixture is being prepared in `/srv/nvme/tmp/izumi-impl/2e-sdk-di-template`
+and `2e-sdk-di-consumer-first.py`. It contains five ordinary/plain-Identity
+suites plus Cats Effect and ZIO environment suites, owner-cache factory loading,
+real configuration snapshots, shared Lifecycle resources, selected IDs,
+activation/memoization overrides, source invalidation and a host-limit-one
+control. These templates have not run or been copied into the tracked tree.
+Factory-source/configuration-source invalidation will not be described as the
+complete runtime-scanned-plugin or external configuration-input gate. The
+platform default loaders explicitly reject runtime scanning on JS/Native;
+compile-time discovery and its full invalidation contract still need evidence.
+
+
+### Provider graph and SDK DI fixture follow-up
+
+The first SDK DI consumer run, `2e-sdk-di-consumers-scala3-first`, returned
+actual SBT exit 1 on both targets before executing bodies: the fixture omitted
+Scala3 `-Yretain-trees`, required by distage macros. The second run enabled that
+flag and `-Xmax-inlines:64`; both targets compiled the fixtures but linking
+returned 1 because fixture `UUID.randomUUID` reached unsupported
+`java.security.SecureRandom`. The third driver and template use the existing
+portable `IzUUID.generateTimeUUID`; its results are pending. These are fixture
+setup failures, not reproduced production defects. Each attempt preserves its
+source and command manifests in `/srv/nvme/tmp/izumi-impl`.
+
+Inspection of generated build settings shows protocol JS/Native support
+Scala3.8.4 **and Scala2.13.18**. The running provider publication driver excludes
+protocol from the runtime publication loop and therefore omits its two
+Scala2.13 publications. The earlier count of ninety-four describes that
+incomplete driver, not the complete supported dependency graph. Publish and
+qualify those two additional artifacts after the current producer terminates;
+the complete graph requires ninety-six artifacts. Scala3 protocol remains
+pinned to 3.8.4, rather than the runtime modules' 3.9.0 compiler.
+
+An independent partial audit, `2e-provider-scala3-publication-audit.py`, verified
+all forty-eight Scala3 artifacts against compiled class/TASTy/target payloads
+and 1,612 unchanged producer inputs. Its SHA256 is
+`2cf13e427825d141eabecf9c755a15ecec0008e765afb9fbc150117ff73ed651`.
+This is partial evidence; the producer and Scala2.13 graph are not yet complete.
+
+
+The third Scala3 SDK DI run returned actual SBT exit 0 for JS and Native, and
+controller exit 0: 24 contexts, 362 physical/XML/protocol bodies, 60 matched
+Lifecycle acquisitions/releases, and unchanged immutable fixture/publication
+inputs. This includes Identity sharing across three suites, real Cats IO and
+ZIO environment bodies, selected suite/individual requests, memoization off,
+activation override, same-session private implementation/configuration source
+edits under `test` and `testQuick`, and host test limit one.
+`2e-sdk-di-independent-audit.py` independently rechecked the captures and hashes;
+its report SHA256 is
+`413645918c978e3527e786fa88efb26558b9b47eb6bfd22ec37829aaafdc12cc`.
+This does not establish the external-input or scanned-plugin acceptance items.
+
+The first provider producer was bounded after no log progress for ten minutes
+in Scala2.13 dependency resolution. Three thread snapshots show active Coursier
+resolution computations, not a demonstrated deadlock; the last snapshot has
+586 seconds of resolver-thread CPU. The exact producer Java PID received TERM;
+the driver recorded actual exit 143 and 1,612 unchanged inputs. Completed
+Scala3 publications and controls remain partial evidence, not an exit-0 batch.
+The second driver aligns private versions across all generated cross-project
+variants (including test-support projects), publishes the Scala2.13 graph in
+dependency order with its protocol artifacts, then runs the two real provider
+controls. It will also qualify the complete 96-artifact graph. This tests a
+partial-version-override hypothesis; no production resolution correction or
+confirmed root cause is claimed.
+
+A further scratch consumer batch adds untracked configuration files read by
+real Node fs/Native filesystem adapters. It preserves the existing twelve
+histories and adds four external-input `test`/`testQuick` histories per target.
+Its results are pending; the fixtures are still untracked prototypes.
+
+
+The external-input Scala3 batch, `2e-sdk-di-consumers-external-scala3-first`,
+returned actual exit 0 for both targets and controller exit 0: 32 contexts,
+530 physical/XML/protocol bodies, 84 matched resources, and unchanged immutable
+inputs. The independent full-capture audit SHA256 is
+`a901174d808172f9f8540adfc45df6496ba9ce285290cf26d3c15b4caeaf2f8f`.
+Eight external-file contexts additionally verify **no compiler invocation**,
+new gamma/delta snapshots delivered to real Identity/Cats/ZIO bodies, and
+explicit per-suite `DISTAGE_CACHE_DECISION ... decision=rerun
+reason=untracked-input-closure` logs under both `test` and `testQuick`.
+The external-input audit SHA256 is
+`cd2a78621d9bdc8bae93042a7a061595ada3689a58e0b74011bc1eebc076db72`.
+Scala2.13 qualification remains pending.
+
+`2e-sdk-di-consumer-scan.py` now tests compile-time package discovery from a
+separate compiled dependency module, through an owner-cache factory. It retains
+the same 16 histories per target, including a private implementation reached
+through the scan and untracked configuration files. Its first Scala3 results
+are pending; no runtime-scanning capability is asserted for closed-world targets.
+
+
+The Scala3 scanned-plugin batch, `2e-sdk-di-consumers-scan-scala3-first`, returned
+actual SBT exit 0 on JS and Native, controller exit 0, and unchanged immutable
+inputs. Its 32 contexts execute 530 bodies with 84 matched resource lifetimes.
+Independent capture audit SHA256:
+`2c123e51857820c08bb1df748acdd3356a8dab0c1b53adcd4e8462fc70bc9143`.
+Four implementation contexts separately verify dependency recompilation and
+revision two under both `test` and `testQuick`, with no revision-one output.
+Their scan audit SHA256 is
+`dc3899b80e9ba33ae2f33a58f4231aa5e6aebeac505a95d52ffe3ed579a08fc5`.
+Discovery uses the production `StaticPluginLoader.scanCompileTime` macro on
+`candidate.plugins` in the dependency project; no constructor is directly
+listed in the loader body. This supplies evidence for compile-time package
+scanning and a private implementation reached through it, not runtime package
+scanning. The target runtime defaults continue to reject runtime scanning.
+The analogous Scala2.13 lanes and tracked fixture qualification remain pending.
+
+
+### Reproduced SDK DI finalizer-abort terminal-record defect
+
+The scratch failure driver runs baseline, deliberate Cats body failure,
+recovery, deliberate shared Lifecycle finalizer failure, and recovery in the
+same SBT session. Both Scala3 targets returned outer SBT exit 0 because the
+driver explicitly requires the two failing task results; this is not a claim
+that their deliberate-failure test commands passed.
+
+Before any production correction,
+`python3 -B /srv/nvme/tmp/izumi-impl/2e-sdk-di-finalization-reproduction.py
+/srv/nvme/tmp/izumi-impl/2e-sdk-di-consumers-failures-scala3-first` returned 1 for
+`Provider omitted selected test terminal records after finalizer failure`.
+The JS finalizer-failure capture selects 21 tests but returns 18 succeeded
+records, two finalization failures, and two unrelated transport invariant
+failures for the omitted records. Its framed capture SHA256 is
+`54c5103860f87d6c3cf9818670fc42c1eb70c370be8c71a0eaa94bcd5567f5d6`.
+The analogous Native capture has all21 records and three finalization failures,
+SHA256 `4534527d083d4d87681e021aa5f60c4bb6bed14826fb79b0170cfef694bfd641`.
+The Cats body-failure capture attributes exactly one failed third Cats body,
+retains the other20 succeeded records, and has no run-level transport failure.
+
+Inspection shows `DistageProviderReporter.outcome` returns only completed
+records. Uncancelled abnormal engine termination in `DistageExecutionProvider`
+does not terminalize selected tests whose effect group never ran. The provider
+and session invariant checks detect this omission and reject success; they must
+remain intact. The correction must preserve completed records and explicitly
+terminalize the unexecuted remainder on abnormal termination while retaining
+the original failure. A normally successful provider that omits records must
+still fail its invariant. The active frozen producer is finishing before source
+edits; no correction has been made or claimed yet.
+
+
+The second producer returned actual SBT exit 0 and 1,612 unchanged inputs.
+Both Scala2.13 provider controls passed 516 checks, including Native executor
+termination. Its `publications.json` qualifies all96 jars against compiled
+class/TASTy/NIR/SJSIR payloads; report SHA256 is
+`82ae857c6f8fd63f36f5ee18f14642ff3694e8f1e300056874975529fd866f18`.
+This is private publication evidence with documentation artifacts omitted, not
+the normal publish gate. The aligned-version/dependency-order retry completes;
+those two changes do not isolate the exact cause of the first resolution stall.
+
+The Scala2.13 scanned-plugin SDK batch returned actual exit 0 on JS and Native,
+controller exit 0, and unchanged immutable inputs: 32 contexts, 530 bodies,
+84 matched resource lifetimes. Independent audit SHA256 is
+`06b6937cf06de30151cb7a5cfb6633f62e789b17ef93c45fa85abdd8fbcc251b`.
+Together with its Scala3 counterpart this verifies 64 real SDK histories,
+1,060 bodies and 168 resources across the supported compiler/target matrix.
+
+Only after the producer terminated, `abortedReporting` was added to the real
+provider fixture. It reports one completed success and a finalization failure
+for a two-test selection, then requires complete selected terminal identities.
+The focused fail-first producer is running; production sources remain unchanged.
+
+
+## 2026-10-06: provider abort correction and SDK host terminal reproduction
+
+The focused `2e-aborted-reporting-failfirst` producer returned actual exit1
+for `aborted finalization terminalizes every selected test`, before the shared
+provider correction. The provider now terminalizes unreported selected tests
+as Cancelled on abnormal engine termination, preserving completed results and
+the original run failures. Normal successful-provider completeness checks and
+external cancellation semantics remain unchanged.
+
+The frozen `2e-aborted-reporting-producer-first` batch returned actual exit0,
+1,616 unchanged inputs, 523 checks in each supported JS/Native compiler lane,
+and four matching private higher-runner publications at
+`1.3.0-M5-target-abort-SNAPSHOT`. Publication audit SHA256:
+`1bd1f0574cf44bc70ff3796aecab764035334e36833d74f120e470da070424d3`.
+The subsequent `2e-aborted-reporting-jvm-controls` batch returned actual exit0
+with 646 JVM provider checks on Scala3.9.0 and Scala2.13.18.
+
+The tracked consumer command was:
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-di.py \
+  --repo-root "$PWD" \
+  --artifact-version 1.3.0-M5-target-abort-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-mixed-fork-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2e-sdk-di-tracked-matrix-first
+```
+
+All four SBT processes and the controller returned actual exit0. The independent
+`2e-sdk-di-independent-audit.py` returned0, verifying64 command histories,
+1,060 physical/XML/protocol test outcomes and168 fresh, matched DI resource
+lifetimes. Its report SHA256 is
+`b2d20770c1db377742d400ab2645bbcf7c56e75d0f9697ba2fc156b9c90bd989`.
+The histories include compiled package scanning, changed private implementation,
+configuration and untracked external inputs, selection, memoization and host
+limits. This is positive-path evidence for the corrected shared provider.
+
+The four-lane `2e-sdk-di-consumers-failures-matrix-second` batch returned outer
+SBT exit0 because its driver deliberately catches failed test tasks. Its
+independent failure audit returned1: the Scala3 JS finalizer-failure stream
+ends at a valid TestCompleted(Cancelled) record without a matching TestStarted;
+there is no final application completion. Inspection of TargetHostEvents shows
+it unconditionally requires a start record for every completion, whereas the
+provider event contract explicitly permits unstarted Cancelled/Skipped tests.
+The host rejects this legitimate abort outcome and truncates its accepted
+stream. This is an additional reproduced host defect, not a passing failure
+matrix. The focused host regression is running before any host correction.
+
+
+`2e-unstarted-completion-failfirst` returned actual exit1 with exactly four
+expected failures (Cancelled/Skipped times host limits one/two), all retaining
+`Target completion has no matching test owner`. Its captured log SHA256 is
+`74f5336ab36971b2e81d57df9cf8f7651bd0e27459036f0177d307b28a0787ed`.
+Only afterward, TargetHostEvents was changed to admit unstarted Cancelled and
+Skipped completions. Every completion still requires a selected class owner,
+stable logical-suite ownership and unique terminal identity; successful or
+failed bodies still require a start record. The expanded host fixture also
+checks aliased logical suite identities and rejects unstarted successful tests
+and unselected completion owners. The current private producer's focused host
+control passes all30 scenarios; remaining reporting controls and publication
+qualification are still running. These changes are not yet committed.
+
+
+The `2e-unstarted-completion-producer-first` command runs the corrected target
+host fixture, HostReceiptTest, HostJUnitReportsTest, HostForkReportsTest and
+HostForeignForkReportsTest, then publishes all three SBT plugins under
+`1.3.0-M5-target-abort-host-SNAPSHOT`. It returned actual exit0 with1,616 frozen
+inputs unchanged and three source/class/TASTy-qualified publications.
+Publication report SHA256:
+`ba179a1b6ac8731b8b4da7ea022a4afd490a1207f4fa1531cc5d2c203f88945a`.
+Exact SBT argv and individual controls are in its `command.json` and `run.log`.
+
+The durable failure fixture command was:
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify-di-failures.py \
+  --repo-root "$PWD" \
+  --artifact-version 1.3.0-M5-target-abort-SNAPSHOT \
+  --production-host-version 1.3.0-M5-target-abort-host-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2e-sdk-di-failures-tracked-first
+```
+
+All four actual SBT processes, the controller and the independent failure audit
+returned0 with unchanged immutable inputs. Its20 histories reconcile420
+selected terminal records,411 attempted physical bodies,57 fresh matched
+resources, exact XML statuses and run-level errors. Body failure has one failed
+Cats third test and20 successes; finalizer failure retains only the original
+Finalization causes and explicitly cancels the unexecuted remainder. No
+Transport invariant failures survive. `test` recovers after body failure and
+`testQuick` recovers after release failure in the same SBT session. Independent
+audit SHA256:
+`631cf24631d387932e0ac6fa7eb04ace416fb601b28b744148fb84ca28459969`.
+The outer exit0 means the driver required those deliberate failed tasks and
+passed capture audits; it does not mean the deliberate test commands succeeded.
+
+The full positive64-history matrix is being rerun with these corrected host
+publications. The separate real SDK held-DI-finalizer cancellation probe is
+running at host limit2; no cancellation checkpoint is claimed yet.
+
+
+The corrected-host positive batch `2e-sdk-di-tracked-matrix-second` completed:
+all four actual SBT exits0, controller0, unchanged immutable inputs,64 histories,
+1,060 reconciled outcomes and168 matched resources. The independent audit
+returned0; SHA256
+`8e66d8a1ac8322d4fddb9b06fcfb5470c1f6677b774333196444b032d0862d58`.
+Its command differs from the preceding positive command only in the evidence
+directory and host version `1.3.0-M5-target-abort-host-SNAPSHOT`.
+
+The separate scratch `2e-sdk-di-held-cancel-first` probe also completed all four
+actual SBT processes and its controller at0. It checks12 histories with252
+physical/XML/protocol results and48 resource lifetimes at host limit2. A real
+memoized Cats Effect Lifecycle finalizer writes an entered marker and suspends
+for five seconds. The host interrupts its active suite task only after observing
+that marker, then verifies after200ms that the finalizer remains entered and no
+application terminal frame exists. After the SDK task returns it requires the
+finalizer's exit marker. The cancellation command retains21 successful body
+results but a cancelled overall run and seven suite errors; the next incremental
+command has fresh resources and a fresh successful application. Independent
+held-boundary audit returned0; SHA256
+`356381695659ebb13e8524de965b2815ed2040f9505f48f3a2e64a82b5b791bf`.
+This is a Cats finalizer checkpoint, not yet the tracked limit1/2 matrix or a
+claim about every effect's interruption. No whole acceptance phase is closed.
+
+This local reporting checkpoint includes the shared provider correction,
+selected-owner-aware host correction, fail-first regressions, and durable DI
+history/failure fixtures. `git diff --check` and Python AST checks pass.
