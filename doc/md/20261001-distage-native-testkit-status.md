@@ -116,7 +116,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
 | 2e.5 | not started | No evaluation point passed yet. |
 | 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
-| 2e.7 | in progress | Actual host interruption reproduces lost SDK events; an owned SDK worker and production target cancellation input preserve all fifteen results, five held releases and cancelled terminal outcomes on both compilers/platforms below. Complete host XML/SDK lifecycle recovery and DI finalization remain open. |
+| 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. Production host integration, DI finalization and final evaluation remain open. |
 | 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
 | 3.1 | not started | No evaluation point passed yet. |
 | 3.2 | not started | No evaluation point passed yet. |
@@ -16668,3 +16668,69 @@ The production target bootstrap is exercised; its host projection remains fixtur
 code. Interrupted host XML, SDK completion/reuse, full platform host policy,
 real DI/effect lifecycles, browser input and complete2e/final evaluation remain
 open. No whole phase or final gate closes.
+
+
+## 2026-10-06: complete candidate host cancellation reports and SDK recovery
+
+The captured first-suite XML omission is corrected in the host candidate: the
+owned aggregate worker still joins target cleanup, while the cancelled terminal
+outcome becomes an explicit error for every selected suite. Each ordinary host
+task emits its three body results and cancellation error, then returns. Stock
+SBT therefore completes its normal SDK runner lifecycle; no incomplete-adapter
+warning occurs. The cancellation command fails, and a later full command in the
+same SBT session succeeds with a fresh application/run identity.
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/2e-host-cancellation-recovery-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-host-cancellation-recovery-audit-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-host-cancellation-recovery-threads-two-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/2e-host-cancellation-recovery-threads-two-audit-first.py
+```
+
+All terminate0, with all eight actual SBT drivers terminating0. An uncached
+fixture task requires the deliberately cancelled `testFull` result to be
+`Result.Inc`, permitting the subsequent recovery command. Independent audits
+reconcile24 command contexts,360 exact physical/body-XML cases,40 explicit suite
+cancellation errors and24 complete framed streams across both compilers, both
+platforms and host limits one/two. All96 fixture input records and60 private
+publication files remain unchanged. Each lane records three fresh run identities;
+normal and recovery outcomes succeed, while the middle outcome is cancelled.
+
+Evidence SHA-256:
+
+- Host limit1, `2e-host-cancellation-recovery-second/independent-audit.json`:
+  `42a816cf2a3b4e6097dce0b7c2973d103575d838a2428a6a5f5a5ffd7498bab9`.
+- Host limit2, `2e-host-cancellation-recovery-threads-two-first/independent-audit.json`:
+  `5cc9bccef941abe5092604c3839c8f38d01395cd8221b677ebc464f91d48f0e3`.
+
+The first recovery controller fails build load because its extractor uses the
+SBT1-style unqualified `Value`; the fresh second uses SBT2 `Result.Value` and
+`Result.Inc`. The first audit also expects an exception message that the explicit
+`.result` capture does not print; its corrected expectation retains the actual
+failed task, all five cancellation errors, exact XML and terminal-frame checks.
+Both controller errors are archived; neither changes production code.
+
+The new tracked `test-fixtures/target-runner-consumer` contains the tested host
+projection, five separate suites and platform callback fixtures. It has no SBT1
+compatibility shim, derives its artifact version and host limit from required
+arguments, and removes unused target-runtime helpers now supplied by production.
+Its actual validation command is:
+
+```sh
+python3 -B test-fixtures/target-runner-consumer/verify.py \
+  --repo-root /home/pavel/work/safe/7mind/izumi \
+  --artifact-version 1.3.0-M5-target-framework-SNAPSHOT \
+  --scala-version 3.9.0 2.13.18 --host-threads 2 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/2e-tracked-target-recovery-first
+```
+
+The driver and all four actual SBT children terminate0. Its12 contexts check180
+physical bodies,180 exact body-XML cases,20 suite cancellation errors,12 complete
+streams and120 unchanged source/publication input records. Evidence:
+`2e-tracked-target-recovery-first/audit.json`, SHA-256
+`2fd680b551aba75ae7498251f9a9163d9672743bbb3c5486c332c3af78103e30`.
+The host projection remains fixture infrastructure; production host settings,
+full selection/history/framework parity, DI/effect lifecycles and browser input
+remain open. This verified fixture checkpoint is committed as
+`Track target cancellation reports and same-session recovery; verify both compilers`.
+No whole phase or final gate closes.
