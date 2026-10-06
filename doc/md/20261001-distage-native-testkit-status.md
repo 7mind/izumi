@@ -15079,3 +15079,70 @@ from the SBT client's cancellation channel remains to be checked. Complete
 option/classloader, input/history and host-hook outcome domains remain open,
 as do production JS/Native hosts, coverage, migration and final reviews. IDE
 remains deferred. No push or PR was made.
+
+## 2026-10-06: real client cancellation and completed-result interruption
+
+Commit: the commit containing this entry, parent
+`b2b354f730727c9ffe1edc4347664c5498df0e54`. This is a bounded JVM bootstrap
+correction; step 2d and its cancellation acceptance remain in progress.
+
+The local SBT 2.0.9 server accepts an actual `sbt/cancelRequest` with the pinned
+protocol's `__CancelAll` current-channel identifier. Cancellation enters the
+Cats Effect finalizer, stays pending while release is held, and rejects the
+original execution after release. The executing-task interruption matrix from
+the preceding checkpoint did not cover this command-engine cancellation path.
+The first real-client reproduction leaves a command receipt directory behind.
+The sixth capture also proves that a subsequent `testOnly fixture.Suite*`
+fails with `Overlapping distage host task admission`; a full `test` uses another
+owner and succeeds. Exact RPC transcripts and failures are retained under
+`/srv/nvme/tmp/izumi-impl/sbt2-client-cancellation-{fourth,fifth,sixth}-3.9/`.
+
+A public `commandProgress` cleanup candidate is present in the working tree,
+but is not committed or accepted by this checkpoint. Its receipt cleanup
+passes focused checks, while the real-client run still leaves four zero-byte
+suite XML files. The unmodified fourth capture has the same empty-report
+failure. One candidate also exposes callbacks after receipt closure; the next
+candidate joins executing SDK work before closure but still reproduces
+`ClosedByInterruptException` in SBT reporting and the stock JUnit listener's
+null-selector exception. Full client cancellation, reports and same-boundary
+recovery therefore remain open. Forked client cancellation has not been reached.
+
+The narrower public-framework reproduction runs one suite task to complete the
+shared application, then executes another suite task with its interrupt flag
+already set and attempts real NIO reporting. Before the correction it exits 1
+with `NONBLOCKING_INTERRUPTION_REPORTING: Some(java.nio.channels.ClosedByInterruptException)`.
+Record: `sbt2-client-cancellation-nonblocking-interruption-before/`, including
+source, exact argv and log. An earlier probe omitted required identity arguments
+and failed before task execution; that failure is not the reproduction.
+
+`TaskInterruption.rethrow` now consumes a remaining interrupt flag even when
+the shared result was already completed and no blocking await threw. It retains
+an existing interruption exception, or creates an explicit interruption when
+only the flag supplied cancellation. Three bootstrap controls require the
+interruption, usable NIO reporting and preserved buffered terminal outcomes.
+
+Commands under `/srv/nvme/tmp/izumi-impl/`:
+
+```sh
+python3 -B sbt2-client-cancellation-producer-second.py
+python3 -B sbt2-client-cancellation-qualify-second.py
+python3 -B sbt2-client-cancellation-nonblocking-interruption-after/run.py
+```
+
+Producer exit 0, frozen inputs unchanged: 219 protocol, 802 base and 61 bootstrap
+checks per supported compiler, plus 21 XML, 22 receipt and 18 task-boundary
+checks. All five published JAR payloads match compiled binaries; both runner
+source JARs match the corrected Framework source. The published-consumer
+reproduction exits 0 with `PRE_INTERRUPTED_TASK_PROBE_OK` and records its
+actual loaded framework JAR location. This consumer verifies the bounded
+nonblocking interruption correction, not the full client command.
+
+The preliminary large consumer batch is superseded, not passed. Its two client
+drivers first fail because their Unix socket paths exceed the platform limit.
+The socket directory is moved to a short, task-owned temporary directory. A
+corrected probe then exposes incomplete reporting. Remaining checks against
+the superseded candidate are terminated before further source changes: actual
+batch exit 143; seven verified owned process identities, none left running.
+Captures: `sbt2-client-cancellation-regression-first/superseded-processes.json`
+and `superseded.json`. Their successful individual controls do not establish
+a complete current-head host regression pass. No whole phase is closed.

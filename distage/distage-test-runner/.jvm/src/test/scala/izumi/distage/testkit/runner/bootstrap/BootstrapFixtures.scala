@@ -53,6 +53,27 @@ object BootstrapFixtures {
     verify(first.events.forall(_.duration() >= 0L), "Host event durations must be nonnegative milliseconds")
     verify(rejected { execute(tasks.head, new RecordingHandler) }, "An ordinary suite task must not execute twice")
 
+    val completedTasks = runner.tasks(definitions)
+    execute(completedTasks.head, new RecordingHandler)
+    val completedHandler = new RecordingHandler
+    val completedPipe = Pipe.open()
+    var completedInterruption = Option.empty[Throwable]
+    var completedReportingFailure = Option.empty[Throwable]
+    try {
+      Thread.currentThread().interrupt()
+      try execute(completedTasks.last, completedHandler)
+      catch { case cause: Throwable => completedInterruption = Some(cause) }
+      try { val _ = completedPipe.sink().write(ByteBuffer.wrap(Array[Byte](1))) }
+      catch { case cause: Throwable => completedReportingFailure = Some(cause) }
+    } finally {
+      val _ = Thread.interrupted()
+      completedPipe.sink().close()
+      completedPipe.source().close()
+    }
+    verify(completedInterruption.exists(_.isInstanceOf[InterruptedException]), "Pre-interrupted completed-result tasks must propagate cancellation")
+    verify(completedReportingFailure.isEmpty, "Completed-result interruption must leave host NIO reporting usable: " + completedReportingFailure)
+    verify(completedHandler.events.size == 2 && completedHandler.events.forall(_.status() == Status.Success), "Completed-result interruption must preserve buffered terminal outcomes")
+
     val repeated = runner.tasks(definitions)
     val repeatedHandlers = repeated.map { task =>
       val handler = new RecordingHandler

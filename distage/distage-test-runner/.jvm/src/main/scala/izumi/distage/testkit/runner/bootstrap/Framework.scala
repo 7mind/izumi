@@ -322,5 +322,8 @@ private[bootstrap] final class TaskInterruption {
     completed.get
   }
 
-  def rethrow(): Unit = failure.foreach(throw _)
+  def rethrow(): Unit = {
+    if (Thread.interrupted() && failure.isEmpty) failure = Some(new InterruptedException("Host test task was interrupted"))
+    failure.foreach(throw _)
+  }
 }
