@@ -431,6 +431,7 @@ private[sbt] object HostReceiptPolicy {
 
   def unobserved(selection: Seq[String] => Seq[String => Boolean]): Seq[String] => Seq[String => Boolean] = selection match {
     case observed: HostSelectionObserver => unobserved(observed.inherited)
+    case observed: HostReportedSelection => unobserved(observed.inherited)
     case other => other
   }
 

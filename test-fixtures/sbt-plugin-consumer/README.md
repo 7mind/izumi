@@ -208,3 +208,24 @@ the owned framework because SBT's fork runner completes each framework's tasks
 before starting the next. These Behavioral-Active, Effectual-GoodCommunication
 controls cover already completed foreign tests; cancellation during an active
 foreign test requires separate validation.
+
+`verify-selection-reasons.py` verifies distinct stock suite digests, warms the
+foreign success cache, and exercises cached skips, negative request patterns,
+configured exclusions and filters, multiple includes and ordered filter unions.
+The public log must distinguish `cached-success`, `user-request` and
+`user-configuration`. Each command also checks physical bodies, resource
+lifetimes and XML; excluded suites execute no bodies, and admitted suites must
+have no exclusion record. Exact command markers keep similarly named cases
+separate.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-selection-reasons.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/selection-reasons-example
+```
+
+Run Scala2.13.18 separately. Each compiler checks thirteen commands in process
+and thirteen with forks. These Behavioral-Active, Effectual-GoodCommunication
+controls verify the named selection cases; opaque inherited predicates and the
+complete extension/input inventory remain separate acceptance requirements.

@@ -64,7 +64,8 @@ keep their existing order. The session environment cache uses the actual stable
 loader reference, along with the existing config, role, merge, effect and default
 module dimensions.
 
-The owner approved this factory migration on 2026-10-03. Eligible custom hooks
-need hook/construction edits beyond imports, so they do not satisfy the unchanged
-import-only acceptance item 2b.10. That conformance gap remains recorded in the
-status ledger; ordinary import-only compatibility fixtures retain their scope.
+The owner approved this factory migration on 2026-10-03. Acceptance item 2b.10
+permits hook/construction edits for custom plugin-loader hooks using this API;
+their recorded migration diffs must verify the preserved behavior required by
+O.1. Ordinary eligible suites retain the imports-only guarantee. The complete
+migration-diff inventory and final evaluation remain open in the status ledger.

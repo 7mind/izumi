@@ -231,9 +231,9 @@ the existing retry policy described above. Explicit incompatible scanner/cache
 policies and prebuilt mutable state remain caller-owned boundaries. See
 [the factory contract and migration](20261003-plugin-loader-factories.md) for
 the required cache binding and its limitations. Eligible custom hooks need
-non-import edits, so the fixed import-only acceptance item remains unmet for
-those hooks; the complete compatibility inventory and final evaluation remain
-open.
+non-import edits under the owner-authorized exception in acceptance item 2b.10;
+ordinary eligible suites retain imports-only migration. The complete compatibility
+inventory, preserved behavior under O.1 and final evaluation remain open.
 
 The built-in testkit `BootstrapFactory.Impl` keeps its router local to the
 test environment. This also applies when a custom factory delegates to it.

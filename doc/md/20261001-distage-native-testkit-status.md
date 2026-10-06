@@ -96,19 +96,19 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
-| 2d.10 | in progress | Current368-command checkpoint includes28 actual-client controls, eight partial-delivery controls and six repeated-fork-group commands across both supported compilers. Held finalizers/callbacks are joined; repeated cancellations preserve30 selected marked XML outcomes and all group callbacks. Complete mixed/failure domain and final evaluation remain open. |
-| 2d.11 | in progress | Current correction passes368 SBT2 controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption,28 actual-client, eight partial-delivery and six repeated-fork-group commands. Complete failure/input inventory and final evaluation stay open. |
+| 2d.10 | in progress | Current432-command checkpoint includes28 actual-client, eight partial-delivery, six repeated-fork-group and twelve completed-foreign cancellation/recovery controls across both supported compilers. Held finalizers/callbacks are joined; repeated cancellations preserve30 selected marked XML outcomes and all group callbacks. Active-foreign cancellation, complete failure domain and final evaluation remain open. |
+| 2d.11 | in progress | Current correction passes432 SBT2 controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption,28 actual-client, eight partial-delivery, six repeated-fork-group, twelve mixed-framework and52 selection-reason commands. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged event payloads. Twelve additional real-client commands preserve completed foreign bodies/events/XML through owned cancellation and same-session recovery on both compilers/modes below. Active-foreign cancellation, complete failure domains and final evaluation remain open. |
-| 2d.16 | in progress | The sixteen-command public fixture reproduces missing cached/request/configured exclusion reasons with SBT exit0 and driver exit1 below. Production correction and final evaluation remain outstanding. |
+| 2d.16 | in progress | The corrected published plugin passes52 selection controls within the completed432-command regression checkpoint on Scala2.13/3, both modes: twelve cached, twelve request and24 configured reason checks, with28 physical no-op commands. The independent audit reconciles240 bodies/XML cases and twelve resource lifetimes below. Complete input inventory and final evaluation remain outstanding. |
 | 2d.17 | in progress | Bootstrap61 checks per compiler plus120 host/store contracts include28 memory/file projections of repeated and partially delivered groups, selector/duration/failure identity and process/count rejection. Fourteen real-client partial/repeated commands reconcile300 callbacks without omissions, duplicates or late delivery. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | in progress | Four public SBT discovery/fingerprint controls pass in process and forked on both supported compilers, with94 host execution/inspection cases,558 physical bodies and574 XML cases. Complete mode/sharing inventory and final evaluation remain open. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
 | 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current368-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
+| 2d.22 | in progress | Current432-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures, completed foreign results and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
 | 2d.23 | in progress | Current audit passes eighteen resolved Compile classpaths and eighteen published POMs across all runner layers/platforms/supported compilers;46 production sources import no SBT implementation. JVM variants use only the public test interface. Production Node/Native target host execution and final evaluation remain open. |
 | 2e.1 | not started | No evaluation point passed yet. |
 | 2e.2 | not started | No evaluation point passed yet. |
@@ -15849,3 +15849,264 @@ The missing records are the expected cached-success, user-request and
 user-configuration exclusion decisions; no excluded case executes a body.
 Captured source/generated inputs remain unchanged. This reproduces the missing
 2d.16 behavior before any production correction; the item remains in progress.
+
+## 2026-10-06: selection-reason candidate, evaluation still in progress
+
+The completed-foreign cancellation checkpoint is local commit
+`e812b19c3`. Item2d.16 remains in progress. The following production candidate is
+uncommitted and has not passed its full fixture; it is not an acceptance milestone.
+
+The candidate records typed host reasons for request, configured and cached
+exclusions. Configured predicates are observed during their normal evaluation;
+ordered filters retain their union and order. A cached-success label additionally
+requires a matching public `ActionCache` entry keyed by framework options and the
+suite digest, using the pinned SBT2.0.9 action format. Opaque inherited exclusions
+without that evidence use the explicit inherited-filter reason. The portable
+protocol and target engine are unchanged.
+
+Producer, qualification and publication-freeze commands return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-producer-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-qualify-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-freeze-first.py
+```
+
+The1521 recorded inputs stay unchanged. Both compilers pass the existing219
+protocol,802 base and61 bootstrap checks, with the120 host/store contracts.
+All five class/TASTy payloads match compiled outputs; the plugin now has133
+payloads. Its JAR SHA-256 is
+`78101c967a18f6039df2939b79c30df42c062b6775602d33a49c161a4e090930`.
+All75 publication files are frozen, and the20 target agent classes remain
+byte-identical to the preceding qualified publication.
+
+The36-driver `sbt2-selection-reasons-regression-first.py` batch is still running
+at this entry. Its two expanded selection drivers stop at the new plain-only
+multiple-includes control because the fixture incorrectly expects one DI resource
+for SuiteA plus ForeignSuite. Captured six body records are all plain, with zero
+acquisitions/releases. The second plain-only ordered-filter control has the same
+incorrect expectation. This is a fixture defect; both expectations are corrected
+in the separately staged `sbt2-selection-reasons-corrected-driver.py`, leaving
+repository inputs frozen while the first batch runs. The original driver bytes
+are archived in the first batch directory.
+
+The staged two-compiler batch
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-corrected-batch-first.py`
+finishes with driver exit1 on both compilers and SBT exit0. Each compiler completes
+all26 physical body/resource/XML controls and passes24 reason controls, but the
+in-process and forked `testOnly *ForeignSuite -*ForeignSuite` cases fail with
+`SELECTION_REASON_MISSING`. All captured inputs remain unchanged. Cached-success,
+configured exclusions/filters, ordered-filter unions, multiple request includes
+and owned incremental request exclusions pass their stated reason checks.
+
+This is a reproduced production omission in the candidate: the active receipt
+observer unwraps its inherited selection function, stripping the reporting
+wrapper placed inside it. The next correction must put current reporting outside
+the current receipt observer while retaining unwrapping of inherited observers.
+The full selection fixture and affected host regression checks must pass before
+committing the production change. No candidate checkpoint or phase is marked done.
+
+### Decorator correction and exact fixture boundaries
+
+The initial36-driver batch terminates with exit1:34 drivers pass and the two
+selection drivers fail on their incorrect plain-only acquisition expectations.
+All recorded inputs stay unchanged. Separately, the corrected-expectation fixture
+reproduces four missing explicit-request exclusion records, with SBT exit0 on
+both compilers. Original candidate source bytes are archived under
+`sbt2-selection-reasons-regression-first/production-before-decorator-correction/`.
+
+The production correction places current reporting outside the current receipt
+observer. Reporting invokes that observer directly, while the receipt observer
+continues to unwrap inherited observers/reporters. This preserves current
+admission and exclusion reporting without retaining an earlier owner. The
+fixture's two plain-only acquisition expectations are also corrected to zero.
+
+Commands return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-producer-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-qualify-second.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-freeze-second.py
+```
+
+The existing219 protocol,802 base and61 bootstrap checks per compiler and120
+host/store contracts pass again, with1521 inputs unchanged at producer completion.
+All five publications match their compiled payloads, and75 files are frozen.
+The corrected133-payload plugin JAR SHA-256 is
+`5ab69031e64fa7a5bfc8c80a1cbc7fe555ac8108c5d14c480571406fbb34f4a8`.
+`previous-payload-continuity.json` verifies that the four protocol/base-runner JAR
+payload sets remain byte-identical to the first candidate. Only seven plugin
+class/TASTy payloads differ between the two candidates; target agent continuity
+also remains intact.
+
+The second consumer batch deliberately cancels queued work after a driver fails,
+and joins the already admitted drivers. It exits1: both selection fixtures now
+have the previously missing explicit-request records, but each reports two
+`INCLUDED_SUITE_REPORTED_EXCLUDED` failures. Their SBT processes exit0 after all26
+physical controls per compiler. Inspection reproduces a fixture parser defect:
+its marker for `inprocess-explicit` also matches `inprocess-explicit-user-request`
+(and likewise for forked cases), so it reads the wrong command's records. Exact
+line matches show no foreign exclusion in either actual explicit-run segment.
+The old driver bytes are archived as `driver-before-marker-correction.py`.
+
+The verifier now terminates each case marker with a newline. Independent
+`exact-marker-revalidation.json` rechecks all52 existing command segments and
+returns0, including required reason exclusivity and absence of exclusion records
+for admitted suites. This is a corrected interpretation of existing captures,
+not a new process execution. No further production change is justified by the
+fixture parser defect.
+
+Only that Python marker delimiter differs from the second producer's input set;
+its commands never execute this driver. The continuity record
+`fixture-marker-change-continuity.json` verifies every other producer input and
+all75 published files unchanged, and matches the original driver archive to its
+recorded hash. Therefore the completed producer checks and qualified artifacts
+remain applicable. A fresh36-driver consumer batch is running:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-regression-third.py
+```
+
+Its intended domain is432 controls: the preceding368, twelve mixed-framework
+commands and52 selection-reason commands. Completion, independent capture audits
+and a local verified-substep commit remain pending; no acceptance gate is closed.
+
+During this evaluation, two loader-factory documents still claim custom hooks
+violate an unchanged imports-only requirement. That conflicts with the owner's
+accepted exception now present in2b.10. Their migration paragraphs now state that
+custom hooks may use the factory API, ordinary eligible suites retain imports-only
+migration, and migration diffs/O.1 verification remain required. The correction
+changes documentation only and does not close the complete hook inventory.
+
+The third batch's two selection drivers now return0, with SBT exit0 and26 checks
+per compiler. The independent capture audit
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-selection-domain-audit-third.py`
+returns0 while other batch drivers continue. Its scope is the completed selection
+drivers, not the unfinished parent batch. It rechecks1642 frozen input records,
+52 command segments,240 literal body identities,240 successful XML identities,
+twelve unique acquired/released resources and28 physical no-op commands. Required
+reason checks comprise twelve cached-success, twelve user-request and24
+user-configuration decisions. No admitted suite has an exclusion record, and no
+excluded suite contributes an executed body or XML test. Complete parent-batch
+verification, wider input inventory and final evaluation remain pending.
+
+### Current loader-hook source inventory
+
+The source search runs `rg -n --no-heading -- makePlugin[Ll]oader` over the
+1,455 tracked Scala files returned by `git ls-files -z`, including platform
+directories. It finds five custom factory-hook override declarations in four
+fixture files and no custom legacy `makePluginloader` override. The exact argv,
+all matched lines, seven matched source hashes and inspected parent
+`e812b19c37554ccae98aeb8d7c28a8d6b19d71b0` are recorded in
+`sbt2-selection-reasons-regression-third/loader-hook-source-inventory.json`.
+This is an occurrence/site inventory, not a new runtime test or full2b/O.1
+acceptance.
+
+| Site | Inspected contract and existing behavioral fixture |
+| --- | --- |
+| `SpecFrontendFixtures.scala:104` | The factory constructs a loader whose load failure retains the Planning phase and original exception; discovery suspends the hook and provisioning. |
+| `SpecFrontendFixtures.scala:164` | The stackable configuration trait resolves roles and merging before the factory, passes the supplied cache into its delegate and preserves the selected effect/default module. |
+| `PluginLoaderFactoryFixtures.scala:77` | Two selected suites share a stable factory reference; repeated sessions get distinct supplied caches and materialize once per provider. Registry controls additionally cover reference identity, retained creation failures, recursion and concurrent lookups. |
+| `SpecPluginRequestFixtures.scala:26` | Reconstructed application/bootstrap plugin requests preserve cache flags and static definitions, using an explicitly owned mapped delegate; repeated/concurrent sessions have distinct owners. |
+| `.jvm/SpecPluginOwnershipFixtures.scala:78` | Custom scanning/subclass/mapped delegates bind to the supplied owner before reconstructed requests or borrowed-worker loading, with memoized resource and held-overlap checks. |
+
+The new `DistageSpec` supplies the default factory and final legacy-name bridge;
+`PluginLoaderFactoryConfiguration` declares the stackable hook. The legacy
+`DistageTestEnv` still defines its original loader hook for the temporary adapter.
+Inspection of `SessionEnvironmentFactory` and `SessionBootstrapFactoryBase`
+also confirms that the default bootstrap is replaced per provider and disables
+static log-router setup; custom bootstrap collaborators are retained. Borrowed
+prebuilt state, incompatible cache policies, migration-diff behavior under O.1
+and final-head verification remain open, as documented by the factory contract.
+
+### JVM host input and execution inventory, still in progress
+
+Inspection of the current `HostSettings`, `DistageHostPolicy`,
+`HostReceiptPolicy`, `HostTaskBoundary`, `HostCompletionFramework` and
+`HostForkCompletion` identifies the following public boundaries. This inventory
+records the implemented policy and bounded fixture coverage; it does not replace
+runtime proof for the remaining cases or close2d/O.20/O.21/O.23/O.24.
+
+| Input or boundary | Implemented handling | Existing evidence / remaining check |
+| --- | --- | --- |
+| Ordinary suite definitions and fingerprints | Reuse public `definedTests`, retain ordinary names, register one matching framework, hash the owned catalogue. | Discovery and exclusive-registration controls; complete final inventory remains open. |
+| Incremental suite digests | Remove owned-suite entries from success publication and conservatively rerun selected owned suites; foreign suites retain stock selection/history. | Suite/scanned-implementation edits and distinct-digest history controls. No owned cached skip is claimed. |
+| Configuration resources, properties/environment, custom loaders and planning extensions | The owned input closure remains untracked; every selected owned suite reruns with an explicit decision. No extension can obtain an owned cached skip through this policy. | External UTF-8/configuration/activation/memoization controls exist; opaque extension/property/environment boundary controls remain open. |
+| Framework request arguments | Preserve inherited arguments; add owned identity, event and receipt arguments; parse the normalized request before provisioning. | Host selection/inspection and application checks; complete host/standalone request correspondence remains open. |
+| Request patterns and inherited selection predicates | Delegate admission to inherited public predicates, unwrap earlier receipt owners, observe current admission/exclusion without reevaluating predicates. | The52 selection controls cover positive/negative patterns and multiple includes; opaque inherited predicate reason/side-effect controls remain open. |
+| Configured `Exclude`, `Filter` and ordered `Filters` | Preserve options and ordered union semantics, observing the predicates' actual evaluations for reason reporting. | The52 selection controls cover named exclusion, one filter and a two-filter union; arbitrary side-effecting configured predicates remain open. |
+| Setup/cleanup, listeners and result loggers | Preserve inherited execution options; wrap reporting and normalize verified public results before inherited loggers receive them. | Stock/adapted callback, loader and early input-definition controls; complete failure-domain checks remain open. |
+| Enabled configurations and aggregation | Install settings in `Test`; expose the same settings for explicit installation in another configuration; scope identities and receipt/event directories to the configuration. | Two-project Test/Integration controls with distinct directories and user loggers. |
+| Explicit execution/fork groups | Preserve group name, tests, tags and run policy; append the completion agent only to subprocess JVM options. Each admitted group retains its own target/process membership. | Serial/parallel duplicate-group and repeated owned fork-cancellation controls; complete sharing-mode inventory remains open. |
+| Host limits and concurrent test events | The first executing suite task launches its entire compatible application group; ordinary tasks project their own suite results. | In-process host limits one/two and concurrent within-suite bodies pass; forked concurrency controls remain open. |
+| Mixed original frameworks | Compose loaded frameworks, delegate fingerprints/runner/task creation, guard public handler lifetime and invoke original tasks once. | Normal/failing/repeated groups and already-completed foreign cancellation pass; active foreign-task cancellation remains open. |
+| Streaming, cancellation and command completion | Keep the explicit distage stream live, serialize per-task event-handler calls, join owned finalization/report delivery and validate target/host terminal records before completion. | Held-body, resource failures, actual-client, partial-delivery and repeated-fork controls; production JS/Native host proof remains2e work. |
+
+The next combined JVM batch targets active foreign-task cancellation, forked
+within-suite concurrency and opaque configuration/filter inputs. Any reproduced
+production failure must be corrected before the affected regression domain is
+qualified again. The current432-control batch remains frozen and in flight;
+there is no production change or acceptance completion in this inventory entry.
+
+## 2026-10-06: verified selection reasons and 432 SBT command controls
+
+Verified sub-step: the commit containing this entry, parent
+`e812b19c37554ccae98aeb8d7c28a8d6b19d71b0`. No whole phase is closed.
+The production correction and fixture retain the reproduced-before-fix evidence
+above. Current reporting wraps the active receipt observer, preserving admission
+and reason reporting; older observers/reporters are unwrapped. Configured
+predicates are observed during their actual evaluations, without reevaluation.
+The explicit cached-success reason additionally requires the public matching
+SBT2.0.9 action-cache entry.
+
+The fresh 36-driver consumer batch returns0. All 36 drivers return0, and all 1,642
+frozen input records remain unchanged. Independent audit commands return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-regression-third-audit.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-prior-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-mixed-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-selection-domain-audit-third.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-selection-reasons-combined-audit-third.py
+```
+
+The selection audit ran after its two drivers completed, while the parent was
+still live; its bounded results remain applicable through the final combined
+input guard. The other three domain audits and combined audit run after actual
+parent exit0. The combined audit reconciles 432 controls:
+
+| Domain | Command controls | Independent capture evidence |
+| --- | --- | --- |
+| Earlier general/body/callback/task/client contracts |354|230 general,36 resource/body,40 stock callbacks,20 task interruptions and28 actual-client commands;84 fresh run/resource-attempt identities. |
+| Partial-delivery/repeated-fork cancellation |14|244 bodies,300 selected XML outcomes,300 callbacks and20 distinct released resource lifetimes. |
+| Completed foreign tests through owned cancellation |12|124 owned bodies,180 owned selected XML outcomes,36 unchanged foreign body/event/XML identities and twelve paired resource lifetimes. |
+| Selection reasons |52|240 bodies,240 successful XML identities, twelve paired resource lifetimes and28 physical no-op commands; twelve cached, twelve request and24 configured reason checks. |
+
+Combined completion SHA-256:
+`d1d985556bcd843cecb260b3d7f67ce8da6b339d48efde99870527a8eeb51629`.
+It verifies all 75 current/frozen publication files unchanged, all 1,642 consumer
+input records unchanged and the 1,521 producer inputs against their current
+bytes or the explicitly retained original Python marker fixture. All 204 recorded
+host/worker PIDs, including the earlier failed-prerequisite targets, are absent
+from /proc. Domain audit hashes and driver completion hashes are retained in
+`sbt2-selection-reasons-regression-third/extended-audit.json`.
+
+The producer's 219 protocol,802 base and61 bootstrap checks per supported
+compiler, plus 120 host/store contracts, remain applicable through the recorded
+fixture-only continuity exception. The five publications still match compiled
+payloads; the plugin JAR SHA-256 remains
+`5ab69031e64fa7a5bfc8c80a1cbc7fe555ac8108c5d14c480571406fbb34f4a8`.
+Shared/JS/Native source continuity preserves the preceding portable checks;
+this does not establish production JS/Native host execution.
+
+The fixture README now includes the selection driver's exact invocation and
+scope. The two loader-factory documents reflect the owner's approved migration
+exception, and the current source/host input inventories are recorded above.
+`git diff --check` returns0. A fork-concurrency extension is prepared in scratch
+storage only, without changing this checkpoint's execution inputs.
+
+Active foreign-task cancellation, forked concurrency, opaque extension/filter
+controls, complete inventories, production JS/Native hosts, coverage, migration
+and prescribed phase/final reviews remain open. IDE remains owner-deferred.
+This sub-step is committed locally as
+`Report exclusion reasons; verify 432 SBT controls`; no push is authorized.

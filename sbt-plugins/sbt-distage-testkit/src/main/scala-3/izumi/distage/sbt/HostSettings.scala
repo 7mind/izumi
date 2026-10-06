@@ -5,7 +5,8 @@ import izumi.distage.sbt.DistageTestkitPlugin.autoImport.*
 import sbt.*
 import sbt.Keys.*
 import sbt.complete.DefaultParsers.spaceDelimited
-import sbt.util.{Digest, Logger}
+import sbt.util.{ActionCache, Digest, Logger}
+import sbt.util.CacheImplicits.given
 
 private[sbt] object HostSettings {
   def globalSettings: Seq[Def.Setting[?]] = Seq(
@@ -33,14 +34,27 @@ private[sbt] object HostSettings {
     testSelected / definedTestDigests := Def.uncached { cacheableDigests((testSelected / definedTestDigests).value, definedTests.value, streams.value.log) },
     testQuick / definedTestDigests := Def.uncached { cacheableDigests((testQuick / definedTestDigests).value, definedTests.value, streams.value.log) },
     test / definedTestDigests := Def.uncached { cacheableDigests((test / definedTestDigests).value, definedTests.value, streams.value.log) },
-    testSelected / testFilter := Def.uncached { new HostSelectionObserver((testSelected / testFilter).value, HostReceiptPolicy.names(definedTests.value), (testSelected / HostReceiptPolicy.owner).value) },
+    testSelected / testFilter := Def.uncached {
+      val filter = new HostSelectionObserver((testSelected / testFilter).value, HostReceiptPolicy.names(definedTests.value), (testSelected / HostReceiptPolicy.owner).value)
+      HostSelectionPolicy.selected(filter, streams.value.log)
+    },
     testQuick / testFilter := Def.uncached {
-      val filter = DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testSelected / testFilter).value, streams.value.log)
+      val digests = (testQuick / definedTestDigests).value
+      val cache = Def.cacheConfiguration.value
+      // SBT2.0.9 keys successful suite actions by framework options and suite digest.
+      val cachedSuccess = (name: String, options: Seq[String]) => digests.get(name).exists(digest => ActionCache.exists(options, digest, Digest.zero, cache))
+      val filter = DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testSelected / testFilter).value, cachedSuccess, streams.value.log)
       new HostSelectionObserver(filter, HostReceiptPolicy.names(definedTests.value), (testQuick / HostReceiptPolicy.owner).value)
     },
-    testSelected / testExecution := Def.uncached { HostReceiptPolicy.execution((testSelected / testExecution).value, definedTests.value, (testSelected / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value) },
-    testQuick / testExecution := Def.uncached { HostReceiptPolicy.execution((testQuick / testExecution).value, definedTests.value, (testQuick / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value) },
-    test / testExecution := Def.uncached { HostReceiptPolicy.execution((test / testExecution).value, definedTests.value, (executeTests / HostReceiptPolicy.owner).value, full = true, HostJUnitReports.format.value) },
+    testSelected / testExecution := Def.uncached {
+      HostSelectionPolicy.configured(HostReceiptPolicy.execution((testSelected / testExecution).value, definedTests.value, (testSelected / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value), definedTests.value, streams.value.log)
+    },
+    testQuick / testExecution := Def.uncached {
+      HostSelectionPolicy.configured(HostReceiptPolicy.execution((testQuick / testExecution).value, definedTests.value, (testQuick / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value), definedTests.value, streams.value.log)
+    },
+    test / testExecution := Def.uncached {
+      HostSelectionPolicy.configured(HostReceiptPolicy.execution((test / testExecution).value, definedTests.value, (executeTests / HostReceiptPolicy.owner).value, full = true, HostJUnitReports.format.value), definedTests.value, streams.value.log)
+    },
     testSelected / testResultLogger := HostReceiptPolicy.logger((testSelected / testResultLogger).value, (testSelected / HostReceiptPolicy.owner).value),
     testQuick / testResultLogger := HostReceiptPolicy.logger((testQuick / testResultLogger).value, (testQuick / HostReceiptPolicy.owner).value),
     testSelected / HostReceiptPolicy.normalisedLogger := HostReceiptPolicy.logger((testSelected / testResultLogger).value, (testSelected / HostReceiptPolicy.owner).value),
