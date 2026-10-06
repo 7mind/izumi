@@ -95,7 +95,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
-| 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
+| 2d.9 | in progress | Sixteen current SBT2 concurrency controls verify three overlapping bodies per suite, distinct thread/PID receipts and exact listener/XML identities on Scala2.13/3, in process and forked, with host limits one/two. The independent audit reconciles240 bodies/XML cases, sixteen released resources and eight distinct fork targets. Complete concurrency domain and final evaluation remain open. |
 | 2d.10 | in progress | Current432-command checkpoint includes28 actual-client, eight partial-delivery, six repeated-fork-group and twelve completed-foreign cancellation/recovery controls across both supported compilers. Held finalizers/callbacks are joined; repeated cancellations preserve30 selected marked XML outcomes and all group callbacks. Active-foreign cancellation, complete failure domain and final evaluation remain open. |
 | 2d.11 | in progress | Current correction passes432 SBT2 controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption,28 actual-client, eight partial-delivery, six repeated-fork-group, twelve mixed-framework and52 selection-reason commands. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
@@ -16110,3 +16110,65 @@ controls, complete inventories, production JS/Native hosts, coverage, migration
 and prescribed phase/final reviews remain open. IDE remains owner-deferred.
 This sub-step is committed locally as
 `Report exclusion reasons; verify 432 SBT controls`; no push is authorized.
+
+## 2026-10-06: forked within-suite concurrency and host limits
+
+The selection-reason checkpoint is local commit
+`6205de4c032ba1d79a00f9d43898e3a862cf81b4`; its post-commit guard returns0 with
+a clean worktree and all nine committed files matching the verified input bytes.
+Production code and all75 qualified publication files remain unchanged in this
+substep. The fixture extension is applied only after the preceding batch,
+audits and commit guards complete.
+
+`verify-host-limits.py` now requires an explicit `--fork false|true` and includes
+the target PID in every body-start record. It verifies that the actual body PID
+matches the listener's host PID in process and differs with forks. The existing
+three-body latch checks overlapping execution on three distinct threads in every
+suite; exact event identities and XML still reconcile all fifteen tests. Each
+full run and incremental repeat acquires/releases one fresh shared resource.
+The README includes the new argument and both mode invocations.
+
+Before interpreting listener concurrency, the pinned SDK sources are inspected:
+`ForkTestMain` uses its target executor for suite tasks, whereas
+`ForkTests.React.processNotification` delivers each received suite batch through
+start/event/end listener calls. Therefore the listener window measures host
+report delivery, not forked target task concurrency. Physical body-start
+receipts supply the target concurrency evidence. Source paths are under
+`2d-fork-selection-sdk2-source-first/{actions_3/sbt/ForkTests.scala,
+worker/sbt/internal/worker1/ForkTestMain.java}`.
+
+Commands return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-fork-concurrency-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-fork-concurrency-audit-first.py
+```
+
+The first command runs two independent drivers for explicit in-process/forked
+modes, each covering Scala3.9.0/2.13.18 and host limits one/two. All eight SBT
+lanes return0; each completes a full run and incremental repeat, for sixteen
+commands. Every lane's source snapshots and generated inputs remain unchanged,
+as do all85 outer fixture/publication input records. The independent audit
+reconciles240 literal body IDs,240 successful XML identities, sixteen distinct
+paired resource lifetimes, eight distinct fork target PIDs and sixteen terminated
+host/target PIDs. Audit SHA-256:
+`087e4c7de7ceb21227302bff1cb5ac735fed7bcf59ccbf2cbc325ebadbf181de`.
+The in-process host windows reach their configured one/two limits; forked
+listener windows are serial in these captures.
+
+`sbt2-fork-concurrency-first/production-continuity.json` returns0. It compares
+all1,521 producer inputs, retaining the already qualified marker-verifier
+exception, and all75 current/frozen publication files. The host-limit verifier
+is not a producer input and is never executed by its argv; its original/current
+hashes are bound to the reviewed staging record and parent commit. The prior
+producer checks and432-command production checkpoint remain applicable to the
+unchanged production artifacts. This sixteen-command batch rechecks eight
+in-process contexts and adds eight forked contexts; it is not a fresh combined
+448-command run or448 distinct contexts.
+
+No production correction is necessary for this domain. `git diff --check`
+returns0. This verified fixture substep is committed locally as
+`Verify forked concurrency with host limits on both Scala versions`.
+Active foreign-task cancellation, opaque extension/filter controls, remaining
+inventories, production JS/Native hosts, coverage, migration and phase/final
+evaluation remain open. IDE is owner-deferred; no push is authorized.

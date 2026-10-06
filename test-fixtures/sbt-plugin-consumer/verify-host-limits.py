@@ -43,6 +43,7 @@ final class HostWindow(directory: Path, limit: Int, log: sbt.util.Logger) extend
     ended = Set.empty
     maximum = 0
     firstEndBodies = None
+    log.info("HOST_WINDOW_PID hostPid=" + java.lang.ProcessHandle.current().pid())
     events = Set.empty
   }
   override def startGroup(name: String): Unit = synchronized {
@@ -101,6 +102,7 @@ def main():
     parser.add_argument('--sbt-version', nargs='+', required=True, choices=['2.0.9'])
     parser.add_argument('--scala-version', nargs='+', required=True, choices=['3.9.0', '2.13.18'])
     parser.add_argument('--host-threads', nargs='+', required=True, type=int, choices=[1, 2])
+    parser.add_argument('--fork', required=True, choices=['false', 'true'])
     parser.add_argument('--evidence-dir', required=True, type=Path)
     arguments = parser.parse_args()
     evidence = arguments.evidence_dir.resolve()
@@ -118,7 +120,7 @@ def main():
     for sdk in arguments.sbt_version:
         for scala in arguments.scala_version:
             for limit in arguments.host_threads:
-                lane = evidence / ('sbt' + sdk + '-scala' + scala + '-threads' + str(limit))
+                lane = evidence / ('sbt' + sdk + '-scala' + scala + '-threads' + str(limit) + '-fork-' + arguments.fork)
                 build = lane / 'build'
                 build.mkdir(parents=True)
                 for row in inputs:
@@ -138,6 +140,7 @@ def main():
                         source += '\nlazy val sharingConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)\n'
                         source += 'Global / concurrentRestrictions := Seq(Tags.limitAll(' + str(limit) + '))\n'
                         source += 'Test / parallelExecution := true\n'
+                        source += 'Test / fork := ' + arguments.fork + '\n'
                         source += 'Test / testListeners += new fixture.HostWindow(file(sys.props("izumi.fixture.audit-root")).toPath, ' + str(limit) + ', streams.value.log)\n'
                     elif original.name in ['SuiteA.scala', 'SuiteB.scala']:
                         assert source.count('extends PlainFixtureSuite') == 1
@@ -153,7 +156,7 @@ def main():
                         before = '  def record(index: Int, resource: Option[String]): Unit = {\n'
                         assert source.count(before) == 1
                         source = source.replace(before, before + '''    val ordinal = started.incrementAndGet()
-    val entry = suite + "\\t" + index + "\\t" + ordinal + "\\t" + Thread.currentThread().getId
+    val entry = suite + "\\t" + index + "\\t" + ordinal + "\\t" + Thread.currentThread().getId + "\\t" + java.lang.ProcessHandle.current().pid()
     val _ = Files.write(directory.resolve(suite + "-" + index + ".start"), entry.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
     ready.countDown()
     require(ready.await(BodyStartTimeoutSeconds, java.util.concurrent.TimeUnit.SECONDS), "Concurrent suite bodies did not all start")
@@ -193,6 +196,11 @@ def main():
                 raw = (lane / 'run.log').read_text()
                 windows = re.findall(r'^\[info\] HOST_WINDOW_OK limit=(\d+) maximum=(\d+) started=5 ended=5 firstEndBodies=15$', raw, re.M)
                 failures = []
+                host_pids = re.findall(r'^\[info\] HOST_WINDOW_PID hostPid=(\d+)$', raw, re.M)
+                if len(host_pids) != 2 or len(set(host_pids)) != 1:
+                    failures.append('Host process identity differs')
+                host_pid = host_pids[0] if host_pids else None
+                body_pids = set()
                 if code != 0 or len(windows) != 2 or any(int(cap) != limit or not 1 <= int(actual) <= limit for cap, actual in windows):
                     failures.append('Host window completion/control differs')
                 for case in ['full', 'repeat']:
@@ -216,6 +224,10 @@ def main():
                     if sorted((row[0], row[1]) for row in bodies) != sorted(expected) or sorted(identities) != sorted(expected_xml):
                         failures.append('Physical/report identity set differs: ' + case)
                     starts = [path.read_text().split('\t') for path in audit.glob('*.start')]
+                    target_pids = {row[4] for row in starts if len(row) == 5}
+                    if any(len(row) != 5 for row in starts) or len(target_pids) != 1 or ((host_pid in target_pids) != (arguments.fork == 'false')):
+                        failures.append('Configured fork/physical target process differs: ' + case)
+                    body_pids.update(target_pids)
                     if sorted((row[0], row[1]) for row in starts) != sorted(expected):
                         failures.append('Concurrent body start identities differ: ' + case)
                     for suite in SUITES:
@@ -229,14 +241,14 @@ def main():
                     assert sha(row['path']) == sha(row['frozen']) == row['sha256']
                 for row in generated:
                     assert sha(row['path']) == row['sha256']
-                outcome = dict(sbt=sdk, scala=scala, threads=limit, actualExit=code, windows=windows, validationFailures=failures)
+                outcome = dict(sbt=sdk, scala=scala, threads=limit, fork=arguments.fork, hostPid=host_pid, bodyPids=sorted(body_pids), actualExit=code, windows=windows, validationFailures=failures)
                 (lane / 'completion.json').write_text(json.dumps(outcome, indent=2) + '\n')
                 outcomes.append(outcome)
                 print(json.dumps(outcome), flush=True)
                 if failures:
                     (evidence / 'completion.json').write_text(json.dumps(dict(exit=1, outcomes=outcomes), indent=2) + '\n')
                     raise SystemExit(1)
-    (evidence / 'completion.json').write_text(json.dumps(dict(exit=0, outcomes=outcomes, bodies=len(outcomes) * 2 * EXPECTED_BODIES, resourceLifetimes=len(resources), scope='Five compatible DI suites, three concurrent bodies per suite with distinct thread receipts and exact listener identities, actual SBT host task windows of one/two and serial fresh-resource recovery; in-process JVM controls, no cancellation/fork/multi-project acceptance.'), indent=2) + '\n')
+    (evidence / 'completion.json').write_text(json.dumps(dict(exit=0, outcomes=outcomes, bodies=len(outcomes) * 2 * EXPECTED_BODIES, resourceLifetimes=len(resources), scope='Five compatible DI suites, three concurrent bodies per suite with distinct thread receipts and exact listener identities, actual SBT host task windows of one/two and serial fresh-resource recovery; Explicitly selected in-process or forked JVM controls; no cancellation/multi-project acceptance.'), indent=2) + '\n')
 
 
 if __name__ == '__main__':

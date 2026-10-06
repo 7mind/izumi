@@ -76,15 +76,23 @@ The first returning suite task must observe all fifteen body files; host group
 start/end records retain the actual concurrency maximum. Three bodies in each
 suite wait for one another with a finite deadline; start receipts must identify
 three distinct threads before they complete. The listener checks every exact
-test identity and rejects duplicate or omitted events. These in-process JVM
-controls do not establish cancellation, fork or multi-project behavior.
+test identity and rejects duplicate or omitted events. These JVM controls do
+not establish cancellation or multi-project behavior.
 
 ```sh
 python3 -B test-fixtures/sbt-plugin-consumer/verify-host-limits.py \
   --artifact-version 1.3.0-SNAPSHOT --sbt-version 2.0.9 \
-  --scala-version 3.9.0 2.13.18 --host-threads 1 2 \
+  --scala-version 3.9.0 2.13.18 --host-threads 1 2 --fork false \
   --evidence-dir /srv/nvme/tmp/izumi-impl/host-limits-capture
 ```
+
+Run `--fork true` in a separate capture for forked execution. Each body-start
+receipt includes the target PID; it must match the listener's host PID in
+process and differ with forks. Both modes require three overlapping bodies on
+distinct threads per suite, all fifteen exact listener/XML identities and fresh
+paired shared resources on repeat. The host listener window observes report
+delivery; forked target task concurrency is controlled separately by SBT's
+worker executor.
 
 `verify-streaming.py` holds one body while its sibling finishes. Before releasing
 that body, it requires both start frames and the sibling completion frame in the
