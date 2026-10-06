@@ -96,14 +96,14 @@ head. The spike reports are design evidence, not implementation verification.
 | 2d.7 | in progress | Real scanned-plugin external UTF-8 input changes rerun with an explicit conservative cache decision in six published host lanes below; complete configuration-input domain and final evaluation remain open. |
 | 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
 | 2d.9 | in progress | The current SBT2 batch verifies three overlapping bodies per suite, distinct thread receipts and all exact listener identities on Scala2.13/3 with host limits one/two. Forked concurrency and final evaluation remain open. |
-| 2d.10 | in progress | Current354-command checkpoint includes28 actual-client controls in process and forked on both supported compilers, with held finalizers, marked cancelled XML and same-boundary recovery. Publication/discovery failures join all task projections. Complete cancellation/failure domain and final evaluation remain open. |
+| 2d.10 | in progress | Current354-command checkpoint includes28 actual-client controls in process and forked on both supported compilers, with held finalizers, marked cancelled XML and same-boundary recovery. Eight additional partial-host-delivery controls preserve completed body outcomes, join held callbacks and recover in the same session. Complete cancellation/failure domain and final evaluation remain open. |
 | 2d.11 | in progress | Current correction passes354 SBT2 command controls on Scala2.13/3:230 general,36 resource/body,40 stock callback,20 task-interruption and28 actual-client controls covering both execution modes. Complete failure/input inventory and final evaluation stay open. |
 | 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
 | 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
 | 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
 | 2d.15 | in progress | Original foreign frameworks execute once per admitted group with unchanged successful event payloads in current mixed/history controls. Owned/foreign task errors retain original causes; repeated foreign groups now retain all body outcomes in custom Output/XML. Complete mixed/cancellation domains and final evaluation remain open. |
 | 2d.16 | not started | No evaluation point passed yet. |
-| 2d.17 | in progress | Bootstrap61 checks per compiler,18 task checks,25 receipt checks,31 XML,14 report-store,eight host-projection and four public report-failure checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Complete streaming lifecycle and final evaluation remain open. |
+| 2d.17 | in progress | Bootstrap61 checks per compiler,18 task checks,25 receipt checks,31 XML,14 report-store,eight host-projection and four public report-failure checks cover serialized handlers, original events/causes, late callback rejection, descendants, per-group status reconciliation, interruption reporting and report accumulation without callback replay. Eight partial-delivery controls additionally reconcile120 listener callbacks without omissions, duplicates or late delivery. Complete streaming lifecycle and final evaluation remain open. |
 | 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
 | 2d.19 | in progress | Four public SBT discovery/fingerprint controls pass in process and forked on both supported compilers, with94 host execution/inspection cases,558 physical bodies and574 XML cases. Complete mode/sharing inventory and final evaluation remain open. |
 | 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
@@ -15598,3 +15598,64 @@ the production Node/Native host requirements in2d.23 remain open. Item2d.16
 still needs explicit selection-reason verification. The wider cancellation
 domain,2e, coverage, migration, final lanes and independent reviews remain open.
 IDE stays deferred; no push is authorized.
+
+## 2026-10-06: cancellation during partial host delivery
+
+The registration/dependency checkpoint is local commit
+`32c607f79a9fd9688901e31592cdfd1f1ca76eca`; its postcommit guard exits0 with108
+graph inputs and10 fixture inputs unchanged and the worktree clean.
+Items2d.10/11/17/22 remain in progress. The following test-only checkpoint
+extends the real-client cancellation domain; production code is unchanged.
+
+The initial narrow hypothesis was that cancellation during a partially delivered
+host group could return the command before an outstanding listener callback
+finished. The forked Scala3 probe
+`python3 -B /srv/nvme/tmp/izumi-impl/sbt2-partial-delivery-cancellation-first.py`
+exits0 and falsifies that hypothesis for its controlled boundary. One suite
+report had completed, the next callback was held, and all15 bodies and the
+shared resource had finished. The original execution response stayed absent
+while held, then returned a cancellation error; same-session recovery passed.
+No production correction is justified by this passing probe.
+
+The committed public process fixture strengthens that probe with serial host
+suite tasks, exact callback records and a late-callback marker, on both execution
+modes and both supported compilers. Commands:
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-partial-delivery-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 --execution-mode both \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-partial-delivery-matrix-first-scala3
+python3 -B test-fixtures/sbt-plugin-consumer/verify-partial-delivery-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 2.13.18 --execution-mode both \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-partial-delivery-matrix-first-scala213
+```
+
+Both drivers and SBT servers exit0, with four command checks per compiler.
+Four client cancellations withhold the original command response until the
+held callback returns, then reject the command. Four immediate commands recover
+in the same sessions with fresh run/resource identities. Because cancellation
+occurs after the target has completed, all selected test outcomes remain
+succeeded, and all selected XML cases remain successful; the host command
+cancellation is recorded separately. It must not retroactively turn completed
+tests into cancelled body outcomes.
+
+The independent public-file audit in
+`sbt2-partial-delivery-matrix-first-audit.json` exits0: eight commands,120 literal
+body IDs,120 XML identities/outcomes and120 start/event/end callback identities
+reconcile. All eight run IDs and eight resource IDs are distinct; all1518
+producer inputs and16 fixture input records stay unchanged. The six recorded
+host/worker PIDs are absent from /proc. Each capture retains command/input
+records, client RPC frames, per-case bodies/resources/protocol/XML/callbacks,
+and completion records. This audit reads those public files independently of
+the fixture's own checks.
+
+The verified fixture and documentation are committed locally as
+`Verify cancellation during partial JVM report delivery`, with parent
+`32c607f79a9fd9688901e31592cdfd1f1ca76eca`. `git diff --check` exits0.
+This establishes the stated partial-delivery boundary, not every possible
+listener failure or group arrangement. Foreign/repeated explicit-group
+cancellation, selection-reason verification, the remaining2d inventory and final
+evaluation stay open. Production Node/Native host integration, coverage,
+migration, final lanes and reviews remain outstanding. IDE stays deferred.

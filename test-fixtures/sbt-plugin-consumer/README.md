@@ -21,6 +21,9 @@ An application constructor failure, in process and forked, must produce exactly
 one construction attempt and one error report for each of three selected suites,
 without executing bodies or acquiring resources. A subsequent incremental
 command in the same session must execute all five suites with fresh resources.
+Public discovery/fingerprint checks in both execution modes require exactly
+the five owned suites and one foreign suite, one owned framework registration,
+and no execution fingerprint for the containing application.
 
 Additional controls inspect exact IDs without body execution or acquisition,
 select one DI body through framework JSON arguments, and verify the subsequent
@@ -143,3 +146,25 @@ Behavioral-Active, Effectual-GoodCommunication tests. Fork callbacks run in SBT
 with its host loader; test bodies run in the target process. These controls do
 not establish the entire classloader-lifetime or selected-outcome reporting
 contract after host setup/cleanup failures.
+
+`verify-partial-delivery-cancellation.py` cancels a real SBT client command while
+the second host test-event callback is held, after the first suite report has
+completed. Serial suite tasks make that boundary deterministic. All fifteen
+test bodies and their shared resource have completed before cancellation, so
+the target outcome and XML retain successful test results while the SBT command
+reports cancellation. The original command must stay pending until the held
+callback returns. Exact start/event/end callback identities reject omissions,
+duplicates and callbacks after the command response. A subsequent command in
+the same session must execute fifteen bodies with fresh run/resource IDs.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-partial-delivery-cancellation.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --scala-version 3.9.0 --execution-mode both \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/partial-delivery-example
+```
+
+Run Scala2.13.18 in a separate capture. Each compiler checks cancellation and
+recovery in both execution modes. These are Behavioral-Active,
+Effectual-GoodCommunication controls of owned suite reporting; foreign-framework
+and repeated explicit-group cancellation require separate controls.
