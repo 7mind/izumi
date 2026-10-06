@@ -65,28 +65,18 @@ private[sbt] object DistageHostPolicy {
     definitions: Seq[TestDefinition],
     inherited: Seq[String] => Seq[String => Boolean],
     selection: Seq[String] => Seq[String => Boolean],
-    cachedSuccess: (String, Seq[String]) => Boolean,
     log: Logger,
   ): Seq[String] => Seq[String => Boolean] = {
     val owned = definitions.filter(isDistage).map(_.name).toSet
     arguments => {
       val selected = HostReceiptPolicy.unobserved(selection)(arguments.takeWhile(_ != "--"))
       val stock = HostReceiptPolicy.unobserved(inherited)(arguments)
-      val requested = HostSelectionPolicy.request(arguments)
-      val frameworkOptions = arguments.dropWhile(_ != "--").drop(1)
       val rerun = owned.filter(name => selected.exists(_(name)))
       rerun.toVector.sorted.foreach { name =>
         log.info("DISTAGE_CACHE_DECISION suite=" + name + " decision=rerun reason=untracked-input-closure")
       }
       Seq { name =>
-        val included = rerun.contains(name) || (!owned.contains(name) && stock.exists(_(name)))
-        if (!included) {
-          val reason = if (!requested(name)) HostSelectionPolicy.Reason.UserRequest
-          else if (!owned.contains(name) && cachedSuccess(name, frameworkOptions)) HostSelectionPolicy.Reason.CachedSuccess
-          else HostSelectionPolicy.Reason.InheritedFilter
-          HostSelectionPolicy.exclude(name, reason, log)
-        }
-        included
+        rerun.contains(name) || (!owned.contains(name) && stock.exists(_(name)))
       }
     }
   }

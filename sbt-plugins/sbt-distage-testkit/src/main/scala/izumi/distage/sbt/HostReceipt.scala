@@ -446,6 +446,7 @@ private[sbt] final class HostVerifiedResultLog(inherited: sbt.util.Logger, val o
 private[sbt] object HostReceiptPolicy {
   val owner: SettingKey[HostReceiptOwner] = settingKey[HostReceiptOwner]("Distage host task receipt owner")
   val normalisedLogger: SettingKey[TestResultLogger] = settingKey[TestResultLogger]("Result logger receiving reconciled group results")
+  val normalisedFilter: TaskKey[Seq[String] => Seq[String => Boolean]] = taskKey[Seq[String] => Seq[String => Boolean]]("Selection filter observed at the active input boundary")
 
   def ownerAt(parent: File): HostReceiptOwner = new HostReceiptOwner(() => FileForkReceiptStore.create((parent / "distage-fork-receipts").toPath.toAbsolutePath), ForkProcessId(ProcessHandle.current().pid()))
 

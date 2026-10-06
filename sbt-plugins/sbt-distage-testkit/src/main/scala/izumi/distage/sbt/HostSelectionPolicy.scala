@@ -4,12 +4,11 @@ import sbt.{TestDefinition, Tests}
 import sbt.io.GlobFilter
 import sbt.util.Logger
 
-private[sbt] final class HostReportedSelection(val inherited: Seq[String] => Seq[String => Boolean], log: Logger)
+private[sbt] final class HostReportedSelection(val inherited: Seq[String] => Seq[String => Boolean], reason: (String, Seq[String]) => HostSelectionPolicy.Reason, log: Logger)
   extends (Seq[String] => Seq[String => Boolean]) {
   override def apply(arguments: Seq[String]): Seq[String => Boolean] = {
-    val requested = HostSelectionPolicy.request(arguments)
     HostSelectionPolicy.observeFilters(inherited(arguments), name => {
-      HostSelectionPolicy.exclude(name, if (requested(name)) HostSelectionPolicy.Reason.InheritedFilter else HostSelectionPolicy.Reason.UserRequest, log)
+      HostSelectionPolicy.exclude(name, reason(name, arguments), log)
     })
   }
 }
@@ -32,10 +31,6 @@ private[sbt] object HostSelectionPolicy {
 
   def exclude(name: String, reason: Reason, log: Logger): Unit = {
     log.info("DISTAGE_SELECTION_DECISION suite=" + name + " decision=exclude reason=" + reason.value)
-  }
-
-  def selected(inherited: Seq[String] => Seq[String => Boolean], log: Logger): Seq[String] => Seq[String => Boolean] = {
-    new HostReportedSelection(inherited, log)
   }
 
   def observeFilters(filters: Seq[String => Boolean], excluded: String => Unit): Seq[String => Boolean] = {

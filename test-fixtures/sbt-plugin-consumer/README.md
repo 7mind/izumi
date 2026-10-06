@@ -259,3 +259,21 @@ Run Scala2.13.18 separately. Each compiler checks thirteen commands in process
 and thirteen with forks. These Behavioral-Active, Effectual-GoodCommunication
 controls verify the named selection cases; opaque inherited predicates and the
 complete extension/input inventory remain separate acceptance requirements.
+
+`verify-opaque-selection.py` exercises public selected/quick filters wrapped in
+opaque closures, replacement filters, multiple patterns, configured predicate
+short-circuiting, factory/predicate exceptions and same-session recovery. Each
+case checks literal physical body/XML identities, paired resource lifetimes and
+the actual user predicate call records. Both JVM modes run in one SBT session.
+
+```sh
+python3 -B test-fixtures/sbt-plugin-consumer/verify-opaque-selection.py \
+  --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT \
+  --plugin-version 1.3.0-M5-SNAPSHOT --scala-version 3.9.0 \
+  --evidence-dir /srv/nvme/tmp/izumi-impl/opaque-selection-example
+```
+
+Run Scala2.13.18 separately. Each compiler checks twelve commands in process
+and twelve with forks. These Behavioral-Active, Effectual-GoodCommunication
+controls retain original selection exceptions and confirm that a later command
+recovers; they do not substitute for the complete host acceptance gate.

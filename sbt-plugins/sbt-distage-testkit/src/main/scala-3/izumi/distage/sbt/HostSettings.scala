@@ -34,17 +34,27 @@ private[sbt] object HostSettings {
     testSelected / definedTestDigests := Def.uncached { cacheableDigests((testSelected / definedTestDigests).value, definedTests.value, streams.value.log) },
     testQuick / definedTestDigests := Def.uncached { cacheableDigests((testQuick / definedTestDigests).value, definedTests.value, streams.value.log) },
     test / definedTestDigests := Def.uncached { cacheableDigests((test / definedTestDigests).value, definedTests.value, streams.value.log) },
-    testSelected / testFilter := Def.uncached {
+    testSelected / HostReceiptPolicy.normalisedFilter := Def.uncached {
       val filter = new HostSelectionObserver((testSelected / testFilter).value, HostReceiptPolicy.names(definedTests.value), (testSelected / HostReceiptPolicy.owner).value)
-      HostSelectionPolicy.selected(filter, streams.value.log)
+      new HostReportedSelection(filter, (name, arguments) => {
+        if (HostSelectionPolicy.request(arguments)(name)) HostSelectionPolicy.Reason.InheritedFilter else HostSelectionPolicy.Reason.UserRequest
+      }, streams.value.log)
     },
     testQuick / testFilter := Def.uncached {
+      DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testSelected / testFilter).value, streams.value.log)
+    },
+    testQuick / HostReceiptPolicy.normalisedFilter := Def.uncached {
       val digests = (testQuick / definedTestDigests).value
       val cache = Def.cacheConfiguration.value
+      val owned = HostReceiptPolicy.names(definedTests.value)
       // SBT2.0.9 keys successful suite actions by framework options and suite digest.
       val cachedSuccess = (name: String, options: Seq[String]) => digests.get(name).exists(digest => ActionCache.exists(options, digest, Digest.zero, cache))
-      val filter = DistageHostPolicy.conservativeFilter(definedTests.value, (testQuick / testFilter).value, (testSelected / testFilter).value, cachedSuccess, streams.value.log)
-      new HostSelectionObserver(filter, HostReceiptPolicy.names(definedTests.value), (testQuick / HostReceiptPolicy.owner).value)
+      val filter = new HostSelectionObserver((testQuick / testFilter).value, owned, (testQuick / HostReceiptPolicy.owner).value)
+      new HostReportedSelection(filter, (name, arguments) => {
+        if (!HostSelectionPolicy.request(arguments)(name)) HostSelectionPolicy.Reason.UserRequest
+        else if (!owned.contains(HostSuiteName(name)) && cachedSuccess(name, arguments.dropWhile(_ != "--").drop(1))) HostSelectionPolicy.Reason.CachedSuccess
+        else HostSelectionPolicy.Reason.InheritedFilter
+      }, streams.value.log)
     },
     testSelected / testExecution := Def.uncached {
       HostSelectionPolicy.configured(HostReceiptPolicy.execution((testSelected / testExecution).value, definedTests.value, (testSelected / HostReceiptPolicy.owner).value, full = false, HostJUnitReports.format.value), definedTests.value, streams.value.log)

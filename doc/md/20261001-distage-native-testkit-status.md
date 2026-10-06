@@ -16326,3 +16326,70 @@ Its Java agent changes require renewed JDK17/25 verification; old agent-byte
 continuity evidence does not satisfy that gate. Opaque selector correction,
 complete failure/input inventories, JS/Native production hosts, coverage,
 migration and phase/final evaluation remain open. IDE is owner-deferred.
+
+## 2026-10-06: opaque selection correction and 176 candidate controls
+
+Parent head: `0ad476797`. The four pre-correction public failures and source
+archives are recorded above. Public selected/quick filters now remain free of
+receipt observers. The existing input-initializer normalization maps public
+`testFilter` references to a private task that wraps the final inherited value
+with the current command's observer. Opaque user closures therefore finish
+admission before it is recorded, and quick selection cannot invoke a captured
+selected-command receipt. Exclusion reporting likewise observes final admission.
+The conservative owned rerun and foreign stock history policies remain explicit.
+
+Candidate work starts in a disposable linked worktree with all21 current plugin
+inputs copied and hashed. Three build attempts stop on linked-worktree JGit
+dirty-state/commit-date lookup or command key qualification, before compilation.
+The five candidate source changes are archived and integrated only after the
+preceding452-command batch and its audits finish. A fourth producer compiles
+the candidate and passes126 host/storage contracts, but its publication command
+incorrectly uses a hyphenated project ID as a Scala expression. The fifth command
+uses public `LocalProject("sbt-distage-testkit")`, publishes only the distinct
+`1.3.0-M5-opaque-candidate-SNAPSHOT` plugin and returns0. All recorded producer
+inputs remain unchanged; its source inputs agree with the fourth attempt.
+All160 compiled class/TASTy payloads and15 published source payloads match the
+candidate inputs. Plugin SHA-256:
+`d65bef705b3095d4b8c21047644f8f438503a1286a1e51575aae37595e1bba05`.
+The qualified publication additionally hashes every plugin source, including the
+Java `target` package, and freezes all15 publication files. No M5 publication is
+overwritten during candidate validation.
+
+Completed commands return0:
+
+```sh
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-candidate-batch-first.py
+python3 -B test-fixtures/sbt-plugin-consumer/verify-opaque-selection.py --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT --plugin-version 1.3.0-M5-opaque-candidate-SNAPSHOT --scala-version 3.9.0 --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-extended-candidate-first-3.9.0
+python3 -B test-fixtures/sbt-plugin-consumer/verify-opaque-selection.py --repo-root . --artifact-version 1.3.0-M5-SNAPSHOT --plugin-version 1.3.0-M5-opaque-candidate-SNAPSHOT --scala-version 2.13.18 --evidence-dir /srv/nvme/tmp/izumi-impl/sbt2-opaque-selection-extended-candidate-first-2.13.18
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-candidate-jdk-batch-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-candidate-selection-audit-first.py
+python3 -B /srv/nvme/tmp/izumi-impl/sbt2-opaque-candidate-combined-audit-first.py
+```
+
+The first batch passes72 controls: eight original opaque-probe commands,
+52 existing selection-reason commands and twelve stock/adapted early-input
+composition commands across Scala3.9.0/2.13.18. The expanded tracked verifier
+passes48 further commands across both compilers and both JVM modes. These
+reconcile528 literal body/XML identities and forty distinct acquired/released
+resources. The configured first predicate executes six times, the second five,
+and selected predicates four, preserving actual SDK short-circuiting. Multiple
+patterns execute each inherited predicate once per admitted filtering pass.
+Factory and predicate failures retain their original markers, execute no bodies
+and produce no XML; subsequent selected and quick commands recover successfully.
+
+The eight-driver JDK batch passes56 commands on JDK17.0.17/25.0.1, both target
+compilers:32 fork grouping/death/recovery controls and24 actual-client active
+foreign normal/cancel/recovery controls. It reconciles156 group bodies,
+360 owned bodies and72 exact foreign events. Sixteen captured agent JARs match
+the candidate's published Java payloads. All recorded host/target PIDs terminate.
+This supplies fresh bounded verification of the changed agent on JDK17/25;
+it does not close the repository-wide L1 matrix.
+
+The combined176-control independent audit returns0, with unchanged candidate
+source/publication inputs. Evidence:
+`sbt2-opaque-selection-candidate-batch-first/combined-audit.json`, SHA-256
+`8880ff3e7e6ac687ec54a8d7a66f92fc29f0d046f6c1b87dd5bef05970def6a9`.
+`git diff --check` returns0. Local verified substep:
+`Observe final opaque selection filters; verify 176 SBT controls`.
+A fresh full M5 producer/consumer checkpoint, remaining inventories and whole
+phase/final evaluations remain outstanding. IDE is owner-deferred.

@@ -20,6 +20,7 @@ private[sbt] object HostTaskBoundary {
     val originals = definitions.take(boundaries.head._2).map { setting =>
       setting.mapReferenced([a] => (reference: Def.ScopedKey[a]) => {
         if (reference.key == Keys.testResultLogger.key) Def.ScopedKey(reference.scope, HostReceiptPolicy.normalisedLogger.key).asInstanceOf[Def.ScopedKey[a]]
+        else if (reference.key == Keys.testFilter.key) Def.ScopedKey(reference.scope, HostReceiptPolicy.normalisedFilter.key).asInstanceOf[Def.ScopedKey[a]]
         else reference
       }).asInstanceOf[Def.Setting[InputTask[TestResult]]]
     }
