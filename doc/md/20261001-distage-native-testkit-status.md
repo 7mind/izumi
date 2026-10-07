@@ -19897,3 +19897,65 @@ org.scalatest.tools.distagetest to an izumi package and testing the new producti
 JUnit reporter, preserving the case name and four parallel-duration checks.
 This authorized identity change is recorded before implementation; the original
 source remains and no completed replacement is claimed.
+
+
+## 2026-10-07: factory progression correction and qualified Scala2 migration
+
+The previous ninth/tenth factory-failure interpretation was incorrect. Their
+actual XML message is Expected java.lang.Throwable, but no exception was thrown.
+ScalatestGuards.broken delegates to intercept[Throwable]; it is the progression
+wrapper that fails. The assertion macro does reject the factory snippet. The
+instrumented original case in5-factory-progression-diagnostic-first reproduces
+actual1 after177.830s,1659 frozen inputs unchanged. Its captured diagnostic
+contains both the existing Yretain-trees/position error and Factory cannot
+produce factories. Therefore only the second progression expectation became
+obsolete. Removing that wrapper retains the exact positive diagnostic assertion;
+the first progression guard and both case names remain unchanged. No production
+macro correction is needed.
+
+The repair in5-factory-progression-repair-first passes all twelve runtime lanes:
+Scala2.13 actual0 after509.597s;Scala3.9 actual0 after504.346s;1659 frozen inputs
+unchanged. Each compiler passes three base-runner lanes with847 checks each.
+Core JVM/JS/Native case counts are366/302/308 onScala2 and400/335/341 onScala3.
+Its independent audit exits0:2052 core cases and5082 base checks. Audit SHA256:
+630a0bb6984def103926a9d66baf7cead18d0e5075cf5a7ba89b8dd237fec30d
+Commands and completion captures are retained in each compiler directory.
+
+The eleventh ordinary migration's Scala2 producer is terminal actual0 after
+1628.994s,1690 frozen inputs unchanged. The explicitly Scala2-only ordinary and
+extended audits both exit0; they retain every identity/outcome/discovery,
+resolved-vendor exclusion, publication-skip and engine control from the full
+matrices. Ordinary JVM preserves357 cases:338 success,19 cancelled;JS andNative
+preserve155 each:136 success,19 cancelled. Both Native JSON corrections now
+satisfy the unchanged predicates. The module-filtering case preserves its
+original identity and outcome. Core366/302/308, engine143/103/118 controls,
+Native typed configuration/four-body memoization, and the three847 base and
+691/568/568 higher lanes pass. The capture also contains a host JVM
+RejectedExecutionException while the Native engine process starts; attribution
+and the final host gate remain open. Neither the passing XML audit nor the
+producer exit establishes the absence of late host callbacks.
+
+The full Scala3 eleventh producer remains running against unchanged inputs.
+The entire1690-file candidate is archived in frozen-source-inputs.tar.gz. Main
+has not integrated this candidate or retired the original ordinary project.
+The Scala2-only audit SHA256 values are6909a93fbe61bdb89a027e47c6012f28326d5a0eb43eeab32fb40d007d6ed0a9
+and8cb7042c7884dfd6dd5aacbd5119449008d685892e3a4857f72555a9293955f5.
+
+The read-only runtime replacement review is complete at
+legacy-runtime-replacement-readonly-design-first/REVIEW.md, SHA256
+b563f52d6f9ee3fcad9214407d1b1b94989b08e1928a78aadb0c6ffc127e62e7.
+It is source/design evidence, not a producer verdict. Configurable outer
+runtimes, resource-bearing runner overrides, local failure identity, owned
+allocation completion and separate standalone/SBT caller policies remain
+replacement obligations. The candidate TestRuntime completion boundary is
+used by the production provider. Its nine migrated finalization scenarios pass
+onScala2 JVM/JS/Native; the two-compiler capture and audit remain pending.
+
+The approved JUnit replacement uses two independent SBT consumer projects:
+four real parallel SpecIdentity bodies through the production host reporter,
+then the original regression case name and four two-second duration predicates.
+Fresh normal-artifact publication passes on both supported library compilers,
+with the host plugin/protocol compiled on pinnedScala3.8.4. The first consumer
+reproduces a build-definition type error becauseSBT2 test is an input key;
+its task dependency is being corrected to Test/testFull. JUnit qualification
+and retirement remain open. No acceptance parent/final gate closes here.
