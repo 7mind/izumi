@@ -31,10 +31,10 @@ head. The spike reports are design evidence, not implementation verification.
 
 | Item | State | Evaluation-point evidence |
 | --- | --- | --- |
-| L1 | in progress | Serial f8911f8c CI passes Scala2.13 on JDK17/21/25 and Scala3 on JDK17/21 below. JDK25 Scala3 reproduces a separate registration oracle defect; its correction has bounded controls below. Complete final evaluation remains open. |
-| L2 | in progress | Current corrected-assertion candidate passes Scala3 JS:892 passed,19 skipped. Scala2.13 coverage executes100 plain/12 Cats/13 BIO and887 base controls but fails linking on Class.getClassLoader after the reproduced System.exit path is removed. Platform-trait correction and ten-lane serial batch are queued below. |
-| L3 | in progress | Serial f8911f8c Native Scala3 and Scala2.13 CI pass968 and931 reported cases with exact preceding-capture identity parity and1814 unchanged inputs per lane. Current-source applicability and phase/final review remain open. |
-| L4 | in progress | Earlier candidate site actual0 remains preserved; final site actual1 fails with Docker unavailable after the OOM. Host launcher recovery now returns Docker5.8.7, but the sandbox socket mount points at a deleted inode. A syntax-checked, locally exercised exchange-directory relay awaits host execution; site retry remains required. |
+| L1 | in progress | Combined db4461cdc production sources pass all six JVM lanes on JDK17/21/25 with1817 unchanged inputs per lane. Scala2.13 reports1628 cases and Scala3 reports1660 per lane. Final item review remains open. |
+| L2 | in progress | Combined db4461cdc production sources pass both JS lanes: Scala2.13 coverage879 reported cases and Scala3 test911, each with19 skips, no failures and1817 unchanged inputs. Both reproduced linker defects are corrected; final item review remains open. |
+| L3 | in progress | Combined db4461cdc production sources pass Native Scala2.13:931 reported cases,19 skips, no failures and1817 unchanged inputs. Scala3 remains in flight. |
+| L4 | in progress | Host and sandbox Docker5.8.7 connectivity is restored through the owner-executed six-hour exchange-directory relay. Current site replay is queued after serialized CI, publication and consumers. No current site pass is claimed. |
 | L5 | in progress | Actual combined regeneration and clean generated-file diff pass at c4ac0d0cd; reproduced coverage-classpath correction is regenerated below. Final-head recheck remains open. |
 | L6 | in progress | Part-1 verification below; full gate remains outstanding. |
 | G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
@@ -76,7 +76,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.7 | in progress | Resource-free plain registration and raw DI/four-spec discovery pass nine lanes below; final evaluation outstanding. |
 | 2b.8 | in progress | Atomic registration and owner-approved loader factories pass nine producer and nine published-consumer lanes below, including opaque/warmed-worker isolation and held-resource overlap. Complete custom-hook audit and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain and distage path/suite/test IDs reject in all nine JVM/JS/Native lanes below; final evaluation outstanding. |
-| 2b.10 | in progress | Existing pure plain and retained autoset/three-effect distage suites pass import-only fixtures below. The owner explicitly permits factory-API migration edits for custom loader hooks. Complete migration-diff inventory, preserved behavior under O.1, and final evaluation remain outstanding. |
+| 2b.10 | in progress | Tracked fixture verifies150 direct source forms, nine inherited forms and two preserved originals against exact Git blobs. Current-artifact JVM original-form probes pass on both compilers; three complete CI class/report binding captures are verified below. Original-form JS replay, remaining platform bindings, hook/O.1 reconciliation and final review remain open. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | in progress | Typed application agrees on discovered, planned and executed IDs in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
 | 2c.2 | in progress | Application rejects unknown IDs and actual DI axis values before provisioning in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
@@ -21616,3 +21616,99 @@ izumi-docker-after-oom-launcher.out,izumi-docker-after-oom-relay.out}. The tempo
 relay mitigates this already-running sandbox's deleted socket bind; subsequent
 fresh sandboxes can use the restored normal endpoint. No global container cleanup,
 host configuration edit or host-wide service restart was performed.
+
+## 2026-10-07: tracked original-form compatibility fixture and current CI bindings
+
+At production checkpoint db4461cdc, the tracked
+`test-fixtures/source-compatibility/manifest.json` holds151 direct classifications
+(one permitted ScalaMock absence), nine inherited-source references and209
+lexical concrete candidates. `verify.py` records complete per-file diffs and
+checks the exact original Git blobs/current hashes. Command:
+`python3 -B test-fixtures/source-compatibility/verify.py --capture /srv/nvme/tmp/izumi-impl/2b10-tracked-source-fixture-provenance-third`
+exits0 with150 direct sources, nine inherited sources and two preserved originals.
+The inherited SbtModuleFilteringTest is byte-identical to its original; its
+proposal's false imports-only flag is corrected in the tracked metadata, without
+changing the suite. The earlier incomplete verifier captures remain preserved.
+
+The whole original IzResourcesTest changes only its WordSpec import; all seven
+bodies and its historical slash-delimited resource filename remain unchanged.
+The driver supplies that filename in a fixture-owned plain-properties JAR, with
+no vendor class or implementation. The generic fixture explicitly extracts five
+eligible original declaration/companion-support spans from its mixed original
+unit, each retained byte-for-byte exactly once. It makes no whole-unit
+imports-only claim. Exact historical generator capture
+2b10-original-generic-platform-domain-first confirms82c156acc69f5b40ce15c3ac64d3576be3236bdf
+used Targets.cross=JVM/JS for that original artifact; the new Native port and5.6
+remain independently required. The first sealed proposal's companion/class
+fragment filename collision is reproduced in
+2b10-fragment-copy-identity-repro-first. Its original capture is retained; the
+read-only correction verifies28 distinct fragment copies. Directly read addendum:
+2b10-fragment-copy-identity-readonly-correction-first/REVIEW.md SHA256
+432fc6b2e278192083ef40ed41607c0d3cefadf31991c0e1fcc045b002d36e91.
+
+Commands `python3 -B /srv/nvme/tmp/izumi-impl/original-resource-current-ci-controls.py`
+and `python3 -B /srv/nvme/tmp/izumi-impl/original-generic-current-ci-controls.py`
+complete sequentially. Their third captures use actual current combined-CI
+artifacts for both2.13.18/3.9.0; all eight fresh compile/runtime commands exit0.
+Each resource runtime records seven distinct successes. Each generic runtime
+records11 suites and75 distinct results:63 successes, four unavailable-integration
+skips and eight intentional skip/assume cancellations. Drivers verify exact
+selected/discovered IDs and cancellation failures, join session.close and stop
+their owned callback executors. Fresh original definitions precede the unchanged
+compiled leaf/helper closure; class-origin checks guard the fixture location.
+These are current-artifact JVM checks, not published-only or Node/Native claims.
+The initial resource driver incorrectly compared URL text with URI text; captured
+class-load output proves the fresh origin, and the corrected URI oracle passes.
+The initial generic driver incorrectly required RunOutcome.successful despite
+original skip/assume cancellations; the corrected oracle preserves those exact
+statuses without changing production semantics or original bodies.
+
+2b10-current-original-fixture-independent-audit-second independently rehashes all
+recorded sources/compiler/dependency inputs and raw logs, checks actual exits,
+and reconciles each case identity/status. It exits0. Its first capture fails only
+because the auditor expected an incorrect resource marker literal; the actual
+successful marker and failed auditor record remain preserved separately.
+
+`bind-ci.py` pairs all159 held source references with the frozen command inputs,
+actual generated project platforms, compiled-class SourceFile metadata and raw
+terminal XML. Its three completed current-CI bindings are retained in
+2b10-complete-current-ci-source-bindings-second: JVM3active153/compiled150/reported149;
+JVM2=152/149/148; JS2=96/94/93. The only uncompiled active files are the three
+already-commented pre-migration sources (two shared files on JS). Compiled
+unreported support is abstract CatsLawsTestBase on JVM and the inherited
+MiniBIOAsyncTestPlatformSpecific trait on JS; neither is an independent selected
+suite. These totals include separately classified extra-facility sources, not
+159 eligible suites. The first binder fails before producing bindings because
+its classfile cursor update reads the interfaces count after capturing the old
+offset; separating the count read corrects the auditor. The failed capture is
+retained, with no production defect inferred. Actual nested negative fixtures
+still require their parental control reconciliation, rather than standalone
+success assertions for every lexical declaration.
+
+The directly read tracked-fixture review finds no substantive fixture defect:
+2b10-tracked-fixture-readonly-review-first/REVIEW.md SHA256
+466ceb6d511cbaf6243c92b1cae97f7768d56ffde553a95fbf0ae957d5932f7d.
+Its881 direct checks verify source/provenance, current original-form JVM outcomes
+and the three named binder captures, retaining dependency/JAR inventories' root
+provenance separately. B1-B5 in remaining-binding-assessment.json explicitly
+retain original-form JS replay, remaining applicable JS/Native bindings,
+parental negative-control reconciliation, approved-hook O.1 inventory and final
+applicability. The209 lexical candidates are not209 standalone pass obligations.
+Untested queued JS-driver work is excluded from this milestone.
+
+All six combined-correction JVM CI actions now exit0, with1817 unchanged inputs
+each: Scala2.13 reports1628 cases per JDK and Scala3 reports1660, each with74
+skips and no failures. JS3 exits0 after215.264s with911 cases/19 skips; Native2.13
+exits0 after461.049s with931 cases/19 skips. Native3 remains in flight. These
+are observations of successful frozen actions; SBT's permitted task-cache reuse
+is not relabeled fresh execution of every body. Independent all-lane rehash/XML
+verification is queued at5-platform-linkage-final-ci-independent-audit-first.
+
+The directly read nine-file platform review finds no introduced material defect:
+3-platform-linkage-readonly-review-first/REVIEW.md SHA256
+1f56d4a865c6c644c0d69dd528961af1b24dbd184238d6486112857f1a5a0e4e.
+It confirms source/seed equality and123 JS2 reports with860 successes/19 skips,
+while preserving probe scope. Four direct ParserFailureHandler copies differ
+from final sources solely in import order; no exact-byte claim is made for them.
+Current full publication, point positions, published consumers and site execution
+remain queued serially. No item or parent phase is closed by this checkpoint.
