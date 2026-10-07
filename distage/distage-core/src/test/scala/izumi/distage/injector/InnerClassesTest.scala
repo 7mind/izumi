@@ -4,7 +4,7 @@ import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.InnerClassCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class InnerClassesTest extends AnyWordSpec with MkInjector {
   "can instantiate inner classes from stable objects where the classes are inherited from a trait" in {

@@ -5,7 +5,7 @@ import cats.effect.unsafe.IORuntime
 import distage.{Injector, ModuleDef, Roots}
 import izumi.distage.modules.support.CatsIOSupportModule
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.util.concurrent.{CountDownLatch, Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicReference

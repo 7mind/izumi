@@ -9,7 +9,7 @@ import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, Mod
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class AxisTest extends AnyWordSpec with MkInjector {
 

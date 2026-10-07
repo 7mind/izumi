@@ -16,7 +16,7 @@ import izumi.fundamentals.platform.cli.model.{EntrypointArgs, RoleArgs}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.fundamentals.platform.versions.Version
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files

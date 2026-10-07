@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage.{DIKey, Injector, LocatorPrivacy, ModuleDef, Roots}
 import izumi.distage.fixtures.BasicCases.BasicCase1.*
 import izumi.distage.model.PlannerInput
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   "Support private bindings in public-by-default mode" in {

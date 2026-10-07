@@ -2756,7 +2756,9 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
     ),
     scalaVersion := crossScalaVersions.value.head,
     Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-platform-test-jvm"
+    Test / distageTargetId := "fundamentals-platform-test-jvm",
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -4421,7 +4423,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
   .dependsOn(
     `fundamentals-platform` % "test->compile;compile->compile",
     `fundamentals-functoid` % "test->compile;compile->compile",
-    `fundamentals-bio` % "test->compile;compile->compile"
+    `fundamentals-bio` % "test->compile;compile->compile",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -4598,6 +4601,9 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -4605,7 +4611,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "distage-core-api-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -4617,7 +4624,8 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "distage-core-api-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -4629,9 +4637,10 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "distage-core-api-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-core-apiJVM` = `distage-core-api`.jvm
 lazy val `distage-core-apiJS` = `distage-core-api`.js
 lazy val `distage-core-apiNative` = `distage-core-api`.native
@@ -5027,7 +5036,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
     `fundamentals-platform` % "test->compile;compile->compile",
-    `fundamentals-platform-test` % "test->compile,test"
+    `fundamentals-platform-test` % "test->compile,test",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -5200,6 +5210,9 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -5207,7 +5220,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "distage-core-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -5219,7 +5233,8 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "distage-core-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -5231,9 +5246,10 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "distage-core-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-coreJVM` = `distage-core`.jvm
   .dependsOn(
     `distage-core-proxy-bytebuddy` % "test->compile;compile->compile"
@@ -5254,7 +5270,8 @@ lazy val `distage-coreNative` = `distage-core`.native
 lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))
   .dependsOn(
     `distage-core-api` % "test->compile;compile->compile",
-    `distage-core` % "test->compile"
+    `distage-core` % "test->compile",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -5422,6 +5439,9 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -5429,7 +5449,16 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "distage-extension-config-jvm",
+    Test / resourceGenerators += Def.task {
+                  val _ = (LocalProject("distage-optional-dependency-test") / Compile / compile).value
+                  val classpath = (LocalProject("distage-optional-dependency-test") / Compile / fullClasspath).value
+                  val converter = fileConverter.value
+                  val manifest = (Test / resourceManaged).value / "optional-dependency-classpath.txt"
+                  IO.write(manifest, classpath.map(entry => converter.toPath(entry.data).toUri.toASCIIString).mkString(System.lineSeparator()))
+                  Seq(manifest)
+                }.taskValue
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -5441,7 +5470,8 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "distage-extension-config-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -5453,9 +5483,10 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "distage-extension-config-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
   .settings(
     libraryDependencies ++= Seq(
@@ -5489,12 +5520,206 @@ lazy val `distage-extension-configNative` = `distage-extension-config`.native
     )
   )
 
+lazy val `distage-optional-dependency-test` = project.in(file("distage/distage-optional-dependency-test"))
+  .dependsOn(
+    `distage-extension-configJVM` % "test->compile;compile->compile",
+    `distage-coreJVM` % "test->compile;compile->compile",
+    `distage-test-runnerJVM` % "test->compile;compile->compile"
+  )
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.scalatest" %% "scalatest-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-diagrams" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-featurespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-flatspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-freespec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-funsuite" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-matchers-core" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-mustmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-propspec" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-shouldmatchers" % V.scalatest % Test,
+      "org.scalatest" %% "scalatest-wordspec" % V.scalatest % Test,
+      "org.scalatestplus" %% "scalacheck-1-18" % V.scalatestplus_scalacheck % Test
+    ),
+    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+    ) else Seq.empty }
+  )
+  .settings(
+    crossScalaVersions := Seq(
+      "3.9.0",
+      "2.13.18"
+    ),
+    scalaVersion := crossScalaVersions.value.head,
+    organization := "io.7mind.izumi",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:product-name=${name.value}",
+      s"-Xmacro-settings:product-version=${version.value}",
+      s"-Xmacro-settings:product-group=${organization.value}",
+      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+    ),
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+        case _ => Seq.empty
+      }
+    },
+    Compile / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Compile / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / unmanagedSourceDirectories ++= {
+      val version = scalaVersion.value
+      val crossVersions = crossScalaVersions.value
+      import Ordering.Implicits._
+      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+      (Test / unmanagedSourceDirectories).value.flatMap {
+        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+        case _ => Seq.empty
+      }
+    },
+    Test / testOptions += Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF"),
+    closeClassLoaders := false,
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Wconf:any:error",
+        "-explaintypes",
+        "-P:kind-projector:underscore-placeholders",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wconf:cat=optimizer:warning",
+        "-Wconf:cat=other-match-analysis:error",
+        "-Vimplicits",
+        "-Vtype-diffs",
+        "-Ybackend-parallelism",
+        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+        "-Wdead-code",
+        "-Wextra-implicit",
+        "-Wnumeric-widen",
+        "-Woctal-literal",
+        "-Wvalue-discard",
+        "-Wunused:_",
+        "-Wmacros:default",
+        "-Ycache-plugin-class-loader:always",
+        "-Ycache-macro-class-loader:last-modified",
+        "-Wunused:-synthetics",
+        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+        "-Wconf:msg=package.object.inheritance:silent",
+        "-Wconf:msg=not.a.valid.main.method:silent",
+        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+        "-Wconf:cat=lint-eta-sam:silent",
+        "-release:17"
+      )
+      case (_, "3.9.0") => Seq(
+        "-source:3.9",
+        "-Xkind-projector:underscores",
+        "-Ximport-suggestion-timeout:0",
+        "-Yretain-trees",
+        "-no-indent",
+        "-explain",
+        "-explain-types",
+        "-explain-cyclic",
+        "-Xmax-inlines:64",
+        "-Wopt:all",
+        "-Wrecurse-with-default",
+        "-Wshadow:private-shadow",
+        "-Wwrong-arrow",
+        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+        "-Wenum-comment-discard",
+        "-Wimplausible-patterns",
+        "-Wnonunit-statement",
+        "-WunstableInlineAccessors",
+        "-Wunused:all",
+        "-Wvalue-discard",
+        "-Wconf:any:verbose",
+        "-Wconf:name=UnusedNonUnitValue:silent",
+        "-Wconf:name=ValueDiscarding:silent",
+        "-Wconf:msg=eta-expanded even though:silent",
+        "-Wconf:msg=Ignoring .this. qualifier:silent",
+        "-Wconf:msg=.this. qualifier will be deprecated:silent",
+        "-Wconf:msg=scala.compiletime.uninitialized:silent",
+        "-Wconf:msg=`using` clause:silent",
+        "-Wconf:msg=The syntax ..function:silent",
+        "-Wconf:msg=method contains is not declared infix:silent",
+        "-Wconf:msg=method in is not declared infix:silent",
+        "-release:17"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions -= "-Wconf:any:warning",
+    scalacOptions ++= Seq(
+      "-Wconf:cat=deprecation:warning",
+      "-Wconf:msg=legacy-binding:silent",
+      "-Wconf:msg=nowarn:silent"
+    ),
+    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
+    scalacOptions ++= Seq(
+      s"-Xmacro-settings:scalatest-version=${V.scalatest}",
+      s"-Xmacro-settings:is-ci=${insideCI.value}"
+    ),
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (false, "2.13.18") => Seq(
+        "-opt:l:inline",
+        "-opt-inline-from:izumi.**"
+      )
+      case (_, _) => Seq.empty
+    } },
+    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+      case (_, "2.13.18") => Seq(
+        "-Xsource:3",
+        "-Xmigration",
+        "-Wconf:cat=scala3-migration:silent",
+        "-Wconf:cat=other-migration:silent"
+      )
+      case (_, _) => Seq.empty
+    } },
+    Test / packageDoc / publishArtifact := false,
+    publish / skip := true,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Compile / dependencyClasspath := {
+                  val classpath = (Compile / dependencyClasspath).value
+                  val converter = fileConverter.value
+                  val excluded = (Compile / update).value.configurations.flatMap(_.modules).filter { module =>
+                    (module.module.organization == "org.typelevel" && module.module.name.startsWith("cats-")) ||
+                      (module.module.organization == "dev.zio" && module.module.name.startsWith("zio")) ||
+                      (module.module.organization == "io.monix" && module.module.name.startsWith("monix"))
+                  }.flatMap(_.artifacts.map(_._2)).toSet
+                  classpath.filterNot(entry => excluded.contains(converter.toPath(entry.data).toFile))
+                },
+    Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
+  )
+  .enablePlugins(SitePreviewPlugin)
+
 lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-logstage"))
   .dependsOn(
     `distage-extension-config` % "test->compile;compile->compile",
     `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile",
-    `logstage-core` % "test->test;compile->compile"
+    `logstage-core` % "test->test;compile->compile",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -5663,6 +5888,9 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -5670,7 +5898,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "distage-extension-logstage-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -5682,7 +5911,8 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "distage-extension-logstage-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -5694,9 +5924,10 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "distage-extension-logstage-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-extension-logstageJVM` = `distage-extension-logstage`.jvm
 lazy val `distage-extension-logstageJS` = `distage-extension-logstage`.js
 lazy val `distage-extension-logstageNative` = `distage-extension-logstage`.native
@@ -5706,7 +5937,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
     `distage-core-api` % "test->compile;compile->compile",
     `distage-core` % "test->compile",
     `distage-extension-config` % "test->compile",
-    `logstage-core` % "test->compile"
+    `logstage-core` % "test->compile",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -5875,6 +6107,9 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -5882,7 +6117,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "distage-extension-plugins-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -5894,7 +6130,8 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "distage-extension-plugins-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -5906,9 +6143,10 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "distage-extension-plugins-native"
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-extension-pluginsJVM` = `distage-extension-plugins`.jvm
   .dependsOn(
     `fundamentals-platform-testJVM` % "test->compile,test"
@@ -5932,7 +6170,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
     `distage-framework-api` % "test->compile;compile->compile",
     `distage-extension-plugins` % "test->compile;compile->compile",
     `distage-extension-config` % "test->compile;compile->compile",
-    `distage-extension-plugins` % "test->test;compile->compile"
+    `distage-extension-plugins` % "test->test;compile->compile",
+    `distage-test-runner` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -6115,6 +6354,9 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
@@ -6122,7 +6364,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
       "3.9.0",
       "2.13.18"
     ),
-    scalaVersion := crossScalaVersions.value.head
+    scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "distage-framework-jvm"
   )
   .jsSettings(
     crossScalaVersions := Seq(
@@ -6134,7 +6377,8 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
     libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
+    Test / distageTargetId := "distage-framework-js"
   )
   .nativeSettings(
     crossScalaVersions := Seq(
@@ -6147,9 +6391,10 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
     Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath((Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
     libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
+    Test / distageTargetId := "distage-framework-native",
     Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-frameworkJVM` = `distage-framework`.jvm
 lazy val `distage-frameworkJS` = `distage-framework`.js
   .settings(
@@ -8249,6 +8494,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `distage-framework-apiJVM` % "test->compile;compile->compile",
     `distage-coreJVM` % "test->compile;compile->compile",
     `distage-extension-configJVM` % "test->compile;compile->compile",
+    `distage-optional-dependency-test` % "test->compile;compile->compile",
     `distage-extension-logstageJVM` % "test->compile;compile->compile",
     `distage-extension-pluginsJVM` % "test->compile;compile->compile",
     `distage-frameworkJVM` % "test->compile;compile->compile",
@@ -9582,6 +9828,7 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
     `distage-extension-configJVM`,
     `distage-extension-configJS`,
     `distage-extension-configNative`,
+    `distage-optional-dependency-test`,
     `distage-extension-logstageJVM`,
     `distage-extension-logstageJS`,
     `distage-extension-logstageNative`,
@@ -9621,6 +9868,7 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
     `distage-framework-apiJVM`,
     `distage-coreJVM`,
     `distage-extension-configJVM`,
+    `distage-optional-dependency-test`,
     `distage-extension-logstageJVM`,
     `distage-extension-pluginsJVM`,
     `distage-frameworkJVM`,

@@ -11,7 +11,7 @@ import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.collection.immutable.Queue
 

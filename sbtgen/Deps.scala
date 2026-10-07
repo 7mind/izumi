@@ -538,6 +538,7 @@ object Izumi {
       final lazy val proxyBytebuddy = ArtifactId("distage-core-proxy-bytebuddy")
       final lazy val core = ArtifactId("distage-core")
       final lazy val config = ArtifactId("distage-extension-config")
+      final lazy val optionalDependencyTest = ArtifactId("distage-optional-dependency-test")
       final lazy val plugins = ArtifactId("distage-extension-plugins")
       final lazy val docker = ArtifactId("distage-framework-docker")
       final lazy val frameworkApi = ArtifactId("distage-framework-api")
@@ -762,7 +763,12 @@ object Izumi {
         plugins = fundamentalsTestPlugins,
         libs = Seq(scala_reflect, fast_classpath_scanner in Scope.Provided.all, scala_java_time_tzdb in Scope.Test.native),
         depends = Seq(Projects.fundamentals.platform, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
-        settings = fundamentalsTestSettings("fundamentals-platform-test") ++ testResourcesOnCompileClasspath,
+        settings = fundamentalsTestSettings("fundamentals-platform-test") ++ testResourcesOnCompileClasspath ++ Seq(
+          "libraryDependencies" in (SettingScope.Project, Platform.Jvm) ~=
+            """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+          "testFrameworks" in (SettingScope.Test, Platform.Jvm) :=
+            """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
+        ),
       ),
       Artifact(
         name = Projects.fundamentals.collectionsTest,
@@ -886,14 +892,16 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.coreApi,
+        plugins = fundamentalsTestPlugins,
         libs = allCatsOptional ++ allZioOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(zio_managed in Scope.Optional.all),
         depends = Seq(
 //          Projects.fundamentals.reflection,
           Projects.fundamentals.platform,
           Projects.fundamentals.functoid,
           Projects.fundamentals.bio,
-        ).map(_ in Scope.Compile.all),
+        ).map(_ in Scope.Compile.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.cross,
+        settings = plainSuiteSettings("distage-core-api"),
       ),
       Artifact(
         name = Projects.distage.proxyBytebuddy,
@@ -909,6 +917,7 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.core,
+        plugins = fundamentalsTestPlugins,
         libs = allMonadsOptional ++ Seq(
           zio_interop_cats in Scope.Optional.all
         ) ++ Seq(
@@ -921,11 +930,13 @@ object Izumi {
           Projects.distage.proxyBytebuddy in Scope.Compile.jvm,
           Projects.fundamentals.platform in Scope.Compile.all,
           Projects.fundamentals.platformTest tin Scope.Test.all,
-        ),
+        ) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.cross,
+        settings = plainSuiteSettings("distage-core"),
       ),
       Artifact(
         name = Projects.distage.config,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(
           pureconfig_core in Scope.Compile.jvm,
           pureconfig_magnolia in Scope.Compile.jvm.scalaVersion(ScalaVersionScope.Versions(scala213)),
@@ -942,32 +953,68 @@ object Izumi {
           scala_java_time in Scope.Test.native,
         ) ++ Seq(scala_reflect),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core).map(_ in Scope.Test.all),
+          Seq(Projects.distage.core).map(_ in Scope.Test.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.cross,
-        settings = Seq.empty,
+        settings = plainSuiteSettings("distage-extension-config") ++ Seq(
+          "resourceGenerators" in (SettingScope.Test, Platform.Jvm) +=
+            """Def.task {
+              val _ = (LocalProject("distage-optional-dependency-test") / Compile / compile).value
+              val classpath = (LocalProject("distage-optional-dependency-test") / Compile / fullClasspath).value
+              val converter = fileConverter.value
+              val manifest = (Test / resourceManaged).value / "optional-dependency-classpath.txt"
+              IO.write(manifest, classpath.map(entry => converter.toPath(entry.data).toUri.toASCIIString).mkString(System.lineSeparator()))
+              Seq(manifest)
+            }.taskValue""".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.optionalDependencyTest,
+        libs = Seq(scala_reflect),
+        depends = Seq(Projects.distage.config, Projects.distage.core, Projects.distage.testRunner).map(_ in Scope.Compile.all),
+        platforms = Targets.jvm,
+        settings = Seq(
+          "skip" in SettingScope.Raw("publish") := true,
+          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+          "dependencyClasspath" in SettingScope.Compile :=
+            """{
+              val classpath = (Compile / dependencyClasspath).value
+              val converter = fileConverter.value
+              val excluded = (Compile / update).value.configurations.flatMap(_.modules).filter { module =>
+                (module.module.organization == "org.typelevel" && module.module.name.startsWith("cats-")) ||
+                  (module.module.organization == "dev.zio" && module.module.name.startsWith("zio")) ||
+                  (module.module.organization == "io.monix" && module.module.name.startsWith("monix"))
+              }.flatMap(_.artifacts.map(_._2)).toSet
+              classpath.filterNot(entry => excluded.contains(converter.toPath(entry.data).toFile))
+            }""".raw,
+        ),
       ),
       Artifact(
         name = Projects.distage.extensionLogstage,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(
           cats_effect in Scope.Test.all,
           zio_core in Scope.Test.all
         ),
         depends = Seq(Projects.distage.config, Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core).map(_ in Scope.Test.all) ++
-          Seq(Projects.logstage.core).map(_ tin Scope.Compile.all),
+          Seq(Projects.logstage.core).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.cross,
+        settings = plainSuiteSettings("distage-extension-logstage"),
       ),
       Artifact(
         name = Projects.distage.plugins,
+        plugins = fundamentalsTestPlugins,
         libs = Seq(fast_classpath_scanner in Scope.Compile.all) ++ Seq(scala_reflect) ++
           Seq( /* for ZIOResourcesZManagedTestJvm */ zio_managed, zio_interop_cats, cats_effect, javaXInject).map(_ in Scope.Test.jvm),
         depends = Seq(Projects.distage.coreApi).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.config, Projects.logstage.core).map(_ in Scope.Test.all) ++
-          Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platformTest tin Scope.Test.jvm),
+          Seq( /* for ZIOResourcesZManagedTestJvm */ Projects.fundamentals.platformTest tin Scope.Test.jvm) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.cross,
+        settings = plainSuiteSettings("distage-extension-plugins"),
       ),
       Artifact(
         name = Projects.distage.framework,
+        plugins = fundamentalsTestPlugins,
         libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler) ++ Seq(
           circe_parser in Scope.Test.all,
           circe_parser in Scope.Compile.js,
@@ -975,9 +1022,9 @@ object Izumi {
         ),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all),
+          Seq(Projects.distage.plugins).map(_ tin Scope.Compile.all) ++ Seq(Projects.distage.testRunner in Scope.Test.all),
         platforms = Targets.cross,
-        settings = Seq(
+        settings = plainSuiteSettings("distage-framework") ++ Seq(
           "nativeConfig" in (SettingScope.Test, Platform.Native) := """nativeConfig.value.withEmbedResources(true)""".raw,
         ),
       ),

@@ -12,8 +12,8 @@ import izumi.distage.model.provisioning.proxies.DistageProxy
 import izumi.distage.modules.platform.CatsIOPlatformDependentSupportModule
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.unused
 import scala.concurrent.ExecutionContext
@@ -210,7 +210,7 @@ final class CatsResourcesTestJvm extends AnyWordSpec with CatsIOPlatformDependen
       """
       )
     }
-    val res = intercept[TestFailedException](
+    val res = intercept[AssertionFailure](
       assertCompiles(
         """
          new ModuleDef {

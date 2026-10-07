@@ -119,6 +119,7 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
   private val results = mutable.ArrayBuffer.empty[TestResult]
   private val owners = mutable.Map.empty[SuiteId, String]
   private val started = mutable.Set.empty[TestId]
+  private val frames = new SdkProtocolFrames.Decoder
   private var protocolFailure = Option.empty[Throwable]
   private var sequence = 0L
   private var run = Option.empty[RunId]
@@ -141,57 +142,61 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
   private def accept(event: Event): Unit = {
     require(!closed && terminal.isEmpty, "Target event arrived after application completion")
     event.selector() match {
-      case nested: NestedTestSelector if nested.suiteId() == "$distage-protocol-v4" =>
-        val frame = nested.testName()
-        require(!frame.contains('\n') && !frame.contains('\r'), "Target channel framing violation")
-        val message = ProtocolCodec.decode(frame).fold(error => throw new IllegalArgumentException(error.message), identity)
-        channel.foreach(path => { val _ = Files.writeString(path, frame + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND) })
-        message match {
-          case ProtocolMessage.Event(index, value) =>
-            require(index == sequence, "Target event sequence is not contiguous")
-            sequence += 1
-            value match {
-              case RunEvent.Started(id) =>
-                require(run.isEmpty, "Duplicate target application start")
-                run = Some(id)
-                control.started(id)
-              case other =>
-                require(run.contains(other.run) && finished.isEmpty, "Target event belongs to an inactive application")
-                other match {
-                  case RunEvent.TestStarted(_, test) =>
-                    require(selected.contains(event.fullyQualifiedName()), "Target test owner is not selected")
-                    require(owners.get(test.suite).forall(_ == event.fullyQualifiedName()), "Target logical suite changed its class owner")
-                    owners.update(test.suite, event.fullyQualifiedName())
-                    require(started.add(test), "Duplicate target test start")
-                  case RunEvent.TestCompleted(_, result) =>
-                    require(started.contains(result.id) || result.status == TestStatus.Cancelled || result.status == TestStatus.Skipped, "Target completion has no matching test start")
-                    val definition = selected.getOrElse(event.fullyQualifiedName(), throw new IllegalArgumentException("Target result belongs to an unselected suite"))
-                    require(owners.get(result.id.suite).forall(_ == definition.fullyQualifiedName()), "Target logical suite changed its class owner")
-                    require(!results.exists(_.id == result.id), "Duplicate target test completion")
-                    owners.update(result.id.suite, definition.fullyQualifiedName())
-                    results += result
-                    val projected = new TargetHostTestEvent(definition, result)
-                    val name = definition.fullyQualifiedName()
-                    events.update(name, events.getOrElse(name, Vector.empty) :+ projected)
-                  case RunEvent.Finished(_, value) => finished = Some(value)
-                  case _ => ()
-                }
-            }
-          case ProtocolMessage.Completed(value) =>
-            require(finished.contains(value) && value.results.map(result => result.id -> result).toMap == results.map(result => result.id -> result).toMap && value.results.size == results.size, "Target terminal differs from its event stream")
-            terminal = Some(value)
-          case ProtocolMessage.Rejected(_, cause) => throw ProjectedFailure.root(cause)
-          case _ => throw new IllegalArgumentException("Unexpected target channel response")
-        }
+      case nested: NestedTestSelector if nested.suiteId() == SdkProtocolFrames.SelectorId || nested.suiteId() == SdkProtocolFrames.PartSelectorId =>
+        frames.accept(event.fullyQualifiedName(), SdkProtocolFrames.Frame(nested.suiteId(), nested.testName())).foreach(frame => acceptProtocol(event, frame))
       case _ =>
         if (event.throwable().isDefined) throw event.throwable().get()
         else throw new IllegalArgumentException("Unattributable target SDK event")
     }
   }
 
+  private def acceptProtocol(event: Event, frame: String): Unit = {
+    require(!frame.contains('\n') && !frame.contains('\r'), "Target channel framing violation")
+    val message = ProtocolCodec.decode(frame).fold(error => throw new IllegalArgumentException(error.message), identity)
+    channel.foreach(path => { val _ = Files.writeString(path, frame + "\n", StandardOpenOption.CREATE, StandardOpenOption.APPEND) })
+    message match {
+      case ProtocolMessage.Event(index, value) =>
+        require(index == sequence, "Target event sequence is not contiguous")
+        sequence += 1
+        value match {
+          case RunEvent.Started(id) =>
+            require(run.isEmpty, "Duplicate target application start")
+            run = Some(id)
+            control.started(id)
+          case other =>
+            require(run.contains(other.run) && finished.isEmpty, "Target event belongs to an inactive application")
+            other match {
+              case RunEvent.TestStarted(_, test) =>
+                require(selected.contains(event.fullyQualifiedName()), "Target test owner is not selected")
+                require(owners.get(test.suite).forall(_ == event.fullyQualifiedName()), "Target logical suite changed its class owner")
+                owners.update(test.suite, event.fullyQualifiedName())
+                require(started.add(test), "Duplicate target test start")
+              case RunEvent.TestCompleted(_, result) =>
+                require(started.contains(result.id) || result.status == TestStatus.Cancelled || result.status == TestStatus.Skipped, "Target completion has no matching test start")
+                val definition = selected.getOrElse(event.fullyQualifiedName(), throw new IllegalArgumentException("Target result belongs to an unselected suite"))
+                require(owners.get(result.id.suite).forall(_ == definition.fullyQualifiedName()), "Target logical suite changed its class owner")
+                require(!results.exists(_.id == result.id), "Duplicate target test completion")
+                owners.update(result.id.suite, definition.fullyQualifiedName())
+                results += result
+                val projected = new TargetHostTestEvent(definition, result)
+                val name = definition.fullyQualifiedName()
+                events.update(name, events.getOrElse(name, Vector.empty) :+ projected)
+              case RunEvent.Finished(_, value) => finished = Some(value)
+              case _ => ()
+            }
+        }
+      case ProtocolMessage.Completed(value) =>
+        require(finished.contains(value) && value.results.map(result => result.id -> result).toMap == results.map(result => result.id -> result).toMap && value.results.size == results.size, "Target terminal differs from its event stream")
+        terminal = Some(value)
+      case ProtocolMessage.Rejected(_, cause) => throw ProjectedFailure.root(cause)
+      case _ => throw new IllegalArgumentException("Unexpected target channel response")
+    }
+  }
+
   def finish(failure: Option[Throwable]): TargetHostOutcome = synchronized {
     closed = true
-    val effectiveFailure = protocolFailure.orElse(failure)
+    val framingFailure = try { frames.requireComplete(); None } catch { case NonFatal(cause) => Some(cause) }
+    val effectiveFailure = protocolFailure.orElse(failure).orElse(framingFailure)
     val incomplete = if (terminal.isEmpty && effectiveFailure.isEmpty) Vector(new IllegalStateException("Target aggregate returned without application completion")) else Vector.empty
     val runFailures = terminal.toVector.flatMap(_.failures.map(ProjectedFailure.root))
     val cancelled = terminal.filter(_.cancelled).toVector.map(_ => new InterruptedException("Target application was cancelled"))

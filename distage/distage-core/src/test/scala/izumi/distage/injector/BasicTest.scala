@@ -16,8 +16,8 @@ import izumi.distage.model.reflection.IdContract
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "maintain correct operation order" in {
@@ -96,7 +96,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   }
 
   "fails on wrong @Id annotation at compile-time" in {
-    val res = intercept[TestFailedException] {
+    val res = intercept[AssertionFailure] {
       assertCompiles("""
         import BadAnnotationsCase._
 

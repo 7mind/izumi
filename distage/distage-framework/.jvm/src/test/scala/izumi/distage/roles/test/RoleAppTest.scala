@@ -25,7 +25,7 @@ import izumi.fundamentals.platform.versions.Version
 import izumi.logstage.api.logger.LogSink
 import izumi.logstage.api.routing.StaticLogRouter
 import izumi.logstage.api.{IzLogger, Log}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.io.{File, OutputStream, PrintStream}
 import java.nio.charset.StandardCharsets

@@ -5,7 +5,7 @@ import izumi.distage.fixtures.TraitCases.*
 import izumi.distage.fixtures.TypesCases.*
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 import scala.language.reflectiveCalls

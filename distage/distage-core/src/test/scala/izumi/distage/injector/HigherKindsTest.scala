@@ -4,7 +4,7 @@ import distage.*
 import izumi.distage.fixtures.HigherKindCases.*
 import izumi.distage.model.PlannerInput
 import izumi.reflect.macrortti.LTag
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 

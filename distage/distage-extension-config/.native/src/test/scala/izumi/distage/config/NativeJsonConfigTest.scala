@@ -3,7 +3,7 @@ package izumi.distage.config
 import io.circe.{Json, JsonObject}
 import izumi.distage.config.codec.DIConfigReader
 import izumi.distage.config.model.exceptions.DIConfigReadException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 final class NativeJsonConfigTest extends AnyWordSpec {
   "Native JSON configuration" should {

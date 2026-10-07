@@ -3,7 +3,7 @@ package izumi.distage.injector
 import izumi.distage.fixtures.CircularCases.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support proxies in sets (non-immediate case) https://github.com/7mind/izumi/issues/482" in {

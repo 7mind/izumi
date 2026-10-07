@@ -6,7 +6,7 @@ import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import izumi.distage.injector.CompactPlanFormatterTest.*
 import izumi.distage.model.PlannerInput
 import izumi.functional.Renderable.*
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 object CompactPlanFormatterTest {
   trait T1[A, B]

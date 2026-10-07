@@ -10,8 +10,8 @@ import izumi.distage.model.plan.Roots
 import izumi.functional.bio.data.{Free, FreeError, FreePanic}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.collection.mutable
 import scala.util.Try
@@ -431,7 +431,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
     }
 
     "Display tag macro stack trace when ResourceTag is not found" in {
-      val t = intercept[TestFailedException] {
+      val t = intercept[AssertionFailure] {
         assertCompiles {
           """
           def x[F[_]]: ModuleDef = new ModuleDef {
@@ -443,11 +443,11 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
 
       import Ordering.Implicits.*
       if (IzScala.scalaRelease < ScalaRelease.`3`(0, 0)) { // no Tag trace yet on Scala 3
-        assert(t.message.get contains "<trace>")
+        assert(t.getMessage contains "<trace>")
       }
       assert(
-        (t.message.get contains "could not find implicit value for TagK[F]") ||
-        (t.message.get contains "could not find implicit value for izumi.reflect.Tag[F]")
+        (t.getMessage contains "could not find implicit value for TagK[F]") ||
+        (t.getMessage contains "could not find implicit value for izumi.reflect.Tag[F]")
       )
     }
 

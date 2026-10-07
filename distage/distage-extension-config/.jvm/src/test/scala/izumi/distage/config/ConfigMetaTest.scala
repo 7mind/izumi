@@ -5,7 +5,7 @@ import izumi.distage.config.codec.ConfigMetaType.*
 import izumi.distage.config.model.ConfTag
 import izumi.distage.config.test.configapp.TestConfigReaders
 import izumi.distage.model.PlannerInput
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 final class ConfigMetaTest extends AnyWordSpec {
 

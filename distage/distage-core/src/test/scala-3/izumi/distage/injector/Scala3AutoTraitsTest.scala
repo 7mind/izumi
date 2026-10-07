@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage.{ModuleDef, PlannerInput, TraitConstructor, With}
 import izumi.distage.fixtures.Scala3TraitCases.*
 import izumi.distage.model.reflection.TypedRef
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.language.reflectiveCalls
 

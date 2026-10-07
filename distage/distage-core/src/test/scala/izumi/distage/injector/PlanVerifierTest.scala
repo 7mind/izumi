@@ -12,8 +12,8 @@ import izumi.distage.planning.solver.PlanVerifier
 import izumi.distage.model.planning.PlanIssue.*
 import izumi.fundamentals.collections.nonempty.{NEMap, NESet}
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class PlanVerifierTest extends AnyWordSpec with MkInjector {
 
@@ -45,7 +45,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     }
 
     val result = PlanVerifier().verify[Identity](definition, Roots.Everything, Injector.providedKeys(), Set.empty)
-    assertThrows[TestFailedException] {
+    assertThrows[AssertionFailure] {
       assert(result.issues.isEmpty)
     }
   }

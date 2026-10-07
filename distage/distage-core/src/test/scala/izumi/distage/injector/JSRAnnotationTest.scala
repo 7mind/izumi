@@ -5,7 +5,7 @@ import izumi.distage.gc.MkGcInjector
 import izumi.distage.injector.JSRAnnotationTest.*
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class JSRAnnotationTest extends AnyWordSpec with MkGcInjector with ScalatestGuards {
   "JSR330 @Named anno" should {

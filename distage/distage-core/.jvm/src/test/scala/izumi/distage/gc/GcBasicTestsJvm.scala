@@ -7,7 +7,7 @@ import izumi.distage.model.plan.Roots
 import izumi.distage.model.provisioning.proxies.DistageProxy
 import izumi.distage.planning.AutoSetModule
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.collection.immutable
 

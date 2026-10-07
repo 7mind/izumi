@@ -6,7 +6,7 @@ import izumi.distage.model.definition.errors.DIError.LoopResolutionError
 import izumi.distage.model.definition.{Activation, ModuleDef}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Roots
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class GcBasicTests extends AnyWordSpec with MkGcInjector {
   "Garbage-collecting injector" should {

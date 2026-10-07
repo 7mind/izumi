@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage.ModuleDef
 import izumi.distage.fixtures.ImplicitCases.{ImplicitCase1, ImplicitCase2}
 import izumi.distage.model.PlannerInput
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 

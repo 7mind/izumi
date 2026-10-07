@@ -8,8 +8,8 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class SubcontextTest extends AnyWordSpec with MkInjector {
 
@@ -210,7 +210,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     assert(res.run() == Right(230))
 
-    val err = intercept[TestFailedException](assertCompiles("""
+    val err = intercept[AssertionFailure](assertCompiles("""
     def bad[F[_]](subcontext: Subcontext[F, F[Int]]): F[Int] = {
       subcontext.provide[Arg](Arg(1)).produce().use(effect => effect)
     }

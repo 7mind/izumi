@@ -8,7 +8,7 @@ import distage.{DefaultModule, Injector, ModuleDef, Roots}
 import izumi.distage.model.Locator
 import izumi.functional.quasi.QuasiIORunner
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.{Executor, Task, ZIO}
 
 import java.util.concurrent.atomic.AtomicInteger

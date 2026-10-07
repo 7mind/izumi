@@ -1,7 +1,7 @@
 package izumi.distage.planning
 
 import distage.{GraphDumpBootstrapModule, Injector, ModuleDef, PlannerInput}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}

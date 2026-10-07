@@ -8,7 +8,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.TypedRef
 import izumi.reflect.Tag
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 import scala.language.reflectiveCalls

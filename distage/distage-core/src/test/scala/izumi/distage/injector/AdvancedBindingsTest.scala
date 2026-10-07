@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases.{SetCase2, SetCase4}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.util.Try
 

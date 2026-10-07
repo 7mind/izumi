@@ -5,8 +5,8 @@ import izumi.distage.constructors.FactoryConstructor
 import izumi.distage.fixtures.FactoryCases.*
 import izumi.distage.model.PlannerInput
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 import scala.language.reflectiveCalls
@@ -34,7 +34,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   }
 
   "abstract vals are forbidden in factories, since all abstract definitions must generate a new instance on call" in {
-    val err = intercept[TestFailedException](assertCompiles("""
+    val err = intercept[AssertionFailure](assertCompiles("""
     import FactoryCase1.*
 
     PlannerInput.everything(new ModuleDef {
@@ -106,7 +106,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     })
     """)
 
-    val exc = intercept[TestFailedException](test())
+    val exc = intercept[AssertionFailure](test())
     assert(exc.getMessage contains "Couldn't disambiguate between multiple arguments with the same type")
   }
 
@@ -247,7 +247,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   }
 
   "Factory cannot produce factories" in {
-    val exc = intercept[TestFailedException] {
+    val exc = intercept[AssertionFailure] {
       assertCompiles("""
         import FactoryCase1._
 
@@ -275,7 +275,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   }
 
   "Factory cannot produce factories (dotty test) [Scala 3 bug, `Couldn't find position` in `make` macro inside assertCompiles]" in {
-    val exc = intercept[TestFailedException] {
+    val exc = intercept[AssertionFailure] {
       assertCompiles("""
         import FactoryCase1._
 
@@ -337,7 +337,7 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     assert(instantiated.x(new Dep1).TC == TC2)
     assert(instantiated.x(new Dep1).dep3 == Dep3)
 
-    val res = intercept[TestFailedException](assertCompiles("""new ModuleDef {
+    val res = intercept[AssertionFailure](assertCompiles("""new ModuleDef {
       makeFactory[InvalidImplicitFactory]
     }"""))
     assert(

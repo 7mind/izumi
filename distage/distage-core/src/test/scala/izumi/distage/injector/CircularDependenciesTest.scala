@@ -8,7 +8,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.macros.TraitInitializationFailedException
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class CircularDependenciesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 

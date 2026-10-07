@@ -21,8 +21,9 @@ object TargetHostFrameworkTest {
 
   def main(arguments: Array[String]): Unit = {
     require(arguments.isEmpty)
+    checkUtfFrames()
     var failures = Vector.empty[String]
-    for (threads <- Vector(1, 2); scenario <- Vector("success", "body-failure", "run-failure", "incomplete", "launch-failure", "bad-sequence", "cancel", "runner-failure", "tasks-failure", "logical-alias", "bad-owner", "cancel-before-start", "skip-before-start", "success-before-start", "bad-unstarted-owner")) {
+    for (threads <- Vector(1, 2); scenario <- Vector("success", "body-failure", "run-failure", "incomplete", "launch-failure", "bad-sequence", "cancel", "runner-failure", "tasks-failure", "logical-alias", "bad-owner", "cancel-before-start", "skip-before-start", "success-before-start", "bad-unstarted-owner", "large-frame", "truncated-frame", "bad-frame-owner", "duplicate-frame-part")) {
       try check(threads, scenario)
       catch { case NonFatal(cause) =>
         val message = s"threads=$threads scenario=$scenario cause=$cause"
@@ -31,10 +32,11 @@ object TargetHostFrameworkTest {
       }
     }
     require(failures.isEmpty, failures.mkString("; "))
-    println("TARGET_HOST_FRAMEWORK_CHECK_OK scenarios=30")
+    println("TARGET_HOST_FRAMEWORK_CHECK_OK scenarios=38")
   }
 
   private def check(threads: Int, scenario: String): Unit = {
+    val largeFrame = Set("large-frame", "truncated-frame", "bad-frame-owner", "duplicate-frame-part").contains(scenario)
     val directory = Files.createTempDirectory("distage-target-host-")
     val launches = new AtomicInteger
     val runners = new AtomicInteger
@@ -68,14 +70,24 @@ object TargetHostFrameworkTest {
               val run = RunId(UUID.randomUUID().toString)
               var sequence = 0L
               var eventOwner = selected.head.fullyQualifiedName()
-              def frame(message: ProtocolMessage): Unit = handler.handle(new Event {
-                override def fullyQualifiedName(): String = eventOwner
-                override def fingerprint(): Fingerprint = TargetHostFrameworkTest.fingerprint
-                override def selector(): Selector = new NestedTestSelector("$distage-protocol-v4", ProtocolCodec.encode(message))
-                override def status(): Status = Status.Success
-                override def throwable(): OptionalThrowable = new OptionalThrowable
-                override def duration(): Long = 0L
-              })
+              def frame(message: ProtocolMessage): Unit = {
+                val encoded = SdkProtocolFrames.encode(ProtocolCodec.encode(message))
+                val terminal = message.isInstanceOf[ProtocolMessage.Completed]
+                val parts = if (terminal && scenario == "truncated-frame") encoded.dropRight(1)
+                  else if (terminal && scenario == "duplicate-frame-part") encoded.take(1) ++ encoded
+                  else encoded
+                parts.zipWithIndex.foreach { case (part, index) =>
+                  val partOwner = if (terminal && scenario == "bad-frame-owner" && index == 1) "another.Suite" else eventOwner
+                  handler.handle(new Event {
+                    override def fullyQualifiedName(): String = partOwner
+                    override def fingerprint(): Fingerprint = TargetHostFrameworkTest.fingerprint
+                    override def selector(): Selector = new NestedTestSelector(part.selectorId, part.payload)
+                    override def status(): Status = Status.Success
+                    override def throwable(): OptionalThrowable = new OptionalThrowable
+                    override def duration(): Long = 0L
+                  })
+                }
+              }
               def emit(event: RunEvent): Unit = { frame(ProtocolMessage.Event(sequence, event)); sequence += 1 }
               val socket = if (scenario == "cancel" && launches.get() == 1) Some(new Socket("127.0.0.1", port)) else None
               try {
@@ -94,7 +106,7 @@ object TargetHostFrameworkTest {
                       case "skip-before-start" => TestStatus.Skipped
                       case _ => if (failure.isDefined) TestStatus.Failed else TestStatus.Succeeded
                     }
-                    TestResult(TestId(BuildTargetId("fixture"), SuiteId(suite), Vector("same", index.toString), None), status, failure, 1000000L)
+                    TestResult(TestId(BuildTargetId("fixture"), SuiteId(suite), Vector("same", index.toString) ++ (if (largeFrame) Vector("😀" * 750) else Vector.empty), None), status, failure, 1000000L)
                   }
                 }
                 results.reverse.foreach { result =>
@@ -151,7 +163,7 @@ object TargetHostFrameworkTest {
     }
     val bodyCount = if (Set("launch-failure", "bad-owner", "success-before-start", "bad-unstarted-owner").contains(scenario) || earlyFailure) 0 else 15
     require(observed.count(_.selector().isInstanceOf[TestSelector]) == bodyCount, scenario + ": body event count")
-    val groupFailure = !Set("success", "body-failure", "logical-alias", "cancel-before-start", "skip-before-start").contains(scenario)
+    val groupFailure = !Set("success", "body-failure", "logical-alias", "cancel-before-start", "skip-before-start", "large-frame").contains(scenario)
     require(observed.count(_.status() == Status.Error) == (if (groupFailure) 5 else 0), scenario + ": suite error count")
     require(observed.count(_.status() == Status.Failure) == (if (scenario == "body-failure") 1 else 0))
     selected.foreach(definition => require(observed.filter(_.selector().isInstanceOf[TestSelector]).count(_.fullyQualifiedName() == definition.fullyQualifiedName()) == (if (bodyCount == 0) 0 else 3)))
@@ -166,6 +178,28 @@ object TargetHostFrameworkTest {
     require(channels.size == (if (scenario == "launch-failure" || earlyFailure) 0 else if (scenario == "cancel") 2 else 1))
     channels.foreach(path => { val _ = Files.deleteIfExists(path) })
     Files.delete(directory)
+  }
+
+  private def checkUtfFrames(): Unit = {
+    val maximumUtfBytes = SdkProtocolFrames.MaxModifiedUtfBytes
+    val formerlyFailingFrame = "x" * 74917
+    val original = new java.io.DataOutputStream(new java.io.ByteArrayOutputStream)
+    val rejected = try { original.writeUTF(formerlyFailingFrame); false } catch { case _: java.io.UTFDataFormatException => true }
+    require(rejected, "The original oversized SDK selector must reproduce writeUTF failure")
+    Vector(formerlyFailingFrame, "😀\u0000" * SdkProtocolFrames.MaxPartCharacters, "x" * ProtocolCodec.MaxFrameCharacters).foreach { value =>
+      val decoder = new SdkProtocolFrames.Decoder
+      val restored = SdkProtocolFrames.encode(value).flatMap { part =>
+        val bytes = new java.io.ByteArrayOutputStream
+        val output = new java.io.DataOutputStream(bytes)
+        output.writeUTF(part.payload)
+        require(bytes.size() - java.lang.Short.BYTES <= maximumUtfBytes)
+        val input = new java.io.DataInputStream(new java.io.ByteArrayInputStream(bytes.toByteArray))
+        decoder.accept("fixture.Suite", part.copy(payload = input.readUTF()))
+      }
+      require(restored == Vector(value), "Modified UTF-8 serialization changed a fragmented SDK frame")
+      decoder.requireComplete()
+    }
+    println("TARGET_HOST_UTF_CHECK_OK frames=3")
   }
 
   private def error(phase: FailurePhase, message: String): Failure = Failure(phase, "fixture.Failure", message, Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)

@@ -4,7 +4,7 @@
 //import izumi.distage.model.definition.{Activation, ModuleDef}
 //import distage.DIKey
 //import izumi.distage.model.plan.Roots
-//import org.scalatest.wordspec.AnyWordSpec
+//import izumi.distage.testkit.runner.spec.AnyWordSpec
 //
 //class GcIdempotenceTests extends AnyWordSpec with MkGcInjector {
 //  "Garbage-collecting injector" when {

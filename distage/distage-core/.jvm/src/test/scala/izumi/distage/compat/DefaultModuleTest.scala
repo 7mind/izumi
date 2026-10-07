@@ -8,7 +8,7 @@ import izumi.distage.modules.support.ZIOSupportModule
 import izumi.distage.modules.typeclass.BIOInstancesModule
 import izumi.functional.bio.UnsafeRun2
 import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.{ZEnvironment, ZLayer}
 
 final class DefaultModuleTest extends AnyWordSpec with MkInjector with CatsIOPlatformDependentTest with ZIOTest {

@@ -5,8 +5,8 @@ import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.functional.quasi.QuasiApplicative
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.reflect.Tag
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 
@@ -549,7 +549,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       // all while the initial sought implicit type was e.g. `Tag[StaticTestRole[F]]` – because the implicit search was
       // done inside the macro, not by filling implicit holes in the tree, the initial type is unrecoverable via our simple
       // dummy discharging strategy)
-      val err = intercept[TestFailedException](assertCompiles("""
+      val err = intercept[AssertionFailure](assertCompiles("""
       def definition[F[_]: TagK, G[_]: TagK] = PlannerInput.everything(new ModuleDef {
         make[StaticTestRole[F]].fromEffect {
           bindImplicits {

@@ -8,7 +8,7 @@ import izumi.distage.config.test.configapp.SealedTrait2.{No, Yes}
 import izumi.distage.config.test.configapp.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.collection.immutable.ListSet
 

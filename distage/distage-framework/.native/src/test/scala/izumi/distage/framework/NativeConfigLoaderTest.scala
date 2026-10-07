@@ -8,7 +8,7 @@ import izumi.distage.framework.services.*
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.IzLogger
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.io.FileNotFoundException
 import java.nio.charset.StandardCharsets

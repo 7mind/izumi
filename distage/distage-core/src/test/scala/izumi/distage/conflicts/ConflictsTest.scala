@@ -2,7 +2,7 @@ package izumi.distage.conflicts
 
 import izumi.distage.model.planning.AxisPoint
 import izumi.distage.planning.solver.SemigraphSolver
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class ConflictsTest extends AnyWordSpec {
 

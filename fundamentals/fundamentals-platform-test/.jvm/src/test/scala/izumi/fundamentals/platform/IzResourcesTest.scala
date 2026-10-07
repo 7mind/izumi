@@ -45,18 +45,18 @@ class IzResourcesTest extends AnyWordSpec {
     }
 
     "extract a jar-packaged file and delete it on close" in {
-      val resource = extracted("org/scalatest/ScalaTestBundle.properties")
+      val resource = extracted("scala/annotation/meta/companionClass.class")
       val path: Path = resource.path
       assert(path.getFileSystem == FileSystems.getDefault)
-      assert(path.getFileName.toString.endsWith("ScalaTestBundle.properties"))
-      val expected = getClass.getClassLoader.getResourceAsStream("org/scalatest/ScalaTestBundle.properties").readAllBytes()
+      assert(path.getFileName.toString.endsWith("companionClass.class"))
+      val expected = getClass.getClassLoader.getResourceAsStream("scala/annotation/meta/companionClass.class").readAllBytes()
       assert(Files.readAllBytes(path).toSeq == expected.toSeq)
       resource.close()
       assert(!Files.exists(path))
     }
 
     "extract a jar-packaged file again once its filesystem is already open" in {
-      Using.resources(extracted("org/scalatest/ScalaTestBundle.properties"), extracted("org/scalatest/ScalaTestBundle.properties")) {
+      Using.resources(extracted("scala/annotation/meta/companionClass.class"), extracted("scala/annotation/meta/companionClass.class")) {
         (first, second) =>
           assert(first.path != second.path)
           assert(Files.readAllBytes(first.path).toSeq == Files.readAllBytes(second.path).toSeq)
@@ -74,7 +74,7 @@ class IzResourcesTest extends AnyWordSpec {
     }
 
     "allow closing an extracted resource more than once" in {
-      val resource = extracted("org/scalatest/ScalaTestBundle.properties")
+      val resource = extracted("scala/annotation/meta/companionClass.class")
       resource.close()
       resource.close()
       assert(!Files.exists(resource.path))

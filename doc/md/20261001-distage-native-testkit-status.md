@@ -19406,3 +19406,47 @@ applied and regenerated; build.sbt, plugins.sbt and build.properties match the
 verified candidate byte-for-byte. The remaining migration's generator input
 patch still passes its integration preflight. This closes the bounded engine
 project task; parent-step review and final combined-head evaluation remain open.
+
+## 2026-10-07: remaining distage module migration passes all42 lanes
+
+The thirteenth candidate exits0 after1364.300s onScala2.13 and1729.976s on
+Scala3.9,1640 frozen inputs unchanged per process. Both independent audits
+exit0. Discovery and JUnit outcomes match the qualified original baseline
+exactly:1580 cases/182 suite reports onScala2.13 and1679/188 onScala3.9,
+3259 cases/370 reports overall. This covers the six remaining distage modules
+and fundamentals-platform-test on JVM, JS and Native. No failed/error/skipped
+case or discovered-suite difference is accepted. All42 resolved test graphs
+and classpaths contain the new runner and exclude ScalaTest/Scalactic.
+
+All eight actual JS/Native core list/plan commands retain every selected identity,
+including302/308 tests onScala2.13 and335/341 onScala3.9. The largest frame is
+249243 characters; strict SDK fragmentation/reassembly handles these complete
+frames without sampling or truncation. Protocol235 controls per3.8.4 platform,
+38 JVM host scenarios and eight host inspection scenarios also pass. These
+retain malformed/incomplete/interleaved transport rejection and large UTF frames.
+The SDK correction addresses the captured74917-byte modified-UTF failure.
+
+The isolated absence fixture preserves the four original bodies and verifies
+Cats/ZIO/Monix are actually absent from its child loader. Configuration cases
+remain30 JVM/13 JS/16 Native per compiler. RoleApp's unmodified stderr assertion
+passes with ordinary plain-suite body ordering restored. FunctoidTest retains
+its original assumption call. The source inventory independently records65
+distage suite source files:51 imports-only and14 facility replacements, with
+original/migrated hashes and no vendor references in the migrated sources.
+
+Commands/reports:5-distage-plain-migration-worktree-thirteenth/. Audits:
+python3 /srv/nvme/tmp/izumi-impl/5-distage-plain-migration-worktree-thirteenth/audit.py <compiler-directory>.
+Scala2.13 audit SHA256:f59464ce2575e2826b762a7affeaa169d92f67bd197369a2905c32b18e14f287.
+Scala3.9 audit SHA256:1591028d0dfe6248f85f4e41bda3935ba86abf174e11ec4543fca2d4fe8d2fe5.
+Frozen1640-input archive SHA256:
+acf3da0bdca2750dade514d4e46b4d4fe5ef419461f55de2c286a47a0c61c47a.
+
+Integration verifies86 source payloads:76 copied changes/new files and ten
+already-integrated runner corrections retained byte-for-byte. Its generator
+input patch applies over current BIO/Docker/engine changes and is regenerated
+with--js --native; candidate generated files are not copied over main.
+Bounded module migration, optional absence isolation and large SDK frame
+correction are verified. Combined-head regression, legacy testkit retirement,
+complete imports-only/O.1 audit, parent reviews and final gates remain open.
+
+The engine-project change is committed locally asaef0f4fb4.

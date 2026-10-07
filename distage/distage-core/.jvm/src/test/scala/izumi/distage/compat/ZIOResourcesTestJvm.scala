@@ -8,9 +8,9 @@ import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 
 import scala.annotation.unused
-import org.scalatest.{Assertion, GivenWhenThen}
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.*
 
 object ZIOResourcesTestJvm {
@@ -24,7 +24,7 @@ object ZIOResourcesTestJvm {
     def run: Task[Unit] = ZIO.attempt(())
   }
 }
-final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOTest with ScalatestGuards {
+final class ZIOResourcesTestJvm extends AnyWordSpec with ZIOTest with ScalatestGuards {
 
   "ZIO Scoped" should {
 
@@ -241,7 +241,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
          }
         """)
       }
-      val res = intercept[TestFailedException](
+      val res = intercept[AssertionFailure](
         assertCompiles(
           """
          new ModuleDef {
@@ -259,40 +259,40 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
   "interruption" should {
 
     "Lifecycle.fromZIO(ZIO.forkScoped) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {
-      When("axiom: ZIO.forkScoped is interruptible")
+      println("axiom: ZIO.forkScoped is interruptible")
       unsafeRun {
         for {
           latch <- Promise.make[Nothing, Unit]
           _ <- ZIO.scoped(
             (latch.succeed(()) *> ZIO.never)
-              .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
+              .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(println("ZIO interrupted")))
               .forkScoped
               .flatMap(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
           )
         } yield ()
       }
 
-      When("ZIO.forkScoped converted to Lifecycle is still interruptible")
+      println("ZIO.forkScoped converted to Lifecycle is still interruptible")
       unsafeRun(
         for {
           latch <- Promise.make[Nothing, Unit]
           _ <- Lifecycle
             .fromZIO {
               (latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
+                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(println("ZIO interrupted")))
                 .forkScoped
             }.use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
         } yield ()
       )
 
-      When("ZManaged.fork converted to Lifecycle interrupts itself")
+      println("ZManaged.fork converted to Lifecycle interrupts itself")
       unsafeRun(
         for {
           latch <- Promise.make[Nothing, Unit]
           doneFiber <- Lifecycle
             .fromZIO {
               (latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
+                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(println("ZIO interrupted")))
                 .forkScoped
             }.use(latch.await.as(_))
           exit <- doneFiber.await.timeoutFail("fiber was not interrupted")(60.seconds)
@@ -303,14 +303,14 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
     }
 
     "In fa.flatMap(fb), fa and fb retain interruptibility" in {
-      Then("Lifecycle.fromZIO(_).flatMap is interruptible")
+      println("Lifecycle.fromZIO(_).flatMap is interruptible")
       unsafeRun(
         for {
           latch <- Promise.make[Nothing, Unit]
           _ <- Lifecycle
             .fromZIO[Any](
               (latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
+                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(println("ZIO interrupted")))
                 .forkScoped
             )
             .flatMap(a => Lifecycle.unit[Task].map(_ => a))
@@ -318,7 +318,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         } yield ()
       )
 
-      Then("_.flatMap(_ => Lifecycle.fromZIO(_)) is interruptible")
+      println("_.flatMap(_ => Lifecycle.fromZIO(_)) is interruptible")
       unsafeRun(
         for {
           latch <- Promise.make[Nothing, Unit]
@@ -328,7 +328,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
                 Lifecycle
                   .fromZIO[Any](
                     (latch.succeed(()) *> ZIO.never)
-                      .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
+                      .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(println("ZIO interrupted")))
                       .forkScoped
                   )
             }.use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)

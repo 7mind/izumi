@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.functional.Identity
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.api.{IzLogger, TestSink}
 import logstage.{LogCreateIO, LogIO, UnsafeLogIO}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.Task
 
 final class NativeLoggerInjectionTest extends AnyWordSpec {

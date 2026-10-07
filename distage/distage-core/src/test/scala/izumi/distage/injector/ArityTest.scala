@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage.{Injector, ModuleDef}
 import izumi.distage.fixtures.BasicCases.BasicCase8
 import izumi.distage.model.PlannerInput
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class ArityTest extends AnyWordSpec with MkInjector {
 

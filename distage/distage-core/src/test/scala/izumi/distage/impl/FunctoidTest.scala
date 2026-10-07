@@ -11,8 +11,8 @@ import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.{IzScala, ScalaRelease}
 import izumi.fundamentals.platform.language.Quirks.*
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class FunctoidTest extends AnyWordSpec with ScalatestGuards {
   import ProviderCase1._
@@ -381,12 +381,12 @@ class FunctoidTest extends AnyWordSpec with ScalatestGuards {
     }
 
     "fail on multiple conflicting annotations on the same parameter" in brokenOnScala3 {
-      val t1 = intercept[TestFailedException] {
+      val t1 = intercept[AssertionFailure] {
         assertCompiles("Functoid.apply(defconfannfn _)")
       }
       assert(t1.getMessage contains "Multiple DI annotations on symbol")
 
-      val t2 = intercept[TestFailedException] {
+      val t2 = intercept[AssertionFailure] {
         assertCompiles("Functoid.apply(defconfannfn2 _)")
       }
       assert(t2.getMessage contains "Multiple DI annotations on symbol")
@@ -416,7 +416,7 @@ class FunctoidTest extends AnyWordSpec with ScalatestGuards {
     }
 
     "progression test: Can't expand functions with implicit arguments" in {
-      intercept[TestFailedException] {
+      intercept[AssertionFailure] {
         assertCompiles("Functoid.apply(defimplicitfn _)")
       }
     }

@@ -192,7 +192,7 @@ private[bootstrap] final class TargetTask(
           case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, result)) => suiteOwners(result.id.suite)
           case _ => taskDef()
         }
-        handler.handle(new TargetChannelFrame(definition, ProtocolCodec.encode(message)))
+        SdkProtocolFrames.encode(ProtocolCodec.encode(message)).foreach(part => handler.handle(new TargetChannelFrame(definition, part)))
       }
     }
     val loader = new TargetSuiteLoader
@@ -230,10 +230,10 @@ private[bootstrap] final class TargetTask(
   }
 }
 
-private[bootstrap] final class TargetChannelFrame(definition: TaskDef, frame: String) extends Event {
+private[bootstrap] final class TargetChannelFrame(definition: TaskDef, frame: SdkProtocolFrames.Frame) extends Event {
   override def fullyQualifiedName(): String = definition.fullyQualifiedName()
   override def fingerprint(): Fingerprint = definition.fingerprint()
-  override def selector(): Selector = new NestedTestSelector("$distage-protocol-v4", frame)
+  override def selector(): Selector = new NestedTestSelector(frame.selectorId, frame.payload)
   override def status(): Status = Status.Success
   override def throwable(): OptionalThrowable = new OptionalThrowable
   override def duration(): Long = 0L

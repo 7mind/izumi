@@ -6,7 +6,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.planning.PlanningHook
 import izumi.distage.planning.AutoSetHook
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class AutoSetTest extends AnyWordSpec with MkInjector {
 

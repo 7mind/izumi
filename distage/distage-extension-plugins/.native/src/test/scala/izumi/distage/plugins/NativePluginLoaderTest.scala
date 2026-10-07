@@ -3,7 +3,7 @@ package izumi.distage.plugins
 import distage.{Injector, ModuleDef, Roots}
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl.RuntimePluginScanningNotSupportedOnScalaNative
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderDefaultImpl, PluginPackageCache}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 final class NativeExplicitPlugin extends PluginDef {
   make[String].fromValue("plugin")

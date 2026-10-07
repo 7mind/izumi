@@ -10,6 +10,7 @@ object ProtocolFixtures {
       checks += 1
       if (!condition) throw new IllegalStateException(message)
     }
+    SdkProtocolFrameFixtures.run(verify)
     val run = RunId("protocol-fixture")
     val target = BuildTargetId("fixtures/jvm")
     val suite = SuiteId("example.WordSpec")
