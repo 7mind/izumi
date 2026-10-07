@@ -19332,3 +19332,77 @@ This closes the bounded actual-wiring-macro consumer task, not the complete
 ordinary-suite inventory or final combined-head publication evaluation.
 
 The default plain ordering correction is committed locally as67146f46b.
+
+## 2026-10-07: engine checks moved above core in a validation candidate
+
+The engine-test-project-worktree at0f943013b moves all ten existing core
+fixture/resource files, preserving their packages and original check bodies,
+into distage-testkit-core-test. The new unpublished cross-platform project
+depends on core and the base runner in Compile scope; core's own Test scope no
+longer needs these fixtures or their main-class settings. Generated build files
+come from the edited generator input and--js --native regeneration.
+
+A shared AsyncWordSpec wraps the existing session-environment controls and
+returns their completion future. JVM/Native retain the original four-worker
+fixture contexts and join their shutdown on the runner's separate callback
+context; JS returns its asynchronous completion to the runner. A Native-only
+plain suite invokes the original typed JSON configuration and four-parallel-body
+memoized lifecycle checks, with unchanged check bodies. Only the two helper
+method access scopes change. The original fixture main entry points remain.
+
+Capture:5-engine-test-project-first/,1653 frozen inputs. Each compiler has23
+commands:Native clean after moves, all three compiler preflights, three discovery/
+resolved-graph/classpath/runtime checks, and actual publishLocal/skip checks.
+An independent audit checks six lanes, expected new wrapper cases, original
+control markers, no vendor dependencies and retained fixture body bytes.
+All execution and audit results remain pending;5.7 is not marked complete.
+
+The published wiring consumer is committed locally as0f943013b.
+The thirteenth six-module migration Scala2.13 process exits0 after1364.300s,
+1640 unchanged inputs. Independent migration audit exits0:21 execution lanes,
+1580 cases and182 suite reports match the original baseline exactly. All four
+real JS/Native list/plan inspections match selected case identities; the largest
+frame is222544 characters. Scala3.9 and combined-head evaluation remain open.
+
+The completed wiring macro worktree is removable after its1650 archived input
+payloads and all four copied main consumer payloads pass their recorded hashes.
+Its six published JAR/POM pairs are archived separately, SHA256:
+589c2bcebb17eebb518f8ff4545f527e9219e596fd42b8662be29ad735b98c59.
+Capture archives and normal Ivy publications remain after worktree cleanup.
+
+## 2026-10-07: engine checks execute through the new runner above core
+
+The engine candidate exits0 after360.559s onScala2.13 and407.788s onScala3.9,
+with1653 frozen inputs unchanged per process. Independent audit exits0 across
+six lanes:ten wrapper cases in eight suite reports, with no failed/error/skipped
+outcomes. Shared controls remain143 JVM/103 JS/118 Native per compiler,728
+overall. Each lane retains four production/dummy64-request control markers.
+Native additionally preserves typed JSON injection and exactly four parallel
+memoized bodies, one acquisition and one release. Owned fixture executors drain
+before the asynchronous wrapper completes.
+
+The new test-only project resolves no ScalaTest/Scalactic/ScalaTestPlus; all six
+actual publishLocal requests skip publishing and all six skip queries are true.
+The audit verifies all ten retained fixture files against the original commit:
+five are byte-identical; the other five preserve the existing native check
+bodies, shared private checks, and original platform concurrent implementations.
+Only awaited entry-point adapters and two package-private Native helper scopes
+change. New wrapper discovery counts are1 JVM/1 JS/3 Native cases per compiler;
+these report previously standalone fixture controls rather than adding or
+removing their original check bodies. Original standalone entry points remain.
+
+Commands/reports:5-engine-test-project-first/. Audit command:
+python3 /srv/nvme/tmp/izumi-impl/5-engine-test-project-first/audit.py.
+Audit SHA256:dc633bc70e014f4c5e50927e9f380e3eec5d30c5a6fd5ea10a5075582a2b614f.
+Frozen1653-input archive SHA256:
+e43b74278afc1fc8a0bfffc433b4aed0ee10f4dcdbe6b3fc9fe784913cb59bc9.
+An initial audit compared Counter(dictionary) rather than its keys; after
+correcting that audit predicate, the same completed producer results pass.
+No production correction or repeat producer run was needed.
+
+All twelve verified fixture/suite/resource payloads are integrated into main
+after its ten originals match their recorded hashes. Generator inputs are
+applied and regenerated; build.sbt, plugins.sbt and build.properties match the
+verified candidate byte-for-byte. The remaining migration's generator input
+patch still passes its integration preflight. This closes the bounded engine
+project task; parent-step review and final combined-head evaluation remain open.

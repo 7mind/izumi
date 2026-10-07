@@ -543,6 +543,7 @@ object Izumi {
       final lazy val frameworkApi = ArtifactId("distage-framework-api")
       final lazy val framework = ArtifactId("distage-framework")
       final lazy val testkitCore = ArtifactId("distage-testkit-core")
+      final lazy val testkitCoreTest = ArtifactId("distage-testkit-core-test")
       final lazy val testProtocol = ArtifactId("distage-test-protocol")
       final lazy val testRunner = ArtifactId("distage-test-runner")
       final lazy val testkitRunner = ArtifactId("distage-testkit-runner")
@@ -994,9 +995,16 @@ object Izumi {
         libs = Seq.empty,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
         platforms = Targets.cross,
-        settings = assertionFixtureSettings ++ Seq(
-          "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.spec.SessionEnvironmentFixtures\")".raw,
-          "mainClass" in (SettingScope.Test, Platform.Native) := "Some(\"izumi.distage.testkit.spec.NativeTestkitFixtures\")".raw,
+        settings = Seq.empty,
+      ),
+      Artifact(
+        name = Projects.distage.testkitCoreTest,
+        plugins = fundamentalsTestPlugins,
+        libs = Seq.empty,
+        depends = Seq(Projects.distage.testkitCore, Projects.distage.testRunner).map(_ in Scope.Compile.all),
+        platforms = Targets.cross,
+        settings = plainSuiteSettings("distage-testkit-core-test") ++ Seq(
+          "skip" in SettingScope.Raw("publish") := true,
           "nativeConfig" in (SettingScope.Test, Platform.Native) := """nativeConfig.value.withEmbedResources(true)""".raw,
         ),
       ),
