@@ -1,5 +1,7 @@
 package izumi.distage.sbt.target;
 
+import izumi.distage.sbt.SdkFixtures;
+
 import sbt.testing.AnnotatedFingerprint;
 import sbt.testing.Event;
 import sbt.testing.EventHandler;
@@ -34,9 +36,7 @@ public final class ForeignRunReportsTest {
             ForeignRunReports.Store store = mode.equals("memory") ? new MemoryStore() : new ForeignRunReports.FileStore(Files.createDirectory(directory.resolve(mode)));
             contract(mode, store);
         }
-        try (var entries = Files.walk(directory)) {
-            for (Path path : entries.sorted(java.util.Comparator.reverseOrder()).toList()) Files.delete(path);
-        }
+        SdkFixtures.deleteTree(directory);
     }
 
     private static void contract(String mode, ForeignRunReports.Store store) {
@@ -47,14 +47,7 @@ public final class ForeignRunReportsTest {
         List<Event> original = new ArrayList<>();
         Throwable failure = new IllegalStateException("foreign failure", new IllegalArgumentException("cause"));
         List<Selector> selectors = List.of(new SuiteSelector(), new TestSelector("test"), new NestedSuiteSelector("suite"), new NestedTestSelector("suite", "test"), new TestWildcardSelector("wild*"));
-        for (Fingerprint fingerprint : List.of(subclass, annotation)) for (Selector selector : selectors) for (Status status : Status.values()) original.add(new Event() {
-            @Override public String fullyQualifiedName() { return "fixture.EventName"; }
-            @Override public Fingerprint fingerprint() { return fingerprint; }
-            @Override public Selector selector() { return selector; }
-            @Override public Status status() { return status; }
-            @Override public OptionalThrowable throwable() { return status == Status.Failure ? new OptionalThrowable(failure) : new OptionalThrowable(); }
-            @Override public long duration() { return 42L; }
-        });
+        for (Fingerprint fingerprint : List.of(subclass, annotation)) for (Selector selector : selectors) for (Status status : Status.values()) original.add(SdkFixtures.event("fixture.EventName", fingerprint, selector, status, status == Status.Failure ? new OptionalThrowable(failure) : new OptionalThrowable(), 42L));
         AtomicInteger executions = new AtomicInteger();
         Task descendant = task(child, handler -> { executions.incrementAndGet(); original.forEach(handler::handle); return new Task[0]; });
         Task root = task(parent, handler -> { executions.incrementAndGet(); return new Task[]{descendant}; });
@@ -99,11 +92,9 @@ public final class ForeignRunReportsTest {
         if (expected instanceof TestWildcardSelector left && actual instanceof TestWildcardSelector right) return left.testWildcard().equals(right.testWildcard());
         throw new IllegalArgumentException("Unsupported selector contract: " + expected);
     }
-    private static Task task(TaskDef definition, Execute body) { return new Task() {
-        @Override public TaskDef taskDef() { return definition; }
-        @Override public String[] tags() { return new String[]{"foreign"}; }
-        @Override public Task[] execute(EventHandler handler, Logger[] loggers) { return body.run(handler); }
-    }; }
+    private static Task task(TaskDef definition, Execute body) {
+        return SdkFixtures.task(definition, new String[]{"foreign"}, body::run);
+    }
     private static void require(boolean condition, String message) { if (!condition) throw new AssertionError(message); }
     private static final class MemoryStore implements ForeignRunReports.Store {
         private final Map<UUID, ForeignRunReports.Report> values = new LinkedHashMap<>();

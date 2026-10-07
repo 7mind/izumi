@@ -3,9 +3,10 @@ package izumi.distage.sbt
 import izumi.distage.testkit.protocol.{FileForkReceiptStore, ForkProcessId, ForkReceiptArguments, ForkReceiptCounts, ForkReceiptSuite, ForkReceiptSummary}
 
 import izumi.distage.sbt.target.TaskGroups
+import izumi.distage.sbt.HostFixtures.*
 
 import sbt._
-import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SubclassFingerprint, SuiteSelector}
+import sbt.testing.{Event, OptionalThrowable, Status, SuiteSelector}
 
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{CountDownLatch, TimeUnit}
@@ -33,58 +34,38 @@ object HostReceiptTest {
       omitted.expect(name)
       omitted.configure(Set(name)).doComplete(TestResult.Passed)
       rejects(classOf[MessageOnlyException])(omitted.verifyCompletion())
-      val complete = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = complete.configure(Set(name))
-      complete.expect(name)
-      listener.startGroup(name.value)
-      listener.testEvent(TestEvent(Seq(event(name, Status.Success))))
-      listener.endGroup(name.value, TestResult.Passed)
+      val ReceiptFixture(complete, listener) = configured(Set(name), Set(name))
+      group(listener, name, TestResult.Passed)(Seq(event(name, Status.Success)))
       listener.doComplete(TestResult.Passed)
       complete.verifyCompletion()
     }
 
     check("reject a passed SDK completion after a received error") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set(name))
-      receipt.expect(name)
-      listener.startGroup(name.value)
-      listener.testEvent(TestEvent(Seq(event(name, Status.Error))))
-      listener.endGroup(name.value, TestResult.Error)
+      val ReceiptFixture(receipt, listener) = configured(Set(name), Set(name))
+      group(listener, name, TestResult.Error)(Seq(event(name, Status.Error)))
       listener.doComplete(TestResult.Passed)
       rejects(classOf[MessageOnlyException])(receipt.verifyCompletion())
     }
 
     check("reject success events without group completion") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set(name))
-      receipt.expect(name)
+      val ReceiptFixture(receipt, listener) = configured(Set(name), Set(name))
       listener.startGroup(name.value)
       listener.testEvent(TestEvent(Seq(event(name, Status.Success))))
       rejects(classOf[MessageOnlyException])(receipt.verify(output(new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0))))
     }
 
     check("reconcile each status without treating equal totals as equal outcomes") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set(name))
-      receipt.expect(name)
-      listener.startGroup(name.value)
-      listener.testEvent(TestEvent(Seq(Status.Success, Status.Failure, Status.Error, Status.Skipped, Status.Ignored, Status.Canceled, Status.Pending).map(event(name, _))))
-      listener.endGroup(name.value, TestResult.Error)
+      val ReceiptFixture(receipt, listener) = configured(Set(name), Set(name))
+      group(listener, name, TestResult.Error)(Seq(Status.Success, Status.Failure, Status.Error, Status.Skipped, Status.Ignored, Status.Canceled, Status.Pending).map(event(name, _)))
       receipt.verify(output(new SuiteResult(TestResult.Error, 1, 1, 1, 1, 1, 1, 1)))
 
-      val alias = new HostReceipt(new TaskGroups.MemoryStore)
-      val aliasListener = alias.configure(Set(name))
-      alias.expect(name)
-      aliasListener.startGroup(name.value)
-      aliasListener.testEvent(TestEvent(Seq(event(name, Status.Success))))
-      aliasListener.endGroup(name.value, TestResult.Passed)
+      val ReceiptFixture(alias, aliasListener) = configured(Set(name), Set(name))
+      group(aliasListener, name, TestResult.Passed)(Seq(event(name, Status.Success)))
       rejects(classOf[MessageOnlyException])(alias.verify(output(new SuiteResult(TestResult.Error, 0, 0, 1, 0, 0, 0, 0))))
     }
 
     check("preserve a zero-event group failure") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set(name))
-      receipt.expect(name)
+      val ReceiptFixture(receipt, listener) = configured(Set(name), Set(name))
       listener.startGroup(name.value)
       listener.endGroup(name.value, new IllegalStateException("group failure"))
       receipt.verify(output(SuiteResult.Error))
@@ -94,43 +75,32 @@ object HostReceiptTest {
       val receipt = new HostReceipt(new TaskGroups.MemoryStore)
       receipt.configure(Set(name))
       receipt.verify(empty)
-      val zero = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = zero.configure(Set(name))
-      zero.expect(name)
-      listener.startGroup(name.value)
-      listener.testEvent(TestEvent(Nil))
-      listener.endGroup(name.value, TestResult.Passed)
+      val ReceiptFixture(zero, listener) = configured(Set(name), Set(name))
+      group(listener, name, TestResult.Passed)(Nil)
       zero.verify(output(new SuiteResult(TestResult.Passed, 0, 0, 0, 0, 0, 0, 0)))
       rejects(classOf[IllegalArgumentException])(listener.startGroup(name.value))
     }
 
     check("leave foreign framework results unchanged") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set(name))
+      val ReceiptFixture(receipt, listener) = configured(Set(name), Set.empty)
       val foreign = HostSuiteName("fixture.ForeignSuite")
-      listener.startGroup(foreign.value)
-      listener.testEvent(TestEvent(Seq(event(foreign, Status.Error))))
-      listener.endGroup(foreign.value, TestResult.Error)
+      group(listener, foreign, TestResult.Error)(Seq(event(foreign, Status.Error)))
       receipt.verify(Tests.Output(TestResult.Error, Map(foreign.value -> new SuiteResult(TestResult.Error, 0, 0, 1, 0, 0, 0, 0)), Nil))
     }
 
     check("reject truncated SDK output after foreign framework delivery") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set(name))
+      val ReceiptFixture(receipt, listener) = configured(Set(name), Set.empty)
       val foreign = HostSuiteName("fixture.ForeignSuite")
       receipt.expect(name)
       Seq(name, foreign).foreach { suite =>
-        listener.startGroup(suite.value)
-        listener.testEvent(TestEvent(Seq(event(suite, Status.Success))))
-        listener.endGroup(suite.value, TestResult.Passed)
+        group(listener, suite, TestResult.Passed)(Seq(event(suite, Status.Success)))
       }
       listener.doComplete(TestResult.Passed)
       rejects(classOf[MessageOnlyException])(receipt.verify(output(new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0))))
     }
 
     check("validate foreign completion when the result logger is replaced") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set.empty)
+      val ReceiptFixture(receipt, listener) = configured(Set.empty, Set.empty)
       val foreign = HostSuiteName("fixture.ForeignSuite")
       listener.startGroup(foreign.value)
       listener.testEvent(TestEvent(Seq(event(foreign, Status.Success))))
@@ -139,12 +109,9 @@ object HostReceiptTest {
     }
 
     check("preserve foreign event identities that differ from their group") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set.empty)
+      val ReceiptFixture(receipt, listener) = configured(Set.empty, Set.empty)
       val foreign = HostSuiteName("fixture.ForeignSuite")
-      listener.startGroup(foreign.value)
-      listener.testEvent(TestEvent(Seq(event(HostSuiteName("fixture.NestedSuite"), Status.Success))))
-      listener.endGroup(foreign.value, TestResult.Passed)
+      group(listener, foreign, TestResult.Passed)(Seq(event(HostSuiteName("fixture.NestedSuite"), Status.Success)))
       receipt.verify(Tests.Output(TestResult.Passed, Map(foreign.value -> new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)), Nil))
     }
 
@@ -157,23 +124,18 @@ object HostReceiptTest {
       val listener = receipt.configure(Set.empty)
       listener.startGroup(foreign.value)
       listener.endGroup(foreign.value, TestResult.Passed)
-      listener.startGroup(child.value)
-      listener.testEvent(TestEvent(Seq(event(foreign, Status.Success))))
-      listener.endGroup(child.value, TestResult.Passed)
+      group(listener, child, TestResult.Passed)(Seq(event(foreign, Status.Success)))
       val result = Tests.Output(TestResult.Passed, Map(foreign.value -> new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)), Nil)
       require(receipt.normalise(result) eq result, "Complete nested SDK output changed")
       receipt.verify(result)
     }
 
     check("reject foreign per-group status swaps with equal aggregate counts") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set.empty)
+      val ReceiptFixture(receipt, listener) = configured(Set.empty, Set.empty)
       val left = HostSuiteName("fixture.Left")
       val right = HostSuiteName("fixture.Right")
       Seq(left -> Status.Success, right -> Status.Failure).foreach { case (suite, status) =>
-        listener.startGroup(suite.value)
-        listener.testEvent(TestEvent(Seq(event(suite, status))))
-        listener.endGroup(suite.value, if (status == Status.Success) TestResult.Passed else TestResult.Failed)
+        group(listener, suite, if (status == Status.Success) TestResult.Passed else TestResult.Failed)(Seq(event(suite, status)))
       }
       val swapped = Tests.Output(TestResult.Failed, Map(left.value -> new SuiteResult(TestResult.Failed, 0, 1, 0, 0, 0, 0, 0), right.value -> new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)), Nil)
       rejects(classOf[MessageOnlyException])(receipt.verify(swapped))
@@ -181,13 +143,10 @@ object HostReceiptTest {
 
     check("merge repeated owned and foreign groups without changing complete SDK output") {
       Seq(true, false).foreach { owned =>
-        val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-        val listener = receipt.configure(if (owned) Set(name) else Set.empty)
+        val ReceiptFixture(receipt, listener) = configured(if (owned) Set(name) else Set.empty, Set.empty)
         if (owned) receipt.expect(name)
         Seq(Status.Success, Status.Error).foreach { status =>
-          listener.startGroup(name.value)
-          listener.testEvent(TestEvent(Seq(event(name, status))))
-          listener.endGroup(name.value, if (status == Status.Success) TestResult.Passed else TestResult.Error)
+          group(listener, name, if (status == Status.Success) TestResult.Passed else TestResult.Error)(Seq(event(name, status)))
         }
         val replaced = output(new SuiteResult(TestResult.Error, 0, 0, 1, 0, 0, 0, 0))
         val merged = receipt.normalise(replaced)
@@ -242,8 +201,7 @@ object HostReceiptTest {
     }
 
     check("distinguish owned task interruption from ordinary cancellation and foreign interruption") {
-      val receipt = new HostReceipt(new TaskGroups.MemoryStore)
-      val listener = receipt.configure(Set(name))
+      val ReceiptFixture(receipt, listener) = configured(Set(name), Set.empty)
       listener.startGroup(name.value)
       listener.testEvent(TestEvent(Seq(event(name, Status.Canceled))))
       require(!receipt.isInterrupted, "A cancelled outcome was mistaken for host task interruption")
@@ -366,9 +324,7 @@ object HostReceiptTest {
       assert(reader.received(suite).isEmpty)
       listener.endGroup(name.value, TestResult.Passed)
       assert(reader.received(suite).contains(ForkReceiptSummary(1, ForkReceiptCounts(1, 0, 0, 0, 0, 0, 0))))
-      listener.startGroup(name.value)
-      listener.testEvent(TestEvent(Seq(event(name, Status.Error))))
-      listener.endGroup(name.value, TestResult.Error)
+      group(listener, name, TestResult.Error)(Seq(event(name, Status.Error)))
       assert(reader.received(suite).contains(ForkReceiptSummary(2, ForkReceiptCounts(1, 0, 1, 0, 0, 0, 0))))
       listener.startGroup("fixture.ForeignSuite")
       listener.endGroup("fixture.ForeignSuite", TestResult.Passed)
@@ -459,16 +415,6 @@ object HostReceiptTest {
 
   private def event(suite: HostSuiteName, state: Status): Event = event(suite, state, new OptionalThrowable)
 
-  private def event(suite: HostSuiteName, state: Status, cause: OptionalThrowable): Event = new Event {
-    override def fullyQualifiedName(): String = suite.value
-    override def fingerprint(): Fingerprint = new SubclassFingerprint {
-      override def isModule(): Boolean = false
-      override def superclassName(): String = "fixture.Spec"
-      override def requireNoArgConstructor(): Boolean = true
-    }
-    override def selector(): Selector = new SuiteSelector
-    override def status(): Status = state
-    override def throwable(): OptionalThrowable = cause
-    override def duration(): Long = 0L
-  }
+  private def event(suite: HostSuiteName, state: Status, cause: OptionalThrowable): Event =
+    SdkFixtures.event(suite.value, SdkFixtures.subclass(false, "fixture.Spec", true), new SuiteSelector, state, cause, 0L)
 }

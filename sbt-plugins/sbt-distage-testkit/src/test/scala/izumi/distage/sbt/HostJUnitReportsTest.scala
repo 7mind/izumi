@@ -2,7 +2,7 @@ package izumi.distage.sbt
 
 import java.nio.file.{Files, Paths}
 import sbt.{JUnitXmlTestsListener, TestEvent, TestResult}
-import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SubclassFingerprint, TestSelector}
+import sbt.testing.{Event, OptionalThrowable, Status, TestSelector}
 import scala.xml.Elem
 
 object HostJUnitReportsTest {
@@ -20,9 +20,7 @@ object HostJUnitReportsTest {
     require(HostJUnitFileFormat.configured(Some("auto"), Some("true")) == HostJUnitFileFormat.Standard)
     require(HostJUnitFileFormat.configured(None, None) == HostJUnitFileFormat.Standard)
     println("HOST_JUNIT_CHECK_OK configured property/environment precedence")
-    val entries = Files.walk(directory)
-    try entries.sorted(java.util.Comparator.reverseOrder()).forEach(path => { val _ = Files.delete(path) })
-    finally entries.close()
+    SdkFixtures.deleteTree(directory)
   }
 
   private def run(mode: String, format: HostJUnitFileFormat, files: HostJUnitReportFiles): Unit = {
@@ -113,18 +111,8 @@ object HostJUnitReportsTest {
     println("HOST_JUNIT_CHECK_OK " + format + " public SDK owned cancellation and unchanged foreign outcomes")
   }
 
-  private def event(suite: HostSuiteName, name: String, value: Status): Event = new Event {
-    override def fullyQualifiedName(): String = suite.value
-    override def fingerprint(): Fingerprint = new SubclassFingerprint {
-      override def isModule(): Boolean = false
-      override def superclassName(): String = "fixture.Suite"
-      override def requireNoArgConstructor(): Boolean = true
-    }
-    override def selector(): Selector = new TestSelector(name)
-    override def status(): Status = value
-    override def throwable(): OptionalThrowable = new OptionalThrowable
-    override def duration(): Long = 1250L
-  }
+  private def event(suite: HostSuiteName, name: String, value: Status): Event =
+    SdkFixtures.event(suite.value, SdkFixtures.subclass(false, "fixture.Suite", true), new TestSelector(name), value, new OptionalThrowable, 1250L)
 
   private def report(name: HostSuiteName, output: String, testcase: Elem): Elem = {
     <testsuite name={name.value} tests="1" errors={(testcase \ "error").size.toString} failures={(testcase \ "failure").size.toString} skipped={(testcase \ "skipped").size.toString} time="1.25" timestamp="2026-10-05T00:00:00" hostname="fixture">

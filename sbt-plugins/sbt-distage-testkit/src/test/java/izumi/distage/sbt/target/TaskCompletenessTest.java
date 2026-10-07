@@ -1,13 +1,13 @@
 package izumi.distage.sbt.target;
 
+import izumi.distage.sbt.SdkFixtures;
+
 import sbt.testing.Event;
 import sbt.testing.EventHandler;
-import sbt.testing.Fingerprint;
 import sbt.testing.Logger;
 import sbt.testing.OptionalThrowable;
 import sbt.testing.Selector;
 import sbt.testing.Status;
-import sbt.testing.SubclassFingerprint;
 import sbt.testing.SuiteSelector;
 import sbt.testing.Task;
 import sbt.testing.TaskDef;
@@ -38,9 +38,7 @@ public final class TaskCompletenessTest {
             try { return new TaskCompleteness.FileCompletionStore(Files.createDirectory(directory.resolve(name))); }
             catch (Exception cause) { throw new IllegalStateException(cause); }
         });
-        try (var entries = Files.walk(directory)) {
-            for (Path path : entries.sorted(java.util.Comparator.reverseOrder()).toList()) Files.delete(path);
-        }
+        SdkFixtures.deleteTree(directory);
     }
 
     private interface StoreFactory { TaskCompleteness.CompletionStore create(String name); }
@@ -177,34 +175,17 @@ public final class TaskCompletenessTest {
     }
 
     private static TaskDef definition(String name, boolean owned) {
-        return new TaskDef(name, new FingerprintValue(owned), false, new Selector[]{new SuiteSelector()});
+        return new TaskDef(name, SdkFixtures.subclass(false, owned ? "izumi.distage.testkit.runner.TestSuite" : "fixture.ForeignSuperclass", true), false, new Selector[]{new SuiteSelector()});
     }
 
-    private static final class FingerprintValue implements SubclassFingerprint {
-        private final boolean owned;
-        private FingerprintValue(boolean owned) { this.owned = owned; }
-        @Override public boolean isModule() { return false; }
-        @Override public String superclassName() { return owned ? "izumi.distage.testkit.runner.TestSuite" : "fixture.ForeignSuperclass"; }
-        @Override public boolean requireNoArgConstructor() { return true; }
-    }
 
     private static Task task(TaskDef definition, Execute execute) {
-        return new Task() {
-            @Override public TaskDef taskDef() { return definition; }
-            @Override public String[] tags() { return new String[]{"fixture"}; }
-            @Override public Task[] execute(EventHandler handler, Logger[] loggers) { return execute.run(handler); }
-        };
+        return SdkFixtures.task(definition, new String[]{"fixture"}, execute::run);
     }
 
     private static Event event(TaskDef definition, Status status) {
-        return new Event() {
-            @Override public String fullyQualifiedName() { return definition.fullyQualifiedName(); }
-            @Override public Fingerprint fingerprint() { return definition.fingerprint(); }
-            @Override public Selector selector() { return new TestSelector("fixture " + status); }
-            @Override public Status status() { return status; }
-            @Override public OptionalThrowable throwable() { return status == Status.Error || status == Status.Failure ? new OptionalThrowable(new IllegalStateException(status.toString())) : new OptionalThrowable(); }
-            @Override public long duration() { return 13L; }
-        };
+        OptionalThrowable cause = status == Status.Error || status == Status.Failure ? new OptionalThrowable(new IllegalStateException(status.toString())) : new OptionalThrowable();
+        return SdkFixtures.event(definition.fullyQualifiedName(), definition.fingerprint(), new TestSelector("fixture " + status), status, cause, 13L);
     }
 
     private static void require(boolean condition, String message) { if (!condition) throw new AssertionError(message); }

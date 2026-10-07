@@ -3,7 +3,7 @@ package izumi.distage.sbt
 import izumi.distage.sbt.target.{ForeignRunReports, TaskCompleteness}
 import izumi.distage.testkit.protocol.ForkProcessId
 
-import sbt.{TestEvent, TestResult, TestsListener}
+import sbt.{TestEvent, TestResult}
 import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, TestSelector}
 
 import java.nio.file.{Files, Paths}
@@ -23,8 +23,7 @@ object HostForeignForkReportsTest {
         }
       }
     } finally {
-      val entries = Files.walk(directory)
-      try entries.sorted(java.util.Comparator.reverseOrder()).forEach(path => { val _ = Files.delete(path) }) finally entries.close()
+      SdkFixtures.deleteTree(directory)
     }
   }
 
@@ -50,41 +49,26 @@ object HostForeignForkReportsTest {
       received.testEvent(TestEvent(altered.reverse))
       if (scenario != "active") received.endGroup(name.value, TestResult.Passed)
     }
-    var observed = Vector.empty[Event]
-    var groups = 0
-    val listener = new TestsListener {
-      override def doInit(): Unit = ()
-      override def doComplete(result: TestResult): Unit = ()
-      override def startGroup(value: String): Unit = { require(value == name.value); groups += 1 }
-      override def testEvent(value: TestEvent): Unit = observed ++= value.detail
-      override def endGroup(value: String, cause: Throwable): Unit = throw cause
-      override def endGroup(value: String, result: TestResult): Unit = require(value == name.value && result == TestResult.Passed)
-    }
+    val listener = new HostFixtures.RecordedGroups(name, TestResult.Passed)
     val admissions = Vector(HostForkAdmission(ForkProcessId(if (scenario == "process") 999L else 101L), Set(if (scenario == "owner") HostSuiteName("different.Owner") else name))) ++
       (if (repeated) Vector(HostForkAdmission(ForkProcessId(102L), Set(name))) else Vector.empty)
     val projection = new HostForeignForkReports(store, Seq(received, listener), receipt)
     if (Set("process", "owner", "selector", "duration", "fingerprint", "failure", "active").contains(scenario)) {
       try { projection.cancel(admissions); throw new AssertionError("Invalid foreign projection accepted") }
       catch { case _: IllegalArgumentException => () }
-      require(groups == 0 && observed.isEmpty, "Invalid foreign projection emitted callbacks")
+      require(listener.groups == 0 && listener.events.isEmpty, "Invalid foreign projection emitted callbacks")
     } else {
       projection.cancel(admissions)
       projection.cancel(admissions)
       val expectedGroups = if (scenario == "delivered") 0 else if (scenario == "repeated") 2 else 1
-      require(groups == expectedGroups && observed.size == expectedGroups * 3, "Foreign groups replayed more than once or were lost")
-      require(observed.grouped(3).forall(group => group.map(_.selector().asInstanceOf[TestSelector].testName()) == Vector("test-0", "test-1", "test-2")), "Foreign selectors changed")
+      require(listener.groups == expectedGroups && listener.events.size == expectedGroups * 3, "Foreign groups replayed more than once or were lost")
+      require(listener.events.grouped(3).forall(group => group.map(_.selector().asInstanceOf[TestSelector].testName()) == Vector("test-0", "test-1", "test-2")), "Foreign selectors changed")
     }
     println("HOST_FOREIGN_REPORT_CHECK_OK " + mode + " " + scenario)
   }
 
-  private def event(name: String, marker: Fingerprint, selected: Selector, elapsed: Long, failure: Option[Throwable]): Event = new Event {
-    override def fullyQualifiedName(): String = name
-    override def fingerprint(): Fingerprint = marker
-    override def selector(): Selector = selected
-    override def status(): Status = Status.Success
-    override def throwable(): OptionalThrowable = failure.fold(new OptionalThrowable)(new OptionalThrowable(_))
-    override def duration(): Long = elapsed
-  }
+  private def event(name: String, marker: Fingerprint, selected: Selector, elapsed: Long, failure: Option[Throwable]): Event =
+    SdkFixtures.event(name, marker, selected, Status.Success, failure.fold(new OptionalThrowable)(new OptionalThrowable(_)), elapsed)
 
   private final class MemoryStore extends ForeignRunReports.Store {
     private var values = Vector.empty[ForeignRunReports.Report]

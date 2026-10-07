@@ -2,8 +2,8 @@ package izumi.distage.sbt
 
 import izumi.distage.sbt.target.TaskCompleteness
 import izumi.distage.testkit.protocol.{BuildTargetId, Failure, FailurePhase, FileForkRunReports, ForkProcessId, ForkRunReport, ForkRunReports, ForkSuiteOwner, ProjectedFailure, RunId, RunOutcome, SuiteId, TestId, TestResult as LogicalResult, TestStatus}
-import sbt.{TestDefinition, TestEvent, TestResult, TestsListener}
-import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SubclassFingerprint, SuiteSelector, TestSelector}
+import sbt.{TestDefinition, TestEvent, TestResult}
+import sbt.testing.{Event, OptionalThrowable, Selector, Status, SuiteSelector, TestSelector}
 
 import java.nio.file.{Files, Paths}
 import java.util.UUID
@@ -23,19 +23,14 @@ object HostForkReportsTest {
         }
       }
     } finally {
-      val entries = Files.walk(directory)
-      try entries.sorted(java.util.Comparator.reverseOrder()).forEach(path => { val _ = Files.delete(path) }) finally entries.close()
+      SdkFixtures.deleteTree(directory)
     }
   }
 
   private def contract(mode: String, scenario: String, reports: ForkRunReports, terminals: TaskCompleteness.CompletionStore): Unit = {
     val name = HostSuiteName("fixture.ActualSuite")
     val logical = SuiteId("logical-identity-differs-from-class-name")
-    val fingerprint = new SubclassFingerprint {
-      override def isModule(): Boolean = false
-      override def superclassName(): String = "izumi.distage.testkit.runner.TestSuite"
-      override def requireNoArgConstructor(): Boolean = true
-    }
+    val fingerprint = SdkFixtures.subclass(false, "izumi.distage.testkit.runner.TestSuite", true)
     val definition = new TestDefinition(name.value, fingerprint, false, Array(new SuiteSelector))
     val results = (1 to 3).map(index => LogicalResult(TestId(BuildTargetId("target"), logical, Vector("same name", index.toString), None), TestStatus.Cancelled, None, 1000000L)).toVector
     val failure = Failure(FailurePhase.Finalization, "fixture.ReleaseFailure", "release failed", Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)
@@ -56,16 +51,7 @@ object HostForkReportsTest {
     val receipt = new HostReceipt(new izumi.distage.sbt.target.TaskGroups.MemoryStore)
     receipt.expect(name)
     val received = receipt.configure(Set(name))
-    var events = Vector.empty[Event]
-    var groups = 0
-    val listener = new TestsListener {
-      override def doInit(): Unit = ()
-      override def doComplete(result: TestResult): Unit = ()
-      override def startGroup(value: String): Unit = { require(value == name.value); groups += 1 }
-      override def testEvent(value: TestEvent): Unit = events ++= value.detail
-      override def endGroup(value: String, cause: Throwable): Unit = throw cause
-      override def endGroup(value: String, result: TestResult): Unit = require(value == name.value && result == TestResult.Error)
-    }
+    val listener = new HostFixtures.RecordedGroups(name, TestResult.Error)
     val delivered = Set("delivered", "partial", "selector-mismatch", "duration-mismatch", "failure-mismatch", "in-process", "active-group").contains(scenario)
     if (delivered) {
       val expectedEvents = (1 to 3).map { index =>
@@ -84,30 +70,24 @@ object HostForkReportsTest {
     if (Set("mismatch", "duplicates", "selector-mismatch", "duration-mismatch", "failure-mismatch", "unknown-process", "terminal-process", "group-counts", "active-group").contains(scenario)) {
       try { projection.cancel(admissions); throw new AssertionError("Invalid fork projection accepted") }
       catch { case _: IllegalArgumentException => () }
-      require(groups == 0 && events.isEmpty, "Invalid fork reports emitted host callbacks")
+      require(listener.groups == 0 && listener.events.isEmpty, "Invalid fork reports emitted host callbacks")
     } else {
       projection.cancel(admissions)
       projection.cancel(admissions)
-      if (scenario == "delivered") require(groups == 0 && events.isEmpty, "Completed host group was replayed")
+      if (scenario == "delivered") require(listener.groups == 0 && listener.events.isEmpty, "Completed host group was replayed")
       else {
         val expectedGroups = if (scenario == "repeated") 2 else 1
-        require(groups == expectedGroups && events.size == expectedGroups * 4 && events.count(_.status() == Status.Canceled) == expectedGroups * 3)
-        require(events.grouped(4).forall(group => group.take(3).map(_.selector().asInstanceOf[TestSelector].testName()) == Vector("same name 1", "same name 2", "same name 3")), "Logical suite binding or selectors changed")
-        require(events.last.status() == Status.Error && events.last.throwable().get().getMessage.contains("Finalization: fixture.ReleaseFailure: release failed"))
+        require(listener.groups == expectedGroups && listener.events.size == expectedGroups * 4 && listener.events.count(_.status() == Status.Canceled) == expectedGroups * 3)
+        require(listener.events.grouped(4).forall(group => group.take(3).map(_.selector().asInstanceOf[TestSelector].testName()) == Vector("same name 1", "same name 2", "same name 3")), "Logical suite binding or selectors changed")
+        require(listener.events.last.status() == Status.Error && listener.events.last.throwable().get().getMessage.contains("Finalization: fixture.ReleaseFailure: release failed"))
         require(!receipt.unreported(name), "Projected group did not complete")
       }
     }
     println("HOST_FORK_REPORT_CHECK_OK " + mode + " " + scenario)
   }
 
-  private def fixtureEvent(definition: TestDefinition, selected: Selector, result: Status, cause: Option[Throwable], elapsed: Long): Event = new Event {
-    override def fullyQualifiedName(): String = definition.name
-    override def fingerprint(): Fingerprint = definition.fingerprint
-    override def selector(): Selector = selected
-    override def status(): Status = result
-    override def throwable(): OptionalThrowable = cause.fold(new OptionalThrowable)(new OptionalThrowable(_))
-    override def duration(): Long = elapsed
-  }
+  private def fixtureEvent(definition: TestDefinition, selected: Selector, result: Status, cause: Option[Throwable], elapsed: Long): Event =
+    SdkFixtures.event(definition.name, definition.fingerprint, selected, result, cause.fold(new OptionalThrowable)(new OptionalThrowable(_)), elapsed)
 
   private final class MemoryReports extends ForkRunReports {
     private var values = Vector.empty[ForkRunReport]

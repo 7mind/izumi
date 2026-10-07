@@ -2,7 +2,7 @@ package izumi.distage.sbt
 
 import izumi.distage.testkit.protocol.*
 
-import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, NestedTestSelector, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, SuiteSelector, Task, TaskDef, TestSelector}
+import sbt.testing.{Event, EventHandler, NestedTestSelector, OptionalThrowable, Status, SuiteSelector, Task, TaskDef, TestSelector}
 
 import java.net.Socket
 import java.nio.file.Files
@@ -13,11 +13,7 @@ import scala.jdk.CollectionConverters.*
 import scala.util.control.NonFatal
 
 object TargetHostFrameworkTest {
-  private val fingerprint = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = "izumi.distage.testkit.runner.TestSuite"
-    override def requireNoArgConstructor(): Boolean = true
-  }
+  private val fingerprint = SdkFixtures.subclass(false, "izumi.distage.testkit.runner.TestSuite", true)
 
   def main(arguments: Array[String]): Unit = {
     require(arguments.isEmpty)
@@ -42,93 +38,71 @@ object TargetHostFrameworkTest {
     val runners = new AtomicInteger
     val completions = new AtomicInteger
     val started = new CountDownLatch(1)
-    val platform = new Framework {
-      override def name(): String = "fixture"
-      override def fingerprints(): Array[Fingerprint] = Array(fingerprint)
-      override def runner(args: Array[String], remoteArgs: Array[String], loader: ClassLoader): Runner = {
-        require(!args.contains(ForkReceiptArguments.EventDirectoryOption) && !args.contains(ForkReceiptArguments.HostDirectoryOption))
-        require(!remoteArgs.contains(ForkReceiptArguments.ForkDirectoryOption))
-        val portIndex = args.indexOf("--distage-control-port")
-        require(portIndex >= 0)
-        val port = args(portIndex + 1).toInt
-        val capturedArgs = args.clone()
-        val capturedRemoteArgs = remoteArgs.clone()
-        val _ = runners.incrementAndGet()
-        if (scenario == "runner-failure") throw new IllegalStateException("runner launch failed")
-        new Runner {
-          override def args(): Array[String] = capturedArgs.clone()
-          override def remoteArgs(): Array[String] = capturedRemoteArgs.clone()
-          override def done(): String = { val _ = completions.incrementAndGet(); "" }
-          override def tasks(selected: Array[TaskDef]): Array[Task] = {
-            if (scenario == "tasks-failure") throw new IllegalStateException("task construction failed")
-            Array(new Task {
-            override def taskDef(): TaskDef = selected.head
-            override def tags(): Array[String] = Array.empty
-            override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-              val _ = launches.incrementAndGet()
-              if (scenario == "launch-failure") throw new IllegalStateException("launch failed")
-              val run = RunId(UUID.randomUUID().toString)
-              var sequence = 0L
-              var eventOwner = selected.head.fullyQualifiedName()
-              def frame(message: ProtocolMessage): Unit = {
-                val encoded = SdkProtocolFrames.encode(ProtocolCodec.encode(message))
-                val terminal = message.isInstanceOf[ProtocolMessage.Completed]
-                val parts = if (terminal && scenario == "truncated-frame") encoded.dropRight(1)
-                  else if (terminal && scenario == "duplicate-frame-part") encoded.take(1) ++ encoded
-                  else encoded
-                parts.zipWithIndex.foreach { case (part, index) =>
-                  val partOwner = if (terminal && scenario == "bad-frame-owner" && index == 1) "another.Suite" else eventOwner
-                  handler.handle(new Event {
-                    override def fullyQualifiedName(): String = partOwner
-                    override def fingerprint(): Fingerprint = TargetHostFrameworkTest.fingerprint
-                    override def selector(): Selector = new NestedTestSelector(part.selectorId, part.payload)
-                    override def status(): Status = Status.Success
-                    override def throwable(): OptionalThrowable = new OptionalThrowable
-                    override def duration(): Long = 0L
-                  })
-                }
-              }
-              def emit(event: RunEvent): Unit = { frame(ProtocolMessage.Event(sequence, event)); sequence += 1 }
-              val socket = if (scenario == "cancel" && launches.get() == 1) Some(new Socket("127.0.0.1", port)) else None
-              try {
-                emit(RunEvent.Started(run))
-                started.countDown()
-                socket.foreach { connection =>
-                  val input = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream, java.nio.charset.StandardCharsets.UTF_8))
-                  require(ProtocolCodec.decode(input.readLine()) == Right(ProtocolMessage.Cancel(run)), "Cancellation did not reach target input")
-                }
-                val results = selected.toVector.flatMap { definition =>
-                  (1 to 3).map { index =>
-                    val failure = if (scenario == "body-failure" && definition == selected.last && index == 3) Some(error(FailurePhase.Test, "body failed")) else None
-                    val suite = (if (Set("logical-alias", "cancel-before-start", "skip-before-start").contains(scenario)) "logical:" else "") + definition.fullyQualifiedName()
-                    val status = scenario match {
-                      case "cancel-before-start" | "bad-unstarted-owner" => TestStatus.Cancelled
-                      case "skip-before-start" => TestStatus.Skipped
-                      case _ => if (failure.isDefined) TestStatus.Failed else TestStatus.Succeeded
-                    }
-                    TestResult(TestId(BuildTargetId("fixture"), SuiteId(suite), Vector("same", index.toString) ++ (if (largeFrame) Vector("😀" * 750) else Vector.empty), None), status, failure, 1000000L)
-                  }
-                }
-                results.reverse.foreach { result =>
-                  eventOwner = if (Set("bad-owner", "bad-unstarted-owner").contains(scenario)) "fixture.Unselected" else result.id.suite.value.stripPrefix("logical:")
-                  if (!Set("cancel-before-start", "skip-before-start", "success-before-start", "bad-unstarted-owner").contains(scenario)) emit(RunEvent.TestStarted(run, result.id))
-                  emit(RunEvent.TestCompleted(run, result))
-                }
-                if (scenario != "incomplete") {
-                  if (scenario == "bad-sequence") sequence += 1
-                  val failures = if (scenario == "run-failure") Vector(error(FailurePhase.Finalization, "release failed")) else Vector.empty
-                  val outcome = RunOutcome(run, results, failures, socket.isDefined)
-                  emit(RunEvent.Finished(run, outcome))
-                  frame(ProtocolMessage.Completed(outcome))
-                }
-              } finally socket.foreach(_.close())
-              Array.empty
+    val platform = SdkFixtures.framework("fixture", fingerprint, (args, remoteArgs, _) => {
+      require(!args.contains(ForkReceiptArguments.EventDirectoryOption) && !args.contains(ForkReceiptArguments.HostDirectoryOption))
+      require(!remoteArgs.contains(ForkReceiptArguments.ForkDirectoryOption))
+      val portIndex = args.indexOf("--distage-control-port")
+      require(portIndex >= 0)
+      val port = args(portIndex + 1).toInt
+      val _ = runners.incrementAndGet()
+      if (scenario == "runner-failure") throw new IllegalStateException("runner launch failed")
+      SdkFixtures.runner(args, remoteArgs, selected => {
+        if (scenario == "tasks-failure") throw new IllegalStateException("task construction failed")
+        Array(SdkFixtures.task(selected.head, Array.empty, handler => {
+          val _ = launches.incrementAndGet()
+          if (scenario == "launch-failure") throw new IllegalStateException("launch failed")
+          val run = RunId(UUID.randomUUID().toString)
+          var sequence = 0L
+          var eventOwner = selected.head.fullyQualifiedName()
+          def frame(message: ProtocolMessage): Unit = {
+            val encoded = SdkProtocolFrames.encode(ProtocolCodec.encode(message))
+            val terminal = message.isInstanceOf[ProtocolMessage.Completed]
+            val parts = if (terminal && scenario == "truncated-frame") encoded.dropRight(1)
+              else if (terminal && scenario == "duplicate-frame-part") encoded.take(1) ++ encoded
+              else encoded
+            parts.zipWithIndex.foreach { case (part, index) =>
+              val partOwner = if (terminal && scenario == "bad-frame-owner" && index == 1) "another.Suite" else eventOwner
+              handler.handle(SdkFixtures.event(partOwner, TargetHostFrameworkTest.fingerprint, new NestedTestSelector(part.selectorId, part.payload), Status.Success, new OptionalThrowable, 0L))
             }
-            })
           }
-        }
-      }
-    }
+          def emit(event: RunEvent): Unit = { frame(ProtocolMessage.Event(sequence, event)); sequence += 1 }
+          val socket = if (scenario == "cancel" && launches.get() == 1) Some(new Socket("127.0.0.1", port)) else None
+          try {
+            emit(RunEvent.Started(run))
+            started.countDown()
+            socket.foreach { connection =>
+              val input = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream, java.nio.charset.StandardCharsets.UTF_8))
+              require(ProtocolCodec.decode(input.readLine()) == Right(ProtocolMessage.Cancel(run)), "Cancellation did not reach target input")
+            }
+            val results = selected.toVector.flatMap { definition =>
+              (1 to 3).map { index =>
+                val failure = if (scenario == "body-failure" && definition == selected.last && index == 3) Some(error(FailurePhase.Test, "body failed")) else None
+                val suite = (if (Set("logical-alias", "cancel-before-start", "skip-before-start").contains(scenario)) "logical:" else "") + definition.fullyQualifiedName()
+                val status = scenario match {
+                  case "cancel-before-start" | "bad-unstarted-owner" => TestStatus.Cancelled
+                  case "skip-before-start" => TestStatus.Skipped
+                  case _ => if (failure.isDefined) TestStatus.Failed else TestStatus.Succeeded
+                }
+                TestResult(TestId(BuildTargetId("fixture"), SuiteId(suite), Vector("same", index.toString) ++ (if (largeFrame) Vector("😀" * 750) else Vector.empty), None), status, failure, 1000000L)
+              }
+            }
+            results.reverse.foreach { result =>
+              eventOwner = if (Set("bad-owner", "bad-unstarted-owner").contains(scenario)) "fixture.Unselected" else result.id.suite.value.stripPrefix("logical:")
+              if (!Set("cancel-before-start", "skip-before-start", "success-before-start", "bad-unstarted-owner").contains(scenario)) emit(RunEvent.TestStarted(run, result.id))
+              emit(RunEvent.TestCompleted(run, result))
+            }
+            if (scenario != "incomplete") {
+              if (scenario == "bad-sequence") sequence += 1
+              val failures = if (scenario == "run-failure") Vector(error(FailurePhase.Finalization, "release failed")) else Vector.empty
+              val outcome = RunOutcome(run, results, failures, socket.isDefined)
+              emit(RunEvent.Finished(run, outcome))
+              frame(ProtocolMessage.Completed(outcome))
+            }
+          } finally socket.foreach(_.close())
+          Array.empty
+        }))
+      }, () => { val _ = completions.incrementAndGet(); "" })
+    })
     val args = Array(ForkReceiptArguments.EventDirectoryOption, directory.toString, ForkReceiptArguments.HostDirectoryOption, directory.toString, ForkReceiptArguments.CommandCompletionOption)
     val runner = new TargetHostFramework(platform).runner(args, Array(ForkReceiptArguments.ForkDirectoryOption, directory.toString), getClass.getClassLoader)
     val selected = (1 to 5).map(index => new TaskDef("fixture.Suite" + index, fingerprint, false, Array(new SuiteSelector))).toArray
