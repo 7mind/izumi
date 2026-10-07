@@ -26,9 +26,9 @@ private[assertions] object AssertionMacro {
     val comparisonOwners = Set("scala.Any", "scala.AnyRef", "java.lang.Object", "scala.Boolean", "scala.Byte", "scala.Short", "scala.Char", "scala.Int", "scala.Long", "scala.Float", "scala.Double")
     val comparisonNames = Set("==", "!=", "<", "<=", ">", ">=", "eq", "ne")
 
-    def sourceText(position: Position): Expr[CompiledText] = position.sourceCode match {
+    def sourceText(term: Term): Expr[CompiledText] = term.pos.sourceCode.filter(_.nonEmpty) match {
       case Some(text) => '{ CompiledText.Available(${ Expr(text) }) }
-      case None => '{ CompiledText.Unavailable }
+      case None => '{ CompiledText.Reconstructed(${ Expr(term.show) }) }
     }
 
     def point(offset: Int, line: Int, column: Int): Expr[SourcePoint] = '{ SourcePoint(${ Expr(offset) }, ${ Expr(line) }, ${ Expr(column) }) }
@@ -42,7 +42,7 @@ private[assertions] object AssertionMacro {
 
     def site(term: Term, kind: Expr[ObservationKind]): Int = {
       val index = sites.size
-      sites += '{ ObservationSite(${ span(term.pos) }, ${ sourceText(term.pos) }, $kind) }
+      sites += '{ ObservationSite(${ span(term.pos) }, ${ sourceText(term) }, $kind) }
       index
     }
 
@@ -99,7 +99,7 @@ private[assertions] object AssertionMacro {
       val _ = $receiver
       val recorder = new AssertionRecorder(Vector($siteExpressions*))
       val result = ${ node.emit('recorder) }
-      recorder.check(result, ${ Expr(path) }, ${ Expr(virtual) }, ${ span(position) }, ${ sourceText(position) }, $context)
+      recorder.check(result, ${ Expr(path) }, ${ Expr(virtual) }, ${ span(position) }, ${ sourceText(condition.asTerm) }, $context)
     }
   }
 }

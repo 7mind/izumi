@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
-EXPECTED_ASSERTION_FIXTURE_CHECKS = 100
+EXPECTED_ASSERTION_FIXTURE_CHECKS = 103
 
 
 def audit(commands, evidence):

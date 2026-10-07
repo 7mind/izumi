@@ -317,6 +317,7 @@ object ProtocolCodec {
       case "mismatch" => Right(DiagnosticSourceValidation.Mismatch)
       case "unavailable" => Right(DiagnosticSourceValidation.Unavailable)
       case "rangeUnavailable" => Right(DiagnosticSourceValidation.RangeUnavailable)
+      case "textUnavailable" => Right(DiagnosticSourceValidation.TextUnavailable)
       case "providerFailed" => for {
         exceptionClass <- cursor.get[String]("exceptionClass")
         message <- cursor.get[DiagnosticErrorMessage]("message")
@@ -328,6 +329,7 @@ object ProtocolCodec {
       case DiagnosticSourceValidation.Mismatch => tagged("mismatch")
       case DiagnosticSourceValidation.Unavailable => tagged("unavailable")
       case DiagnosticSourceValidation.RangeUnavailable => tagged("rangeUnavailable")
+      case DiagnosticSourceValidation.TextUnavailable => tagged("textUnavailable")
       case DiagnosticSourceValidation.ProviderFailed(exceptionClass, message) => tagged("providerFailed", "exceptionClass" -> Json.fromString(exceptionClass), "message" -> diagnosticErrorMessageCodec(message))
     },
   )

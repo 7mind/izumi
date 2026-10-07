@@ -54,9 +54,12 @@ exclusive end offset. Lines also start at zero in the structured model; messages
 display lines and columns starting at one. A `SourceSpan.Range` carries both
 endpoints. A compiler position without a range becomes `SourceSpan.Point`;
 absence of a position becomes `SourceSpan.Unavailable`. Text is copied from the
-compiler's source buffer only when an exact range is available, otherwise
-`CompiledText.Unavailable` records its absence. No compiler pretty-print is
-substituted for the compiled excerpt. Scala 2.13 with `-Yrangepos:false` uses
+compiler's source buffer when available. Without exact source text, the macro
+stores a compiler pretty-print as `CompiledText.Reconstructed`, labelled
+`AST fallback` in the message and observations. It does not infer pointers from
+that text or validate it as an original source excerpt. `CompiledText.Unavailable`
+still represents diagnostics with neither source text nor a reconstructed expression.
+Scala 2.13 with `-Yrangepos:false` uses
 point positions even if a typed tree
 contains a synthesized range: such ranges can omit the left comparison operand
 and therefore do not establish an exact expression span.
@@ -76,7 +79,10 @@ A `SourceProvider` may resolve the identity to available content. Rendering
 compares the recorded range and excerpt with that content before accepting it.
 Different content produces `SourceValidation.Mismatch` and a message identifying
 the mismatch while displaying the compiled excerpt. Missing content, missing
-ranges, and provider exceptions have separate representations. No pointer is
+ranges, missing exact text, and provider exceptions have separate representations.
+`SourceValidation.TextUnavailable` rejects validation of reconstructed text even
+when provider content happens to equal it. Transported reconstructed expressions
+retain the `[AST fallback]` label. No pointer is
 inferred from mismatching surrounding source.
 
 Constructing a failure does not render values or read source files. Its first

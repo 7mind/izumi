@@ -75,6 +75,7 @@ object SourceSpan {
 sealed trait CompiledText
 object CompiledText {
   final case class Available(text: String) extends CompiledText
+  final case class Reconstructed(text: String) extends CompiledText
   case object Unavailable extends CompiledText
 }
 
@@ -151,6 +152,7 @@ object SourceValidation {
   case object Mismatch extends SourceValidation
   case object Unavailable extends SourceValidation
   case object RangeUnavailable extends SourceValidation
+  case object TextUnavailable extends SourceValidation
   final case class ProviderFailure(cause: Throwable) extends SourceValidation {
     lazy val message: RenderedErrorMessage = RenderedErrorMessage.capture(cause)
   }

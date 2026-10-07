@@ -125,7 +125,8 @@ object ProtocolFixtures {
     reject(failureFrame.replace("\"captureErrors\":[]", "\"unrelated\":[]"), "Missing required field")
     val validations = Vector[DiagnosticSourceValidation](
       DiagnosticSourceValidation.Matching, DiagnosticSourceValidation.Mismatch, DiagnosticSourceValidation.Unavailable,
-      DiagnosticSourceValidation.RangeUnavailable, DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.Available("missing\n😀")),
+      DiagnosticSourceValidation.RangeUnavailable, DiagnosticSourceValidation.TextUnavailable,
+      DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.Available("missing\n😀")),
       DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.Unavailable),
       DiagnosticSourceValidation.ProviderFailed("SourceFailure", DiagnosticErrorMessage.AccessorFailed("AccessorFailure")),
     )

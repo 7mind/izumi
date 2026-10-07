@@ -59,6 +59,13 @@ private[runner] object AssertionTransportFixtures {
             SourceCase("mismatch", source, () => assertion.ProvidedSource.Content("changed source"), wire, DiagnosticSourceValidation.Mismatch),
             SourceCase("missing-source", source, () => assertion.ProvidedSource.Unavailable, wire, DiagnosticSourceValidation.Unavailable),
             SourceCase(
+              "reconstructed-text",
+              source.copy(text = assertion.CompiledText.Reconstructed(expression)),
+              matching,
+              wire.copy(expression = Some("[AST fallback] " + expression)),
+              DiagnosticSourceValidation.TextUnavailable,
+            ),
+            SourceCase(
               "missing-range",
               source.copy(span = point),
               matching,
@@ -151,7 +158,7 @@ private[runner] object AssertionTransportFixtures {
           }
       }.flatMap(_ => renderingFailure(context, verify)).flatMap(_ => accessorFailures(context, verify)).flatMap(_ => bounded(context, verify)).map {
         _ =>
-          println("ASSERTION_TRANSPORT_FIXTURES_OK cases=16 cached=true wire=verified")
+          println("ASSERTION_TRANSPORT_FIXTURES_OK cases=17 cached=true wire=verified")
       }
   }
 

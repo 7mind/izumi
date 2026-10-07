@@ -88,6 +88,7 @@ object FrontendAssertionFixtures {
       verify(clued.getMessage.contains("custom clue"), "Clued assertions render the supplied clue")
       clued.diagnostic.source.text match {
         case CompiledText.Available(text) => verify(text.contains("memberValue"), "Clued assertions preserve the caller expression")
+        case CompiledText.Reconstructed(text) => verify(text.contains("memberValue") && clued.getMessage.contains("AST fallback"), "Clued assertions label reconstructed expressions")
         case CompiledText.Unavailable => verify(clued.diagnostic.observations.nonEmpty, "Missing ranges retain expression observations")
       }
       val suppressed = new IllegalArgumentException("suppressed failure")

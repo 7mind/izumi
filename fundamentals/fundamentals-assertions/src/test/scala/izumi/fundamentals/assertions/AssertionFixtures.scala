@@ -187,6 +187,7 @@ object AssertionFixtures {
     } else {
       oracle.verify(!source.span.isInstanceOf[SourceSpan.Range], "Missing ranges are explicit")
       oracle.verify(failure.getMessage.contains("range unavailable") || failure.getMessage.contains("position unavailable"), "Missing range is visible in the message")
+      oracle.verify(source.text.isInstanceOf[CompiledText.Reconstructed] && failure.getMessage.contains("AST fallback") && failure.getMessage.contains("minimum"), "Missing exact source uses a labelled AST fallback")
     }
     oracle.verify(failure.getMessage.contains("Assertion failed") && failure.getMessage.contains("source unavailable"), "Unrelated runners receive a useful message without source files")
     val mismatching = new SourceProvider {
@@ -282,6 +283,17 @@ object AssertionFixtures {
     oracle.verify(pointRendered.text.contains("range unavailable") && pointRendered.text.contains("compiled expression text unavailable"), "Point-only diagnostics state both missing range and text")
     val absentRendered = AssertionRenderer.render(AssertionDiagnostic(pointSource.copy(span = SourceSpan.Unavailable), Vector.empty), AssertionContext.standard)
     oracle.verify(absentRendered.text.contains("source position unavailable") && !absentRendered.text.contains("^"), "Absent positions never infer pointers")
+    val reconstructedText = "left.&&(right)"
+    val reconstructedSource = source.copy(text = CompiledText.Reconstructed(reconstructedText))
+    val reconstructedObservation = Observation(ObservationSite(source.span, CompiledText.Reconstructed("right"), ObservationKind.BooleanLeaf), Evaluation.NotEvaluated)
+    val reconstructedDiagnostic = AssertionDiagnostic(reconstructedSource, Vector(reconstructedObservation))
+    val reconstructedProvider = new SourceProvider { override def read(identity: SourceIdentity): ProvidedSource = ProvidedSource.Content(reconstructedText) }
+    val reconstructedContext = AssertionContext(SourceRoot.Unspecified, reconstructedProvider, ValueRenderer.standard, RenderLimits.standard)
+    val reconstructed = AssertionRenderer.render(reconstructedDiagnostic, reconstructedContext)
+    oracle.verify(reconstructed.sourceValidation == SourceValidation.TextUnavailable, "AST text is never validated as original source, even when provider text matches")
+    oracle.verify(reconstructed.text.contains("AST fallback") && reconstructed.text.contains("[AST fallback] right = not evaluated") && !reconstructed.text.contains("^"), "AST fallbacks label expressions and observations without source pointers")
+    val reconstructedBounded = AssertionRenderer.render(reconstructedDiagnostic, reconstructedContext.copy(limits = RenderLimits(5, 8, 1, 48, 4)))
+    oracle.verify(reconstructedBounded.text.length <= 48, "AST fallback rendering respects the total output limit")
   }
 
   private def validUnicode(value: String): Boolean = value.indices.forall { index =>

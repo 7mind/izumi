@@ -64,17 +64,18 @@ object AssertionMacro {
       else q"_root_.izumi.fundamentals.assertions.SourceSpan.Unavailable"
     }
 
-    def text(position: Position): Tree = {
+    def text(tree: Tree): Tree = {
+      val position = tree.pos
       if (rangePositions && position.isRange) {
         val content = new String(position.source.content.slice(position.start, position.end))
         q"_root_.izumi.fundamentals.assertions.CompiledText.Available($content)"
-      } else q"_root_.izumi.fundamentals.assertions.CompiledText.Unavailable"
+      } else q"_root_.izumi.fundamentals.assertions.CompiledText.Reconstructed(${ showCode(tree) })"
     }
 
     def site(tree: Tree, kind: String): Int = {
       val index = sites.size
       val kindName = TermName(kind)
-      sites += q"_root_.izumi.fundamentals.assertions.ObservationSite(${ span(tree.pos) }, ${ text(tree.pos) }, _root_.izumi.fundamentals.assertions.ObservationKind.$kindName)"
+      sites += q"_root_.izumi.fundamentals.assertions.ObservationSite(${ span(tree.pos) }, ${ text(tree) }, _root_.izumi.fundamentals.assertions.ObservationKind.$kindName)"
       index
     }
 
@@ -111,7 +112,7 @@ object AssertionMacro {
       val _ = $receiver
       val $recorder = new _root_.izumi.fundamentals.assertions.AssertionRecorder(_root_.scala.Vector(..$sites))
       val result = $instrumented
-      $recorder.check(result, $path, $virtual, ${ span(position) }, ${ text(position) }, $context)
+      $recorder.check(result, $path, $virtual, ${ span(position) }, ${ text(condition.tree) }, $context)
     }""")
   }
 }

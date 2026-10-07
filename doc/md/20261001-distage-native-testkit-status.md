@@ -22356,3 +22356,41 @@ that postcondition. No push or external release is authorized/performed. The
 branch remains local with its reviewed Native/assertion/runner implementation.
 
 First completed whole-goal audit receipt SHA25625dddb7489b13bdfa78b72462be76a6ed0929f0a59f67c3d2a7f6b35d8e26c3c.
+
+## Follow-up: rebase and assertion AST fallback
+
+The owner-requested rebase onto freshly fetched origin/develop
+c6e79ea935de499f4b68cfb98ee766ca87c308d2 completed at
+0e6b10827270e2c51ef6dd2fd181f8b2dd5a2685 without conflicts. All 193 replayed
+commit patches remain identical. Only the upstream README update changed the
+validated tree; all 536 reviewed subjects still matched at that rebase head.
+The old tip remains on backup/distage-native-before-rebase-20261007-2e86e4d.
+Receipt: /srv/nvme/tmp/izumi-impl/rebase-origin-develop-20261007-first/completion.json.
+
+The owner's subsequent AST-fallback request adds CompiledText.Reconstructed.
+Macros still prefer compiler source text; missing exact text uses showCode on
+Scala 2 and public Term.show on Scala 3. Reconstructed expressions and
+observations carry an explicit AST fallback label, produce no excerpt pointers,
+and cannot validate as original source. The protocol preserves the label and
+the separate TextUnavailable validation state. Exact-source rendering and
+short-circuit evaluation remain unchanged.
+
+assertion-source-fallback-reproduction-first preserves the expected failing
+Scala 2 point-position demonstration. assertion-source-fallback-correction-first
+records 11 successful direct compile/runtime commands: both compiler range
+fixtures pass 103 checks; Scala 2 without ranges passes 101. The throwing skipped
+branch stays unexecuted, and actual messages retain source text or labelled AST
+fallbacks. All captures are under /srv/nvme/tmp/izumi-impl/.
+
+assertion-source-fallback-platform-batch-first preserves actual exit 1 for a
+runner test helper's newly non-exhaustive match. Its corrected second batch
+passes all 18 assertion/protocol/base-runner entry points on JVM, JS and Native,
+using Scala 2.13/3.9 and the configured protocol compiler versions. Each domain
+reports 103 assertion checks, 238 protocol checks and 896 runner checks, including
+17 assertion transport cases. The second batch's audit.json verifies all six
+sets of markers, actual exit 0, unchanged captured inputs and the coverage
+consumer's updated expected count. One SBT process uses a 3 GiB heap and two
+reported processors; cache provenance and Native compiler warnings remain in
+the logs. These are component checks for this follow-up, not a fresh replay of
+the earlier whole-goal CI, publication or coverage matrix. Earlier receipts
+retain their original heads. IDE scope remains deferred; nothing is pushed.

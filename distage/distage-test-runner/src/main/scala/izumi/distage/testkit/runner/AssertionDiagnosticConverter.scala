@@ -36,6 +36,7 @@ private[runner] object AssertionDiagnosticConverter {
 
   private def text(value: assertion.CompiledText): Option[String] = value match {
     case assertion.CompiledText.Available(value) => Some(value)
+    case assertion.CompiledText.Reconstructed(value) => Some(s"[AST fallback] $value")
     case assertion.CompiledText.Unavailable => None
   }
 
@@ -44,6 +45,7 @@ private[runner] object AssertionDiagnosticConverter {
     case assertion.SourceValidation.Mismatch => DiagnosticSourceValidation.Mismatch
     case assertion.SourceValidation.Unavailable => DiagnosticSourceValidation.Unavailable
     case assertion.SourceValidation.RangeUnavailable => DiagnosticSourceValidation.RangeUnavailable
+    case assertion.SourceValidation.TextUnavailable => DiagnosticSourceValidation.TextUnavailable
     case failure: assertion.SourceValidation.ProviderFailure => DiagnosticSourceValidation.ProviderFailed(failure.cause.getClass.getName, errorMessage(failure.message))
   }
 

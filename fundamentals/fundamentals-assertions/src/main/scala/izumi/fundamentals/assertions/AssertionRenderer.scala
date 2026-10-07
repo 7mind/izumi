@@ -29,12 +29,22 @@ object AssertionRenderer {
             case _ => ()
           }
         }
+      case CompiledText.Reconstructed(text) =>
+        output.append("AST fallback (exact source text unavailable)\n")
+        bounded(text, limits.excerptCharacters).split("\n", -1).foreach { line =>
+          output.append(expandTabs(line, limits.tabWidth, output.remaining))
+          output.append("\n")
+        }
       case CompiledText.Unavailable => output.append("compiled expression text unavailable\n")
     }
     validation match {
       case SourceValidation.Mismatch => output.append("source mismatch; showing compiled excerpt\n")
-      case SourceValidation.Unavailable => output.append("source unavailable; showing compiled excerpt\n")
+      case SourceValidation.Unavailable => source.text match {
+        case _: CompiledText.Reconstructed => output.append("source unavailable; showing AST fallback\n")
+        case _ => output.append("source unavailable; showing compiled excerpt\n")
+      }
       case SourceValidation.RangeUnavailable => output.append("source range unavailable; surrounding source not used\n")
+      case SourceValidation.TextUnavailable => output.append("exact source text unavailable; surrounding source not used\n")
       case SourceValidation.ProviderFailure(cause) => output.append(s"source provider failed: ${cause.getClass.getName}\n")
       case SourceValidation.Matching => ()
     }
@@ -48,6 +58,9 @@ object AssertionRenderer {
         }
         site.text match {
           case CompiledText.Available(text) => output.append(bounded(text, limits.excerptCharacters))
+          case CompiledText.Reconstructed(text) =>
+            output.append("[AST fallback] ")
+            output.append(bounded(text, limits.excerptCharacters))
           case CompiledText.Unavailable => output.append(site.kind.toString)
         }
         output.append(" = ")
@@ -84,6 +97,7 @@ object AssertionRenderer {
               if (start.offset >= 0 && end.offset >= start.offset && end.offset <= content.length && content.substring(start.offset, end.offset) == text) {
                 SourceValidation.Matching
               } else SourceValidation.Mismatch
+            case (_: SourceSpan.Range, _) => SourceValidation.TextUnavailable
             case _ => SourceValidation.RangeUnavailable
           }
       }

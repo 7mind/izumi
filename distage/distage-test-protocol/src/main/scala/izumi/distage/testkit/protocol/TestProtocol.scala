@@ -88,6 +88,7 @@ object DiagnosticSourceValidation {
   case object Mismatch extends DiagnosticSourceValidation
   case object Unavailable extends DiagnosticSourceValidation
   case object RangeUnavailable extends DiagnosticSourceValidation
+  case object TextUnavailable extends DiagnosticSourceValidation
   final case class ProviderFailed(exceptionClass: String, message: DiagnosticErrorMessage) extends DiagnosticSourceValidation
 }
 
