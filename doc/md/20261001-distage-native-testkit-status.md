@@ -18993,3 +18993,71 @@ The exact commands, logs, manifests and report hashes are in
 python3 -B /srv/nvme/tmp/izumi-impl/5-bio-laws-migration-fifth/audit.py.
 Its audit SHA256 is 5f4fb1bbeb15448f7c4b8286325d421153a552d1e7a7c9ad75bf93352411d6a4.
 This closes the BIO law migration checkpoint, not phase5 or final-head acceptance.
+
+## 2026-10-07: wiring frontend migration in progress
+
+The verified BIO worktree is integrated as ecf13e338. Its four code/build files
+match the verified candidate byte-for-byte, and the removed shim remains absent.
+The automatic ledger merge initially retained conflict markers despite claiming
+resolution; comparison against the canonical incoming ledger caught that. The
+owned merge artifact is corrected before amending the local integration commit.
+All1633 BIO source/build inputs are archived in
+5-bio-laws-migration-fifth/frozen-source-inputs.tar.gz, SHA256
+580202db414fae4b104091966fef576088abafa3480d11ae877799979a3ca784.
+The completed owned worktree is removed; report/manifest/audit captures remain.
+
+The new higher-runner wiring facilities port SpecWiring's compiler-specific
+constructors and WiringAssertions' delegation, using TestAssertions. Their cfg
+and runtime-check arguments are explicit. New controls exercise direct assertion
+success/failure, runtime-check delegation and resource-free discovery of one/two
+actual SpecWiring cases on all supported platforms. The fixture passes an
+explicit PlanCheckMaterializer; it verifies frontend behavior and real runtime
+planning, not macro materialization. The actual compile-time macro consumer
+and migrated legacy wiring cases remain required.
+
+The first wiring batch exits1 after156.145s with1639 inputs unchanged. Production
+sources compile; the fixture passes DefaultModule[Identity], which returns its
+Module rather than the required DefaultModule instance. The fixture now summons
+that instance explicitly. The second complete six-lane higher-provider batch
+runs from5-wiring-frontend-controls-second/, with all1639 inputs frozen and
+all three platform tests compiled before execution per compiler. No wiring
+replacement completion is claimed before the batch and audit pass.
+
+The seventh six-module migration preflight completes actual0 on both supported
+compilers, after239.751s and526.158s, with1636 inputs unchanged in each process.
+All42 module/platform lanes compile before full execution. Its runtime/compiler
+batches and actual JS/Native inspection checks remain in flight.
+
+## 2026-10-07: verified wiring frontend controls checkpoint
+
+The second batch exits1 after372.039s with1639 unchanged inputs. All684
+JVM controls pass; JS linking then rejects Class.getCanonicalName, absent from
+the pinned Scala.js1.22.0 class implementation. The portable name helper uses
+getName on JS/Native and preserves getCanonicalName on JVM, retaining the
+legacy JVM wiring-case prefix. The authoritative Scala.js source is
+https://raw.githubusercontent.com/scala-js/scala-js/v1.22.0/javalib/src/main/scala/java/lang/Class.scala.
+
+The third batch succeeds on Scala2.13.18 after166.973s and Scala3.9.0
+after336.431s. All1642 frozen inputs remain unchanged per process. All three
+platform test sources compile before execution per compiler. Independent audit
+exits0:684 JVM/561 JS/561 Native checks per compiler, twelve actual wiring
+sessions and eighteen wiring case outcomes overall. The sixty added controls
+verify direct assertion behavior, resource-free discovery, explicit failed
+materializer rejection and real runtime planning in SpecWiring.
+
+Commands, logs, frozen manifests and audit are preserved in
+5-wiring-frontend-controls-third/. Audit command:
+python3 /srv/nvme/tmp/izumi-impl/5-wiring-frontend-controls-third/audit.py.
+These controls use an explicit PlanCheckMaterializer. Actual compiler macro
+materialization, legacy wiring-suite migration and final-head acceptance remain
+open. No parent phase is marked complete.
+
+The seventh six-module migration execution exits1 after621.678s with1636
+inputs unchanged. Its complete42-lane compiler preflights passed. The2.13
+platform/core-api/core prefix succeeds, including all308 Native core cases and
+the new SDK framing controls. Configuration JVM then fails12 of30 cases:
+eleven cannot load Test resources; one optional-dependency absence check sees
+Cats introduced by the protocol dependency. The JVM bootstrap captures the
+supplied classloader for suite construction but does not propagate it to the
+work-stealing executor. A focused reproduction and isolated absence fixture
+are in progress in the free candidate worktree; no full migration is claimed.
