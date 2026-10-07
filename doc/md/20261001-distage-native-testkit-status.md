@@ -20672,3 +20672,14 @@ capture5-runtime-retirement-next-reviewable-diff-second includes all81 changed
 files and72 staged deletions. Its patch SHA-256 is
 13212f0aa8c26188cc6a8f4ea8c207a0d93d4d3aa2c0cf75108aee50334f4ebd.
 That historical patch is not applied wholesale to the rebased checkout.
+
+
+Evidence correction:5-runtime-selected-policy-direct-first compiles with
+unchanged inputs, but all three runtime completions record inputsUnchanged=false.
+RunSession.cancel was edited during execution of those already-frozen compiled
+classes. This was a capture-discipline mistake; the evidence remains actual0
+for its frozen source, not a qualification of the later checkout. Its
+post-capture-drift-audit.json verifies23 frozen source snapshots against the
+pre-command manifest and identifies current drift in RunSession and the two
+subsequently refactored fixtures. The unchanged combined-third capture is the
+applicable qualification of mixed/selected launcher and shutdown behavior.
