@@ -10,18 +10,20 @@ import zio.ZIO
   * Adds `cats-effect` typeclass instances for ZIO
   */
 class ZIOCatsEffectInstancesModule[R: Tag] extends ModuleDef {
-  private val instances = new zio.interop.CatsEffectInstances {}
-
   include(CatsEffectInstancesModule.usingAsync[ZIO[R, Throwable, +_]])
 
+  make[ZIOCatsEffectInstancesModule.Instances]
+
   make[Async[ZIO[R, Throwable, +_]]].from {
-    instances.asyncInstance[R]
+    (_: ZIOCatsEffectInstancesModule.Instances).asyncInstance[R]
   }
   make[Parallel[ZIO[R, Throwable, +_]]].from {
-    instances.parallelInstance[R, Throwable]
+    (_: ZIOCatsEffectInstancesModule.Instances).parallelInstance[R, Throwable]
   }
 }
 
 object ZIOCatsEffectInstancesModule {
+  private[distage] final class Instances extends zio.interop.CatsEffectInstances
+
   def apply[R: Tag]: ZIOCatsEffectInstancesModule[R] = new ZIOCatsEffectInstancesModule[R]
 }

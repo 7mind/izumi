@@ -27,7 +27,7 @@ trait TestEntrypointPatchedLeakBase extends TestEntrypointBase {
 
 class TestEntrypointBase extends RoleAppMain.Launcher1[IO] {
   override protected def pluginConfig: PluginConfig = {
-    if (IzPlatform.isScalaJS) {
+    if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
       __ScalaJSFixturesPlugins.pluginConfig
     } else {
       PluginConfig.cached(Seq(s"${SourcePackageMaterializer.thisPkg}.fixtures"))

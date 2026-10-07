@@ -20118,3 +20118,100 @@ actual0 in344.008s;inputs unchanged. The independent audit exits0, verifies all
 qualified62-control caller candidate. Commands, actual results, audit and frozen
 source archive are retained. The explicit await API is verified; standalone
 launcher wiring and configurable-runtime normal provider integration remain open.
+
+## 2026-10-07: ordinary migration and configurable runtime candidates qualified
+
+The complete 32-lane ordinary candidate qualifies in
+5-legacy-ordinary-migration-thirteenth. Scala 2.13 exits 0 in 897.845 seconds
+with 1699 frozen inputs unchanged. Scala 3.9 reuses the successful exact-source
+producer from the twelfth capture: exit 0 in 1189.609 seconds, inputs unchanged.
+The symlink preserves the original command, reports and completion provenance.
+The recovery keeps all 68 commands and moves dependency checks before expensive
+execution. Both captures contain zero raw RejectedExecutionException messages.
+The earlier CPU-bound Coursier reconciliation remains a recorded failed capture;
+this successful retry does not establish its root cause or eliminate recurrence.
+
+Both independent auditors exit 0. Ordinary project lanes preserve 368 JVM cases
+(349 success, 19 cancellation) and 164 JS/Native cases (145 success, 19
+cancellation) per compiler, including the nine shared and two JVM runtime
+controls. All selected original IDs, discovered suites and outcomes reconcile.
+Core lanes preserve 366/302/308 cases on Scala 2 and 400/335/341 on Scala 3.
+Engine checks preserve 143/103/118 controls and 1/1/3 reported cases per compiler;
+module filtering preserves its one original case. Base checks are 847 per lane;
+higher-runner checks are 691/568/568 per compiler. Resolved dependency reports
+and classpaths exclude ScalaTest-family artifacts; test projects remain
+unpublished. The reordered first update output includes initial build-linter
+text naming the still-present legacy project. The auditor now requires exactly
+one canonical Update report header and checks its complete dependency content;
+it still rejects every vendor artifact and keeps the full classpath predicate.
+Audit SHA256 values:
+ordinary: 86bd80f1b709d45a0264a058915c78c80b7eced7b564b0bd481d9dc2f0e3db03
+extended: 2a963f0e8d84fd46fa4abbabd91650c17d975d63c6fdccf870666f9d9417acd8
+
+The separate configurable-runtime candidate qualifies in
+5-owned-runtime-interruption-fourth. Scala 2 exits 0 in 226.129 seconds and
+Scala 3 in 259.858 seconds; 1708 frozen inputs unchanged. Its independent audit
+exits 0: 72 original runtime controls, four additional resource-override cases,
+330 actual inner interrupted bodies and 3654 higher-runner checks. The five
+original interruption variants use owned MiniBIO, Cats IO and ZIO outer runtimes.
+The explicit runtime factory accepts runner-module overrides. Both added variants
+prove one runner resource acquisition/release, release before owned outer-runtime
+shutdown, one completion callback, and original graph/outer release references
+retained in the combined failure. Initial fixture compile errors are captured;
+the third fixture additionally fails because its held synchronous finalizer
+blocks its controller. MiniBIO explicitly runs to its first async boundary.
+The fourth fixture uses a separate driver; ownership predicates and production
+code are unchanged. The auditor compares full suite/test identities so the five
+identical interruption case names do not introduce filesystem-order dependence.
+Audit SHA256: 72a5d59c4683309de76404cb241771fd2ae6c35e95de09e25087eea6dd1c804c.
+
+Main now contains 51 byte-verified candidate inputs, including the new ordinary
+and module-filtering projects, stable ZIO/Cats default-module bindings, portable
+framework fixtures, public runtime factories and all migrated runtime controls.
+The current main assertion macros, corrected factory diagnostic, provider and
+await boundary are retained. A malformed transfer path was corrected before
+validation. Generation with pinned sbtgen 0.0.122 and --js --native exits 0 and
+produces the exact qualified build.sbt. The combined main batch is next; this
+integration is not yet declared done. Legacy ordinary/runtime sources remain
+until main parity passes. Normal-provider runtime configuration, standalone
+caller wiring and all parent/final acceptance gates remain open.
+
+## 2026-10-07: combined ordinary and runtime integration verified on main
+
+The main capture `5-ordinary-runtime-main-first` completes with actual exit 0
+on Scala 2.13.18 in 1009.910 seconds and Scala 3.9.0 in 1055.093 seconds.
+Both compiler manifests freeze 1716 inputs at base commit
+44bd67cbf1ab89952535377aa064314a34aa49af; every input remains unchanged.
+The exact batch argv and its 70 scoped commands are preserved in each
+compiler's command.json. This combines the current assertion macros, factory
+diagnostic correction, provider completion boundary, portable framework fixtures,
+ordinary migration and owned runtime controls; it does not reuse a result from
+an older implementation combination.
+
+Command `python3 /srv/nvme/tmp/izumi-impl/5-ordinary-runtime-main-first/extended-audit.py`
+exits 0 and also runs the ordinary report auditor. Per compiler, the ordinary
+project reports 377 JVM cases in 121 reports (358 success, 19 cancellation)
+and 164 JS/Native cases in 38 reports (145 success, 19 cancellation).
+This preserves all 357 original JVM ordinary cases and 18 original runtime
+cases, with two supplementary resource-override cases; JS/Native preserve the
+155 original ordinary and nine runtime cases. Original IDs, discovery and
+outcomes reconcile separately rather than relying on coincidentally equal totals.
+All five interruption variants run 165 actual inner interrupted bodies per
+compiler. Both caller controls and both resource-override controls pass.
+Base controls pass 847 checks on each platform; higher-runner controls pass
+691/568/568 checks per compiler. Core reports preserve 366/302/308 cases on
+Scala 2 and 400/335/341 on Scala 3. Engine reports and 143/103/118 checks,
+Native memoized/configuration checks and the one module-filtering case pass.
+Scoped dependency reports/classpaths contain no ScalaTest-family artifacts;
+the new test projects remain unpublished.
+
+Audit SHA256 values are
+5758975416402be63d5ed02a21f0d4f3c5f21c3f82cf714bc0ffc6060aeb2e95
+(ordinary) and
+2a963f0e8d84fd46fa4abbabd91650c17d975d63c6fdccf870666f9d9417acd8
+(extended). The verified frozen-source-inputs.tar.gz contains all 1716 input
+bytes, SHA256 24aacccfa351fc201dce71934ff5cfdcf656b05143f42d900828b645044b9291.
+This section accompanies the local integration commit. The separate retirement
+candidate is still running. Normal-provider runtime customization, standalone
+caller wiring, repository-wide dependency closure and final evaluation remain
+open; no parent or final acceptance item is marked done here.

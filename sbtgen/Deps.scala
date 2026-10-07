@@ -548,6 +548,8 @@ object Izumi {
       final lazy val testProtocol = ArtifactId("distage-test-protocol")
       final lazy val testRunner = ArtifactId("distage-test-runner")
       final lazy val testkitRunner = ArtifactId("distage-testkit-runner")
+      final lazy val testkitRunnerTest = ArtifactId("distage-testkit-runner-test")
+      final lazy val testkitRunnerSbtModuleFilteringTest = ArtifactId("distage-testkit-runner-sbt-module-filtering-test")
       final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
       final lazy val testkitScalatestSbtModuleFilteringTest = ArtifactId("distage-testkit-scalatest-sbt-module-filtering-test")
       final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
@@ -1063,6 +1065,28 @@ object Izumi {
         platforms = Targets.cross,
         settings = assertionFixtureSettings ++ Seq(
           "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.runner.di.DistageProviderFixtures\")".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.testkitRunnerTest,
+        plugins = fundamentalsTestPlugins,
+        libs = allMonadsTest ++ Seq(scala_reflect),
+        depends = Seq(Projects.distage.testkitRunner, Projects.fundamentals.assertionsCats, Projects.fundamentals.assertionsBIO).map(_ in Scope.Compile.all) ++
+          Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
+        platforms = Targets.cross,
+        settings = plainSuiteSettings("distage-testkit-runner-test") ++ Seq(
+          "skip" in SettingScope.Raw("publish") := true,
+          "nativeConfig" in (SettingScope.Test, Platform.Native) := """nativeConfig.value.withEmbedResources(true)""".raw,
+        ),
+      ),
+      Artifact(
+        name = Projects.distage.testkitRunnerSbtModuleFilteringTest,
+        plugins = fundamentalsTestPlugins,
+        libs = Nil,
+        depends = Seq(Projects.distage.testkitRunnerTest tin Scope.Test.all),
+        platforms = Targets.jvm,
+        settings = plainSuiteSettings("distage-testkit-runner-sbt-module-filtering-test") ++ Seq(
+          "skip" in SettingScope.Raw("publish") := true,
         ),
       ),
       Artifact(

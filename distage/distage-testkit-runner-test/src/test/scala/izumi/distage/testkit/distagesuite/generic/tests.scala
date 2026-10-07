@@ -1,0 +1,445 @@
+package izumi.distage.testkit.distagesuite.generic
+
+import distage.*
+import izumi.distage.modules.DefaultModule
+import izumi.distage.testkit.distagesuite.fixtures.*
+import izumi.distage.testkit.distagesuite.generic.DistageTestExampleBase.*
+import izumi.distage.testkit.model.TestConfig
+import izumi.distage.testkit.runner.spec.*
+import izumi.distage.testkit.runner.spec.{DistageSpec => ScalatestAbstractDistageSpec}
+import izumi.functional.bio.{Exit, F, IO2}
+import izumi.functional.quasi.QuasiIO
+import izumi.functional.quasi.QuasiIO.syntax.*
+import izumi.fundamentals.platform.language.Quirks
+import izumi.fundamentals.platform.language.Quirks.*
+import izumi.fundamentals.assertions.{AssertionFailure => TestFailedException}
+import izumi.fundamentals.assertions.bio.BIOAssertionSuspension.*
+import izumi.fundamentals.assertions.cats.CatsAssertionSuspension.*
+import cats.effect.kernel.Sync
+import cats.effect.IO as CIO
+import izumi.fundamentals.platform.IzPlatform
+import zio.{Task, ZEnvironment, ZIO}
+
+import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
+
+class DistageTestExampleBIO extends Spec2[zio.IO] with DistageMemoizeExample[Task] {
+
+  "distage test runner" should {
+    "support bifunctor" in {
+      (service: MockUserRepository[Task]) =>
+        for {
+          _ <- ZIO.attempt(assert(service != null))
+        } yield ()
+    }
+  }
+
+}
+
+class DistageTestExampleBIOEnv extends SpecZIO with DistageMemoizeExample[Task] {
+
+  val service = ZIO.environmentWith[MockUserRepository[Task]](_.get)
+
+  "distage test runner" should {
+    "support trifunctor env" in {
+      for {
+        service <- service
+        _ <- assert2[zio.IO](service != null)
+      } yield ()
+    }
+
+    "support empty env" in {
+      assert2[zio.IO](true)
+    }
+
+    "support mixing parameters & env" in {
+      (cached: MockCachedUserService[Task]) =>
+        for {
+          service <- service
+          _ <- assert2[zio.IO](cached != null)
+          _ <- assert2[zio.IO](service != null)
+        } yield ()
+    }
+  }
+
+}
+
+object DistageTestExampleBase {
+  final class SetCounter {
+    private val c: AtomicInteger = new AtomicInteger(0)
+
+    def inc(): Unit = c.incrementAndGet().discard()
+    def get: Int = c.get()
+  }
+  sealed trait SetElement {
+    def counter: SetCounter
+
+    locally {
+      counter.inc()
+    }
+  }
+  final case class SetElement1(counter: SetCounter) extends SetElement
+  final case class SetElement2(counter: SetCounter) extends SetElement
+  final case class SetElement3(counter: SetCounter) extends SetElement
+  final case class SetElement4(counter: SetCounter) extends SetElement
+  final case class SetElement4Retainer(element: SetElement4)
+
+  sealed trait UnmemoizedSetElement extends SetElement
+  final case class UnmemoizedSetElement1(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement2(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement3(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement4(counter: SetCounter @Id("unmemoized")) extends UnmemoizedSetElement
+  final case class UnmemoizedSetElement4Retainer(element: UnmemoizedSetElement4)
+
+  sealed trait DirectlyMemoizedSetElement extends SetElement
+  final case class DirectlyMemoizedSetElement1(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
+  final case class DirectlyMemoizedSetElement2(counter: SetCounter @Id("directly-memoized")) extends DirectlyMemoizedSetElement
+
+  trait DistageMemoizeExample[F[_]] extends ScalatestAbstractDistageSpec[F] {
+    override protected def config: TestConfig = {
+      super.config.copy(
+        pluginConfig = DistageMemoizeExamplePlatformSpecific.pluginConfigForFixturesPkg,
+        memoizationRoots = Map(
+          1 -> Set(DIKey[MockCache[F]]),
+          2 -> Set(DIKey[Set[SetElement]], DIKey[SetCounter], DIKey[DirectlyMemoizedSetElement1], DIKey[DirectlyMemoizedSetElement2]),
+        ),
+      )
+    }
+  }
+}
+
+abstract class DistageTestExampleBase[F[_]: TagK: DefaultModule](implicit F: QuasiIO[F]) extends Spec1[F] with DistageMemoizeExample[F] {
+
+  override protected def config: TestConfig = super.config.copy(
+    pluginConfig = (
+      if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
+        super.config.pluginConfig
+      } else {
+        super.config.pluginConfig.enablePackage("xxx")
+      }
+    ) ++ new izumi.distage.plugins.PluginDef {
+      make[ZEnvironment[Int]].named("zio-initial-env").from(ZEnvironment(1))
+
+      make[SetCounter]
+      make[SetCounter].named("unmemoized")
+      make[SetCounter].named("directly-memoized")
+
+      make[SetElement1]
+      make[SetElement2]
+      make[SetElement3]
+      make[SetElement4]
+      make[SetElement4Retainer]
+
+      many[SetElement]
+        .weak[SetElement1]
+        .weak[SetElement2]
+        .weak[SetElement3]
+        .weak[SetElement4]
+
+      many[SetElement]
+        .named("unmemoized-set")
+        .weak[SetElement1]
+        .weak[SetElement2]
+        .weak[SetElement3]
+        .weak[SetElement4]
+
+      make[UnmemoizedSetElement1]
+      make[UnmemoizedSetElement2]
+      make[UnmemoizedSetElement3]
+      make[UnmemoizedSetElement4]
+      make[UnmemoizedSetElement4Retainer]
+
+      many[UnmemoizedSetElement]
+        .weak[UnmemoizedSetElement1]
+        .weak[UnmemoizedSetElement2]
+        .weak[UnmemoizedSetElement3]
+        .weak[UnmemoizedSetElement4]
+
+      make[DirectlyMemoizedSetElement1]
+      make[DirectlyMemoizedSetElement2]
+
+      many[DirectlyMemoizedSetElement]
+        .weak[DirectlyMemoizedSetElement1]
+        .weak[DirectlyMemoizedSetElement2]
+    }
+  )
+
+  val XXX_Whitebox_memoizedMockCache = new AtomicReference[MockCache[F]]
+
+  "distage test custom runner" should {
+
+    "support memoized weak sets with transitively retained elements" in {
+      (
+        set: Set[SetElement],
+        s1: SetElement4Retainer,
+      ) =>
+        Quirks.discard(s1)
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "support memoized weak sets" in {
+      (
+        set: Set[SetElement],
+        s1: SetElement1,
+        s2: SetElement2,
+        s3: SetElement3,
+      ) =>
+        Quirks.discard(s1, s2, s3)
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "memoized weak set should contain whole list of members even if test does not depends on them" in {
+      (
+        set: Set[SetElement],
+        c: SetCounter,
+      ) =>
+        assert(c.get == 4)
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "support unmemoized named weak sets containing elements from a different memoized set (depend on 3, should still be 4 due to Set[SetElement]'s memoization)" in {
+      (
+        set: Set[SetElement] @Id("unmemoized-set"),
+        s1: SetElement1,
+        s2: SetElement2,
+        s3: SetElement3,
+      ) =>
+        Quirks.discard(s1, s2, s3)
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "support unmemoized named weak sets containing elements from a different memoized set (depend on 4, should be 4)" in {
+      (
+        set: Set[SetElement] @Id("unmemoized-set"),
+        s1: SetElement1,
+        s2: SetElement2,
+        s3: SetElement3,
+        s4: SetElement4Retainer,
+      ) =>
+        Quirks.discard(s1, s2, s3, s4)
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "support unmemoized weak sets containing directly memoized elements from (depend on 1, should still be 2 due to direct memoization of elements themselves)" in {
+      (
+        set: Set[DirectlyMemoizedSetElement],
+        s1: DirectlyMemoizedSetElement1,
+        c: SetCounter @Id("directly-memoized"),
+      ) =>
+        Quirks.discard(s1)
+        assert(c.get == 2)
+        F.maybeSuspend(assert(set.size == 2))
+    }
+
+    "support unmemoized weak sets containing directly memoized elements from (depend on 2, should be 2)" in {
+      (
+        set: Set[DirectlyMemoizedSetElement],
+        s1: DirectlyMemoizedSetElement1,
+        s2: DirectlyMemoizedSetElement2,
+        c: SetCounter @Id("directly-memoized"),
+      ) =>
+        Quirks.discard(s1, s2)
+        assert(c.get == 2)
+        F.maybeSuspend(assert(set.size == 2))
+    }
+
+    "support unmemoized named weak sets with unmemoized elements (depend on 3, should be 3 because everything is unmemoized)" in {
+      (
+        set: Set[UnmemoizedSetElement],
+        s1: UnmemoizedSetElement1,
+        s2: UnmemoizedSetElement2,
+        s3: UnmemoizedSetElement3,
+        c: SetCounter @Id("unmemoized"),
+      ) =>
+        Quirks.discard(s1, s2, s3)
+        assert(c.get == 3)
+        F.maybeSuspend(assert(set.size == 3))
+    }
+
+    "support unmemoized named weak sets with unmemoized elements (depend on 4, should be 4 because everything is unmemoized)" in {
+      (
+        set: Set[UnmemoizedSetElement],
+        s1: UnmemoizedSetElement1,
+        s2: UnmemoizedSetElement2,
+        s3: UnmemoizedSetElement3,
+        s4: UnmemoizedSetElement4Retainer,
+        c: SetCounter @Id("unmemoized"),
+      ) =>
+        Quirks.discard(s1, s2, s3, s4)
+        assert(c.get == 4)
+        F.maybeSuspend(assert(set.size == 4))
+    }
+
+    "support tests with no deps" in {
+      F.unit
+    }
+
+    "support tests with tagK dep" in {
+      (t: TagK[F]) =>
+        val _ = t
+        F.unit
+    }
+
+    "test 1" in {
+      (service: MockUserRepository[F]) =>
+        for {
+          _ <- F.maybeSuspend(assert(service != null))
+        } yield ()
+    }
+
+    "test 2" in {
+      (service: MockCachedUserService[F]) =>
+        for {
+          _ <- F.maybeSuspend(XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache))
+          _ <- F.maybeSuspend(assert(service != null))
+          _ <- F.maybeSuspend(assert(service.cache eq XXX_Whitebox_memoizedMockCache.get()))
+        } yield ()
+    }
+
+    "test 3" in {
+      (service: MockCachedUserService[F]) =>
+        F.maybeSuspend {
+          XXX_Whitebox_memoizedMockCache.compareAndSet(null, service.cache)
+          assert(service != null)
+          assert(service.cache eq XXX_Whitebox_memoizedMockCache.get())
+        }
+    }
+
+    "test 4 (should be ignored due to unavailable integration check)" in {
+      (_: UnavailableIntegrationCheck[F]) =>
+        assert(false)
+    }
+
+    "test 5 (should be ignored due to `skip`)" skip {
+      (_: MockCachedUserService[F]) =>
+        assert(false)
+    }
+
+    "test 6 (should be ignored due to `assume`)" in {
+      (_: MockCachedUserService[F]) =>
+        assume(false, "xxx")
+        assert(false)
+    }
+  }
+
+}
+
+abstract class OverloadingTest[F[_]: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
+  "test overloading of `in`" in {
+    implicit F: QuasiIO[F] =>
+      F.discard()
+      // `in` with Unit return type is ok
+      assertCompiles(""" "test" in { println(""); QuasiIO[F].pure(()) }  """)
+      // `in` with Assertion return type is ok
+      assertCompiles(""" "test" in { QuasiIO[F].pure(assert(1 + 1 == 2)) }  """)
+      // `in` with any other return type is not ok
+      val res = intercept[TestFailedException](
+        assertCompiles(
+          """ "test" in { println(""); QuasiIO[F].pure(1 + 1) }  """
+        )
+      )
+      assert(res.getMessage() contains "overloaded")
+  }
+}
+
+abstract class ActivationTest[F[_]: TagK: DefaultModule] extends Spec1[F] with DistageMemoizeExample[F] {
+  "resolve bindings for the same key via activation axis" in {
+    (activeComponent: ActiveComponent) =>
+      assert(activeComponent == TestActiveComponent)
+  }
+}
+
+abstract class ForcedRootTest[F[_]: TagK: DefaultModule] extends Spec1[F] {
+  override protected def config: TestConfig = super.config.copy(
+    moduleOverrides = new ModuleDef {
+      make[ForcedRootResource[F]].fromResource[ForcedRootResource[F]]
+      make[ForcedRootProbe]
+    },
+    forcedRoots = Set(DIKey.get[ForcedRootResource[F]]),
+  )
+
+  "forced root was attached and the acquire effect has been executed" in {
+    (locatorRef: LocatorRef) =>
+      assert(locatorRef.get.get[ForcedRootProbe].started)
+  }
+}
+
+class ShorthandAssertionsTestZIO extends SpecZIO {
+  "shorthand assertions ZIO" should {
+    "support short assert versions" in {
+      for {
+        _ <- ZIO.attempt(42).flatMap(result => assert2[zio.IO](result == 42))
+        _ <- ZIO.attempt(42).flatMap(result => assert2[zio.IO](result != 21))
+        _ <- ZIO.attempt(List("one", "two")).flatMap(result => assert2[zio.IO](result.nonEmpty))
+        _ <- ZIO.attempt(42).flatMap(result => assert2[zio.IO](result == 21)).sandboxExit.map {
+          case Exit.Termination(err, _, _) =>
+            assert(err.getMessage.contains("42") && err.getMessage.contains("21"))
+          case other =>
+            fail(s"Unexpected error: $other")
+        }
+
+        _ <- ZIO.attempt(42).flatMap(resultA => ZIO.attempt(21).flatMap(resultB => assert2[zio.IO](resultA > resultB)))
+        _ <- ZIO.attempt("test").flatMap(resultA => ZIO.attempt(4).flatMap(resultB => assert2[zio.IO](resultA.length == resultB)))
+      } yield ()
+    }
+  }
+}
+
+class ShorthandAssertionsTestCIO extends Spec1[CIO] {
+  "shorthand assertions CIO" should {
+    "support short assert versions" in {
+      for {
+        _ <- CIO.pure(42).flatMap(result => assert1[CIO](result == 42))
+        _ <- CIO.pure(42).flatMap(result => assert1[CIO](result != 21))
+        _ <- CIO.pure(List("one", "two")).flatMap(result => assert1[CIO](result.nonEmpty))
+        err <- CIO.pure(42).flatMap(result => assert1[CIO](result == 21)).attempt
+        _ <- assert1[CIO](err.left.exists(error => error.getMessage.contains("42") && error.getMessage.contains("21")))
+
+        _ <- CIO.pure(42).flatMap(resultA => CIO.pure(21).flatMap(resultB => assert1[CIO](resultA > resultB)))
+        _ <- CIO.pure("test").flatMap(resultA => CIO.pure(4).flatMap(resultB => assert1[CIO](resultA.length == resultB)))
+      } yield ()
+    }
+  }
+}
+
+abstract class ShorthandAssertionsIO2TestBase[F[+_, +_]: IO2: TagKK: DefaultModule2] extends Spec2[F] {
+  "shorthand assertions IO2" should {
+    "support short assert versions" in {
+      for {
+        _ <- F.syncThrowable(42).flatMap(result => assert2[F](result == 42))
+        _ <- F.syncThrowable(42).flatMap(result => assert2[F](result != 21))
+        _ <- F.syncThrowable(List("one", "two")).flatMap(result => assert2[F](result.nonEmpty))
+        _ <- F.syncThrowable(42).flatMap(result => assert2[F](result == 21)).sandboxExit.map {
+          case Exit.Termination(err, _, _) =>
+            assert(err.getMessage.contains("42") && err.getMessage.contains("21"))
+          case other =>
+            fail(s"Unexpected error: $other")
+        }
+        _ <- F.syncThrowable(42).flatMap(resultA => F.syncThrowable(21).flatMap(resultB => assert2[F](resultA > resultB)))
+        _ <- F.syncThrowable("test").flatMap(resultA => F.syncThrowable(4).flatMap(resultB => assert2[F](resultA.length == resultB)))
+      } yield ()
+    }
+  }
+}
+
+class ShorthandAssertionsTestIO2 extends ShorthandAssertionsIO2TestBase[zio.IO]
+
+abstract class ShorthandAssertionsTestSyncBase[F[_]: TagK: DefaultModule](implicit F: Sync[F]) extends Spec1[F] {
+  import cats.syntax.applicativeError.catsSyntaxApplicativeError
+
+  "shorthand assertions IO2" should {
+    "support short assert versions" in {
+      for {
+        _ <- F.pure(42).flatMap(result => assert1[F](result == 42))
+        _ <- F.pure(42).flatMap(result => assert1[F](result != 21))
+        _ <- F.pure(List("one", "two")).flatMap(result => assert1[F](result.nonEmpty))
+        err <- F.pure(42).flatMap(result => assert1[F](result == 21)).attempt
+        _ <- assert1[F](err.left.exists(error => error.getMessage.contains("42") && error.getMessage.contains("21")))
+
+        _ <- F.pure(42).flatMap(resultA => F.pure(21).flatMap(resultB => assert1[F](resultA > resultB)))
+        _ <- F.pure("test").flatMap(resultA => F.pure(4).flatMap(resultB => assert1[F](resultA.length == resultB)))
+      } yield ()
+    }
+  }
+}
+
+class ShorthandAssertionsTestSync extends ShorthandAssertionsTestSyncBase[CIO]
