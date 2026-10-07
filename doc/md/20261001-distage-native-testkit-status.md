@@ -129,12 +129,12 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.1 | in progress | Verified logstage checkpoint: all16 resolved update/Test classpaths exclude ScalaTest-family dependencies and use only the base runner. Other modules and full retirement remain outstanding. |
 | 5.2 | not started | No evaluation point passed yet. |
 | 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
-| 5.4 | in progress | Separate logstage executions/discovery pass, but the audit found cross-compiler XML overwrites. Scala3 distage baseline qualifies21 lanes; fresh Scala2 distage and old/current logstage report recaptures are running. Full reconciliation/final evaluation remain open. |
+| 5.4 | in progress | Compiler-isolated recaptures qualify the42-lane distage/platform baseline (3259 cases) and exact16-lane old/new logstage report parity (634 cases). The next six-module migration is in flight; full reconciliation/final evaluation remain open. |
 | 5.5 | not started | No evaluation point passed yet. |
 | 5.6 | not started | No evaluation point passed yet. |
 | 5.7 | not started | No evaluation point passed yet. |
 | 5.8 | in progress | assertTypeError and normalized WordSpec names pass all six833-check base controls and both published-consumer probes. Logstage failure/step-note replacements pass; remaining facilities stay open. |
-| 5.9 | not started | No evaluation point passed yet. |
+| 5.9 | in progress | Microsite installation/spec/assertion examples and session-owned helper are being migrated; site compilation and remaining wiring references stay open. |
 | O.1 | in progress | Factory migrations preserve the tested eager/captured-definition memoization controls and existing engine/spec fixtures below. Complete planning/merging/memoization/effect inventory and final evaluation outstanding. |
 | O.2 | in progress | Effect APIs have explicit requested return types; runtime checkpoints below. |
 | O.3 | in progress | Explicit suspension capability; Cats/BIO law checkpoints below. |
@@ -18605,3 +18605,79 @@ Composition removes the competing inherited plain assert overload while still
 intercepting broken bodies with the same assertion implementation. This
 checkpoint does not qualify the still-running full Scala2.13 baseline or close
 any whole-phase/final acceptance item.
+
+Verified guard checkpoint commit: `555f497bc223a48d96a4e9726b628f7b291ff944`. No push occurred.
+
+To overlap independent work without invalidating the still-running baseline,
+a detached candidate worktree at555f497bc is now
+`/srv/nvme/tmp/izumi-impl/distage-plain-migration-worktree`. The prepared65
+suite-source migrations and six-module Test-only base-runner build changes
+are applied there, not in the frozen main checkout. The published fail-first
+reproduction permits adding fail() and cancel(message); candidate controls
+cover their diagnostics, message evaluation, terminal statuses, unaffected
+sibling execution and exact callback reconciliation. These changes are
+unverified and not committed. The pinned generator succeeds with --js --native.
+
+The candidate large batch is in
+`5-distage-plain-migration-worktree-first/`, with1633 compiler inputs frozen.
+Each compiler gets its own SBT process and fresh XML directories:18 migrated
+module lanes plus three base-runner controls, with per-module discovery,
+resolved update/full-classpath and public testFull execution. The second
+compiler starts only after the first succeeds. No candidate result is claimed
+before audit against the qualified baseline; the main baseline continues in
+its own checkout.
+
+The first candidate batch exits1 after146.671s with unchanged inputs at the
+new frontend-outcome control. Production and test sources compile; the control
+incorrectly required AssertionFailure at the top protocol exception node.
+Existing BaseRunnerFixtures already searches its retained cause tree, and
+AssertionFailure extends AssertionError, which Future may wrap. Inspection of
+RunnerFailure confirms per-node structured diagnostics are preserved. The
+control now requires the retained AssertionFailure node, diagnostic and
+"Test failed" message anywhere in that cause tree. No production exception
+handling was changed. A fresh full candidate batch is running from
+`5-distage-plain-migration-worktree-second/`, preserving the failed capture.
+The basics/debugging/Docker documentation examples now reference the new spec
+frontends; the Cats example uses assert1[IO] with the explicit suspension
+adapter. Site validation remains pending.
+
+The main testkit documentation draft now uses the new Spec frontends and
+assert1/assert2 with explicit effect suspension adapters. Its execution helper
+constructs suites from factories in a new RunSession per invocation and owns
+an executor that is shut down after completion. The singleton registry and
+ScalaTest execution calls are removed from that helper. All example outcomes
+must succeed. This draft is unverified until microsite compilation/execution;
+remaining SpecWiring references and final adapter-retirement wording stay open.
+
+## 2026-10-07: compiler-isolated baseline and logstage reconciliation qualified
+
+The main29-lane recapture completes actual SBT/controller0 in2125.396s with
+all1633 frozen compiler inputs unchanged. Its independent audit passes229
+suite reports and1897 successful cases:21 distage/platform lanes plus eight
+current logstage lanes. `baseline.json` SHA256 is
+`bb4a6c63bacac68a24982a1358b21d244a5db37d42f5032879c5b684128bf05c`.
+The shorter elapsed time is not an isolated heap experiment: this recapture
+also has fewer lanes and warmed outputs, so no heap-related speedup is claimed.
+
+`qualify-compiler-recaptures.py` exits0 and combines these fresh Scala2.13
+reports with the retained independently audited Scala3 reports. The qualified
+42-lane distage/platform baseline has370 suite reports,3259 successful cases,
+and both explicit empty plugin JS lanes. It preserves1580 Scala2.13 and1679
+Scala3 cases. `distage-platform-qualified-baseline.json` SHA256 is
+`645ad2c39c84f8774c6205f8039102ba2bf491ed9ba37805f76072e3eb886518`.
+
+The same audit reconciles the fresh original/current Scala2.13 logstage reports
+and retained final-compiler Scala3 reports. All16 compiler/platform lanes
+preserve exact discovery identities, case names and successful outcomes:
+94 suite reports and634 cases. `logstage-qualified-comparison.json` SHA256 is
+`05368c341d28b2e8cc9e2db85933eebc18d6e2a1fa37d166aed2586a5d132770`.
+These files and `qualified-recaptures-audit.json` are in
+`5-scala213-report-recapture-first/`. The contaminated captures remain as
+historical evidence and are not reused as independent Scala2 XML proof.
+The clean detached original-logstage worktree was removed after its audit;
+all logs, manifests, XML and report hashes remain outside that worktree.
+
+The next candidate's three Scala2.13 base-runner controls already pass842
+checks each (JVM/JS/Native), including the new fail/cancel runtime and callback
+controls. Its18 module lanes and Scala3 half remain in flight. None of those
+modules is marked fully migrated before the complete audit.
