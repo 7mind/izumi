@@ -177,13 +177,13 @@ Configs in `src/main/resources`, or in the test resources of a `test->test` depe
 
 ### Using with `distage-teskit`
 
-Use @scaladoc[SpecWiring](izumi.distage.testkit.scalatest.SpecWiring) to spawn a test-suite that also triggers compile-time checks.
+Use @scaladoc[SpecWiring](izumi.distage.testkit.runner.spec.SpecWiring) to spawn a test-suite that also triggers compile-time checks.
 
 `SpecWiring` will check the passed application when compiled, then perform the check again at runtime when ran as a test.
 
 ```scala mdoc:reset:to-string
 import izumi.distage.framework.PlanCheckConfig
-import izumi.distage.testkit.scalatest.SpecWiring
+import izumi.distage.testkit.runner.spec.SpecWiring
 import com.example.myapp.MainLauncher
 
 object WiringCheck extends SpecWiring(

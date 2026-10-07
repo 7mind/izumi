@@ -40,6 +40,29 @@ Scala.js or Scala Native SBT plugin. The platform integration activates when
 both the platform plugin and `DistageTestkitPlugin` are enabled. SBT 2 and
 Scala 2.13 or Scala 3 are supported.
 
+Use `%%%` instead of `%%` for the runner dependency in Scala.js and Scala Native
+projects so SBT resolves the artifact for that platform.
+
+### Migrating from the ScalaTest adapter
+
+Replace the `distage-testkit-scalatest` dependency with `distage-testkit-runner`
+and install the required SBT plugin described above. Change imports of `Spec1`,
+`Spec2`, `SpecZIO`, `SpecIdentity` and `SpecWiring` from
+`izumi.distage.testkit.scalatest` to `izumi.distage.testkit.runner.spec`.
+The `should`, `must`, `can` and `in` registration syntax remains available.
+
+For plain suites, use `izumi.distage.testkit.runner.spec.AnyWordSpec` or
+`izumi.distage.testkit.runner.spec.AsyncWordSpec` from `distage-test-runner`.
+Their assertions use `izumi.fundamentals.assertions.AssertionFailure`.
+The frontends provide `intercept`, `fail`, `cancel`, `assume`, `assertCompiles`,
+`assertDoesNotCompile` and `assertTypeError`; replace ScalaTest matchers with
+boolean assertions.
+
+Effectful assertions use `assert1` or `assert2` with the corresponding
+@ref[assertion suspension adapter](#assertions). Configure custom plugin loaders
+through `PluginLoaderFactoryConfiguration.makePluginLoaderFactory` so each run
+owns its loader and caches.
+
 `distage-testkit-runner` provides `Spec*` base classes for effect types with kind
 `F[_]`, `F[+_, +_]`, `ZIO[-R, +E, +A]` or `Identity`. Its WordSpec interface
 supports effectful tests, dependency injection, resource memoization and parallel
@@ -729,7 +752,8 @@ If forced root components are not memoized, they will be acquired and released f
 
 If memoized, they will be acquired and released once, before all and after all the tests within this memoization environment.
 
-They provide an alternative to ScalaTest's native `beforeEach/beforeAll` that can use functional effects instead of mutability (However, `All` here includes the entire memoization environment, not the enclosing test suite)
+Use forced roots for effectful setup and teardown. A memoized forced root spans
+the entire memoization environment, which may contain several test suites.
 
 Forced roots may be configured per-activation / combination of activations, e.g. you may force postgres table setup to happen only in test environments with `Repo -> Repo.Prod` activation.
 

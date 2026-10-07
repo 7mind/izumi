@@ -19784,3 +19784,62 @@ JVM compilation cases on both compilers; the preceding62-lane run applies to
 ca3522946 before this four-file integration. The isolated corrected30-lane
 candidate is still live and its inputs remain frozen. No production core-root
 correction or unverified ordinary-suite migration is integrated yet.
+
+
+## 2026-10-07: ordinary candidate regression controls and stale Native macro output
+
+The ninth Scala2 producer is terminal actual1 after1272.635s,1688 frozen inputs
+unchanged. Its engine project cases pass on JVM1/JS1/Native3; its distage-core
+366 JVM/302 JS/308 Native cases pass. The higher frontend controls also pass.
+Ordinary JVM357 andJS155 retain their expected338/136 successes and19 cancelled
+cases each. Native155 still has133 success/19 cancelled/three diagnostic failures.
+The custom-check runtime predicate now passes; its compiled diagnostic predicate
+still fails. Reading the actual CompileTimePlanCheckerTest.nir and comparing
+its hash with the eighth capture shows identical bytes: none of its embedded
+compiler diagnostics have been rematerialized after the reflective fixture
+implementation/resource changes. The logs compile the changed framework
+fixtures but never recompile that Native consumer source. This contradicts a
+claim that the corrected compile-time fixture behavior was exercised.
+A cold Native consumer rebuild is required before assessing those diagnostics;
+resource-copy ordering must also be checked. Scala3 remains live and no compiler
+inputs are changed during its producer.
+
+A current-head full microsite validation starts in5-microsite-migration-third/,
+with1707 source/site inputs frozen on0659689ca. The historical site manifest
+contains relocated engine paths and cannot be copied unchanged: that failed
+preparation started no SBT producer. The new capture uses the current combined
+source inventory plus tracked microsite inputs. The plain-suite import examples
+are corrected to runner.spec, matching the actual declarations. Completion and
+independent site audit are pending at launch; no final documentation gate closes.
+
+## 2026-10-07: verified current microsite and cold migration batch
+
+The microsite producer in5-microsite-migration-third is terminal actual0 after
+275.415s,1707 frozen inputs unchanged on0659689ca. Its recorded command runs
+the batch SBT2/JDK21 Scala3.9 docs makeSite task with strict CI settings and
+coverage disabled. The independent site audit exits0:44 mdoc pages compile with
+zero errors, eleven distinct executable examples succeed, and the PostgreSQL
+example returns1 + 1 = 2. The actual protocol health checks succeed against a
+reused container. The inherited auditor initially rejects this capture solely
+because it requires a cold-start retry log. L4 has no cold-start requirement;
+the auditor now requires successful container/protocol checks and reports
+coldPostgres=false,reusedPostgres=true. Prior cold-start evidence is retained.
+The audit preserves frozen-input hashes and rendered-report hashes; it does not
+claim a cold container or close the final-head L4/5.9 gates. The documentation
+changes add installation/migration guidance, use runner.spec plain/spec-wiring
+imports, and describe the actual forced-root lifetime.
+
+The ninth Scala3 candidate is also terminal actual1 after291.211s,1688 frozen
+inputs unchanged. Its core JVM report reproduces a failure in Factory cannot
+produce factories: intercept expects AssertionFailure but assertCompiles throws
+no exception. This is an observed failing case, not evidence that the uncommitted
+ZIO instance-module correction causes it. The remaining commands do not run
+after that failure. No production correction is made from this observation.
+
+With both ninth producers terminal,5-legacy-ordinary-migration-tenth starts the
+same30 runtime lanes with fresh per-compiler Global/localCacheDirectory values.
+It cleans the Native ordinary test consumer and explicitly copies its resources
+before compilation. Scala3 additionally cleans the core JVM test consumer to
+check its actual current macro expansion. No production source changes are made.
+Both compiler captures freeze the same1688 inputs. Native diagnostic parity,
+the Scala3 factory case and complete30-lane acceptance remain in progress.
