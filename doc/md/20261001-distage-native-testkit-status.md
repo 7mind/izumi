@@ -20062,3 +20062,42 @@ Reproduction/publication commands and qualified reports remain in these captures
 Main consumer sources match the qualified payloads byte-for-byte. Runtime
 boundary commit52b6e3fe1 and factory correction9f7fba15b are local. Retirement
 of the old XML source and final-head5.4/5.8/5.9 gates remain open.
+
+## 2026-10-07: original JUnit source retired after approved replacement
+
+The owner explicitly approves the package/reporter migration while preserving
+its case name and four duration predicates. The qualified replacement is in
+local commit063b0a7f5 and its two compiler outcomes are recorded above. The old
+org.scalatest.tools.distagetest.JUnitXmlRegressionTest source is now removed.
+
+5-junit-original-source-retirement-first runs Test/clean, Test/testFull and
+Test/definedTests for distage-testkit-scalatestJVM on both supported compilers,
+with dedicated report listeners and1669 frozen source inputs. Scala2 actual0
+in175.590s;Scala3 actual0 in181.474s;inputs unchanged. The independent audit
+exits0, verifies the removed path is absent, and reconciles all376 remaining
+original case identities and the complete discovered-suite set per compiler.
+The only difference from the377-case qualified legacy baseline is this approved
+one-case migration. XML contains no errors/failures; legacy cancellation
+outcomes are not inferred from its incorrectly successful skipped-case XML.
+Audit SHA256:03979f60848d70da987fbdcf5cdf9604b7c3be095a7e37d6bee6b4dc5419eef8.
+Commands, actual completions, reports and a frozen-source archive are retained.
+This retires one legacy source, not the remaining adapter or final5.4/5.8 gates.
+
+The separate caller candidate also passes both producers in
+5-owned-runtime-caller-first:Scala2 actual0 in235.386s;Scala3 actual0 in240.883s;
+1702 frozen inputs unchanged. Its audit exits0 and matches the original13 JVM
+and9 JS/Native runtime-control case identities/outcomes,62 cases total, plus
+3654 higher-runner checks. Both caller variants observe pending completion
+before release, one released allocation, terminated executor/caller, retained
+original failures and restored interruption flag. Audit SHA256:
+3954a1b433293862c66162a95687b436299e7951e02711731e3fad38fd932c5d.
+Its await boundary remains a candidate pending main integration; actual
+standalone wiring, configurable outer runtime and runner overrides remain open.
+
+The twelfth large candidate stalls at Scala2 show distage-coreNative/update.
+Two thread dumps267s apart show CPU-bound Coursier reconciliation rather than
+a lock deadlock or network wait. After collecting both dumps and a heap class
+histogram, only its verified owned JVM process group is terminated. Producer
+actual143 in1667.548s,1699 inputs unchanged; this is a failed partial capture,
+not qualification. The Scala3 producer proceeds with the frozen candidate.
+Recovery must preserve all32 lanes and their audit requirements.
