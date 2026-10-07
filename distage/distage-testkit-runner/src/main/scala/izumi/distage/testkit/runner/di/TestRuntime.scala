@@ -7,7 +7,7 @@ import izumi.fundamentals.platform.functional.Identity
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Try}
 
-final case class RuntimeExecution[A](completion: Future[A], stop: () => Future[Unit])
+final case class RuntimeExecution[A](completion: Future[A], stop: () => Future[Unit]) extends RuntimeExecutionPlatformSpecific[A]
 
 final class TestRuntime[F[_]](
   lifecycle: Lifecycle[Identity, QuasiIORunner[F]],

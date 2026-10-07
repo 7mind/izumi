@@ -20101,3 +20101,20 @@ histogram, only its verified owned JVM process group is terminated. Producer
 actual143 in1667.548s,1699 inputs unchanged; this is a failed partial capture,
 not qualification. The Scala3 producer proceeds with the frozen candidate.
 Recovery must preserve all32 lanes and their audit requirements.
+
+## 2026-10-07: interrupt-aware await boundary integrated
+
+The four exact qualified caller-boundary payloads are integrated into main:
+RuntimeExecutionPlatformSpecific on JVM/JS/Native and TestRuntime's corresponding
+platform mixin. JVM/Native awaitCompletion joins the finalized operation after
+requesting stop on caller interruption, retains every observed interruption and
+execution/stop/release failure, then restores the interrupt flag. JS exposes no
+blocking await. This does not change SBTTaskInterruption's intentional clearing.
+
+5-owned-runtime-caller-main-first runs all three higher-runner platforms on both
+compilers against main:frozen1662 inputs,Scala2 actual0 in282.731s;Scala3
+actual0 in344.008s;inputs unchanged. The independent audit exits0, verifies all
+3654 provider checks, and compares each integrated payload with the separately
+qualified62-control caller candidate. Commands, actual results, audit and frozen
+source archive are retained. The explicit await API is verified; standalone
+launcher wiring and configurable-runtime normal provider integration remain open.
