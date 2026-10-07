@@ -20459,3 +20459,6 @@ The idle main checkout receives only the qualified seam sources; all 1726
 translated source input hashes match before commit. Subsequent runtime factory
 and policy edits stay isolated in normal-runtime-worktree and are not included
 in this milestone. Parent/final acceptance gates remain open.
+
+Implementation milestone commit: `231262f00b1454d81e409a9c1ad1395b24fa97b7`. The source-identical qualification
+above covers this code; the final-head acceptance evaluation remains pending.
