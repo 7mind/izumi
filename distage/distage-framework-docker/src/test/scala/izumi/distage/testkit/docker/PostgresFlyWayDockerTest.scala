@@ -8,13 +8,14 @@ import izumi.distage.docker.impl.DockerClientWrapper
 import izumi.distage.docker.model.Docker
 import izumi.distage.docker.model.Docker.DockerReusePolicy
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec2}
+import izumi.distage.testkit.runner.spec.Spec2
+import izumi.fundamentals.assertions.bio.BIOAssertionSuspension.*
 import zio.{IO, Task, ZIO}
 
 import java.io.ByteArrayOutputStream
 import java.nio.charset.StandardCharsets
 
-final class PostgresFlyWayDockerTest extends Spec2[IO] with AssertZIO {
+final class PostgresFlyWayDockerTest extends Spec2[IO] {
 
   override protected def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
@@ -28,7 +29,7 @@ final class PostgresFlyWayDockerTest extends Spec2[IO] with AssertZIO {
       (postgres: PostgresFlyWayDocker.Container, cfg: PostgresFlyWayDocker.Cfg, client: DockerClientWrapper[Task]) =>
         for {
           scripts <- ZIO.attempt(psql(client, postgres, cfg, s"select script from ${cfg.schema}.flyway_schema_history where type = 'SQL' and success"))
-          _ <- assertIO(scripts.contains("V2__AddExampleTable.sql"))
+          _ <- assert2[IO](scripts.contains("V2__AddExampleTable.sql"))
         } yield ()
     }
 

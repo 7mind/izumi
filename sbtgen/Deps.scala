@@ -982,10 +982,12 @@ object Izumi {
       ),
       Artifact(
         name = Projects.distage.docker,
+        plugins = fundamentalsTestPlugins,
         libs = allMonadsTest ++ Seq(docker_java_core, docker_java_transport_zerodep, commons_compress).map(_ in Scope.Compile.jvm),
         depends = Seq(Projects.distage.core, Projects.distage.config, Projects.distage.frameworkApi, Projects.distage.extensionLogstage).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.testkitScalatest in Scope.Test.all),
+          Seq(Projects.distage.testkitRunner, Projects.fundamentals.assertionsBIO).map(_ in Scope.Test.all),
         platforms = Targets.jvm,
+        settings = plainSuiteSettings("distage-framework-docker"),
       ),
       Artifact(
         name = Projects.distage.testkitCore,

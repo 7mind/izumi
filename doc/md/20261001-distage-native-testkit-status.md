@@ -19061,3 +19061,75 @@ Cats introduced by the protocol dependency. The JVM bootstrap captures the
 supplied classloader for suite construction but does not propagate it to the
 work-stealing executor. A focused reproduction and isolated absence fixture
 are in progress in the free candidate worktree; no full migration is claimed.
+
+## 2026-10-07: worker loader reproduction and remaining migration batches
+
+The focused public-framework reproduction creates a child URLClassLoader with
+a resource absent from its parent, then executes synchronous and Future suites
+through Framework.runner. It fails before the correction, actual1 after66.452s
+with1637 inputs unchanged, because both bodies cannot resolve that resource.
+Capture:5-worker-classloader-reproduction-first/2.13.18/.
+
+The candidate passes the supplied loader through BootstrapRunner and Invocation
+to a ForkJoin worker factory. Worker count and async scheduling match the
+previous newWorkStealingPool policy; executor ownership/shutdown remain per
+invocation. The reproduction is retained in the JVM runner control batch.
+
+Four complete optional-dependency absence bodies move into an unpublished JVM
+fixture project. Its Compile classpath explicitly excludes Cats/ZIO/Monix jars;
+a generated classpath manifest drives a platform-parent URLClassLoader. The
+original seven suite/test names remain, with four cases invoking the isolated
+Runnable checks. Those checks retain the original compile assertions and
+runtime absence expectations. The loader validates absent effect classes and
+restores the caller context loader in finally. No absence check is deleted.
+
+The eighth batch fails during build load after16.317s with1639 unchanged
+inputs: direct lazy project references cause recursive value inference. The
+generator now uses LocalProject IDs at the resource task boundary. The ninth
+batch fails during build load after22.571s, also with1639 unchanged inputs:
+SBT2 classpaths hold HashedVirtualFileRef rather than File. Both manifest and
+filter boundaries now use the project's existing fileConverter pattern.
+The tenth full compiler-preflight/execution batch is running from
+5-distage-plain-migration-worktree-tenth/. These are captured harness failures;
+the classloader correction and complete migration remain unverified.
+
+Independently, eleven Docker suite files migrate to the new plain/distage
+frontends. Their suspended ZIO boolean assertions use assert2[IO] with the BIO
+assertion adapter. Generator settings switch the Test dependencies/framework
+and preserve the production graph. The full two-compiler Docker batch runs
+from5-docker-suite-migration-first/ against1642 frozen main-checkout inputs.
+Its audit compares all30 original suites and62 cases per compiler against the
+qualified baseline and checks resolved graphs/classpaths for removed vendors.
+No Docker migration completion is claimed before that batch and audit pass.
+
+## 2026-10-07: verified Docker migration checkpoint
+
+The full Docker migration succeeds on both supported compilers:393.626s
+on Scala2.13.18 and272.735s on Scala3.9.0. All1642 frozen main inputs remain
+unchanged per process. The pinned generator succeeds. Independent audit exits0
+and matches all30 discovered suites and62 successful reported cases per
+compiler against the qualified baseline,124 cases overall. Resolved update
+graphs and Test classpaths contain no ScalaTest/Scalactic/ScalaTestPlus entries.
+
+Production Docker dependencies are preserved. Plain suites use the base
+frontend; DI suites use the higher frontend. Boolean ZIO assertions remain
+suspended and now invoke assert2[IO] through the BIO adapter. The existing
+container/hook/file/exit-code/platform/Flyway assertions are retained.
+
+Commands, manifests, logs and report hashes are in5-docker-suite-migration-first/.
+Audit command:python3 /srv/nvme/tmp/izumi-impl/5-docker-suite-migration-first/audit.py.
+Audit SHA256:b0a3520e677db85a5f2d8cb0ef9f1fded46455eab6166882c097507e8fc8f284.
+This closes the Docker migration checkpoint, not phase5 or final-head acceptance.
+
+The tenth isolation-fixture batch exits1 after223.189s with1639 inputs
+unchanged: filtering every dev.zio artifact also removed required izumi-reflect
+Tag definitions. Filtering now targets effect artifact names and retains
+reflection. The eleventh exits1 after122.882s, also unchanged, due fatal
+value-discard warnings at the new Runnable Unit-return boundary. Explicit
+discard calls preserve those two existing unused result values.
+The twelfth batch validates that fixture prerequisite before broader compiler
+preflights. Its Scala2.13 focused worker-loader reproduction now succeeds for
+both sync and Future bodies. Four complete absence bodies match their original
+source after only step-logging and explicit-discard harness adaptations; proof
+is in5-distage-plain-migration-worktree-twelfth/absence-body-preservation-audit.json.
+The remaining twelfth-batch compiler and full-execution outcomes remain pending.

@@ -5,7 +5,7 @@ import izumi.distage.model.definition.Lifecycle
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.docker.fixtures.{PgSvcExample, ReuseCheckContainer}
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.Spec2
+import izumi.distage.testkit.runner.spec.Spec2
 import izumi.logstage.api.Log
 import logstage.LogIO2
 import zio.{IO, ZIO}

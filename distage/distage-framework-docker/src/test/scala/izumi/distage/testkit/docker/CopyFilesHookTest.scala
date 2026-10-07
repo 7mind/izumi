@@ -5,7 +5,7 @@ import izumi.distage.docker.impl.{ContainerFileArchive, CopyFilesHook}
 import izumi.distage.docker.model.Docker.{ContainerFile, ContainerId}
 import izumi.distage.docker.model.DockerFailureException
 import izumi.fundamentals.platform.files.IzFiles
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import java.lang.reflect.{InvocationHandler, Method, Proxy}
 import java.nio.charset.StandardCharsets

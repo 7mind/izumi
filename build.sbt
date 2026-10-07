@@ -6170,7 +6170,8 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     `distage-extension-configJVM` % "test->compile;compile->compile",
     `distage-framework-apiJVM` % "test->compile;compile->compile",
     `distage-extension-logstageJVM` % "test->compile;compile->compile",
-    `distage-testkit-scalatestJVM` % "test->compile"
+    `distage-testkit-runnerJVM` % "test->compile",
+    `fundamentals-assertions-bioJVM` % "test->compile"
   )
   .settings(
     libraryDependencies ++= Seq(
@@ -6205,6 +6206,7 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       "2.13.18"
     ),
     scalaVersion := crossScalaVersions.value.head,
+    Test / distageTargetId := "distage-framework-docker-jvm",
     organization := "io.7mind.izumi",
     scalacOptions ++= Seq(
       s"-Xmacro-settings:product-name=${name.value}",
@@ -6349,9 +6351,12 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
       case (_, _) => Seq.empty
     } },
     Test / packageDoc / publishArtifact := false,
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
+    Test / distageBuildId := "izumi-repository",
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
-  .enablePlugins(SitePreviewPlugin)
+  .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 
 lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-testkit-core"))
   .dependsOn(

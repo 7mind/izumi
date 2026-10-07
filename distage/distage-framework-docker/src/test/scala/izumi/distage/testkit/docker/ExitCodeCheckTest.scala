@@ -3,10 +3,11 @@ package izumi.distage.testkit.docker
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.impl.ContainerResource
 import izumi.distage.testkit.docker.fixtures.ExitCodeCheckContainer
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec2}
+import izumi.distage.testkit.runner.spec.Spec2
+import izumi.fundamentals.assertions.bio.BIOAssertionSuspension.*
 import zio.{IO, ZIO}
 
-final class ExitCodeCheckTest extends Spec2[IO] with AssertZIO {
+final class ExitCodeCheckTest extends Spec2[IO] {
 
   "Exit code check" should {
 
@@ -28,7 +29,7 @@ final class ExitCodeCheckTest extends Spec2[IO] with AssertZIO {
             .use(_ => ZIO.unit)
             .either
           Left(error) = r: @unchecked
-          _ <- assertIO(error.getMessage contains "Code=42, expected=1")
+          _ <- assert2[IO](error.getMessage contains "Code=42, expected=1")
         } yield ()
     }
   }

@@ -8,9 +8,9 @@ import izumi.distage.docker.impl.{ContainerResource, DockerClientWrapper}
 import izumi.distage.docker.model.Docker.DockerReusePolicy
 import izumi.distage.testkit.docker.DockerPullWithPlatformTest.{HelloWorldRiscV64Docker, imageName}
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.Spec2
+import izumi.distage.testkit.runner.spec.Spec2
 import izumi.functional.bio.{F, IO2}
-import org.scalatest.Assertion
+import izumi.distage.testkit.runner.spec.Assertion
 
 final class DockerPullWithPlatformTestZIO extends DockerPullWithPlatformTest[zio.IO]
 
