@@ -2,17 +2,14 @@ package izumi.distage.sbt
 
 import izumi.distage.sbt.target.TaskCompleteness
 import izumi.distage.testkit.protocol.{Failure, FailurePhase, ForkProcessId, ForkRunReport, ForkRunReports, ForkSuiteOwner, ProjectedFailure, TestStatus}
-import sbt.{MessageOnlyException, SuiteResult, TestDefinition, TestEvent, TestReportListener, TestResult}
+import sbt.{MessageOnlyException, TestDefinition, TestReportListener, TestResult}
 import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SuiteSelector, TestSelector}
 
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
 
 private[sbt] final case class HostForkSuite(process: ForkProcessId, name: HostSuiteName)
-private[sbt] final case class HostForkProjection(suite: HostForkSuite, events: Vector[Event]) {
-  val result: SuiteResult = SuiteResult(events)
-  val identity: HostGroupIdentity = HostGroupIdentity(HostSuiteCounts.from(result), events.map(HostEventIdentity.from))
-}
+private[sbt] final case class HostForkProjection(suite: HostForkSuite, group: HostReportGroup)
 
 private[sbt] final class HostForkReports(reports: ForkRunReports, terminals: TaskCompleteness.CompletionStore, definitions: Seq[TestDefinition], listeners: Seq[TestReportListener], receipt: HostReceipt, hostProcess: ForkProcessId) {
   private final val WaitSeconds = 60L
@@ -44,31 +41,19 @@ private[sbt] final class HostForkReports(reports: ForkRunReports, terminals: Tas
         report.owners.filter(owner => selected.contains(HostSuiteName(owner.name))).map { owner =>
           val suite = HostForkSuite(report.process, HostSuiteName(owner.name))
           require(suite.process == hostProcess || expected.contains(suite), "Fork report has no admitted suite")
-          HostForkProjection(suite, project(report, owner, suites(suite.name)))
+          HostForkProjection(suite, HostReportGroup(suite.name, project(report, owner, suites(suite.name))))
         }
       }
       val records = terminals.completed().asScala.toVector.filter(value => selected.contains(HostSuiteName(value.suite().value())))
       require(records.forall(value => value.returnedNormally() && processes.contains(ForkProcessId(value.pid()))), "Fork cancellation has an invalid suite terminal")
       val target = records.groupMap(value => HostForkSuite(ForkProcessId(value.pid()), HostSuiteName(value.suite().value())))(terminalCounts)
-      val projected = projections.groupMap(_.suite)(_.identity.counts)
+      val projected = projections.groupMap(_.suite)(_.group.identity.counts)
       require(target.keySet == projected.keySet && projected.forall { case (suite, counts) =>
         counts.groupMapReduce(identity)(_ => 1)(_ + _) == target(suite).groupMapReduce(identity)(_ => 1)(_ + _)
       }, "Fork cancellation events differ from the target terminal")
-      var missing = projections
-      receipt.completedGroups(selected).foreach { case (name, groups) =>
-        groups.foreach { group =>
-          val index = missing.indexWhere(value => value.suite.name == name && value.identity.matches(group))
-          require(index >= 0, "Completed host group differs from every target report: " + name.value)
-          missing = missing.patch(index, Nil, 1)
-        }
-      }
+      val missing = HostReportGroup.unreported(projections, receipt, selected)(_.group, name => "Completed host group differs from every target report: " + name.value)
       require(missing.forall(_.suite.process != hostProcess), "In-process target report has no completed host group")
-      missing.foreach { projection =>
-        val name = projection.suite.name.value
-        listeners.foreach(_.startGroup(name))
-        listeners.foreach(_.testEvent(TestEvent(projection.events)))
-        listeners.foreach(_.endGroup(name, projection.result.result))
-      }
+      missing.foreach(_.group.replay(listeners))
       finished = true
     }
   }

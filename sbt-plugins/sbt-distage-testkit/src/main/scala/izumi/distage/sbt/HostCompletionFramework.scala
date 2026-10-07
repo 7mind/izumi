@@ -13,22 +13,15 @@ private[sbt] final class HostCompletionFramework(val delegate: Framework) extend
     val original = delegate.runner(groups.arguments(), remoteArgs, loader)
     def capture(tasks: Array[Task]): Array[Task] =
       if (groups.directory() == null) tasks else TaskGroups.capture(tasks, new TaskGroups.FileStore(groups.directory()))
-    ForkReceiptArguments.parse(groups.arguments().toVector, remoteArgs.toVector).hostDirectory match {
-      case None =>
-        new Runner {
-          override def args(): Array[String] = original.args()
-          override def remoteArgs(): Array[String] = original.remoteArgs()
-          override def done(): String = original.done()
-          override def tasks(definitions: Array[TaskDef]): Array[Task] = capture(TaskCompleteness.protect(original.tasks(definitions)))
-        }
-      case Some(directory) =>
-        val completions = new TaskCompleteness.FileCompletionStore(directory)
-        new Runner {
-          override def args(): Array[String] = original.args()
-          override def remoteArgs(): Array[String] = original.remoteArgs()
-          override def done(): String = original.done()
-          override def tasks(definitions: Array[TaskDef]): Array[Task] = capture(TaskCompleteness.normalise(definitions, original.tasks(definitions), completions))
-        }
+    val completions = ForkReceiptArguments.parse(groups.arguments().toVector, remoteArgs.toVector).hostDirectory.map(new TaskCompleteness.FileCompletionStore(_))
+    new Runner {
+      override def args(): Array[String] = original.args()
+      override def remoteArgs(): Array[String] = original.remoteArgs()
+      override def done(): String = original.done()
+      override def tasks(definitions: Array[TaskDef]): Array[Task] = {
+        val tasks = original.tasks(definitions)
+        capture(completions.fold(TaskCompleteness.protect(tasks))(store => TaskCompleteness.normalise(definitions, tasks, store)))
+      }
     }
   }
 }
