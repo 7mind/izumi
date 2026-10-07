@@ -20959,3 +20959,57 @@ four prior successful lanes are retained and independently composed in
 5-final-retirement-module-matrix-third/composed-prior-lanes-audit.json. No suite
 is skipped from the required66-lane matrix and the failed capture is not called
 successful. Pinned3.8.4 host controls remain a separate required check.
+
+
+### 2026-10-07 — retired publication consumer controls and bounded source review
+
+The actual published plain framework consumer on SBT2.0.9/Scala2.13.18
+completes actual0 after33.214s with163 frozen fixture/publication inputs
+unchanged. Its independent audit checks all eight host histories,81 physical
+body/XML cases, published private-version classpaths and no vendor dependency
+or rejected callback. Evidence:5-final-retirement-framework-consumer-scala213-first/
+command.json, completion.json and independent-audit.json. Log SHA256:
+66f776f20b71e876f7c539f0e102bc5119409e33d155a06bb2fb14ef8fd9299e.
+
+The published base-runner consumer completes all three Scala2.13 target lanes
+with actual0 after63.501s and166 unchanged inputs. All twelve bodies preserve
+known positions and constructor/override execution contexts. Exact protocol
+round-trip fixture checks pass; each resolved platform classpath uses the
+qualified assertion/protocol/base-runner publication and no ScalaTest-family
+or test-support artifact. Evidence:5-final-retirement-base-consumer-scala213-first/
+independent-audit.json; log SHA256:
+47e2f5aeecd68294fe44621de3fa651420e5cf7fd66bd0405f658ffd4ea0d6de.
+These bounded consumer checks do not establish higher DI/plugin host parity.
+
+Independent read-only retirement source review preserves186 inspected input
+records with no original-path drift. It confirms72 actual legacy file absences,
+32 mapped replacement pairs, the three current runtime fixtures and exact
+130-node/296-scoped-record generated/observed graph equality with no cycles.
+No additional source blocker is found; final readiness remains conditional on
+qualification and incorporation of cb033a88b requirement-summary corrections.
+Evidence:5-final-retirement-source-readonly-review-first/REVIEW.md SHA256
+62bb93fef9f197d4012a935aaf8cd3ecf4d4cac9397c8b55d538c1bd6724b60f,
+manifest.json660d26f03395deb83f9dab96939caefe95b9d35fb3c65ac3a5674c81b50656cf.
+
+The third module batch completes no first command: two thread dumps show
+runnable Coursier graph computations while fundamentals-bioJS update remains
+incomplete. This is not a demonstrated deadlock. After653.88s without log
+progress, only its verified owned process group2876764 is sent SIGTERM;
+actual143 after724.070s, all1652 source inputs unchanged. Evidence:
+5-final-retirement-module-matrix-third/owned-stop.json and both thread dumps.
+The fourth batch reversibly moves only the two generated fundamentals-bioJS
+update caches aside, retaining their three original file hashes in
+5-final-retirement-module-matrix-fourth/quarantine.json. With unchanged source
+and dependency versions it completes the formerly stalled JS lane, including
+its two original test cases, and continues Native compilation. This establishes
+cache-isolated recovery, not a root-cause correction. The complete66-lane
+qualification remains pending; the four previously audited prefix lanes remain
+part of its composition. The failed third capture is retained.
+
+A separate final-ci-site-worktree carries the retirement candidate plus current
+main requirement summaries. Its guide now explicitly directs custom opaque
+runTests implementations to asyncRuntimeFor so the session owns the planned
+graph and finalization. The CI site generator/check is in progress; no L4 or
+5.9 closure is claimed. Both original retirement producer checkouts remain
+source-frozen. The43-driver current JVM consumer batch is prepared but awaits
+matching final host publication before launch.
