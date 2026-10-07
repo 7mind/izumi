@@ -21062,3 +21062,43 @@ is preserved in5-final-compiler-release-verification-first/. Additional publishe
 macro/compiler consumers will use the available3.10.0 coordinate to satisfy the
 publication baseline conservatively. Producer targets stay pinned3.9.0/2.13.18;
 no prerelease or production compiler upgrade is introduced.
+
+
+### 2026-10-07 — pinned host controls and selected SDK metadata sources
+
+Pinned3.8.4 protocol/host controls finish actual0 after426.160s with unchanged
+1652 inputs. All ten tasks pass:705 protocol checks across JVM/JS/Native,
+38 target framework scenarios,three UTF frames,eight inspection scenarios,
+31 JUnit controls,26 receipt controls,28 owned fork-report controls and22
+foreign report controls. The receipt audit compares all24 literal source names
+plus both boolean variants of the SDK-interruption control to the actual26
+emitted names. Historical25-check assumptions and two incorrectly guessed
+source spellings in auxiliary audit attempts fail without changing code or
+producer results; the final audit uses the inspected current source. Evidence:
+5-final-retirement-host-controls-first/independent-audit.json, log SHA256
+4f94b26daa0e48b739424b8e8b6f920821ae4fdae668262f5d5f6a0b117b67a8.
+
+The public Scala3 JVM framework consumer also qualifies all eight histories,
+81 body/XML cases,171 unchanged fixture/publication inputs and actual0 after
+84.698s. Evidence:5-final-retirement-framework-consumer-scala3-first/
+independent-audit.json, log SHA256
+57d0cf71939f1ca070e76f948b687cf16079ccac201616df820f0943c00274ad.
+
+The selected-SDK metadata source correction is integrated into main. Its failing
+JS-only build reproduction retains the missing Native SDK import; its corrected
+actual CI action compiles the metadata build and reaches all44 mdoc files.
+That complete action still exits1 after516.812s because Docker endpoint
+configuration was removed by the CI action environment. The supplied
+DOCKER_HOST=unix:///run/podman-llm/podman.sock is directly reachable (server5.8.7);
+mdoc instead attempts the absent default endpoint. The isolated third site
+attempt explicitly passes through DOCKER_HOST. The corrected SDK source
+selection fixes the reproduced pre-load import defect; it does not establish
+all final platform lanes or L4. The passthrough correction remains isolated
+pending the complete site result.
+
+A slow Native core task progresses after the host thread snapshot, without
+intervention. Snapshot evidence shows SDK process/socket readers; an attempted
+GDB attach using the project's pinned nixpkgs16.3 debugger is rejected by ptrace
+permissions. No inferred runtime correction or host permission change is made.
+Evidence:5-final-retirement-module-matrix-fourth/native-core-host-thread-dump-first.txt
+and native-core-thread-dump-first.txt. The large matrix continues.
