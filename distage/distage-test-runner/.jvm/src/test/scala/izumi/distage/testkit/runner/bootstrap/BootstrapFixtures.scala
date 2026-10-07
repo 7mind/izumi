@@ -8,7 +8,7 @@ import sbt.testing.{Event, EventHandler, Status, SuiteSelector, Task, TaskDef, T
 
 import java.nio.ByteBuffer
 import java.nio.channels.Pipe
-import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, Executors, TimeUnit}
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, Executors, ForkJoinPool, ForkJoinWorkerThread, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger, AtomicReference}
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.*
@@ -40,10 +40,10 @@ object BootstrapFixtures {
     verify(rejected { val _ = runner.tasks(Array(definitions.head, definitions.head)) }, "Duplicate host suite definitions must reject")
     verify(rejected { val _ = runner.tasks(Array(new TaskDef(definitions.head.fullyQualifiedName(), framework.fingerprints().head, true, Array(new TestSelector("unsupported"))))) }, "Unsupported selectors must reject explicitly")
 
-    val previousThreads = Thread.getAllStackTraces.keySet().asScala.toSet
+    val ownedExecutors = new ConcurrentLinkedQueue[ForkJoinPool]()
     val tasks = runner.tasks(definitions)
-    val first = new RecordingHandler
-    val second = new RecordingHandler
+    val first = new RecordingHandler(ownedExecutors)
+    val second = new RecordingHandler(ownedExecutors)
     execute(tasks.head, first)
     verify(first.events.size == 2 && first.events.forall(_.status() == Status.Success), "First task launches the complete selected session without waiting for other tasks")
     verify(second.events.isEmpty, "An inactive suite handler must receive no event")
@@ -51,11 +51,11 @@ object BootstrapFixtures {
     verify(second.events.size == 2 && second.events.forall(_.status() == Status.Success), "Later suite tasks project their buffered terminal results")
     verify(first.events.forall(_.fullyQualifiedName() == definitions.head.fullyQualifiedName()) && second.events.forall(_.fullyQualifiedName() == definitions.last.fullyQualifiedName()), "Equal display names must retain suite ownership")
     verify(first.events.forall(_.duration() >= 0L), "Host event durations must be nonnegative milliseconds")
-    verify(rejected { execute(tasks.head, new RecordingHandler) }, "An ordinary suite task must not execute twice")
+    verify(rejected { execute(tasks.head, new RecordingHandler(ownedExecutors)) }, "An ordinary suite task must not execute twice")
 
     val completedTasks = runner.tasks(definitions)
-    execute(completedTasks.head, new RecordingHandler)
-    val completedHandler = new RecordingHandler
+    execute(completedTasks.head, new RecordingHandler(ownedExecutors))
+    val completedHandler = new RecordingHandler(ownedExecutors)
     val completedPipe = Pipe.open()
     var completedInterruption = Option.empty[Throwable]
     var completedReportingFailure = Option.empty[Throwable]
@@ -76,7 +76,7 @@ object BootstrapFixtures {
 
     val repeated = runner.tasks(definitions)
     val repeatedHandlers = repeated.map { task =>
-      val handler = new RecordingHandler
+      val handler = new RecordingHandler(ownedExecutors)
       execute(task, handler)
       handler
     }
@@ -85,7 +85,7 @@ object BootstrapFixtures {
     implicit val ec: ExecutionContext = ExecutionContext.fromExecutorService(executor)
     try {
       val parallel = runner.tasks(definitions)
-      val handlers = parallel.map(_ => new RecordingHandler)
+      val handlers = parallel.map(_ => new RecordingHandler(ownedExecutors))
       val _ = Await.result(Future.sequence(parallel.zip(handlers).toVector.map { case (task, handler) => Future { execute(task, handler) } }), TimeoutSeconds.seconds)
       verify(handlers.forall(handler => handler.events.size == 2 && handler.events.forall(_.status() == Status.Success)), "Concurrent suite tasks must share one session and serialize each handler")
     } finally {
@@ -93,13 +93,13 @@ object BootstrapFixtures {
       verify(executor.awaitTermination(TimeoutSeconds, TimeUnit.SECONDS), "Fixture task executor must terminate")
     }
     val failing = runner.tasks(Array(definition(classOf[BootstrapFailingSuite].getName)))
-    val failureHandler = new RecordingHandler
+    val failureHandler = new RecordingHandler(ownedExecutors)
     execute(failing.head, failureHandler)
     verify(failureHandler.events.size == 1 && failureHandler.events.head.status() == Status.Failure, "Assertion failure must remain a host failure")
     def retainsAssertion(cause: Throwable): Boolean = cause.getMessage.contains("Assertion failed") || Option(cause.getCause).exists(retainsAssertion) || cause.getSuppressed.exists(retainsAssertion)
     verify(retainsAssertion(failureHandler.events.head.throwable().get()), "Host failure must preserve assertion diagnostics in its exception tree")
     val captured = runner.tasks(Array(definition(classOf[BootstrapThrowableSuite].getName)))
-    val captureHandler = new RecordingHandler
+    val captureHandler = new RecordingHandler(ownedExecutors)
     execute(captured.head, captureHandler)
     verify(captureHandler.events.size == 4 && captureHandler.events.forall(event => event.status() == Status.Failure && event.throwable().isDefined && event.selector().isInstanceOf[TestSelector]), "Captured Throwables must retain all four host body failures")
     def captureEvent(name: String): Throwable = captureHandler.events.find(_.selector().asInstanceOf[TestSelector].testName() == name).get.throwable().get()
@@ -111,25 +111,25 @@ object BootstrapFixtures {
     verify(suppressed.getSuppressed.head.getCause.getMessage.contains("suppressed cause"), "Host suppressed children must retain their nested causes")
     verify(suppressed.getCause.getMessage.contains("ordinary cause"), "Host causal edges must remain separate from suppressed children")
     val teardown = runner.tasks(Array(definition(classOf[BootstrapFinalizingSuite].getName)))
-    val teardownHandler = new RecordingHandler
+    val teardownHandler = new RecordingHandler(ownedExecutors)
     execute(teardown.head, teardownHandler)
     verify(teardownHandler.events.map(_.status()) == Vector(Status.Success, Status.Error), "Run-level finalizer failure must prevent host success after body success")
     val missing = runner.tasks(Array(definition("izumi.fixtures.MissingSuite")))
-    val missingHandler = new RecordingHandler
+    val missingHandler = new RecordingHandler(ownedExecutors)
     execute(missing.head, missingHandler)
     verify(missingHandler.events.size == 1 && missingHandler.events.head.status() == Status.Error, "Launch/discovery failures must produce a suite error")
     val bufferedTasks = runner.tasks(definitions :+ definition(classOf[BootstrapFailingSuite].getName))
-    execute(bufferedTasks.head, new RecordingHandler)
+    execute(bufferedTasks.head, new RecordingHandler(ownedExecutors))
     val callbackFailure = new IllegalStateException("Buffered callback failed")
     val rejectedHandler = new EventHandler { override def handle(event: Event): Unit = throw callbackFailure }
     val propagated = try { val _ = bufferedTasks(1).execute(rejectedHandler, Array.empty); false } catch { case cause: IllegalStateException => cause eq callbackFailure }
     verify(propagated, "Buffered handler failure must propagate with its original identity")
-    val laterHandler = new RecordingHandler
+    val laterHandler = new RecordingHandler(ownedExecutors)
     execute(bufferedTasks.last, laterHandler)
     verify(laterHandler.events.map(_.status()) == Vector(Status.Failure, Status.Error), "Later suite tasks must retain an observed buffered handler failure in the group outcome")
     verify(runner.done().isEmpty, "Runner completion must release its lifecycle")
     verify(rejected { val _ = runner.tasks(definitions) } && rejected { val _ = runner.done() }, "Spent runners must reject subsequent task requests and completion")
-    verify(Thread.getAllStackTraces.keySet().asScala.filterNot(previousThreads.contains).filter(_.getName.startsWith("ForkJoinPool-")).forall(!_.isAlive), "Bootstrap-owned executor threads must terminate before host completion")
+    verify(!ownedExecutors.isEmpty && ownedExecutors.iterator().asScala.forall(_.isTerminated), "Bootstrap callback executors must terminate before host completion")
     val argumentSuite = classOf[BootstrapArgumentSuite].getName
     val selectedId = s"""{"target":"bootstrap-target","suite":"$argumentSuite","path":["a","b c"],"variant":"selected"}"""
     val selectionFlags = flags ++ Array(
@@ -139,13 +139,13 @@ object BootstrapFixtures {
       "--memoization", "disabled",
     )
     val selectedRunner = framework.runner(selectionFlags, Array.empty, loader)
-    val selectedHandler = new RecordingHandler
+    val selectedHandler = new RecordingHandler(ownedExecutors)
     execute(selectedRunner.tasks(Array(definition(argumentSuite))).head, selectedHandler)
     verify(selectedHandler.events.size == 1 && selectedHandler.events.head.status() == Status.Success, "Normalized arguments must execute and report only the structured selected test with its effective overrides")
     verify(selectedHandler.events.head.selector().asInstanceOf[TestSelector].testName() == "a b c", "Host display projection must preserve the selected test's label")
     verify(selectedRunner.done().isEmpty, "Selected request runner must drain its lifecycle")
     val unknownRunner = framework.runner(flags ++ Array("--test-id", selectedId.replace("selected", "unknown")), Array.empty, loader)
-    val unknownHandler = new RecordingHandler
+    val unknownHandler = new RecordingHandler(ownedExecutors)
     execute(unknownRunner.tasks(Array(definition(argumentSuite))).head, unknownHandler)
     verify(unknownHandler.events.size == 1 && unknownHandler.events.head.status() == Status.Error && unknownHandler.events.head.throwable().get().getMessage.contains("Unknown explicit identities"), "Unknown saved test identities must reject before provider planning or body execution")
     verify(unknownRunner.done().isEmpty, "Rejected request runner must drain its lifecycle")
@@ -266,7 +266,7 @@ object BootstrapFixtures {
       val fatalRunner = new BootstrapRunner(flags, Array.empty, factory, loader, request, None, None)
       val fatalTasks = fatalRunner.tasks(definitions)
       val fatalHandler = new EventHandler { override def handle(event: Event): Unit = throw failure }
-      val follower = new RecordingHandler
+      val follower = new RecordingHandler(ownedExecutors)
       def executeAsync(task: Task, handler: EventHandler): Future[Either[Throwable, Unit]] = Future {
         try { val _ = task.execute(handler, Array.empty); Right(()) }
         catch { case cause: Throwable if NonFatal(cause) || cause.isInstanceOf[LinkageError] || cause.isInstanceOf[InterruptedException] => Left(cause) }
@@ -299,11 +299,15 @@ object BootstrapFixtures {
     } finally handler.close()
   }
 
-  private final class RecordingHandler extends EventHandler {
+  private final class RecordingHandler(ownedExecutors: ConcurrentLinkedQueue[ForkJoinPool]) extends EventHandler {
     private var values = Vector.empty[Event]
     private var closed = false
     private val activeCallbacks = new AtomicInteger(0)
     override def handle(event: Event): Unit = {
+      Thread.currentThread() match {
+        case worker: ForkJoinWorkerThread => val _ = ownedExecutors.add(worker.getPool)
+        case _ => ()
+      }
       val active = activeCallbacks.incrementAndGet()
       try {
         require(active == 1, "Host handler received concurrent callbacks")

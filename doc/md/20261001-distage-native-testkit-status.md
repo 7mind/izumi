@@ -35,7 +35,7 @@ head. The spike reports are design evidence, not implementation verification.
 | L2 | in progress | Part-1 verification below; full gate remains outstanding. |
 | L3 | in progress | Part-1 and full Native CI checkpoint verification below; parent-step and final evaluation remain outstanding. |
 | L4 | in progress | Candidate site action actual0 after2704.189s,1701 frozen inputs unchanged;44 rendered files and3003 API pages audited below. Final-head qualification remains open. |
-| L5 | not started | No evaluation point passed yet. |
+| L5 | in progress | Actual combined regeneration and clean generated-file diff pass at c4ac0d0cd; reproduced coverage-classpath correction is regenerated below. Final-head recheck remains open. |
 | L6 | in progress | Part-1 verification below; full gate remains outstanding. |
 | G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
 | 1a.1 | in progress | No evaluation point passed yet. |
@@ -20933,7 +20933,10 @@ The final normal Scala3.9 capture completes all74 commands with actual0 after
 1500.328s and all1728 input hashes unchanged. Independent audit verifies887
 base checks per JVM/JS/Native lane,872/749/749 provider checks, all four planning
 shutdown routes on each real runtime, masked allocation and closed-plan reuse,
-ordinary377/164/164 cases with exact original identities/outcomes,11 actual CLI
+ordinary377/164/164 cases: JVM retains375 original identities plus two
+supplemental runner-override controls; the permitted ScalaMock removal and
+approved JUnit move are reconciled separately. JS/Native retain164 cases after
+the permitted ScalaMock removal. The audit also verifies11 actual CLI
 subprocesses, held caller finalization,165 inner JVM interruption bodies and
 both runner-override lifetime checks. No rejected callback appears. A separate
 source-applicability receipt checks all1728 captured code/build inputs against
@@ -21019,7 +21022,10 @@ matching final host publication before launch.
 
 The final retirement Scala3.9 batch completes all77 commands with actual0 after
 2046.814s; all1652 frozen inputs remain unchanged. Its ordinary/runtime audit
-passes exact377/164/164 original cases and121/38/38 reports,887 base controls per
+passes377/164/164 cases and121/38/38 reports: JVM comprises375 retained
+original cases plus two supplemental runner-override controls, with the permitted
+ScalaMock removal and approved JUnit move reconciled separately. JS/Native retain
+164 cases after the permitted ScalaMock removal. It verifies887 base controls per
 platform and872/749/749 provider controls. Separate raw-log lifetime audit checks
 eleven actual CLI subprocesses, all nine closed-plan completion observations,
 held caller finalization and no RejectedExecutionException. Evidence:
@@ -21244,3 +21250,103 @@ DOCKER_HOST passthrough, and removal of unscoped Docker deletion. Evidence:
 copy-completion.json and generation.log. The full module matrix is still
 running in its frozen independent checkout. No L1-L6 or complete phase/final
 acceptance is claimed by this integration milestone; no push is performed.
+
+
+## 2026-10-07: completed module matrix, integrated publication, and final CI failures
+
+The independent module matrix completes62 current lanes with4836 cases and559
+reports. Composing the four independently completed prior Scala2.13 lanes gives
+66 lanes,5314 cases and613 reports, with exact baseline suite/case/outcome
+comparison and vendor-free resolved classpaths. The original prior parent stays
+actual1 because its later validation query failed; its four successful prefix
+lanes are not relabeled as a successful parent. Evidence:
+5-final-retirement-module-matrix-fourth/independent-module-audit.json and
+composed-module-audit.json. Final source applicability and acceptance remain open.
+
+The bounded retirement source review covers main c4ac0d0cd,549 repository and416
+evidence records, with zero final drift. It identifies no additional integration
+source defect, but leaves5.8,2b.10 andO.1 qualification open. REVIEW.md SHA256
+8935b66c3fc3fd89765ee0343283cce2b83f4da143a8cef9054446ee74002632.
+The reviewed ledger snapshot is preserved in its manifest. This append corrects
+its D1 wording finding:377 migrated JVM cases comprise375 retained original
+identities and two supplemental runner-override controls. The permitted ScalaMock
+removal and approved JUnit package/reporter move remain separately reconciled;
+JS/Native retain164 cases after the permitted ScalaMock removal. Equal totals
+alone never establish original-case identity parity.
+
+Actual main combined regeneration and git diff --exit-code of the three generated
+files pass at c4ac0d0cd. Evidence:5-final-retirement-main-integration-first/
+l5-audit.json. Local publication from that integrated head completes separate
+Scala2.13.18,3.9.0 and pinned3.8.4 processes with actual0 and1813 unchanged inputs.
+The independent publication audit verifies162 JAR/POM pairs,50 Native artifacts
+and53845 payload entries exactly equal to compiler outputs, with no ScalaTest,
+Scalactic or instrumentation dependencies/payloads. Private version:
+1.3.0-M5-c4ac0d0cd-SNAPSHOT. Evidence:5-final-head-publication-first/completion.json,
+each compiler command/completion/run.log and artifact-audit/audit.json.
+No external publication or push is performed.
+
+All eleven final CI lanes complete against frozen c4ac0d0cd inputs. Both Native
+lanes,Scala3 JS and the site action pass actual0. Six JVM lanes fail the bootstrap
+thread assertion; JDK17 Scala3 additionally has one SchedulerTest timing failure,
+and JDK21 Scala3 has20 Docker setup failures when a reused Postgres container
+exits with code0. Scala2.13 JS coverage fails compilation because both portable-
+resource macros enumerate an empty resource set. Each lane has1814 inputs
+unchanged at completion. Evidence:5-final-head-ci-batch-first/independent-outcome-
+audit.json, all original command/completion/log/report captures. The batch stays
+actual1. Scheduler and Docker root causes remain unproven; no production guess
+patch is made. The attempted JAVA_OPTIONS_TAIL processor limit was filtered by
+Mdl, so it is not claimed as an applied limit. Later isolated JS diagnostics edit
+that completed lane only and do not rewrite its original CI result.
+
+## 2026-10-07: reproduced bootstrap ownership oracle and macro-classpath corrections
+
+An isolated bootstrap reproduction holds one unrelated work-stealing executor
+live after the fixture's own executors have terminated. It observes four owned
+pools,all terminated,and the unrelated pool still live,then fails exactly the old
+global ForkJoinPool-thread scan. Actual1 after104.097s,1813 unchanged inputs;
+log SHA2568f1d3070ec028ffa821a4a67d64de27d1cc8d42df9896fdf7fc81083ad8defb4.
+Evidence:5-bootstrap-thread-ownership-repro-second/reproduction-audit.json and
+frozen-inputs.tar.gz. The first attempt failed only generator staleness and is
+retained; it establishes no executor defect.
+
+The corrected fixture explicitly passes one pool-observation queue to its event
+handlers and requires observed callback pools to terminate. It does not infer
+ownership from global thread names. With the unrelated pool still live,the
+corrected fixture preserves all61 checks and observes eight terminated callback
+pools on both compilers. The Scala2 prefix succeeds before a subsequent same-
+process compiler switch reports a protocol Scala-version mismatch; that parent
+remains actual1. A fresh Scala3 process succeeds actual0. Evidence:
+5-bootstrap-thread-ownership-correction-second/independent-ownership-audit.json.
+Fresh separate full base-runner processes then pass actual0 on2.13.18 and3.9.0,
+with887 base checks,61 bootstrap checks and1813 unchanged inputs each. The tested
+uninstrumented fixture matches current main exactly. Evidence:
+5-bootstrap-owned-executor-main-controls-first/independent-audit.json.
+The production executor shutdown code is unchanged.
+
+The JS coverage failure is independently diagnosed before correction: both test
+resource files exist in the copied test class directory,which is absent from the
+explicit28-entry -Ymacro-classpath. Evidence:
+5-js-coverage-resource-classpath-diagnostic-first/reproduction-audit.json.
+The generator now includes each configuration's own class directory before its
+dependency classpath when constructing the instrumented macro classpath. The
+existing copyResources-before-compilation dependency remains in effect.
+
+The first corrected JS run compiles successfully but has no completion record:
+the owner reports a host OOM killed the session,and its process handle and build
+processes are absent after restart. No successful parent outcome is inferred.
+A subsequent serial run uses a4GiB heap and eight processors and finishes actual0
+with1814 inputs unchanged. Independent XML audit verifies all153 original
+platform-test cases and16 reports,including ten portable-resource cases,with
+exact baseline outcomes. The test-only project has no production coverage data;
+its report task explicitly skips output,so no coverage-report qualification is
+claimed from that task. Evidence:5-js-coverage-resource-classpath-correction-second/
+independent-audit.json. Aggregate JS coverage CI remains open.
+
+Following the owner's OOM instruction,validation now permits one heavy build at
+a time. Direct SBT checks use explicit heap/metaspace/processor limits. Final CI
+will inherit an eight-CPU affinity mask and run lanes serially; its action already
+caps SBT heap at6GiB and metaspace at1GiB. The sandbox exposes no writable memory
+cgroup; no host configuration change is attempted. Original failed and interrupted
+captures remain preserved. Current main is regenerated with actual sbtgen after
+the classpath correction; final CI,facility/compatibility inventories and all
+required final acceptance evaluations remain open.

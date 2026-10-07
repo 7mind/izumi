@@ -225,7 +225,7 @@ object Izumi {
       "libraryDependencies" := """ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value)""".raw,
     ) ++ Seq("Compile", "Test").map { configuration =>
       "scalacOptions" in SettingScope.Raw(s"$configuration / compile") ++=
-        s"""Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(($configuration / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty }""".raw
+        s"""Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq(($configuration / classDirectory).value) ++ ($configuration / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty }""".raw
     }
 
     private val jvmPlatform = PlatformEnv(
