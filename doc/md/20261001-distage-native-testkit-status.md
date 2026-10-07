@@ -20683,3 +20683,49 @@ post-capture-drift-audit.json verifies23 frozen source snapshots against the
 pre-command manifest and identifies current drift in RunSession and the two
 subsequently refactored fixtures. The unchanged combined-third capture is the
 applicable qualification of mixed/selected launcher and shutdown behavior.
+
+
+### 2026-10-07 — direct closed-plan admission correction and retirement preparation
+
+Read-only review predicts that direct ExecutionPlan.execute after completed
+inspection closure installs an execution Promise before the prepared owner
+rejects execution, leaving later close waiting on that unpublished completion.
+Actual closed-reuse controls confirm it. Before-first expected the wrong
+exception class and is retained as an invalid oracle. Before-second observes
+`Prepared runner already has an execution or close decision` and
+closeCompleted=false after graph/outer release, then fails the intended closure
+invariant. No application resources remain held in this reproduction.
+
+The provider now publishes a memoized closing Promise before owner release and
+rejects execution before admission whenever closing has started. After-first
+passes unchanged controls on MiniBIO, Cats IO and ZIO: direct execution rejects
+with the closed-plan precondition and the prior close remains complete. It also
+passes872 JVM provider and887 base checks. The still-running full platform-third
+capture predates these two-file changes and qualifies854/731/731 source only;
+a subsequent all-platform supplement remains required.
+
+- 5-runtime-closed-plan-reuse-before-first: OwnedFactoryProbe-completion.json: actual exit 1, 2.527s, inputs unchanged=True; compile-completion.json: actual exit 0, 11.951s, inputs unchanged=True. Command manifest SHA-256 cfb24da234955e11554567866ae5379081953bac9d787b7d91dcda3916107d02.
+
+- 5-runtime-closed-plan-reuse-before-second: OwnedFactoryProbe-completion.json: actual exit 1, 2.876s, inputs unchanged=True; compile-completion.json: actual exit 0, 11.249s, inputs unchanged=True. Command manifest SHA-256 458deea8ce383616f748d263e2ae4f4faea9b0a663ddefbab41330cb6e15ca58.
+
+- 5-runtime-closed-plan-reuse-after-first: BaseRunnerFixtures-completion.json: actual exit 0, 1.617s, inputs unchanged=True; DistageProviderFixtures-completion.json: actual exit 0, 16.564s, inputs unchanged=True; OwnedFactoryProbe-completion.json: actual exit 0, 5.073s, inputs unchanged=True; compile-completion.json: actual exit 0, 10.704s, inputs unchanged=True. Command manifest SHA-256 50da4b8432c851a8cea9f6e32cba1e498adb838de0e39d75022ff7776de6db21.
+
+
+The current ordinary source inventory rechecks26 frozen original-to-migrated
+pairs:ten unchanged,twelve import-only,four with explicit assertion/matcher
+facility changes. Exact unified diffs and source hashes are retained in
+5-ordinary-migration-source-final-audit-first/inventory.json. This textual
+inventory does not substitute for executed case parity or complete front-end
+compatibility classification. The final-head evaluation remains open.
+
+The new retirement generator output is checked independently by
+5-final-retirement-generated-graph-first/source-graph-audit.py, with its generated
+build hash and complete source-derived graph retained. Retired projects and
+vendor dependency references are absent, the graph is acyclic and the base
+runner keeps its lower-layer bound. This is source-graph proof only; SBT-observed
+graph reconciliation and resolved dependency checks remain pending. The old
+ScalaTest version pins and macro setting are removed, temporary vendor filters
+are no longer necessary, and retired support-module documentation links are
+updated. Microsite draft prose now describes retirement and selected-launcher
+ownership; its final build remains pending. None of these prepared removals is
+integrated into main yet.
