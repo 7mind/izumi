@@ -808,7 +808,12 @@ object Izumi {
           Seq(cats_effect_laws, cats_effect_testkit, discipline, zio_managed, zio_interop_cats).map(_ in Scope.Test.all) ++
           Seq(scala_java_time in Scope.Test.js, scala_java_time in Scope.Test.native),
         depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
-        settings = fundamentalsTestSettings("fundamentals-bio-test"),
+        settings = fundamentalsTestSettings("fundamentals-bio-test") ++ Seq(
+          "libraryDependencies" in (SettingScope.Project, Platform.Jvm) ~=
+            """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
+          "testFrameworks" in (SettingScope.Test, Platform.Jvm) :=
+            """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
+        ),
         platforms = Targets.cross,
       ),
 //      Artifact(

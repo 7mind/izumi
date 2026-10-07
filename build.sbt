@@ -3664,7 +3664,9 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
     ),
     scalaVersion := crossScalaVersions.value.head,
     Test / testFrameworks := Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-bio-test-jvm"
+    Test / distageTargetId := "fundamentals-bio-test-jvm",
+    libraryDependencies ~= (_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization))),
+    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))
   )
   .jsSettings(
     crossScalaVersions := Seq(

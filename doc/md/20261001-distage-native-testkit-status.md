@@ -18969,3 +18969,27 @@ frontend's protected sessionExecutionContext, preserving the existing law
 environments. Scala2.13 completes actual0 after148.697s with1633 inputs
 unchanged; all JVM/JS/Native BIO lanes succeed. Scala3.9 and exact baseline
 reconciliation remain in flight in5-bio-laws-migration-fifth/.
+
+## 2026-10-07: verified BIO discipline migration checkpoint
+
+The fifth BIO candidate completes actual0 on both supported compilers:
+148.697s on Scala2.13.18 and193.315s on Scala3.9.0. All1633 frozen inputs
+remain unchanged per process. The pinned generator succeeds. Independent audit
+exits0 and reconciles every selected suite/test identity against the qualified
+JVM baseline and the preserved portable baseline captures:1297 successful
+cases across six JVM/JS/Native lanes, including518 law cases. Counts are
+439/101/110 on Scala2.13 and438/100/109 on Scala3.9.
+
+The replacement preserves discipline property names, minimum successful sample
+count10, and sequential access to each suite's shared virtual clock. Its small
+Future queue uses the session-owned execution context and retains each
+property's outcome independently; it parks no waiting runner workers. The
+complete former law shim is removed. All six resolved update/Test classpaths
+exclude ScalaTest, Scalactic and ScalaTestPlus and use the base runner; BIO's
+unpublished test-project/dependency layering remains unchanged.
+
+The exact commands, logs, manifests and report hashes are in
+5-bio-laws-migration-fifth/. The audit command is
+python3 -B /srv/nvme/tmp/izumi-impl/5-bio-laws-migration-fifth/audit.py.
+Its audit SHA256 is 5f4fb1bbeb15448f7c4b8286325d421153a552d1e7a7c9ad75bf93352411d6a4.
+This closes the BIO law migration checkpoint, not phase5 or final-head acceptance.
