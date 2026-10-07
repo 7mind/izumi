@@ -3,6 +3,8 @@ package izumi.distage.testkit.protocol
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json, Printer}
 import io.circe.parser.parse
 
+import scala.reflect.ClassTag
+
 object ProtocolCodec {
   final val SchemaVersion = 4
   final val MaxFrameCharacters = 1024 * 1024
@@ -91,6 +93,21 @@ object ProtocolCodec {
   private def tagged(kind: String, fields: (String, Json)*): Json = Json.obj((Vector("kind" -> Json.fromString(kind)) ++ fields)*)
   private def unknown[A](cursor: HCursor, kind: String): Decoder.Result[A] = Left(DecodingFailure(s"Unknown protocol kind: $kind", cursor.history))
 
+  private final case class Variant[A](kind: String, decoder: Decoder[A], encoder: PartialFunction[A, Json])
+  private def constant[A](kind: String, value: A): Variant[A] = Variant(kind, Decoder.const(value), {
+    case candidate if candidate == value => tagged(kind)
+  })
+  private def variant[A, B <: A: ClassTag](kind: String, codec: Codec.AsObject[B]): Variant[A] = Variant(kind, codec.map[A](identity), {
+    case value: B => Json.fromFields(("kind" -> Json.fromString(kind)) +: codec.encodeObject(value).toVector)
+  })
+  private def checked[A](codec: Codec.AsObject[A])(check: A => Either[String, A]): Codec.AsObject[A] = Codec.AsObject.from(codec.emap(check), codec)
+  private def union[A](variants: Variant[A]*): Codec[A] = product(
+    Decoder.instance { cursor => cursor.get[String]("kind").flatMap { kind =>
+      variants.find(_.kind == kind).fold(unknown[A](cursor, kind))(_.decoder(cursor))
+    } },
+    Encoder.instance { value => variants.collectFirst { case entry if entry.encoder.isDefinedAt(value) => entry.encoder(value) }.getOrElse(throw new MatchError(value)) },
+  )
+
   private implicit val exactLongCodec: Codec[Long] = product(
     Decoder.decodeString.emap { text =>
       try Right(text.toLong)
@@ -105,108 +122,56 @@ object ProtocolCodec {
   private implicit val runIdCodec: Codec[RunId] = named(RunId.apply, _.value)
   private implicit val axisIdCodec: Codec[AxisId] = named(AxisId.apply, _.value)
   private implicit val axisValueCodec: Codec[AxisValue] = named(AxisValue.apply, _.value)
-  private implicit val identityCodec: Codec[CatalogueIdentity] = product(
-    Decoder.forProduct3("build", "target", "catalogue")(CatalogueIdentity.apply),
-    Encoder.forProduct3("build", "target", "catalogue")(value => (value.build, value.target, value.catalogue)),
-  )
-  private implicit val testIdCodec: Codec[TestId] = product(
-    Decoder.forProduct4("target", "suite", "path", "variant")(TestId.apply).emap { id =>
-      if (id.path.isEmpty) Left("Test path must not be empty")
-      else if (id.variant.contains("")) Left("Explicit variant must not be empty")
-      else Right(id)
-    },
-    Encoder.forProduct4("target", "suite", "path", "variant")(value => (value.target, value.suite, value.path, value.variant)),
-  )
-  private implicit val axisChoiceCodec: Codec[AxisChoice] = product(
-    Decoder.forProduct2("axis", "value")(AxisChoice.apply),
-    Encoder.forProduct2("axis", "value")(value => (value.axis, value.value)),
-  )
-  private implicit val effectiveSettingsCodec: Codec[EffectiveSettings] = product(
-    Decoder.forProduct2("axes", "memoization")(EffectiveSettings.apply),
-    Encoder.forProduct2("axes", "memoization")(value => (value.axes, value.memoization)),
-  )
+  private implicit val identityCodec: Codec[CatalogueIdentity] = Codec.forProduct3("build", "target", "catalogue")(CatalogueIdentity.apply)(value => (value.build, value.target, value.catalogue))
+  private implicit val testIdCodec: Codec[TestId] = Codec.forProduct4("target", "suite", "path", "variant")(TestId.apply)(value => (value.target, value.suite, value.path, value.variant)).iemap { id =>
+    if (id.path.isEmpty) Left("Test path must not be empty")
+    else if (id.variant.contains("")) Left("Explicit variant must not be empty")
+    else Right(id)
+  }(identity)
+  private implicit val axisChoiceCodec: Codec[AxisChoice] = Codec.forProduct2("axis", "value")(AxisChoice.apply)(value => (value.axis, value.value))
+  private implicit val effectiveSettingsCodec: Codec[EffectiveSettings] = Codec.forProduct2("axes", "memoization")(EffectiveSettings.apply)(value => (value.axes, value.memoization))
   private implicit val memoizationCodec: Codec[MemoizationOverride] = enumeration(Vector(
     "inherit" -> MemoizationOverride.Inherit, "enabled" -> MemoizationOverride.Enabled, "disabled" -> MemoizationOverride.Disabled,
   ))
-  private implicit val selectionCodec: Codec[Selection] = product(
-    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
-      case "all" => Right(Selection.All)
-      case "only" => for {
-        suites <- cursor.get[Vector[SuiteId]]("suites")
-        tests <- cursor.get[Vector[TestId]]("tests")
-        result <- if (suites.nonEmpty || tests.nonEmpty) Right(Selection.Only(suites, tests)) else Left(DecodingFailure("Explicit selection must not be empty", cursor.history))
-      } yield result
-      case other => unknown(cursor, other)
-    } },
-    Encoder.instance {
-      case Selection.All => tagged("all")
-      case Selection.Only(suites, tests) => tagged("only", "suites" -> Encoder.encodeVector[SuiteId].apply(suites), "tests" -> Encoder.encodeVector[TestId].apply(tests))
-    },
+  private implicit val selectionCodec: Codec[Selection] = union(
+    constant("all", Selection.All),
+    variant[Selection, Selection.Only]("only", checked(Codec.forProduct2("suites", "tests")(Selection.Only.apply)(value => (value.suites, value.tests))) { value =>
+      if (value.suites.nonEmpty || value.tests.nonEmpty) Right(value) else Left("Explicit selection must not be empty")
+    }),
   )
-  private implicit val overridesCodec: Codec[RunOverrides] = product(
-    Decoder.forProduct3("axes", "axisFilters", "memoization")(RunOverrides.apply),
-    Encoder.forProduct3("axes", "axisFilters", "memoization")(value => (value.axes, value.axisFilters, value.memoization)),
+  private implicit val overridesCodec: Codec[RunOverrides] = Codec.forProduct3("axes", "axisFilters", "memoization")(RunOverrides.apply)(value => (value.axes, value.axisFilters, value.memoization))
+  private implicit val requestCodec: Codec[RunRequest] = Codec.forProduct3("identity", "selection", "overrides")(RunRequest.apply)(value => (value.identity, value.selection, value.overrides))
+  private implicit val locationCodec: Codec[SourceLocation] = union(
+    constant("unavailable", SourceLocation.Unavailable),
+    variant[SourceLocation, SourceLocation.Known]("known", checked(Codec.forProduct3("path", "line", "column")(SourceLocation.Known.apply)(value => (value.path, value.line, value.column))) { value =>
+      if (value.path.nonEmpty && value.line >= 0 && value.column.forall(_ >= 0)) Right(value) else Left("Invalid source location")
+    }),
   )
-  private implicit val requestCodec: Codec[RunRequest] = product(
-    Decoder.forProduct3("identity", "selection", "overrides")(RunRequest.apply),
-    Encoder.forProduct3("identity", "selection", "overrides")(value => (value.identity, value.selection, value.overrides)),
-  )
-  private implicit val locationCodec: Codec[SourceLocation] = product(
-    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
-      case "unavailable" => Right(SourceLocation.Unavailable)
-      case "known" => for {
-        path <- cursor.get[String]("path")
-        line <- cursor.get[Int]("line")
-        column <- cursor.get[Option[Int]]("column")
-        result <- if (path.nonEmpty && line >= 0 && column.forall(_ >= 0)) Right(SourceLocation.Known(path, line, column)) else Left(DecodingFailure("Invalid source location", cursor.history))
-      } yield result
-      case other => unknown(cursor, other)
-    } },
-    Encoder.instance {
-      case SourceLocation.Unavailable => tagged("unavailable")
-      case SourceLocation.Known(path, line, column) => tagged("known", "path" -> Json.fromString(path), "line" -> Json.fromInt(line), "column" -> Encoder.encodeOption[Int].apply(column))
-    },
-  )
-  private implicit val suiteCodec: Codec[SuiteDescriptor] = product(
-    Decoder.forProduct2("id", "displayName")(SuiteDescriptor.apply),
-    Encoder.forProduct2("id", "displayName")(value => (value.id, value.displayName)),
-  )
-  private implicit val testCodec: Codec[TestDescriptor] = product(
-    Decoder.forProduct4("id", "displayName", "location", "settings")(TestDescriptor.apply),
-    Encoder.forProduct4("id", "displayName", "location", "settings")(value => (value.id, value.displayName, value.location, value.settings)),
-  )
-  private implicit val catalogueCodec: Codec[Catalogue] = product(
-    Decoder.forProduct3("identity", "suites", "tests")(Catalogue.apply),
-    Encoder.forProduct3("identity", "suites", "tests")(value => (value.identity, value.suites, value.tests)),
-  )
-  private implicit val resolvedSelectionCodec: Codec[ResolvedSelection] = product(
-    Decoder.forProduct2("request", "tests")(ResolvedSelection.apply).emap { selection =>
-      val tests = selection.tests
-      if (tests.isEmpty || tests.map(_.id).distinct.size != tests.size) Left("Resolved selection must contain distinct tests")
-      else if (tests.exists(_.id.target != selection.request.identity.target)) Left("Resolved test target differs from the request")
-      else if (tests.exists(test => selection.request.selection match {
-        case Selection.All => false
-        case Selection.Only(suites, ids) => !suites.contains(test.id.suite) && !ids.contains(test.id)
-      })) Left("Resolved selection contains an unselected test")
-      else if (tests.exists(test => test.settings.axes.map(_.axis).distinct.size != test.settings.axes.size)) Left("Duplicate effective activation axes")
-      else if (tests.exists(test => !(selection.request.overrides.axes ++ selection.request.overrides.axisFilters).forall(test.settings.axes.contains))) Left("Effective activation differs from the requested choices")
-      else if (tests.exists(test => selection.request.overrides.memoization match {
-        case MemoizationOverride.Inherit => false
-        case MemoizationOverride.Enabled => !test.settings.memoization
-        case MemoizationOverride.Disabled => test.settings.memoization
-      })) Left("Effective memoization differs from the request")
-      else Right(selection)
-    },
-    Encoder.forProduct2("request", "tests")(value => (value.request, value.tests)),
-  )
+  private implicit val suiteCodec: Codec[SuiteDescriptor] = Codec.forProduct2("id", "displayName")(SuiteDescriptor.apply)(value => (value.id, value.displayName))
+  private implicit val testCodec: Codec[TestDescriptor] = Codec.forProduct4("id", "displayName", "location", "settings")(TestDescriptor.apply)(value => (value.id, value.displayName, value.location, value.settings))
+  private implicit val catalogueCodec: Codec[Catalogue] = Codec.forProduct3("identity", "suites", "tests")(Catalogue.apply)(value => (value.identity, value.suites, value.tests))
+  private implicit val resolvedSelectionCodec: Codec[ResolvedSelection] = Codec.forProduct2("request", "tests")(ResolvedSelection.apply)(value => (value.request, value.tests)).iemap { selection =>
+    val tests = selection.tests
+    if (tests.isEmpty || tests.map(_.id).distinct.size != tests.size) Left("Resolved selection must contain distinct tests")
+    else if (tests.exists(_.id.target != selection.request.identity.target)) Left("Resolved test target differs from the request")
+    else if (tests.exists(test => selection.request.selection match {
+      case Selection.All => false
+      case Selection.Only(suites, ids) => !suites.contains(test.id.suite) && !ids.contains(test.id)
+    })) Left("Resolved selection contains an unselected test")
+    else if (tests.exists(test => test.settings.axes.map(_.axis).distinct.size != test.settings.axes.size)) Left("Duplicate effective activation axes")
+    else if (tests.exists(test => !(selection.request.overrides.axes ++ selection.request.overrides.axisFilters).forall(test.settings.axes.contains))) Left("Effective activation differs from the requested choices")
+    else if (tests.exists(test => selection.request.overrides.memoization match {
+      case MemoizationOverride.Inherit => false
+      case MemoizationOverride.Enabled => !test.settings.memoization
+      case MemoizationOverride.Disabled => test.settings.memoization
+    })) Left("Effective memoization differs from the request")
+    else Right(selection)
+  }(identity)
   private implicit val dependencyKeyIdCodec: Codec[DependencyKeyId] = product(
     Decoder.decodeInt.emap(value => if (value >= 0) Right(DependencyKeyId(value)) else Left("Invalid plan key identity")),
     Encoder.encodeInt.contramap(_.value),
   )
-  private implicit val dependencyKeyCodec: Codec[DependencyKey] = product(
-    Decoder.forProduct2("id", "displayName")(DependencyKey.apply),
-    Encoder.forProduct2("id", "displayName")(value => (value.id, value.displayName)),
-  )
+  private implicit val dependencyKeyCodec: Codec[DependencyKey] = Codec.forProduct2("id", "displayName")(DependencyKey.apply)(value => (value.id, value.displayName))
   private implicit val planScopeIdCodec: Codec[PlanScopeId] = product(
     Decoder.decodeVector[Int].emap { path =>
       if (path.isEmpty || path.exists(_ < 0)) Left("Invalid plan scope path") else Right(PlanScopeId(path))
@@ -224,46 +189,21 @@ object ProtocolCodec {
   private implicit val planScopeKindCodec: Codec[PlanScopeKind] = enumeration(Vector(
     "runtime" -> PlanScopeKind.Runtime, "memoization" -> PlanScopeKind.Memoization, "test" -> PlanScopeKind.Test,
   ))
-  private implicit val planStepCodec: Codec[PlanStep] = product(
-    Decoder.forProduct3("key", "operation", "dependencies")(PlanStep.apply),
-    Encoder.forProduct3("key", "operation", "dependencies")(value => (value.key, value.operation, value.dependencies)),
-  )
-  private implicit val planScopeCodec: Codec[PlanScope] = product(
-    Decoder.forProduct4("id", "kind", "tests", "steps")(PlanScope.apply),
-    Encoder.forProduct4("id", "kind", "tests", "steps")(value => (value.id, value.kind, value.tests, value.steps)),
-  )
+  private implicit val planStepCodec: Codec[PlanStep] = Codec.forProduct3("key", "operation", "dependencies")(PlanStep.apply)(value => (value.key, value.operation, value.dependencies))
+  private implicit val planScopeCodec: Codec[PlanScope] = Codec.forProduct4("id", "kind", "tests", "steps")(PlanScope.apply)(value => (value.id, value.kind, value.tests, value.steps))
   private implicit val phaseCodec: Codec[FailurePhase] = enumeration(Vector(
     "discovery" -> FailurePhase.Discovery, "selection" -> FailurePhase.Selection, "planning" -> FailurePhase.Planning,
     "setup" -> FailurePhase.Setup, "test" -> FailurePhase.Test, "finalization" -> FailurePhase.Finalization, "transport" -> FailurePhase.Transport,
   ))
-  private implicit val diagnosticErrorMessageCodec: Codec[DiagnosticErrorMessage] = product(
-    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
-      case "available" => cursor.get[String]("value").map(DiagnosticErrorMessage.Available.apply)
-      case "unavailable" => Right(DiagnosticErrorMessage.Unavailable)
-      case "accessorFailed" => cursor.get[String]("exceptionClass").map(DiagnosticErrorMessage.AccessorFailed.apply)
-      case other => unknown(cursor, other)
-    } },
-    Encoder.instance {
-      case DiagnosticErrorMessage.Available(value) => tagged("available", "value" -> Json.fromString(value))
-      case DiagnosticErrorMessage.Unavailable => tagged("unavailable")
-      case DiagnosticErrorMessage.AccessorFailed(exceptionClass) => tagged("accessorFailed", "exceptionClass" -> Json.fromString(exceptionClass))
-    },
+  private implicit val diagnosticErrorMessageCodec: Codec[DiagnosticErrorMessage] = union(
+    variant[DiagnosticErrorMessage, DiagnosticErrorMessage.Available]("available", Codec.forProduct1("value")(DiagnosticErrorMessage.Available.apply)(_.value)),
+    constant("unavailable", DiagnosticErrorMessage.Unavailable),
+    variant[DiagnosticErrorMessage, DiagnosticErrorMessage.AccessorFailed]("accessorFailed", Codec.forProduct1("exceptionClass")(DiagnosticErrorMessage.AccessorFailed.apply)(_.exceptionClass)),
   )
-  private implicit val valueCodec: Codec[ObservedValue] = product(
-    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
-      case "evaluated" => cursor.get[String]("value").map(ObservedValue.Evaluated.apply)
-      case "notEvaluated" => Right(ObservedValue.NotEvaluated)
-      case "renderingFailed" => for {
-        exceptionClass <- cursor.get[String]("exceptionClass")
-        message <- cursor.get[DiagnosticErrorMessage]("message")
-      } yield ObservedValue.RenderingFailed(exceptionClass, message)
-      case other => unknown(cursor, other)
-    } },
-    Encoder.instance {
-      case ObservedValue.Evaluated(value) => tagged("evaluated", "value" -> Json.fromString(value))
-      case ObservedValue.NotEvaluated => tagged("notEvaluated")
-      case ObservedValue.RenderingFailed(exceptionClass, message) => tagged("renderingFailed", "exceptionClass" -> Json.fromString(exceptionClass), "message" -> diagnosticErrorMessageCodec(message))
-    },
+  private implicit val valueCodec: Codec[ObservedValue] = union(
+    variant[ObservedValue, ObservedValue.Evaluated]("evaluated", Codec.forProduct1("value")(ObservedValue.Evaluated.apply)(_.value)),
+    constant("notEvaluated", ObservedValue.NotEvaluated),
+    variant[ObservedValue, ObservedValue.RenderingFailed]("renderingFailed", Codec.forProduct2("exceptionClass", "message")(ObservedValue.RenderingFailed.apply)(value => (value.exceptionClass, value.message))),
   )
   private implicit val diagnosticIdentityCodec: Codec[DiagnosticSourceIdentity] = product(
     Decoder.instance { cursor => for {
@@ -282,80 +222,40 @@ object ProtocolCodec {
       case DiagnosticSourceIdentity.Virtual(path) => tagged("virtual", "path" -> Json.fromString(path))
     },
   )
-  private implicit val diagnosticPointCodec: Codec[DiagnosticPoint] = product(
-    Decoder.forProduct3("offset", "line", "column")(DiagnosticPoint.apply).emap { point =>
-      if (point.offset >= 0 && point.line >= 0 && point.column >= 0) Right(point) else Left("Invalid diagnostic source point")
-    },
-    Encoder.forProduct3("offset", "line", "column")(point => (point.offset, point.line, point.column)),
+  private implicit val diagnosticPointCodec: Codec[DiagnosticPoint] = Codec.forProduct3("offset", "line", "column")(DiagnosticPoint.apply)(point => (point.offset, point.line, point.column)).iemap { point =>
+    if (point.offset >= 0 && point.line >= 0 && point.column >= 0) Right(point) else Left("Invalid diagnostic source point")
+  }(identity)
+  private implicit val diagnosticSpanCodec: Codec[DiagnosticSpan] = union(
+    constant("unavailable", DiagnosticSpan.Unavailable),
+    variant[DiagnosticSpan, DiagnosticSpan.Point]("point", Codec.forProduct1("point")(DiagnosticSpan.Point.apply)(_.point)),
+    variant[DiagnosticSpan, DiagnosticSpan.Range]("range", checked(Codec.forProduct2("start", "end")(DiagnosticSpan.Range.apply)(value => (value.start, value.end))) { value =>
+      if (value.end.offset >= value.start.offset && (value.end.line > value.start.line || (value.end.line == value.start.line && value.end.column >= value.start.column))) Right(value)
+      else Left("Invalid diagnostic source range")
+    }),
   )
-  private implicit val diagnosticSpanCodec: Codec[DiagnosticSpan] = product(
-    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
-      case "unavailable" => Right(DiagnosticSpan.Unavailable)
-      case "point" => cursor.get[DiagnosticPoint]("point").map(DiagnosticSpan.Point.apply)
-      case "range" => for {
-        start <- cursor.get[DiagnosticPoint]("start")
-        end <- cursor.get[DiagnosticPoint]("end")
-        range <- if (end.offset >= start.offset && (end.line > start.line || (end.line == start.line && end.column >= start.column))) {
-          Right(DiagnosticSpan.Range(start, end))
-        } else Left(DecodingFailure("Invalid diagnostic source range", cursor.history))
-      } yield range
-      case other => unknown(cursor, other)
-    } },
-    Encoder.instance {
-      case DiagnosticSpan.Unavailable => tagged("unavailable")
-      case DiagnosticSpan.Point(point) => tagged("point", "point" -> diagnosticPointCodec(point))
-      case DiagnosticSpan.Range(start, end) => tagged("range", "start" -> diagnosticPointCodec(start), "end" -> diagnosticPointCodec(end))
-    },
-  )
-  private implicit val diagnosticSourceCodec: Codec[DiagnosticSource] = product(
-    Decoder.forProduct3("identity", "span", "expression")(DiagnosticSource.apply),
-    Encoder.forProduct3("identity", "span", "expression")(source => (source.identity, source.span, source.expression)),
-  )
-  private implicit val diagnosticValidationCodec: Codec[DiagnosticSourceValidation] = product(
-    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
-      case "matching" => Right(DiagnosticSourceValidation.Matching)
-      case "mismatch" => Right(DiagnosticSourceValidation.Mismatch)
-      case "unavailable" => Right(DiagnosticSourceValidation.Unavailable)
-      case "rangeUnavailable" => Right(DiagnosticSourceValidation.RangeUnavailable)
-      case "textUnavailable" => Right(DiagnosticSourceValidation.TextUnavailable)
-      case "providerFailed" => for {
-        exceptionClass <- cursor.get[String]("exceptionClass")
-        message <- cursor.get[DiagnosticErrorMessage]("message")
-      } yield DiagnosticSourceValidation.ProviderFailed(exceptionClass, message)
-      case other => unknown(cursor, other)
-    } },
-    Encoder.instance {
-      case DiagnosticSourceValidation.Matching => tagged("matching")
-      case DiagnosticSourceValidation.Mismatch => tagged("mismatch")
-      case DiagnosticSourceValidation.Unavailable => tagged("unavailable")
-      case DiagnosticSourceValidation.RangeUnavailable => tagged("rangeUnavailable")
-      case DiagnosticSourceValidation.TextUnavailable => tagged("textUnavailable")
-      case DiagnosticSourceValidation.ProviderFailed(exceptionClass, message) => tagged("providerFailed", "exceptionClass" -> Json.fromString(exceptionClass), "message" -> diagnosticErrorMessageCodec(message))
-    },
+  private implicit val diagnosticSourceCodec: Codec[DiagnosticSource] = Codec.forProduct3("identity", "span", "expression")(DiagnosticSource.apply)(source => (source.identity, source.span, source.expression))
+  private implicit val diagnosticValidationCodec: Codec[DiagnosticSourceValidation] = union(
+    constant("matching", DiagnosticSourceValidation.Matching),
+    constant("mismatch", DiagnosticSourceValidation.Mismatch),
+    constant("unavailable", DiagnosticSourceValidation.Unavailable),
+    constant("rangeUnavailable", DiagnosticSourceValidation.RangeUnavailable),
+    constant("textUnavailable", DiagnosticSourceValidation.TextUnavailable),
+    variant[DiagnosticSourceValidation, DiagnosticSourceValidation.ProviderFailed]("providerFailed", Codec.forProduct2("exceptionClass", "message")(DiagnosticSourceValidation.ProviderFailed.apply)(value => (value.exceptionClass, value.message))),
   )
   private implicit val diagnosticKindCodec: Codec[DiagnosticObservationKind] = enumeration(Vector(
     "booleanLeaf" -> DiagnosticObservationKind.BooleanLeaf, "booleanOperator" -> DiagnosticObservationKind.BooleanOperator,
     "comparison" -> DiagnosticObservationKind.Comparison, "operand" -> DiagnosticObservationKind.Operand, "opaque" -> DiagnosticObservationKind.Opaque,
   ))
-  private implicit val observationCodec: Codec[DiagnosticObservation] = product(
-    Decoder.forProduct4("expression", "span", "kind", "value")(DiagnosticObservation.apply),
-    Encoder.forProduct4("expression", "span", "kind", "value")(value => (value.expression, value.span, value.kind, value.value)),
-  )
-  private implicit val diagnosticCodec: Codec[AssertionDiagnostic] = product(
-    Decoder.forProduct4("source", "sourceValidation", "observations", "omittedObservations")(AssertionDiagnostic.apply).emap { diagnostic =>
-      if (diagnostic.omittedObservations >= 0) Right(diagnostic) else Left("Omitted observation count must not be negative")
-    },
-    Encoder.forProduct4("source", "sourceValidation", "observations", "omittedObservations")(value => (value.source, value.sourceValidation, value.observations, value.omittedObservations)),
-  )
+  private implicit val observationCodec: Codec[DiagnosticObservation] = Codec.forProduct4("expression", "span", "kind", "value")(DiagnosticObservation.apply)(value => (value.expression, value.span, value.kind, value.value))
+  private implicit val diagnosticCodec: Codec[AssertionDiagnostic] = Codec.forProduct4("source", "sourceValidation", "observations", "omittedObservations")(AssertionDiagnostic.apply)(value => (value.source, value.sourceValidation, value.observations, value.omittedObservations)).iemap { diagnostic =>
+    if (diagnostic.omittedObservations >= 0) Right(diagnostic) else Left("Omitted observation count must not be negative")
+  }(identity)
   private implicit val captureFieldCodec: Codec[FailureCaptureField] = enumeration(Vector(
     "message" -> FailureCaptureField.Message, "cause" -> FailureCaptureField.Cause, "stack" -> FailureCaptureField.Stack,
   ))
-  private implicit val captureErrorCodec: Codec[FailureCaptureError] = product(
-    Decoder.forProduct2("field", "exceptionClass")(FailureCaptureError.apply).emap { error =>
-      if (error.exceptionClass.nonEmpty) Right(error) else Left("Failure capture exception class must not be empty")
-    },
-    Encoder.forProduct2("field", "exceptionClass")(error => (error.field, error.exceptionClass)),
-  )
+  private implicit val captureErrorCodec: Codec[FailureCaptureError] = Codec.forProduct2("field", "exceptionClass")(FailureCaptureError.apply)(error => (error.field, error.exceptionClass)).iemap { error =>
+    if (error.exceptionClass.nonEmpty) Right(error) else Left("Failure capture exception class must not be empty")
+  }(identity)
   private def failureDecoder(depth: Int): Decoder[Failure] = Decoder.instance { cursor =>
     if (depth > MaxFailureDepth) Left(DecodingFailure("Failure graph depth exceeds its limit", cursor.history))
     else for {
@@ -389,20 +289,14 @@ object ProtocolCodec {
   private implicit val statusCodec: Codec[TestStatus] = enumeration(Vector(
     "succeeded" -> TestStatus.Succeeded, "failed" -> TestStatus.Failed, "cancelled" -> TestStatus.Cancelled, "skipped" -> TestStatus.Skipped,
   ))
-  private implicit val resultCodec: Codec[TestResult] = product(
-    Decoder.forProduct4("id", "status", "failure", "durationNanos")(TestResult.apply).emap { result =>
-      if (result.durationNanos < 0) Left("Test duration must not be negative")
-      else if (result.status == TestStatus.Failed && result.failure.isEmpty) Left("Failed test must carry a failure")
-      else if (result.status == TestStatus.Succeeded && result.failure.nonEmpty) Left("Successful test must not carry a failure")
-      else if (result.status == TestStatus.Skipped && result.failure.nonEmpty) Left("Skipped test must not carry a failure")
-      else Right(result)
-    },
-    Encoder.forProduct4("id", "status", "failure", "durationNanos")(value => (value.id, value.status, value.failure, value.durationNanos)),
-  )
-  private implicit val outcomeCodec: Codec[RunOutcome] = product(
-    Decoder.forProduct4("run", "results", "failures", "cancelled")(RunOutcome.apply),
-    Encoder.forProduct4("run", "results", "failures", "cancelled")(value => (value.run, value.results, value.failures, value.cancelled)),
-  )
+  private implicit val resultCodec: Codec[TestResult] = Codec.forProduct4("id", "status", "failure", "durationNanos")(TestResult.apply)(value => (value.id, value.status, value.failure, value.durationNanos)).iemap { result =>
+    if (result.durationNanos < 0) Left("Test duration must not be negative")
+    else if (result.status == TestStatus.Failed && result.failure.isEmpty) Left("Failed test must carry a failure")
+    else if (result.status == TestStatus.Succeeded && result.failure.nonEmpty) Left("Successful test must not carry a failure")
+    else if (result.status == TestStatus.Skipped && result.failure.nonEmpty) Left("Skipped test must not carry a failure")
+    else Right(result)
+  }(identity)
+  private implicit val outcomeCodec: Codec[RunOutcome] = Codec.forProduct4("run", "results", "failures", "cancelled")(RunOutcome.apply)(value => (value.run, value.results, value.failures, value.cancelled))
   private implicit val eventCodec: Codec[RunEvent] = product(
     Decoder.instance { cursor => for {
       kind <- cursor.get[String]("kind")
@@ -432,67 +326,22 @@ object ProtocolCodec {
   private implicit val operationCodec: Codec[RequestOperation] = enumeration(Vector(
     "resolve" -> RequestOperation.Resolve, "plan" -> RequestOperation.Plan, "execute" -> RequestOperation.Execute,
   ))
-  private implicit val planFailureCodec: Codec[PlanFailure] = product(
-    Decoder.forProduct2("tests", "failure")(PlanFailure.apply),
-    Encoder.forProduct2("tests", "failure")(value => (value.tests, value.failure)),
-  )
-  private implicit val planInspectionCodec: Codec[PlanInspection] = product(
-    Decoder.forProduct3("keys", "scopes", "failures")(PlanInspection.apply),
-    Encoder.forProduct3("keys", "scopes", "failures")(value => (value.keys, value.scopes, value.failures)),
-  )
-  private implicit val plannedSelectionCodec: Codec[PlannedSelection] = product(
-    Decoder.forProduct2("selection", "inspection")(PlannedSelection.apply).emap { plan =>
-      plan.inspection.validate(plan.selection.tests.map(_.id)).map(_ => plan)
-    },
-    Encoder.forProduct2("selection", "inspection")(value => (value.selection, value.inspection)),
-  )
-  private implicit val messageCodec: Codec[ProtocolMessage] = product(
-    Decoder.instance { cursor => cursor.get[String]("kind").flatMap {
-      case "discover" => for {
-        run <- cursor.get[RunId]("run")
-        build <- cursor.get[BuildId]("build")
-        target <- cursor.get[BuildTargetId]("target")
-      } yield ProtocolMessage.Discover(run, build, target)
-      case "request" => for {
-        operation <- cursor.get[RequestOperation]("operation")
-        run <- cursor.get[RunId]("run")
-        request <- cursor.get[RunRequest]("request")
-      } yield ProtocolMessage.Request(operation, run, request)
-      case "cancel" => cursor.get[RunId]("run").map(ProtocolMessage.Cancel.apply)
-      case "discovered" => for {
-        run <- cursor.get[RunId]("run")
-        catalogue <- cursor.get[Catalogue]("catalogue")
-      } yield ProtocolMessage.Discovered(run, catalogue)
-      case "resolved" => for {
-        run <- cursor.get[RunId]("run")
-        selection <- cursor.get[ResolvedSelection]("selection")
-      } yield ProtocolMessage.Resolved(run, selection)
-      case "planned" => for {
-        run <- cursor.get[RunId]("run")
-        plan <- cursor.get[PlannedSelection]("plan")
-      } yield ProtocolMessage.Planned(run, plan)
-      case "event" => for {
-        sequence <- cursor.get[Long]("sequence")
-        event <- cursor.get[RunEvent]("event")
-        result <- if (sequence >= 0) Right(ProtocolMessage.Event(sequence, event)) else Left(DecodingFailure("Event sequence must not be negative", cursor.history))
-      } yield result
-      case "completed" => cursor.get[RunOutcome]("outcome").map(ProtocolMessage.Completed.apply)
-      case "rejected" => for {
-        run <- cursor.get[RunId]("run")
-        failure <- cursor.get[Failure]("failure")
-      } yield ProtocolMessage.Rejected(run, failure)
-      case other => unknown(cursor, other)
-    } },
-    Encoder.instance {
-      case ProtocolMessage.Discover(run, build, target) => tagged("discover", "run" -> runIdCodec(run), "build" -> buildIdCodec(build), "target" -> targetIdCodec(target))
-      case ProtocolMessage.Request(operation, run, request) => tagged("request", "operation" -> operationCodec(operation), "run" -> runIdCodec(run), "request" -> requestCodec(request))
-      case ProtocolMessage.Cancel(run) => tagged("cancel", "run" -> runIdCodec(run))
-      case ProtocolMessage.Discovered(run, catalogue) => tagged("discovered", "run" -> runIdCodec(run), "catalogue" -> catalogueCodec(catalogue))
-      case ProtocolMessage.Resolved(run, selection) => tagged("resolved", "run" -> runIdCodec(run), "selection" -> resolvedSelectionCodec(selection))
-      case ProtocolMessage.Planned(run, plan) => tagged("planned", "run" -> runIdCodec(run), "plan" -> plannedSelectionCodec(plan))
-      case ProtocolMessage.Event(sequence, event) => tagged("event", "sequence" -> exactLongCodec(sequence), "event" -> eventCodec(event))
-      case ProtocolMessage.Completed(outcome) => tagged("completed", "outcome" -> outcomeCodec(outcome))
-      case ProtocolMessage.Rejected(run, failure) => tagged("rejected", "run" -> runIdCodec(run), "failure" -> failureCodec(failure))
-    },
+  private implicit val planFailureCodec: Codec[PlanFailure] = Codec.forProduct2("tests", "failure")(PlanFailure.apply)(value => (value.tests, value.failure))
+  private implicit val planInspectionCodec: Codec[PlanInspection] = Codec.forProduct3("keys", "scopes", "failures")(PlanInspection.apply)(value => (value.keys, value.scopes, value.failures))
+  private implicit val plannedSelectionCodec: Codec[PlannedSelection] = Codec.forProduct2("selection", "inspection")(PlannedSelection.apply)(value => (value.selection, value.inspection)).iemap { plan =>
+    plan.inspection.validate(plan.selection.tests.map(_.id)).map(_ => plan)
+  }(identity)
+  private implicit val messageCodec: Codec[ProtocolMessage] = union(
+    variant[ProtocolMessage, ProtocolMessage.Discover]("discover", Codec.forProduct3("run", "build", "target")(ProtocolMessage.Discover.apply)(value => (value.run, value.build, value.target))),
+    variant[ProtocolMessage, ProtocolMessage.Request]("request", Codec.forProduct3("operation", "run", "request")(ProtocolMessage.Request.apply)(value => (value.operation, value.run, value.request))),
+    variant[ProtocolMessage, ProtocolMessage.Cancel]("cancel", Codec.forProduct1("run")(ProtocolMessage.Cancel.apply)(_.run)),
+    variant[ProtocolMessage, ProtocolMessage.Discovered]("discovered", Codec.forProduct2("run", "catalogue")(ProtocolMessage.Discovered.apply)(value => (value.run, value.catalogue))),
+    variant[ProtocolMessage, ProtocolMessage.Resolved]("resolved", Codec.forProduct2("run", "selection")(ProtocolMessage.Resolved.apply)(value => (value.run, value.selection))),
+    variant[ProtocolMessage, ProtocolMessage.Planned]("planned", Codec.forProduct2("run", "plan")(ProtocolMessage.Planned.apply)(value => (value.run, value.plan))),
+    variant[ProtocolMessage, ProtocolMessage.Event]("event", checked(Codec.forProduct2("sequence", "event")(ProtocolMessage.Event.apply)(value => (value.sequence, value.event))) { value =>
+      if (value.sequence >= 0) Right(value) else Left("Event sequence must not be negative")
+    }),
+    variant[ProtocolMessage, ProtocolMessage.Completed]("completed", Codec.forProduct1("outcome")(ProtocolMessage.Completed.apply)(_.outcome)),
+    variant[ProtocolMessage, ProtocolMessage.Rejected]("rejected", Codec.forProduct2("run", "failure")(ProtocolMessage.Rejected.apply)(value => (value.run, value.failure))),
   )
 }
