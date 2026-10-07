@@ -20587,3 +20587,88 @@ pre-command manifests in that directory's audit.json; historical evidence is
 not asserted to match later edited bytes. A first archive audit used an ambiguous
 basename suffix and failed; the corrected audit uses exact checkout-relative
 member paths and exits 0.
+
+
+### 2026-10-07 — application planning shutdown and ordinary-runtime compatibility
+
+The second normal-runtime batch terminates with actual exit 1 after831.457s,
+1729 inputs unchanged. Its runner controls pass base887 x3 and higher803/680/680,
+but the ordinary JVM task rejects all121 suites during Discovery with
+`Conflicting test runner runtime policies in one session`. Scala3 is not started.
+The actual XML failures are the reproduction; the batch is not relabeled passing.
+
+The legacy global runner chooses one launching suite's runtime for its complete
+selected group, including suites whose own runtime hook selects another effect.
+The draft's blanket compatibility rejection therefore changes ordinary-suite
+behavior. The revised isolated draft retains one session provider, environment
+cache, memoization tree and owned runner graph. The first selected distage
+identity supplies the outer factory; other registered factories remain
+unacquired. Mixed-policy and explicit-second-suite selection controls exercise
+MiniBIO, Cats IO and ZIO, including an unchosen factory that throws if acquired,
+shared application-resource acquisition/release exactly once, and every selected
+identity. The earlier compatibility machinery and core recipe marker are removed
+from the draft. Their historical fail/pass captures remain evidence for that
+abandoned design, not a claim about the final approach. No acceptance clause is
+removed or narrowed.
+
+Read-only review predicted that TestApplication.close waits for the command tail
+before reaching RunSession.close's planning signal. Actual held-plan application
+controls reproduce this, then pass after close requests the separate planning
+signal before waiting. They preserve queued-execution admission without marking
+the session closed prematurely. The same held-plan control reproduces Cancel
+returning without interruption. RunSession.cancel now also signals planning
+while its admitted provider owners remain unpublished; cancellation before
+planning retains the existing selected-test cancellation path.
+
+The consolidated control exercises four public shutdown routes on all three
+real runtimes: session.close, application.close, application Cancel, and
+ApplicationExecution.cancel. Every route observes interruption before opening
+the plan gate, waits through held graph/outer release, releases once and never
+publishes an executable plan or runs a body. All cleanup gates drain before
+assertion. Masked acquisition and failed inspection projection controls remain.
+The combined JVM capture passes854 higher-provider checks and887 base checks,
+including the prior close-admission, cancellation-before-body and bootstrap cases.
+
+Direct capture command/completion records:
+
+- 5-runtime-application-close-before-first: OwnedFactoryProbe-completion.json: actual exit 1, 1.772s, inputs unchanged=True; compile-completion.json: actual exit 0, 8.942s, inputs unchanged=True. Command manifest SHA-256 941e1bb0fa184e4af22d2a45d92b73ce8300b196c74027694d89dfdb68bfb096.
+
+- 5-runtime-application-close-after-first: BaseRunnerFixtures-completion.json: actual exit 0, 1.429s, inputs unchanged=True; DistageProviderFixtures-completion.json: actual exit 0, 14.198s, inputs unchanged=True; OwnedFactoryProbe-completion.json: actual exit 0, 2.224s, inputs unchanged=True; compile-completion.json: actual exit 0, 10.091s, inputs unchanged=True. Command manifest SHA-256 77e1752b70dce43b1e72de943d487ca41b01f026bda284272d36906ef28c0709.
+
+- 5-runtime-application-cancel-before-first: OwnedFactoryProbe-completion.json: actual exit 1, 1.576s, inputs unchanged=True; compile-completion.json: actual exit 0, 11.354s, inputs unchanged=True. Command manifest SHA-256 e44e3ffff6606d4f191b1bd017f19cda86c884237b5bfe241b0f4dcc036a7af1.
+
+- 5-runtime-application-cancel-after-first: BaseRunnerFixtures-completion.json: actual exit 0, 1.426s, inputs unchanged=True; DistageProviderFixtures-completion.json: actual exit 0, 15.278s, inputs unchanged=True; OwnedFactoryProbe-completion.json: actual exit 0, 2.443s, inputs unchanged=True; compile-completion.json: actual exit 0, 12.096s, inputs unchanged=True. Command manifest SHA-256 eb60a1e4ab98d5cbc1c94d273bad97b4b1da3e020002995d5969467b109d931b.
+
+- 5-runtime-selected-policy-direct-first: BaseRunnerFixtures-completion.json: actual exit 0, 1.475s, inputs unchanged=False; DistageProviderFixtures-completion.json: actual exit 0, 18.924s, inputs unchanged=False; OwnedFactoryProbe-completion.json: actual exit 0, 5.144s, inputs unchanged=False; compile-completion.json: actual exit 0, 8.997s, inputs unchanged=True. Command manifest SHA-256 a2988e8874e0078fe7b76548c6c97e08065a5768ff4b4a2ae499b23efcd1a0a9.
+
+- 5-runtime-normal-combined-direct-third: BaseRunnerFixtures-completion.json: actual exit 0, 1.523s, inputs unchanged=True; DistageProviderFixtures-completion.json: actual exit 0, 14.714s, inputs unchanged=True; OwnedFactoryProbe-completion.json: actual exit 0, 6.339s, inputs unchanged=True; compile-completion.json: actual exit 0, 9.093s, inputs unchanged=True. Command manifest SHA-256 15e1d4ff6e580d8ba5b3ede29cc03d2d4c7d41f72333337f24b214183c00eb3a.
+
+
+The corrected full batch is5-normal-runtime-platform-third,73 commands per
+compiler with a frozen source archive; results remain pending. It includes
+ordinary/core/engine parity, six runner lanes,11 original standalone CLI cases
+and held caller interruption. Final-head and published-host gates remain open.
+
+The completed correction review of the preceding draft is preserved in
+5-normal-runtime-correction-readonly-review-first: review SHA-256
+2e593efa946da9f5df3ffebd04ecb8fc0202daa28c696b1a7afa174352d96d5c;
+manifest fabeaae8eb90b8301b6b9750bfe3d15e4b2b97ea6ca191e49ee3c569ce5acd97;
+inspection2a0f047988f5285993109ae84777153191452d62b0e5c7f9d6ed7cc480ef555e.
+Its module-copy prediction was reproduced under the discarded compatibility
+design. Its application-close prediction is reproduced and corrected above.
+A new read-only review covers the revised selected-launcher source and controls.
+The opaque custom-runtime factory migration question remains waiting on owner.
+
+A fresh isolated final-retirement checkout is prepared from rebased d1bd1f276,
+with the normal-runtime draft and72 exact legacy-source deletions. Legacy global
+dependencies, temporary vendor filters, version pins and macro setting are
+removed from the generator; generated output is regenerated using pinned sbtgen,
+not hand-edited. This is preparation, not main integration or acceptance closure.
+The first generator command is blocked by the new checkout's direnv allowlist;
+the second reuses the already-authorized project environment and exits0.
+5-runtime-retirement-next-reviewable-diff-first omitted staged deletions because
+it used git diff instead of git diff HEAD; the corrected historical candidate
+capture5-runtime-retirement-next-reviewable-diff-second includes all81 changed
+files and72 staged deletions. Its patch SHA-256 is
+13212f0aa8c26188cc6a8f4ea8c207a0d93d4d3aa2c0cf75108aee50334f4ebd.
+That historical patch is not applied wholesale to the rebased checkout.
