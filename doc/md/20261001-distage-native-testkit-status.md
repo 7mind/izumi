@@ -20513,3 +20513,77 @@ platform lanes, CLI and held standalone interruption. Qualification is running.
 Pre-publication cancellation is being developed separately in
 runtime-prepublication-worktree. Normal runtime replacement and final legacy
 retirement remain WIP; no final acceptance item is closed by these draft checks.
+
+
+### 2026-10-07 — normal runtime ownership corrections and platform policy reproduction
+
+Normal configurable runtime replacement remains WIP. Direct source controls
+below are isolated draft evidence; they do not qualify unpublished branch
+integration, final artifact retirement, or current final-head acceptance.
+
+A held real runner.plan control reproduced session.close waiting for plan
+publication without requesting interruption. The correction passes an explicit
+close-specific planning cancellation signal from RunSession through the provider
+and factory, and gates operation startup until interruption is registered. The
+MiniBIO, Cats IO, and ZIO controls now observe interruption before opening the
+planning gate, keep close and planning incomplete through held finalization,
+release runner graph and outer allocation once, and reject executable publication.
+
+A runner override returning an unknown transient UID reproduced failed
+DistagePlanInspection projection leaving an unpublished owner acquired. The
+control captures the interpreter stop and drains graph/outer cleanup before
+asserting the failing observation. The correction joins prepared.close before
+publishing projection failure and retains an independent close error in a fresh
+aggregate. Its unchanged control now passes with held finalization awaited.
+
+Additional masked-allocation controls pass for all three real runtimes: close
+waits through incomplete acquisition and held graph release, releases once,
+then rejects execution without a body. These latest controls are not yet in the
+running platform batch.
+
+The first full normal runtime batch, 5-normal-runtime-platform-first, fails
+with actual exit 1 at 373.963s and 1728 unchanged inputs. Scala 2 JVM higher
+controls pass 783 checks. Scala.js reproduces default ZIO factory compatibility
+rejection. The unchanged instrumented JS capture
+5-normal-runtime-policy-js-observation-first exits 1 at 112.779s and observes
+17 fresh provider/instance bindings among 49 equal-intent default ZIO recipe
+bindings. Function-reference equality is not a portable built-in policy key.
+The corrected draft marks only built-in ZIO recipes with immutable internal
+provenance (environment type and interop policy), preserving module-binding
+semantics and exact custom-module comparison. Module transformations discard
+that provenance. A read-only review then predicted that an unchanged
+Module.from copy would be rejected; the actual registration control reproduced
+that false negative, and its isolated correction also accepts exact recipe
+copies while rejecting changed policies. The pending full batch predates this
+last copied-module correction.
+
+5-normal-runtime-platform-second runs 73 scoped commands per compiler against
+1729 frozen inputs. Its completed Scala 2 runner controls pass base 887 on all
+three platforms and higher 803/680/680; ordinary/core/engine checks and Scala 3
+remain in flight. No terminal success is claimed for the complete batch.
+
+Opaque public TestRunnerRuntime implementations remain waiting on owner for a
+specific imports-only scope decision. The approved custom plugin-loader factory
+exception does not authorize this further runtime migration. The protected hook
+and built-in factory calls remain implemented; no acceptance item is closed for
+unsupported custom implementations.
+
+Direct captures and their exact command/completion manifests:
+
+- 5-runtime-prepublication-before-third: OwnedFactoryProbe-completion.json: actual exit 1, 3.330s, unchanged inputs=True; compile-completion.json: actual exit 0, 9.759s, unchanged inputs=True. Manifest SHA-256 fbc0112b0549aeb3c5e723791111e7636af77dbe91a4b2c2af086410b05c48f4.
+- 5-runtime-prepublication-after-first: OwnedFactoryProbe-completion.json: actual exit 0, 3.220s, unchanged inputs=True; compile-completion.json: actual exit 0, 9.836s, unchanged inputs=True. Manifest SHA-256 899fda195b1a56a5714d6b39028d1720b6fd04da98a31b818222d160c9b6974c.
+- 5-runtime-projection-before-first: OwnedFactoryProbe-completion.json: actual exit 1, 2.825s, unchanged inputs=True; compile-completion.json: actual exit 0, 8.842s, unchanged inputs=True. Manifest SHA-256 e0c62fa64ef405e56cb100b3936ae41ed4e6505f0dd969727f824c1239e0ffb8.
+- 5-runtime-projection-after-first: OwnedFactoryProbe-completion.json: actual exit 0, 2.721s, unchanged inputs=True; compile-completion.json: actual exit 0, 8.582s, unchanged inputs=True. Manifest SHA-256 3d4eeae1acb830d5a239d945a9f473537dcb16c76f34e6cff2eb2d7b256c1550.
+- 5-runtime-owned-combined-direct-second: BaseRunnerFixtures-completion.json: actual exit 0, 1.689s, unchanged inputs=True; DistageProviderFixtures-completion.json: actual exit 0, 13.958s, unchanged inputs=True; OwnedFactoryProbe-completion.json: actual exit 0, 4.891s, unchanged inputs=True; compile-completion.json: actual exit 0, 9.400s, unchanged inputs=True. Manifest SHA-256 50e26fa1dccf496daf76e18ef8e413275497c4932b7db9ade18a538b17b4e544.
+- 5-runtime-masked-acquisition-direct-first: BaseRunnerFixtures-completion.json: actual exit 0, 1.878s, unchanged inputs=True; DistageProviderFixtures-completion.json: actual exit 0, 15.252s, unchanged inputs=True; OwnedFactoryProbe-completion.json: actual exit 0, 5.334s, unchanged inputs=True; compile-completion.json: actual exit 0, 11.454s, unchanged inputs=True. Manifest SHA-256 3253c28798a7eeb2e5ff0e77a6841622ee1e60e9205d052053d09c2945c77f14.
+- 5-runtime-policy-copy-before-first: OwnedFactoryProbe-completion.json: actual exit 1, 1.375s, unchanged inputs=True; compile-completion.json: actual exit 0, 11.679s, unchanged inputs=True. Manifest SHA-256 3dd662a1922375cf47cbe4c80e90cc7a1ac4eed52194b81019d53ab3f9986069.
+- 5-runtime-policy-copy-after-first: OwnedFactoryProbe-completion.json: actual exit 0, 1.373s, unchanged inputs=True; compile-completion.json: actual exit 0, 10.097s, unchanged inputs=True. Manifest SHA-256 dd71c91901bcee311be79a87af0645216b0e161b2fd75c17c1562e8fd52934cf.
+
+Frozen snapshots of both platform batches have been independently verified
+member-by-member against their captured source manifest; results are in
+5-runtime-owned-controls-audit-first/frozen-platform-audit.json. Nine earlier
+direct snapshots and completions were also verified against their original
+pre-command manifests in that directory's audit.json; historical evidence is
+not asserted to match later edited bytes. A first archive audit used an ambiguous
+basename suffix and failed; the corrected audit uses exact checkout-relative
+member paths and exits 0.
