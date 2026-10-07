@@ -28,7 +28,6 @@ private[di] object SpecRuntimeFactoryFixtures {
     val released = new AtomicInteger(0)
     val bodies = new AtomicInteger(0)
     val entered = Promise[Unit]()
-    val bodyGate = Promise[Unit]()
     val releasing = Promise[Unit]()
     val release = Promise[Unit]()
     val graphFailure = new IllegalStateException("owned runner graph release failure")
@@ -120,7 +119,7 @@ private[di] object SpecRuntimeFactoryFixtures {
             Success(())
           }
         }.transformWith { result =>
-          val _ = (stats.bodyGate.trySuccess(()), stats.release.trySuccess(()))
+          val _ = stats.release.trySuccess(())
           execution.transformWith(_ => session.close()).transformWith(_ => Future.fromTry(result))
         }
       }
@@ -138,6 +137,6 @@ private[di] object SpecRuntimeFactoryFixtures {
   private final class CancellingSuite[F[_]: TagK: DefaultModule](stats: Statistics, runtime: TestRunnerRuntime)(implicit F: QuasiIO[F], FA: QuasiAsync[F]) extends Spec1[F] {
     override protected def testRunnerRuntime(): TestRunnerRuntime = runtime
     override protected def config: TestConfig = stats.config
-    "held body" in { (_: Resource) => F.flatMap(F.maybeSuspend { val _ = stats.entered.success(()) })(_ => FA.fromFuture(stats.bodyGate.future)) }
+    "held body" in { (_: Resource) => F.flatMap(F.maybeSuspend { val _ = stats.entered.success(()) })(_ => FA.fromFuture(Promise[Unit]().future)) }
   }
 }

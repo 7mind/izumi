@@ -246,8 +246,10 @@ release once they exist.
   migrated form, and they compile and pass. The status ledger records a diff of
   each against its pre-migration source, and that diff touches only import
   lines. Custom plugin-loader hooks may additionally migrate to the
-  owner-authorized session-aware factory API; their recorded diffs identify
-  those changes and verify the preserved behavior required by O.1.
+  owner-authorized session-aware factory API. Custom implementations of
+  `TestRunnerRuntime.runTests` may migrate to `asyncRuntimeFor` factories under
+  the owner's 2026-10-07 authorization. Their recorded diffs identify those
+  changes and verify the preserved behavior required by O.1.
 - **2b.11** (final): Each run session instantiates suites through its own
   factories, and the run is declared complete only after its resources are
   released.

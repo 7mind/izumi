@@ -14,6 +14,10 @@ spike captures remain historical evidence.
 The owner also authorizes migrating custom plugin-loader hooks to the explicit
 session-aware factory API. Acceptance item 2b.10 permits those additional hook
 edits; ordinary suites retain imports-only migration, and O.1 remains required.
+On 2026-10-07 the owner additionally authorizes custom implementations of
+`TestRunnerRuntime.runTests` to migrate to the existing `asyncRuntimeFor`
+factory API under 2b.10. The protected hook and built-in factory calls remain
+compatible; migration diffs and preserved O.1 behavior still require validation.
 
 The owner's further 2026-10-05 instruction excludes IDE implementation and IDE
 validation from this run. Step 4 and IDE-specific evaluation remain deferred,

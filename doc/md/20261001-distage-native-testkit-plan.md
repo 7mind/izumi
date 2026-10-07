@@ -1144,6 +1144,14 @@ assumptions; a different answer changes the listed steps.
   retain that requirement. Custom-hook migration diffs and preserved behavior
   must still be verified under 2b.10 and O.1 at their evaluation points.
 
+- **Custom runtime implementations.** On 2026-10-07 the owner authorizes
+  custom implementations of `TestRunnerRuntime.runTests` to migrate to the
+  existing `asyncRuntimeFor` factory API. The protected `testRunnerRuntime()`
+  hook and built-in factory calls remain compatible. This is an additional
+  owner-authorized exception to 2b.10's imports-only migration requirement;
+  ordinary suites retain that requirement. Verify each migration diff and
+  preserve the planning, merging, memoization and execution behavior under O.1.
+
 - **Legacy correction for #2361.** Assumed: the new runner and plugin address the
   failure class. A correction to the released ScalaTest-based runner is separate
   maintenance tracked by the issue, not a step of this plan; scheduling it adds a

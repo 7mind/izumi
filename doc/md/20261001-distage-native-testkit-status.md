@@ -20748,3 +20748,69 @@ inspectionb5d5e8e89c7f83791ba96d5bf8e77f00556e98cd3fc7243149bb879cf7d58124.
 Schema1 retains20 source/reference revisions and259 evidence inputs. Concurrent
 raw-plan closure and late fixture callback predictions are not reproduced defects;
 platform qualification remains required. No parent/final acceptance gate closes.
+
+
+### 2026-10-07 — full batch callback reproduction and CLI harness correction
+
+Commit8814aa3ce integrates the bounded configured-runtime milestone described
+above. The normal platform-third Scala2.13 capture ends with actual exit1 after
+833.447s; all1728 input hashes remain unchanged. Seventy-one preceding commands
+complete, with887 base checks on each platform and854/731/731 provider checks.
+The independent case-parity-only audit verifies377 JVM cases/121 reports and164
+cases/38 reports on each of JS and Native, with exactly358/145/145 successes and
+19 cancellations per platform. This is ordinary-suite parity evidence, not a
+passing full capture. Scala3 was not started by that driver.
+
+The strict log audit also reproduces two Native RejectedExecutionException
+traces from SpecRuntimeFactoryFixtures cleanup: completing bodyGate after the
+ZIO executor has been released schedules its fromFuture callback on the closed
+executor. The fixture now suspends on a local permanently pending Future and
+relies on the existing cancellation mechanism, without completing that Future
+after shutdown. QuasiAsync.async is explicitly uninterruptible and therefore
+is not a compatible alternative. Production runtime behavior is unchanged.
+
+Direct after-second compiles the current owned seams and runtime fixtures,
+passes177 owned-factory controls,872 provider checks and887 base checks, with
+all four actual exits0 and inputs unchanged. No log contains a rejected
+callback diagnostic. Native verification of this fixture correction remains
+pending. The preliminary after-first ran against an obsolete scratch checkout
+that lacked the new fixtures and failed compilation; it is invalid evidence
+and does not qualify the correction.
+
+The batch's terminal CLI failure is separately reproduced as ClassNotFoundException:
+java.class.path contains SBT's launcher rather than the runner test classpath.
+The corrected supplement uses LocalProject("distage-test-runnerJVM") / Test / fork := true.
+Its Scala2.13 command exits0 after81.125s with unchanged inputs, passing all11
+actual CLI subprocess cases and the held-caller interruption/finalizer control.
+The first supplement's unquoted hyphenated project identifier fails SBT's set
+expression compiler and is retained. After the successful CLI supplement, its
+controller fails to find the ungenerated Scala3 command manifest; this
+controller failure does not invalidate the recorded Scala2.13 command, and
+Scala3 remains pending. New batch preparation uses the existing baseline
+Scala3 template instead.
+
+The first final-retirement batch remains frozen and running; it still contains
+the preceding callback fixture. No source is edited in either live producer.
+Final checks must cover the corrected source and retain all failed captures.
+No parent/final acceptance gate is closed by these bounded checks.
+
+Direct correction command manifest SHA-256:023a66dd37fabd385a726db26fa26606d781c86fba9f10c51658acdeb2c9fcc6.
+
+- BaseRunnerFixtures-completion.json: actual exit 0, 1.488s, inputs unchanged=True.
+
+- DistageProviderFixtures-completion.json: actual exit 0, 15.713s, inputs unchanged=True.
+
+- OwnedFactoryProbe-completion.json: actual exit 0, 7.616s, inputs unchanged=True.
+
+- compile-completion.json: actual exit 0, 10.958s, inputs unchanged=True.
+
+
+### 2026-10-07 — owner-authorized custom runtime factory migration
+
+The owner explicitly answers "Allow custom runtime implementations to migrate
+to factories" to the pending runTests compatibility scope question. The plan,
+brief and2b.10 record this additional exception separately from plugin-loader
+migration. Protected testRunnerRuntime() and built-in factory calls remain
+compatible; ordinary suites retain import-only migration. The scope decision
+is resolved. Inventory, exact diffs and executed O.1 behavior remain required;
+this authorization does not close2b.10 or any implementation acceptance gate.
