@@ -18,9 +18,10 @@ explicit owner instruction authorizes the version-scope edits below. Item IDs,
 evaluation points, platforms, and correctness requirements remain unchanged.
 
 The owner also authorizes custom plugin-loader hooks to migrate to an explicit
-session-aware factory API. This is the sole non-import migration exception in
-2b.10; O.1 still requires preserving planning, environment merging, memoization,
-and effect execution.
+session-aware factory API. On 2026-10-07 the owner additionally permits custom
+`TestRunnerRuntime.runTests` implementations to migrate to `asyncRuntimeFor`
+factories. These are the non-import migration exceptions in 2b.10; O.1 still
+requires preserving planning, environment merging, memoization and effect execution.
 
 Further owner instruction, 2026-10-05: IDE implementation and IDE validation are
 excluded from this run. Step 4 and IDE-specific checks remain deferred, not done.

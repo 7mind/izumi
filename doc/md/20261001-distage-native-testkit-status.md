@@ -20896,3 +20896,32 @@ The module batch covers the21 distage/platform projects per compiler plus
 BIO JVM/JS/Native, eight logstage projects and Docker. Its exact-case baseline
 combines the independently qualified pre-migration inventories. These checks
 are running, not passed; the candidate remains unintegrated into main.
+
+
+### 2026-10-07 — complete Scala2.13 publication payload audit
+
+The corrected library-only publication completes actual0 after277.765s with
+all1652 frozen inputs unchanged. Independent artifact audit freezes79 actual
+Scala2.13 JVM/JS/Native primary JAR/POM pairs under the private final-retirement
+version. Their25729 class/NIR/SJSIR payload members match the captured candidate's
+compiler outputs exactly. POMs contain no ScalaTest/Scalactic/ScalaTestPlus or
+Scoverage dependency, all izumi dependencies use the candidate version, and
+base runner POMs keep exactly the assertions/protocol bound. No fixture payload
+or coverage invocation is present. Evidence:
+5-final-retirement-artifacts-scala213-first/audit.json. Scala3 and pinned host
+publication, complete resolved consumers and final evaluation remain pending.
+
+Read-only retirement review identifies two stale scope summaries: the acceptance
+header still calls plugin-loader migration the sole exception, and the brief's
+quoted objective omits the new custom-runtime exception. Both summaries now
+match the explicit2026-10-07 owner answer and the already amended2b.10. No other
+compatibility requirement is weakened. Live producer snapshots are left unchanged;
+these requirements-text corrections must be included in final integration.
+
+The first module batch passes all three235-check protocol tasks, then reproduces
+the same SBT host projectDependencies mismatch against the switched2.13 protocol.
+Its actual exit1 after225.288s has unchanged1652 inputs. The second module batch
+runs only the66 target compiler/project lanes; pinned3.8.4 host/protocol checks
+remain separately required and will run with host publication. Their removal
+from this invocation moves validation to the correct compiler process, not out
+of acceptance scope. The exact target case baselines total5314 cases in66 lanes.
