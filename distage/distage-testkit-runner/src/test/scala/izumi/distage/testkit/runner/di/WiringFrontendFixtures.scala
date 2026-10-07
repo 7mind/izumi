@@ -56,6 +56,6 @@ private[di] object WiringFrontendFixtures {
         verify("wiring suite runtime flag controls actual application planning", selected.plans.get() == (if (runtime) 1 else 0))
         println("DISTAGE_WIRING_FRONTEND_OK runtime=" + runtime + " tests=" + expected)
       }
-    } }
+    } }.flatMap(_ => WiringDefaultsFixtures.run(context, verify))
   }
 }

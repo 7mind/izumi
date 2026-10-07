@@ -19178,3 +19178,37 @@ new default-call discovery/execution controls. Its six-lane full higher-provider
 batch is in5-wiring-defaults-controls-first/,1645 frozen inputs. Compilation
 of ordinary call shapes and actual runtime defaults are being verified; actual
 compiler materialization and the complete imports-only inventory remain open.
+
+## 2026-10-07: verified wiring optional-argument compatibility checkpoint
+
+The restored optional cfg/runtime-recheck arguments pass the full higher-runner
+controls on all six supported lanes:259.089s on Scala2.13.18 and344.753s
+on Scala3.9.0, with1645 frozen inputs unchanged per process. Counts are
+691 JVM/568 JS/568 Native per compiler,3654 checks overall. Independent audit
+exits0 and verifies both original false/true wiring sessions and twelve added
+default-call sessions with24 successful case outcomes. The original constructor
+and assertion call shapes now compile. Omitted runtime flags retain the legacy
+recheck; default constructors register two checks without planning during
+discovery and plan exactly once during execution.
+
+The existing defaults are optional public API behavior, not newly introduced
+defaults for required inputs. This correction preserves the imports-only
+compatibility requirement instead of requiring routine suites to add arguments.
+Actual compiler macro materialization and the full ordinary-suite inventory
+remain open. Commands and audit are in5-wiring-defaults-controls-first/; audit:
+python3 /srv/nvme/tmp/izumi-impl/5-wiring-defaults-controls-first/audit.py.
+
+All seven API/control files are copied to main after their four prior tracked
+payloads match the verified candidate base. All frozen source inputs are
+archived in5-wiring-defaults-controls-first/frozen-source-inputs.tar.gz,
+SHA256:bafcb6b793928886b293231337e1c023fc95802d648f44dc459b69b1c90167bf. The completed owned worktree can now be
+removed; captures and the source archive remain. No parent phase is complete.
+
+The six-module execution candidate passes the previously failing Scala2.13
+configuration cases on all platforms:30 JVM/13 JS/16 Native, including all
+four isolated absence-check bodies. Native core again passes308 cases without
+SDK transport errors. The remaining compiler/module/inspection batch outcomes
+are still pending; no complete migration is claimed yet. Its source-diff
+inventory records65 migrated suite files,51 with only import-line changes.
+Additional changes are recorded separately for exception, matcher, step-logging
+and absence-check facilities in migration-source-diff-inventory.json.

@@ -5,8 +5,8 @@ import izumi.distage.modules.DefaultModule
 
 abstract class SpecWiring[F[_], AppMain <: CheckableApp { type AppEffectType[A] = F[A] }, Cfg <: PlanCheckConfig.Any](
   val app: AppMain,
-  val cfg: Cfg,
-  val checkAgainAtRuntime: Boolean,
+  val cfg: Cfg = PlanCheckConfig.empty,
+  val checkAgainAtRuntime: Boolean = true,
 )(implicit
   val planCheck: PlanCheckMaterializer[AppMain, Cfg],
   defaultModule: DefaultModule[F],

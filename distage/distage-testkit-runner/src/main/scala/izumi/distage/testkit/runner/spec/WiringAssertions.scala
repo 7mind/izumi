@@ -6,8 +6,8 @@ trait WiringAssertions { this: TestAssertions =>
 
   def assertWiringCompileTime(
     app: CheckableApp,
-    cfg: PlanCheckConfig.Any,
-    checkAgainAtRuntime: Boolean,
+    cfg: PlanCheckConfig.Any = PlanCheckConfig.empty,
+    checkAgainAtRuntime: Boolean = true,
   )(implicit planCheckResult: PlanCheckMaterializer[app.type, cfg.type]
   ): Unit = {
     assert(planCheckResult.checkPassed)
