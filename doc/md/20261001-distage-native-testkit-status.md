@@ -20925,3 +20925,37 @@ runs only the66 target compiler/project lanes; pinned3.8.4 host/protocol checks
 remain separately required and will run with host publication. Their removal
 from this invocation moves validation to the correct compiler process, not out
 of acceptance scope. The exact target case baselines total5314 cases in66 lanes.
+
+
+### 2026-10-07 — full supported normal runtime matrix qualified
+
+The final normal Scala3.9 capture completes all74 commands with actual0 after
+1500.328s and all1728 input hashes unchanged. Independent audit verifies887
+base checks per JVM/JS/Native lane,872/749/749 provider checks, all four planning
+shutdown routes on each real runtime, masked allocation and closed-plan reuse,
+ordinary377/164/164 cases with exact original identities/outcomes,11 actual CLI
+subprocesses, held caller finalization,165 inner JVM interruption bodies and
+both runner-override lifetime checks. No rejected callback appears. A separate
+source-applicability receipt checks all1728 captured code/build inputs against
+current main at cb033a88b; every one matches byte-for-byte. The earlier capture
+HEAD denotes its isolated checkout history, not missing current source changes.
+Evidence:5-normal-runtime-scala3-final-first/audit.py,
+independent-ordinary-runtime-main-audit.json and current-main-source-applicability.json.
+
+Together with the corrected Scala2.13 provider/CLI supplement and the audited
+ordinary case parity, this qualifies the configured runtime milestone on all
+six supported compiler/platform combinations. This remains a bounded milestone:
+final retired-graph publication, consumers, full module matrix, coverage and
+microsite/head evaluations remain open. No parent acceptance step closes.
+
+The second target module batch completes four exact prefix lanes before an
+invalid validation query, actual1 after327.554s with unchanged inputs. The
+successful prefix comprises168 platform JVM cases,153 JS,155 Native and two
+core API JVM cases, all with exact discovered names, outcome parity and vendor-
+free resolved classpaths. Production distage-core-api has no publish/skip key
+in that queried scope. The third batch asks it only for test-only projects and
+continues the remaining29 Scala2.13 projects, then all33 Scala3 projects. The
+four prior successful lanes are retained and independently composed in
+5-final-retirement-module-matrix-third/composed-prior-lanes-audit.json. No suite
+is skipped from the required66-lane matrix and the failed capture is not called
+successful. Pinned3.8.4 host controls remain a separate required check.
