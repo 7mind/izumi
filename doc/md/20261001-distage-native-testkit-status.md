@@ -19959,3 +19959,56 @@ with the host plugin/protocol compiled on pinnedScala3.8.4. The first consumer
 reproduces a build-definition type error becauseSBT2 test is an input key;
 its task dependency is being corrected to Test/testFull. JUnit qualification
 and retirement remain open. No acceptance parent/final gate closes here.
+
+
+## 2026-10-07: owned runtime completion boundary verified on main
+
+The framework-neutral TestRuntime[F] owns one supplied interpreter allocation
+per operation. Startup/extraction failures release that allocation. An admitted
+stop request is idempotent; completion joins execution and the stop request,
+then releases exactly once on the explicit external completion context. A sole
+failure remains the original Throwable reference. Multiple independent failures
+use a fresh aggregate without mutating suppression-disabled originals. The
+production MiniBIO execution provider delegates its finalized completion and
+stop action to this boundary, retaining its cancellation start gate and existing
+Exit projection. Its interpreter remains borrowed from the session; generic
+owned allocations are exercised by the explicit runtime controls.
+
+The migrated finalization controls in5-owned-runtime-finalization-second pass
+both compilers onJVM/JS/Native:54 cases, exact baseline names and successful
+outcomes, and3654 existing higher-runner checks. Producer exits0 after235.550s
+and282.638s,1697 frozen inputs unchanged. Its independent audit exits0, SHA256
+246a6b4b03db01973a76f2f3401e3e91833e07a9232ba2d101b28c5c574aed02.
+A wrong Assertion-package import failed compilation first and is corrected to
+the new runner's existing Unit alias; no behavioral predicate is changed.
+
+The two original JVM allocation-release controls are additionally restored in
+5-owned-runtime-release-first. Both producers exit0 after403.030s and305.670s,
+1698 frozen inputs unchanged. JVM preserves11 finalization/release cases per
+compiler;JS/Native preserve nine each. Held release keeps callback completion
+pending, executor callbacks drain and its executor terminates, and an independent
+release failure remains the original reference. Both release variants show
+acquired=1,released=1,callbacks=1. Independent audit exits0:58 cases with exact
+baseline identities/outcomes and3654 higher checks. Audit SHA256:
+d9577d0936bd1cfef8d58bb8e93f48babaec441ae13f52aa04dd96dade24c663.
+These migrated test sources remain in the frozen ordinary candidate pending
+its complete qualification/integration; original legacy controls remain.
+
+The two production source payloads are copied exactly to main and independently
+verified there in5-owned-runtime-main-first. Both compilers pass all three
+higher-runner lanes691/568/568,3654 checks in total. Scala2 exits0 after482.333s;
+Scala3 exits0 after410.931s;1660 frozen inputs unchanged. Its audit exits0
+and verifies byte identity with the qualified boundary/provider. Audit SHA256:
+2261fecfa55f0e77685b5d33ab7534016f2f27115d94ab9c111f3eae2f02fd08
+Commands, completions and frozen-source archives remain in these captures.
+
+A separate current32-lane ordinary candidate now includes this boundary, the
+factory progression correction, and all eleven JVM/nine shared runtime controls.
+It freezes1699 inputs in5-legacy-ordinary-migration-twelfth. Its auditor adds
+only the original cases restored from the qualified legacy baseline; no selected
+case or outcome is removed. Both results remain pending. Two original blocking
+caller cases and an interrupt-flag-restoring await boundary are being verified
+separately in5-owned-runtime-caller-first. The SBT helper's intentionally cleared
+flag is unchanged. Configurable outer runtime integration, non-empty resource
+bearing runner overrides, caller integration and all parent/final gates remain
+open. This is a bounded completion-boundary checkpoint, not full runtime parity.

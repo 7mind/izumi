@@ -9,7 +9,9 @@ import izumi.distage.testkit.spec.{SessionTestEnvironment, TestEnvironmentFactor
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderFactory}
 import izumi.functional.bio.Exit
 import izumi.functional.bio.impl.MiniBIOAsync
+import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.QuasiIORunner
+import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
 
@@ -37,6 +39,7 @@ final class DistageExecutionProvider(
   private val engine = new DistageEngine[RunnerF](configuration, options)
   private val runtime = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
   private val effectRunner = QuasiIORunner.fromBIO[MiniBIOAsync](using runtime)
+  private val completionRuntime = new TestRuntime[RunnerF](Lifecycle.pure(effectRunner), IzPlatform.platformGlobalExecutionContext)
   private var registrations = Vector.empty[RegisteredDistageTest]
   private var resolutions = Map.empty[TestDescriptor, DistageTest[AnyF]]
   private var planned = false
@@ -130,10 +133,13 @@ final class DistageExecutionProvider(
             val start = Promise[Unit]()
             val F = MiniBIOAsync.WeakAsyncForMiniBIOAsync
             val effect = F.flatMap(F.fromFuture(_ => start.future))(_ => runner.runPrepared(prepared))
-            val (execution, interrupt) = runtime.unsafeRunAsyncAsInterruptibleFuture(effect)
-            val registration = context.cancellation.onRequest(() => effectRunner.runFuture(interrupt.interrupt))
+            val operation = completionRuntime.start { _ =>
+              val (execution, interrupt) = runtime.unsafeRunAsyncAsInterruptibleFuture(effect)
+              (execution, () => effectRunner.runFuture(interrupt.interrupt))
+            }
+            val registration = context.cancellation.onRequest(operation.stop)
             start.success(())
-            execution.transformWith { result =>
+            operation.completion.transformWith { result =>
               registration.close().transform { stopped =>
                 val cancelled = context.cancellation.isRequested
                 def failed(cause: Throwable): Vector[Failure] = Vector(RunnerFailure.fromThrowable(FailurePhase.Finalization, cause))
