@@ -37,7 +37,7 @@ head. The spike reports are design evidence, not implementation verification.
 | L4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | L5 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | L6 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
-| G.1 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger check follows. |
+| G.1 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger audit0 is recorded below. |
 | 1a.1 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | 1a.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | 1a.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
@@ -87,54 +87,54 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.7 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | 2c.8 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | 2c.9 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
-| 2d.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.5 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.9 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.10 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.11 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.12 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger check follows. |
-| 2d.13 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.14 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.15 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.16 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.17 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.18 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.19 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.20 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.21 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.22 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2d.23 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2e.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2e.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2e.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2e.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2e.5 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger check follows. |
-| 2e.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2e.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 2e.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 3.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 3.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.5 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.9 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.10 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.11 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.12 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger audit0 is recorded below. |
+| 2d.13 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.14 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.15 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.16 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.17 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.18 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.19 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.20 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.21 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.22 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2d.23 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2e.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2e.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2e.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2e.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2e.5 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger audit0 is recorded below. |
+| 2e.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2e.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 2e.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 3.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 3.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
 | 4.1 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.2 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.3 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.4 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.5 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.6 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
-| 5.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.5 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| 5.9 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.5 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| 5.9 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
 | O.1 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | O.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
@@ -149,22 +149,22 @@ head. The spike reports are design evidence, not implementation verification.
 | O.12 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.13 | done | Non-IDE four-front-end/common integration contract reviewed and verified below. The IntelliJ portion stays owner-deferred and is not passed. |
 | O.14 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
-| O.15 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.15 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
 | O.16 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.17 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.18 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.19 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
-| O.20 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| O.21 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| O.22 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| O.23 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| O.24 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.20 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| O.21 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| O.22 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| O.23 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| O.24 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
 | O.25 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.26 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | O.27 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
-| O.28 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| O.29 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
-| O.30 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.28 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| O.29 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
+| O.30 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head source/ledger audit0 is recorded below. |
 | O.31 | not started | Deferred by the owner's2026-10-05 instruction; excluded from this run and not passed. |
 | O.32 | not started | Deferred by the owner's2026-10-05 instruction; excluded from this run and not passed. |
 | O.33 | done | Historical step evaluation verified and recorded below; superseded by 5.5, whose final evaluation remains separate. |
@@ -22313,5 +22313,46 @@ python3 -B /srv/nvme/tmp/izumi-impl/final-goal-head-source-and-ledger-audit.py
 --evidence-dir /srv/nvme/tmp/izumi-impl/5-whole-goal-final-head-audit-first.
 It will check the clean final head,all preceding/current reviewed subjects and
 sealed evidence,exact142-ID agreement,and134 done/eight owner-deferred states.
-Its actual final-head/result receipt is required before whole-goal completion.
+Its actual final-head/result receipt is recorded in the completion entry below.
 No heavy SBT/compiler/linker process remains active in the observed sandbox.
+
+## 2026-10-07: final acceptance and source-applicability receipt
+
+Phase2d/2e/3/5 evaluation commit:
+5971140e4ecfa20726b65767bcc9e6f7c9db7d91 (2026-10-07).
+The actual final-scope command
+python3 -B /srv/nvme/tmp/izumi-impl/final-goal-head-source-and-ledger-audit.py
+--repo-root /home/pavel/work/safe/7mind/izumi
+--evidence-dir /srv/nvme/tmp/izumi-impl/5-whole-goal-final-head-audit-first
+exits0 against that clean head. It checks exact142 acceptance/ledger IDs,
+all134 in-scope items done,eight explicit deferred IDE items,all536 distinct
+current reviewed source bindings,2617 final immutable evidence copies,and
+production-input applicability through the recorded commits. Acceptance file
+SHA2561eccbf376d1cf8d8ff40bea5bd33846288d4bcf013a6b76789c4c40dc95af1a1
+is unchanged. The final check does not relabel cached/historical executions as
+fresh tests or reinterpret their failure receipts.
+
+The independently sealed three review groups supply every item's exact behavior
+oracle and source applicability at its step and final evaluation. Step evaluations
+are2e2227d737df73cea2c906979fca74b563dea947 (1a–1d),
+078be156f80055b6f231a74efd09b717edd22717 (2a–2c),and
+5971140e4ecfa20726b65767bcc9e6f7c9db7d91 (2d/2e/3/5).
+The scope revision keeps SBT2.0.9,Scala2.13.18/3.9.0,protocol/host3.8.4;
+IDE4.1–6/O.31/O.32 and IDE portions remain owner-deferred,not passed.
+Every other current evaluation point is positive,with no remaining in-scope
+implementation,evidence,external dependency or owner decision outstanding.
+
+This final receipt commit changes only the evidence ledger. Final-head
+postcondition record:
+/srv/nvme/tmp/izumi-impl/5-whole-goal-final-head-audit-second/completion.json.
+Command:
+python3 -B /srv/nvme/tmp/izumi-impl/final-goal-head-source-and-ledger-audit.py
+--repo-root /home/pavel/work/safe/7mind/izumi
+--evidence-dir /srv/nvme/tmp/izumi-impl/5-whole-goal-final-head-audit-second.
+That record's finalHead/actualExit and source/hash fields identify the exact clean
+receipt-commit check,without attempting to place a commit's own SHA inside itself.
+The earlier first-head result is a completed observation,not a substitute for
+that postcondition. No push or external release is authorized/performed. The
+branch remains local with its reviewed Native/assertion/runner implementation.
+
+First completed whole-goal audit receipt SHA25625dddb7489b13bdfa78b72462be76a6ed0929f0a59f67c3d2a7f6b35d8e26c3c.
