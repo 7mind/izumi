@@ -7,6 +7,8 @@ import izumi.distage.framework.services.ConfigSourceReader
 import scala.util.{Failure, Success}
 
 private[framework] trait RoleCheckableAppPlatformSpecific {
+  private[framework] final def planCheckClassLoader: Option[ClassLoader] = Option(getClass.getClassLoader)
+
   private[framework] final def specificResourceConfigLoaderImpl(classLoader: ClassLoader, resourceName: String, clue: String): AppConfig = {
     val reader = new ConfigSourceReader.LocalFSImpl(classLoader)
     val content = reader.read(ConfigSource.Resource(resourceName)).getOrElse {

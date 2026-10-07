@@ -32,9 +32,9 @@ head. The spike reports are design evidence, not implementation verification.
 | Item | State | Evaluation-point evidence |
 | --- | --- | --- |
 | L1 | in progress | Serial f8911f8c CI passes Scala2.13 on JDK17/21/25 and Scala3 on JDK17/21 below. JDK25 Scala3 reproduces a separate registration oracle defect; its correction has bounded controls below. Complete final evaluation remains open. |
-| L2 | in progress | Serial f8911f8c JS Scala3 CI passes911 reported cases; Scala2.13 coverage stops in CPU-bound dependency reconciliation and has a queued retry. Final qualification remains open. |
+| L2 | in progress | Current corrected-assertion candidate passes Scala3 JS:892 passed,19 skipped. Scala2.13 coverage executes100 plain/12 Cats/13 BIO and887 base controls but fails linking on Class.getClassLoader after the reproduced System.exit path is removed. Platform-trait correction and ten-lane serial batch are queued below. |
 | L3 | in progress | Serial f8911f8c Native Scala3 and Scala2.13 CI pass968 and931 reported cases with exact preceding-capture identity parity and1814 unchanged inputs per lane. Current-source applicability and phase/final review remain open. |
-| L4 | in progress | Earlier candidate site actual0 remains preserved. Serial f8911f8c site actual1 reproduces an unavailable test Docker service after the OOM; the Docker CLI also cannot connect. Host diagnostic output and qualified retry are pending. |
+| L4 | in progress | Earlier candidate site actual0 remains preserved; final site actual1 fails with Docker unavailable after the OOM. Host launcher recovery now returns Docker5.8.7, but the sandbox socket mount points at a deleted inode. A syntax-checked, locally exercised exchange-directory relay awaits host execution; site retry remains required. |
 | L5 | in progress | Actual combined regeneration and clean generated-file diff pass at c4ac0d0cd; reproduced coverage-classpath correction is regenerated below. Final-head recheck remains open. |
 | L6 | in progress | Part-1 verification below; full gate remains outstanding. |
 | G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
@@ -21478,3 +21478,141 @@ The first correction harness stopped before compilation because it expected a se
 The recovery CI capture at d25667a2f additionally passes the complete JVM25 Scala3 action after387.412s. JS2.13 coverage now gets beyond the earlier dependency stall and executes the86 plain,12 Cats and13 BIO assertion controls plus887 base and749 provider controls, but fails actual1 after363.938s while linking two test projects. The linker reports reachable java.lang.System.exit from ParserFailureHandler.TerminatingHandler, an unsupported Scala.js method. Its83 reports and every captured input remain preserved unchanged; no full JS lane pass is claimed. The recovery batch JSON records exit1, although the Python controller itself returns0; the pipeline's subprocess stage0 therefore does not establish qualification. This orchestration result discrepancy will be checked independently rather than relabeling an actual exit. The linker defect is reproduced before any source correction.
 
 The owner has executed the host diagnostic. Its output confirms podman-llm-socket.service is an active/exited launcher for a socket inside the podsvc-llm user manager; root podman-llm.service/socket units do not exist, and Docker connectivity still fails. The syntax-checked host recovery script restarts that user's podman-llm.socket and captures status/connectivity. It is awaiting owner execution under the environment skill; no host mutation has been performed here.
+
+## 2026-10-07: current assertion/platform candidate and serialized final replay
+
+The read-only1b/1c/1d item map and the rendering-correction addendum are now
+read directly and sealed. The first maps all14 numbered items andO.2-O.11/O.33,
+with precise platform/range/publication qualifications. Evidence:
+1b-1c-1d-current-head-readonly-review-first/REVIEW.md SHA256
+5d28c8c2b58c29b184ecdb76a6c334c95ae0c2b39f6d7327ebe73edd731043d4.
+The addendum verifies the22 corrected JVM commands and their exact source/input
+hashes, finds no introduced material defect, and resolves its reproducedF1
+within that tested domain. Evidence:
+1c-rendering-callback-correction-readonly-review-second/REVIEW.md SHA256
+a47234753cdb84d7b6c564afa7f87a2d9f2a61c26ab8e0e191d94944775967cb.
+It retains the then-pending Node/Native, point-position and published-delivery
+checks; later platform outcomes below are separate observations.
+
+3-js-native-diagnostic-exit-ci-candidate-first freezes95b52a25e plus the
+five-file process-exit correction. JVM/Native implementations preserve
+System.exit; the JS implementation explicitly rejects process termination with
+UnsupportedOperationException. ParserFailureHandler and AppFailureHandler use
+that platform implementation. The original JS2.13 coverage linker failure is
+captured before the correction in5-final-head-ci-recovery-third. The candidate
+no longer reports the System.exit linking failure; its JS2.13 action instead
+fails actual1 after319.823s at Class.getClassLoader in
+RoleCheckableApp.preparePlanCheckInput. This is a second reproduced unsupported
+Scala.js linkage path, not a passing whole lane. Its85 reports contain715
+passed cases and no skipped/failed cases. Plain100, Cats12, BIO13, base887 and
+provider749 controls execute. Every1817 input remains unchanged.
+
+The same candidate's complete Scala3 JS action passes actual0 after273.956s:
+124 reports,892 passed cases,19 skipped and no failures. Scala2.13 Native passes
+actual0 after494.399s with137 reports and unchanged1817 inputs. Scala3 Native
+passes actual0 with139 reports:949 passed and19 skipped cases. The four-lane
+parent completes exit1 because JS2.13 retains its classloader failure. The independently checked JS report records
+and executed markers are in each lane's independent-current-case-audit.json;
+commands, raw Mdl logs and actual completion remain retained. These observations
+qualify the corrected assertion/platform candidate, not the later classloader
+correction or a finished L1-L3 batch.
+
+3-process-exit-platform-policy-controls-first checks16 sequential commands
+on2.13.18/3.9.0. Four direct fresh compiles pass; four owned JVM default handler
+processes intentionally exit actual1, while the JS implementation on JVM and
+injected-handler controls pass actual0 after checking explicit rejection/code1
+and original failure identity. Expected1 is retained as actual1, not relabeled0.
+This is a policy/public-boundary check, not actual Node/Native execution.
+
+The classloader correction moves acquisition into the existing platform traits:
+JS returnsNone; JVM and Native retainOption(getClass.getClassLoader). The shared
+entrypoint no longer contains the unsupported call. Four bounded fresh JVM
+compile/runtime commands pass on2.13.18/3.9.0, compiling both actual edited
+shared/trait sources and checking the defining-loader policy. Evidence:
+3-plan-check-classloader-jvm-controls-first/{2.13.18,3.9.0}/command.json,
+*-completion.json andcompletion.json. Those checks do not claim JS/Native
+qualification.
+
+The nine-file combined correction is frozen in
+3-platform-linkage-candidate-seed-second/candidate.patch, SHA256
+0d9c7326d1afe368dce48620834c00d612588cbe2ece65ed2c4e3e9a375fe2c9.
+5-platform-linkage-final-ci-candidate-first queues all ten JVM/JS/Native
+L1-L3 lanes behind the existing four-lane batch, with one heavy action at a time.
+The serial completion pipeline then queues fresh2.13 point-position controls
+onJVM/JS/Native, root publication on2.13.18/3.9.0 and fixed-host3.8.4, an exact
+artifact payload/POM audit, and separate3.9/3.10 macro consumers. These are
+queued commands, not results. The new controller/capture keeps actual child
+exit codes and propagates failure, including distinguishing timeout from a
+synthetic exit124. Site remains separately dependent on Docker recovery.
+
+The preceding5-final-head-publication-second fails actual1 after171.624s
+on3.9.0 Scaladoc: InvocationTargetException wraps OutOfMemoryError:Java heap
+space in the HTML renderer. Its2.13 root publication passes; fixed-host3.8.4
+and the artifact audit never run. This is the bounded4GiB Java heap failure,
+not a new server OOM or successful162-pair publication. The queued retry uses
+8GiB heap/1GiB metaspace/eight-CPU affinity, as the earlier successful full
+publication did, with no overlapping heavy process. CI remains6GiB/1GiB/eight
+CPUs; bounded direct compiles/probes remain256/512MiB/twoCPUs.
+
+## 2026-10-07: compiled-source binding and post-OOM Docker recovery
+
+5-suite-compiled-source-bindings-first pairs each mechanically import-only
+source input hash with actual test-JAR class SourceFile metadata and raw XML
+suite/case identities, preserving parent action status separately. JVM bindings
+contain123 considered sources, all compiled and119 with reports; JS3 has92
+considered/83 compiled/80 reported; Native3 has88/79/78. The nine uncompiled
+non-JVM sources belong to the JVM-only Docker and SLF4J projects; merely being
+considered by the inventory is not a platform obligation or compiled-source
+claim. The manifest is not a complete declaration/inherited-suite eligibility
+audit.5-suite-source-binding-javap-check-first independently invokes bounded
+javap on actual JVM/JS/Native test JARs and confirms their recorded SourceFile
+metadata. No additional test execution is inferred from those class checks.
+
+The owner-executed direct recovery output reports the test-user bus connection
+refused. The next launcher script output shows user@77778.service was killed by
+the kernel OOM killer and inactive. Starting that user manager and restarting the
+existing podman-llm-socket.service launcher succeed; its host Docker CLI returns
+5.8.7. I read that output before rechecking connectivity here. The sandbox CLI
+still fails. /proc/self/mountinfo identifies its single-socket bind source as
+/podman-llm/podman.sock//deleted, establishing that this process retains the old
+socket inode after host replacement. It is not evidence that the restored host
+daemon is still unavailable.
+
+/tmp/exchange/pavel/izumi-docker-after-oom-relay.sh is syntax-checked and starts
+a six-hour user service that relays the restored socket into the shared exchange
+directory, with Unix permissions0600 and no TCP listener. Its exact Python relay
+passes three real Unix-socket forwarding/half-close controls with1,65536 and
+2097152-byte payloads:host-docker-relay-controls-first/completion.json and raw
+log. The environment skill requires host execution. The owner has now confirmed
+execution, and I read the paired output before checking the sandbox. Both host
+and sandbox Docker CLI return5.8.7 at the exchange relay; the latter exits0.
+The output shows a six-hour relay unit with8.9MiB current/20.8MiB peak memory.
+The site action is queued behind the serial completion pipeline and uses the
+confirmed relay endpoint. This is an explicit temporary mitigation for the existing sandbox's
+stale bind, not a host configuration change or site pass.
+
+## 2026-10-07: both Scala2.13 JS linker reproductions now pass
+
+The complete combined-correction JS2.13 coverage lane passes actual0 after
+321.451s with1817 unchanged inputs. Its123 raw XML reports contain860 passed
+and19 skipped cases, zero failed/error cases. Plain100/Cats12/BIO13, base887,
+provider749, protocol235, application/session/factory and transport controls
+execute. Independent input/log/report rehashing passes, and neither reproduced
+unsupported-call linker message remains. Evidence:
+5-platform-linkage-final-ci-candidate-first/js-nojvm-jdk21-scala2.13-coverage/
+{command.json,completion.json,independent-current-case-audit.json,run.log}.
+
+This closes the two reproduced JS coverage linkage defects for the exact frozen
+nine-file correction: terminating handlers delegate to platform implementations,
+and role plan checking delegates classloader lookup to the existing platform
+traits. Bounded defining-loader checks additionally preserve the actual JVM
+policy on both supported compilers. Full remaining L1-L3 lanes, point positions,
+published-artifact delivery and final per-item review continue in the serial
+batch; no parent phase is marked done by this component milestone.
+
+Host service evidence and the restored sandbox connection are retained in
+5-host-docker-restored-through-relay-first/{host-execution-confirmed.json,
+izumi-docker-after-oom-launcher.out,izumi-docker-after-oom-relay.out}. The temporary
+relay mitigates this already-running sandbox's deleted socket bind; subsequent
+fresh sandboxes can use the restored normal endpoint. No global container cleanup,
+host configuration edit or host-wide service restart was performed.

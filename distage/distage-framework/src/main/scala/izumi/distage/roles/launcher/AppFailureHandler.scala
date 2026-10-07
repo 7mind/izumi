@@ -2,6 +2,7 @@ package izumi.distage.roles.launcher
 
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.roles.model.exceptions.DIAppBootstrapException
+import izumi.fundamentals.platform.__ProcessExit
 
 trait AppFailureHandler {
   def onError(t: Throwable): Unit
@@ -16,7 +17,7 @@ object AppFailureHandler {
       rethrow(t)
     }
   }
-  object TerminatingHandler extends TerminatingHandler(sysExit = System.exit)
+  object TerminatingHandler extends TerminatingHandler(sysExit = __ProcessExit.apply)
 
   object NullHandler extends AppFailureHandler {
     override def onError(t: Throwable): Nothing = {
