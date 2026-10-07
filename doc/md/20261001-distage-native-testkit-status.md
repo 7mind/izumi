@@ -18681,3 +18681,106 @@ The next candidate's three Scala2.13 base-runner controls already pass842
 checks each (JVM/JS/Native), including the new fail/cancel runtime and callback
 controls. Its18 module lanes and Scala3 half remain in flight. None of those
 modules is marked fully migrated before the complete audit.
+
+The second candidate batch exits1 after502.004s with unchanged inputs. All three
+Scala2.13 base controls pass842 checks, and the three migrated core-api targets
+preserve their two cases each with no ScalaTest-family classpath entries.
+Core JVM test compilation then reproduces three missing message accessor
+errors in ResourceEffectBindingsTest: AssertionFailure has getMessage, not
+ScalaTest's message: Option[String]. The three diagnostic assertions now use
+getMessage while preserving the same trace/typeclass text checks. Inspection
+of all six module test roots finds no other old failure metadata accessors;
+other message uses belong to logging records. A fresh full candidate batch is
+running from `5-distage-plain-migration-worktree-third/`.
+
+The full microsite validation is running independently in the main checkout:
+`5-microsite-migration-first/command.json` records batch JDK21/SBT2 makeSite on
+Scala3.9, with1681 source/documentation inputs frozen. The overview also now
+requires the SBT plugin and describes released Native interop support. Nothing
+from the documentation draft has been committed as verified.
+
+The first microsite command exits1 after262.6s with all1681 inputs unchanged.
+Mdoc reports one runtime error, in postgresDockerIntegrationExample; migrated
+spec/assertion/session-helper examples compile and execute. The SQL connection
+resets immediately after the default TCP health check reports success at
+02:22:10.063. The owned container log confirms initialization continues until
+02:22:13.864, when PostgreSQL becomes ready for network connections. This is a
+readiness race in the example's generic TCP check, not an assertion migration
+compile failure. Exact container log is `5-microsite-migration-first/postgres-container.log`.
+The bundled PostgresDocker already uses postgreSqlProtocolCheck; the example
+now chooses that same existing health check with its PostgreSQL credentials.
+No arbitrary delay, retry wrapper or production Docker implementation changed.
+
+Only container b39b792bf3ad2a8fdd16c265b91e0450f8df8fe9c0baec627d7199ca1f5ac53c
+was removed for a cold rerun, after verifying its recorded run/JVM-run labels
+and image. Removal exits0; an independent inspect confirms absence. The cleanup
+postprocessor initially expected Docker's code1/capitalized missing-object
+message; this provider returns125/lowercase. The corrected observed record is
+`owned-container-cleanup.json`; no removal was repeated and no other container
+or volume was altered. A premature controller start also records no SBT run
+because its command manifest had not been created; the actual second batch now
+runs from `5-microsite-migration-second/` with a complete frozen manifest.
+
+The third candidate reaches successful compilation/discovery of core JVM after
+the accessor correction, but its captured full Test classpath contains15
+ScalaTest-family entries inherited from fundamentals-platform-testJVM. This
+reproduces the remaining dependency leak before its correction. The owned SBT
+process group is intentionally stopped (actual143 after417.892s,unchanged
+inputs); `intentional-stop.json` records the reason and exact owned PIDs. No
+unrelated process or the separate microsite producer is stopped.
+
+The platform-test JVM artifact now filters its own ScalaTest-family libraries
+and selects only the base framework, matching its already-migrated sources.
+Its JS/Native settings and production dependency scopes are unchanged. The
+pinned generator succeeds. The new full candidate batch
+`5-distage-plain-migration-worktree-fourth/` includes all three platform-test
+lanes as well as the18 distage lanes and three base controls per compiler.
+It can therefore reconcile the complete qualified42-lane baseline and verify
+the transitive dependency correction in the same batch.
+
+The fourth candidate exits1 after256.566s with all1633 frozen inputs unchanged.
+Its platform JVM lane reports168 cases,165 passed and three failed. Fresh XML
+shows all three failures come from the fixture resource
+org/scalatest/ScalaTestBundle.properties disappearing with the deliberately
+removed ScalaTest JAR; resource-fixture-reproduction.json retains the exact
+failures. The suite already tests the Scala library's jar-packaged
+scala/annotation/meta directory. The file fixture now uses its
+companionClass.class resource, preserving all seven test names, extraction,
+byte comparison, independent copies and idempotent cleanup assertions.
+The fifth full candidate is running with separate compiler processes from
+5-distage-plain-migration-worktree-fifth/. No completed migration claim is made.
+
+The second site capture has already compiled44 mdoc files with zero errors,
+executed11 new session-owned example cases, and completed the cold PostgreSQL
+protocol readiness/SQL checks. Full makeSite remains in flight. A JVM thread
+snapshot shows its active thread inside Scala3.9 Scaladoc HtmlRenderer's nested
+rendering, rather than a demonstrated SBT deadlock; the capture is
+5-microsite-migration-second/thread-snapshot.txt.
+
+## 2026-10-07: verified session-owned documentation example checkpoint
+
+The second microsite batch completes actual SBT/controller0 after1198.29s,
+with all1681 frozen source/documentation inputs unchanged at6297665cc.
+The complete command is recorded in
+5-microsite-migration-second/command.json: batch JDK21/SBT2, insideCI enabled,
+coverageOff, project docs, ++3.9.0, makeSite. Mdoc compiles44 files with zero
+errors; full Scaladoc/Paradox/site generation also succeeds. The observed slow
+interval generates API pages continuously, ending with3035 HTML pages; it was
+not a reproduced SBT deadlock and no renderer/build mitigation was applied.
+
+The independent audit exits0 and confirms11 distinct successful example cases
+using the new session-owned helper, absence of the old global registry and
+ScalaTest run helper from the rendered testkit examples, mandatory plugin
+installation instructions, and the cold PostgreSQL protocol readiness/SQL
+result (1 + 1 = 2.). Its JSON SHA256 is 030cef6f4039ca1e9421bc2aa92834160288207707659b9a65ec575ab6d3d6d6.
+The five documentation changes are committed as a bounded5.9 checkpoint.
+SpecWiring documentation, historical adapter language and the final L4/current-
+head evaluation remain open; this does not close phase5 or its9th gate.
+
+A separate ten-lane remaining-migration baseline is running in
+remaining-migration-baseline-worktree at6297665cc: BIO tests/laws JVM, Docker
+JVM, legacy testkit JVM/JS and module-filtering JVM under both supported
+compilers. Each compiler has its own process and report directory; all1633
+compiler inputs are frozen. Commands/manifests are in
+5-remaining-migration-baseline-first/. No candidate source edits are applied
+to that baseline checkout.

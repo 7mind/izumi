@@ -50,6 +50,7 @@ implicit def overridePos: doobie.util.pos.Pos = doobie.util.pos.Pos("", 0)
 
 ```scala mdoc:to-string
 import izumi.distage.docker.{ContainerDef, Docker}
+import izumi.distage.docker.healthcheck.ContainerHealthCheck
 
 object PostgresDocker extends ContainerDef {
   val primaryPort: Docker.DockerPort = Docker.DockerPort.TCP(5432)
@@ -60,6 +61,7 @@ object PostgresDocker extends ContainerDef {
       image = "docker/library/postgres:12.6",
       ports = Seq(primaryPort),
       env = Map("POSTGRES_PASSWORD" -> "postgres"),
+      healthCheck = ContainerHealthCheck.postgreSqlProtocolCheck(primaryPort, "postgres", "postgres"),
     )
   }
 }
@@ -324,10 +326,11 @@ object PostgresUsingDockerModule extends ModuleDef {
 Using `distage-testkit` the test would be written like this:
 
 ```scala mdoc:silent
-import izumi.distage.testkit.scalatest.{AssertCIO, Spec1}
+import izumi.distage.testkit.runner.spec.Spec1
+import izumi.fundamentals.assertions.cats.CatsAssertionSuspension.fromSync
 import distage.DIKey
 
-class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
+class PostgresExampleAppIntegrationTest extends Spec1[IO] {
   override def config = super.config.copy(
     moduleOverrides = new ModuleDef {
       include(TransactorFromConfigModule)
@@ -346,7 +349,7 @@ class PostgresExampleAppIntegrationTest extends Spec1[IO] with AssertCIO {
       (app: PostgresExampleApp) =>
         for {
           v <- app.plusOne(1)
-          _ <- assertIO(v == 2)
+          _ <- assert1[IO](v == 2)
         } yield ()
     }
 

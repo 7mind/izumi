@@ -13,35 +13,60 @@ and JS.
 
 ### Quick Start
 
-`distage-testkit` simplifies pragmatic purely-functional program testing providing `Spec*`
-[ScalaTest](https://www.scalatest.org/) base classes for any existing Scala effect type with kind `F[_]`,
-`F[+_, +_]`, `ZIO[-R, +E, +A]` or `Identity`. `Spec`s provide an interface similar to ScalaTest's
-[`WordSpec`](http://doc.scalatest.org/3.1.0/org/scalatest/wordspec/AnyWordSpec.html), however
-`distage-testkit` adds additional capabilities such as: first class support for effect types; dependency injection; and
-parallel execution.
+SBT use requires the distage testkit plugin. Add it to `project/plugins.sbt`:
+
+@@@vars
+
+```scala
+addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "$izumi.version$")
+```
+
+@@@
+
+Enable the plugin and add the runner to the test configuration in `build.sbt`:
+
+@@@vars
+
+```scala
+enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)
+libraryDependencies += "io.7mind.izumi" %% "distage-testkit-runner" % "$izumi.version$" % Test
+```
+
+@@@
+
+For Scala.js, also add `sbt-distage-testkit-js`; for Scala Native, add
+`sbt-distage-testkit-native`, using the same version and the corresponding
+Scala.js or Scala Native SBT plugin. The platform integration activates when
+both the platform plugin and `DistageTestkitPlugin` are enabled. SBT 2 and
+Scala 2.13 or Scala 3 are supported.
+
+`distage-testkit-runner` provides `Spec*` base classes for effect types with kind
+`F[_]`, `F[+_, +_]`, `ZIO[-R, +E, +A]` or `Identity`. Its WordSpec interface
+supports effectful tests, dependency injection, resource memoization and parallel
+execution on JVM, Scala.js and Scala Native.
 
 Usage of `distage-testkit` generally follows these steps:
 
 1. Extend a base class corresponding to the effect type:
-    - No effect type - @scaladoc[`SpecIdentity`](izumi.distage.testkit.scalatest.SpecIdentity)
-    - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1), for monofunctors (`cats.effect.IO`
+    - No effect type - @scaladoc[`SpecIdentity`](izumi.distage.testkit.runner.spec.SpecIdentity)
+    - `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.runner.spec.Spec1), for monofunctors (`cats.effect.IO`
       , `monix`)
-    - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2), for bifunctors (`ZIO`, `monix-bio`)
-    - `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO) for `ZIO` with environment support in tests
+    - `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.runner.spec.Spec2), for bifunctors (`ZIO`, `monix-bio`)
+    - `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.runner.spec.SpecZIO) for `ZIO` with environment support in tests
 2. Override `def config: TestConfig` to customize the @scaladoc[`TestConfig`](izumi.distage.testkit.model.TestConfig)
 3. Establish test case contexts
-   using [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html),
-   [`must`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/MustVerb.html),
-   or [`can`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/CanVerb.html).
+   using `should`,
+   `must`,
+   or `can`.
 4. Introduce test cases using one of the `in` methods. These test cases can have a variety of forms, from plain
    functions returning an
-   [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html), to effectful functions with
+   assertion returning `Unit`, to effectful functions with
    dependencies:
     - No effect type / `Identity` -
-      @scaladoc[`in`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperLowPriorityIdentityOverloads)
-    - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapper)
-    - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapper2)
-    - @scaladoc[`in` for `ZIO[-R, +E, +A]`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperZIO)
+      @scaladoc[`in`](izumi.distage.testkit.runner.spec.WordSpecString)
+    - @scaladoc[`in` for `F[_]`](izumi.distage.testkit.runner.spec.WordSpecString)
+    - @scaladoc[`in` for `F[+_, +_]`](izumi.distage.testkit.runner.spec.WordSpecString2)
+    - @scaladoc[`in` for `ZIO[-R, +E, +A]`](izumi.distage.testkit.runner.spec.WordSpecStringZIO)
     - Test cases dependent on injectables: @scaladoc[`Functoid`](izumi.distage.model.providers.Functoid)
 
 ### API Overview
@@ -107,10 +132,10 @@ calculated point values.
 There are test suite base classes for functor, bifunctor and trifunctor effect types. We will be choosing the one that
 matches our application's effect type from the following:
 
-- No effect type, imperative usage - @scaladoc[`SpecIdentity`](izumi.distage.testkit.scalatest.SpecIdentity)
-- `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.scalatest.Spec1)
-- `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.scalatest.Spec2)
-- `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.scalatest.SpecZIO)
+- No effect type, imperative usage - @scaladoc[`SpecIdentity`](izumi.distage.testkit.runner.spec.SpecIdentity)
+- `F[_]` - @scaladoc[`Spec1[F]`](izumi.distage.testkit.runner.spec.Spec1)
+- `F[+_, +_]` - @scaladoc[`Spec2[F]`](izumi.distage.testkit.runner.spec.Spec2)
+- `ZIO[-R, +E, +A]` - @scaladoc[`SpecZIO`](izumi.distage.testkit.runner.spec.SpecZIO)
 
 The effect monad is expected to support sync and async effects. `distage-testkit` provides this support for `Identity`
 , `monix`, `monix-bio`, `ZIO`, and monads wth instances of `cats-effect` or @ref[BIO](../bio/00_bio.md) typeclasses. For
@@ -129,9 +154,10 @@ classpath scanning, like so:
 "fakepackage app": Unit
 
 import distage.ModuleDef
-import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
+import izumi.distage.testkit.runner.spec.SpecZIO
+import izumi.fundamentals.assertions.bio.BIOAssertionSuspension.fromIO2
 
-abstract class Test extends SpecZIO with AssertZIO {
+abstract class Test extends SpecZIO {
   val defaultConfig = Config(
     starValue = 10,
     mangoValue = 256,
@@ -155,47 +181,54 @@ abstract class Test extends SpecZIO with AssertZIO {
 // blocks are not interpreted and the actual test tested is the one below.
 
 import izumi.distage.plugins.PluginConfig
-import izumi.distage.testkit.services.scalatest.dstest.DistageTestsRegistrySingleton
+import izumi.distage.testkit.protocol._
+import izumi.distage.testkit.runner.{EventSink, RunSession, TestSuite}
+import java.util.concurrent.Executors
+import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.duration.Duration
 
 trait MdocTest extends Test {
   def name: String
-  override final def suiteName = name
+  override final def distageSuiteName = name
   override def config = super.config.copy(
     pluginConfig = PluginConfig.const(BonusServicePlugin)
   )
 }
 
-object MdocTest {
-  def preRunSetup(): Unit = {
-    DistageTestsRegistrySingleton.resetRegistry()
+final case class SuiteCtor(construct: () => TestSuite)
+implicit def suiteCtor(s: => TestSuite): SuiteCtor = SuiteCtor(() => s)
+
+def __runTest__(suiteCtors: SuiteCtor*): Unit = {
+  val identity = CatalogueIdentity(BuildId("microsite"), BuildTargetId("examples"), CatalogueId("example-suites"))
+  val context = ExecutionContext.fromExecutorService(Executors.newWorkStealingPool())
+  val sink = new EventSink {
+    override def accept(message: ProtocolMessage.Event): Unit = message.event match {
+      case RunEvent.TestCompleted(_, result) =>
+        println(s"${result.id.path.mkString(" ")}: ${result.status}")
+        result.failure.foreach(failure => println(failure.message))
+      case RunEvent.PhaseFailed(_, failure) => println(failure.message)
+      case _ => ()
+    }
+  }
+  println("```")
+  try {
+    val session = new RunSession(identity, suiteCtors.map(_.construct).toVector, context, sink)
+    val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
+    val outcome = Await.result(session.execute(RunId("example-run"), request), Duration.Inf)
+    require(outcome.successful, "Example tests failed")
+  } finally {
+    context.shutdown()
+    println("```")
   }
 }
 
-final case class SuiteCtor(construct: () => org.scalatest.Suite)
-implicit def suiteCtor(s: => org.scalatest.Suite): SuiteCtor = SuiteCtor(() => s)
-
-def __runTest__(suiteCtors: SuiteCtor*) = {
-  // remove all previous tests from registry
-  DistageTestsRegistrySingleton.resetRegistry()
-
-  // run constructors to add the tests to registry
-  val suites = suiteCtors.map(_.construct())
-
-  println("```")
-  suites.foreach {
-    s =>
-      org.scalatest.nostacks.nocolor.run(s)
-      println("\n")
-  }
-  println("```")
-}
 ```
 
 #### Test Cases
 
 In `WordSpec`, a test case is a sentence (a `String`) followed by `in` then the body. In
 `distage-testkit` the body of the test case is not limited to a function returning an
-[assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
+assertion returning `Unit`.
 
 @scaladoc[Functions that take arguments](izumi.distage.model.providers.Functoid)
 and functions using effect types are also supported. Function arguments and effect environments will be provided
@@ -211,14 +244,16 @@ All of the base classes support test cases that are:
 - Functions returning unit that fail on exception.
 
 These are introduced using `in` from
-@scaladoc[ScalatestAbstractDistageSpec.DSWordSpecStringWrapperLowPriorityIdentityOverloads](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperLowPriorityIdentityOverloads)
+@scaladoc[WordSpecString](izumi.distage.testkit.runner.spec.WordSpecString)
 
-The assertion methods are the same as ScalaTest as the base classes extend
-[ScalaTest Assertions](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
+The base classes provide the portable @scaladoc[Assertions](izumi.fundamentals.assertions.Assertions)
+API. A successful assertion returns `Unit`; a failed assertion throws
+@scaladoc[AssertionFailure](izumi.fundamentals.assertions.AssertionFailure) with
+expression diagnostics. Effectful assertions suspend both condition evaluation
+and failure in the selected effect.
 
 ```scala mdoc:invisible
-// minimal check for that scalatest reference
-import org.scalatest.Assertions
+import izumi.fundamentals.assertions.Assertions
 new Assertions {}
 ```
 
@@ -261,7 +296,7 @@ __runTest__(new ScoreSimpleTest with MdocTest { def name = "ScoreSimpleTest" })
 
 All of the base classes support test cases that are effects with assertions. Functions returning effects will have
 arguments provided from the object graph. These test cases are supported by
-@scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapper).
+@scaladoc[`in` from DSWordSpecStringWrapper](izumi.distage.testkit.runner.spec.WordSpecString).
 
 The different effect types fix the `F[_]` argument for this syntax:
 
@@ -283,7 +318,7 @@ class ScoreEffectsTest extends Test {
       (config: Config) =>
         for {
           actual <- Score.echoConfig(config)
-          _      <- assertIO(actual == config)
+          _      <- assert2[zio.IO](actual == config)
         } yield ()
     }
 
@@ -305,7 +340,7 @@ __runTest__(new ScoreEffectsTest with MdocTest { def name = "ScoreEffectsTest" }
 
 #### Assertions with Effects with Environments
 
-@scaladoc[The `in` method for `ZIO`](izumi.distage.testkit.services.scalatest.dstest.ScalatestAbstractDistageSpec$$DSWordSpecStringWrapperZIO)
+@scaladoc[The `in` method for `ZIO`](izumi.distage.testkit.runner.spec.WordSpecStringZIO)
 supports injection of environments from the object graph in addition to simple assertions and assertions with effects.
 
 A test that verifies the `BonusService` in our demonstration would be:
@@ -321,7 +356,7 @@ abstract class BonusServiceTest extends Test {
         bonusService <- ZIO.service[BonusService]
         currentBonus <- bonusService.queryCurrentBonus
         _            <- Console.printLine(s"currentBonus = $currentBonus")
-        _            <- assertIO(currentBonus == defaultConfig.defaultBonus)
+        _            <- assert2[zio.IO](currentBonus == defaultConfig.defaultBonus)
       } yield ()
     }
 
@@ -332,7 +367,7 @@ abstract class BonusServiceTest extends Test {
         initialBonus <- bonusService.queryCurrentBonus
         actualBonus  <- bonusService.increaseCurrentBonus(delta)
         expectedBonus = initialBonus + delta
-        _            <- assertIO(actualBonus == expectedBonus)
+        _            <- assert2[zio.IO](actualBonus == expectedBonus)
       } yield ()
     }
 
@@ -504,11 +539,11 @@ __runTest__(new DummyBonusServiceTest with MdocTest { def name = "DummyBonusServ
 
 #### Test Case Context
 
-The `testkit` ScalaTest base classes include the following verbs for establishing test context:
+The `testkit` base classes include the following verbs for establishing test context:
 
-- [`should`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/ShouldVerb.html)
-- [`must`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/MustVerb.html)
-- [`can`](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/verbs/CanVerb.html)
+- `should`
+- `must`
+- `can`
 
 #### Configuration
 
@@ -527,7 +562,7 @@ See also:
 For `F[_]`, including `Identity`:
 
 - `in { assert(???) }`: The test case is a function returning an
-  [assertion](https://www.scalatest.org/scaladoc/3.2.0/org/scalatest/Assertions.html).
+  assertion returning `Unit`.
 - `in { (a: A, b: B) => assert(???) }`: The test case is a function returning an assertion. The `a` and
   `b` will be injected from the object graph.
 - `in { (a: A, b: B) => ???: F[Unit] }`: The test case is a function returning an effect to be executed. The `a` and `b`
@@ -547,21 +582,18 @@ For `ZIO[-R, +E, +A]` in `SpecZIO`:
   effect requiring an environment. All of `a: A`, `b: B`, and `zio.ZEnvironment[C with D]`
   will be injected from the object graph.
 
-Provided by trait @scaladoc[AssertZIO](izumi.distage.testkit.scalatest.AssertZIO):
+The portable @scaladoc[Assertions](izumi.fundamentals.assertions.Assertions) API provides:
 
-- `assertIO(_: Boolean): zio.ZIO[Any, Nothing, Assertion]`
+- `assert(condition: Boolean): Unit` for synchronous assertions.
+- `assert1[F[_]](condition: Boolean): F[Unit]` with an `AssertionSuspension1[F]`.
+- `assert2[F[_, _]](condition: Boolean): F[Nothing, Unit]` with an `AssertionSuspension2[F]`.
 
-Provided by trait @scaladoc[AssertCIO](izumi.distage.testkit.scalatest.AssertCIO):
-
-- `assertIO(_: Boolean): cats.effect.IO[Assertion]`
-
-Provided by trait @scaladoc[AssertIO2](izumi.distage.testkit.scalatest.AssertIO2):
-
-- `assertBIO[F[+_, +_]: IO2](_: Boolean): F[Nothing, Assertion]`
-
-Provided by trait @scaladoc[AssertSync](izumi.distage.testkit.scalatest.AssertSync):
-
-- `assertIO[F[_]: Sync](_: Boolean): F[Assertion]`
+For Cats Effect, add `fundamentals-assertions-cats` in Test scope and import
+`izumi.fundamentals.assertions.cats.CatsAssertionSuspension.fromSync`.
+For BIO or ZIO, add `fundamentals-assertions-bio` in Test scope and import
+`izumi.fundamentals.assertions.bio.BIOAssertionSuspension.fromIO2`.
+The adapters suspend condition evaluation; assertion failures remain defects,
+and existing typed errors retain their effect's error channel.
 
 ### Execution Order
 
@@ -729,7 +761,7 @@ class NotUsingMemoTest extends DummyTest {
         currentBonus <- bonusService.increaseCurrentBonus(delta)
         expectedBonus = defaultConfig.defaultBonus + delta
 
-        _            <- assertIO(currentBonus == expectedBonus)
+        _            <- assert2[zio.IO](currentBonus == expectedBonus)
       } yield ()
     }
 
@@ -741,7 +773,7 @@ class NotUsingMemoTest extends DummyTest {
         currentBonus <- bonusService.queryCurrentBonus
 
         // verify the state is unchanged from default
-        _            <- assertIO(currentBonus == defaultConfig.defaultBonus)
+        _            <- assert2[zio.IO](currentBonus == defaultConfig.defaultBonus)
       } yield ()
     }
   }
@@ -783,7 +815,7 @@ class UsingMemoTest extends DummyTest {
         currentBonus <- bonusService.increaseCurrentBonus(delta)
         expectedBonus = defaultConfig.defaultBonus + delta
 
-        _            <- assertIO(currentBonus == expectedBonus)
+        _            <- assert2[zio.IO](currentBonus == expectedBonus)
       } yield ()
     }
 
@@ -796,7 +828,7 @@ class UsingMemoTest extends DummyTest {
         expectedBonus = defaultConfig.defaultBonus + delta
 
         // verify the change in the first case modified this bonusService
-        _            <- assertIO(currentBonus == expectedBonus)
+        _            <- assert2[zio.IO](currentBonus == expectedBonus)
       } yield ()
     }
   }
@@ -916,7 +948,7 @@ Techniques in that example to look for:
 You may also take other projects' test suites written with `distage-testkit` as reference:
 
 - [tests in `d4s` library](https://github.com/PlayQ/d4s/tree/develop/d4s-test/src/test/scala/d4s)
-- [tests in `distage-testkit` library](https://github.com/7mind/izumi/tree/develop/distage/distage-testkit-scalatest/src/test/scala/izumi/distage/testkit/distagesuite)
+- [tests in `distage-testkit` library](https://github.com/7mind/izumi/tree/develop/distage/distage-testkit-runner/src/test/scala/izumi/distage/testkit)
 - [tests in `distage-framework-docker` library](https://github.com/7mind/izumi/tree/develop/distage/distage-framework-docker/src/test/scala/izumi/distage/testkit/docker)
 
 ```scala mdoc:reset:invisible:to-string
@@ -965,13 +997,14 @@ import distage.{Activation, DIKey, ModuleDef}
 import distage.StandardAxis.{Scene, Repo}
 import distage.plugins.PluginConfig
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, SpecZIO}
+import izumi.distage.testkit.runner.spec.SpecZIO
+import izumi.fundamentals.assertions.bio.BIOAssertionSuspension.fromIO2
 import leaderboard.model.{Score, UserId}
 import leaderboard.repo.{Ladder, Profiles}
 import leaderboard.zioenv.{ladder, rnd}
 import zio.{ZIO, IO}
 
-abstract class LeaderboardTest extends SpecZIO with AssertZIO {
+abstract class LeaderboardTest extends SpecZIO {
   override def config = TestConfig(
     pluginConfig = PluginConfig.cached(packagesEnabled = Seq("leaderboard.plugins")),
     moduleOverrides = new ModuleDef {
@@ -1017,7 +1050,7 @@ abstract class LadderTest extends LeaderboardTest {
           score <- rnd[Score]
           _     <- ladder.submitScore(user, score)
           res   <- ladder.getScores.map(_.find(_._1 == user).map(_._2))
-          _     <- assertIO(res contains score)
+          _     <- assert2[zio.IO](res contains score)
         } yield ()
     }
 
@@ -1037,9 +1070,9 @@ abstract class LadderTest extends LeaderboardTest {
         user2Rank = scores.indexWhere(_._1 == user2)
 
         _ <- if (score1 > score2) {
-          assertIO(user1Rank < user2Rank)
+          assert2[zio.IO](user1Rank < user2Rank)
         } else if (score2 > score1) {
-          assertIO(user2Rank < user1Rank)
+          assert2[zio.IO](user2Rank < user1Rank)
         } else ZIO.unit
       } yield ()
     }
@@ -1061,9 +1094,9 @@ abstract class LadderTest extends LeaderboardTest {
             user2Rank = scores.indexWhere(_._1 == user2)
 
             _ <- if (score1 > score2) {
-              assertIO(user1Rank < user2Rank)
+              assert2[zio.IO](user1Rank < user2Rank)
             } else if (score2 > score1) {
-              assertIO(user2Rank < user1Rank)
+              assert2[zio.IO](user2Rank < user1Rank)
             } else ZIO.unit
           } yield ()
     }

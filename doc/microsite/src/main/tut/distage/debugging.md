@@ -108,7 +108,7 @@ You may activate GraphViz dump for a `distage-framework` @ref[Role-based applica
 You may activate GraphViz dump in `distage-testkit` tests by setting `PlanningOptions.addGraphVizDump` to true in `config`:
 
 ```scala mdoc:reset
-import izumi.distage.testkit.scalatest.Spec2
+import izumi.distage.testkit.runner.spec.Spec2
 import izumi.distage.testkit.TestConfig
 import izumi.distage.framework.config.PlanningOptions
 

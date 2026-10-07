@@ -32,8 +32,8 @@ To use, add the following into `build.sbt`,
 libraryDependencies ++= Seq(
   // distage core library
   "io.7mind.izumi" %% "distage-core" % "$izumi.version$",
-  // distage-testkit for ScalaTest
-  "io.7mind.izumi" %% "distage-testkit-scalatest" % "$izumi.version$" % Test,
+  // distage-testkit runner
+  "io.7mind.izumi" %% "distage-testkit-runner" % "$izumi.version$" % Test,
   // distage-framework: Roles, Entrypoints, Effect modules
   "io.7mind.izumi" %% "distage-framework" % "$izumi.version$",
   // Typesafe Config support
@@ -56,14 +56,20 @@ libraryDependencies ++= Seq(
 ```
 @@@
 
+SBT testing also requires the distage testkit plugin. Follow the
+@ref:[testkit installation steps](distage/distage-testkit.md#quick-start),
+including the platform integration plugin for Scala.js or Scala Native.
+
 Development
 -----------
 
-Scala Native builds use Native 0.5.12. Native support is currently available for
+Scala Native builds use Native 0.5.12. Native support is available for
 `fundamentals-basics`, `fundamentals-functional`, `fundamentals-collections`,
 `fundamentals-literals`, `fundamentals-language`, `fundamentals-platform`,
-`fundamentals-functoid`, and `fundamentals-json-circe` on Scala 2.13 and 3.
-The remaining library ports are pending the released ZIO interop Native artifacts.
+`fundamentals-functoid`, `fundamentals-json-circe`, `fundamentals-orphans` and
+`fundamentals-bio` on Scala 2.13 and 3. Logstage and the portable distage core,
+configuration, plugin, framework and runner modules also support Native using
+the released ZIO interop artifacts. Docker integration remains JVM-specific.
 
 Native SHA-256 in `fundamentals-platform` requires OpenSSL's `libcrypto` at link
 and execution time. The development shell supplies it; outside the shell install

@@ -340,7 +340,7 @@ In `distage-testkit`, choose axes using @scaladoc[TestConfig](izumi.distage.test
 ```scala mdoc:to-string
 import distage.StandardAxis.Repo
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.Spec2
+import izumi.distage.testkit.runner.spec.Spec2
 
 class AxisTest extends Spec2[zio.IO] {
 
@@ -851,7 +851,7 @@ final case class Config(a: Int, b: Int, z: Int)
 import distage.{Id, ModuleDef}
 import distage.config.ConfigModuleDef
 import izumi.distage.testkit.TestConfig
-import izumi.distage.testkit.scalatest.SpecIdentity
+import izumi.distage.testkit.runner.spec.SpecIdentity
 
 class HACK_OVERRIDE0_MyTest extends SpecIdentity {
   override def config: TestConfig = super.config.copy(
