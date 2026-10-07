@@ -37,7 +37,7 @@ head. The spike reports are design evidence, not implementation verification.
 | L4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | L5 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | L6 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
-| G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
+| G.1 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger check follows. |
 | 1a.1 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | 1a.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | 1a.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
@@ -87,54 +87,54 @@ head. The spike reports are design evidence, not implementation verification.
 | 2c.7 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | 2c.8 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | 2c.9 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
-| 2d.1 | in progress | Plain/DI/foreign selection and reporting now pass the 90-case published plugin checkpoint below; complete history semantics and final evaluation remain open. |
-| 2d.2 | in progress | Target terminal records and missing-suite Error/Output/XML reconciliation pass12 current in-process/fork controls on Scala2.13/3, with same-session recovery. Complete target/failure domain and final evaluation remain open. |
-| 2d.3 | in progress | The preceding SBT2/Scala2.13+3 full/selected/repeat/quick checks pass, including the15 owned quick cases and the foreign stock skip. The current exit-agent correction separately passes selected/grouped and mixed repeat controls. Earlier SDK1/Scala2.12 matrices are historical. Complete stock-contract and final evaluation remain open. |
-| 2d.4 | in progress | Published forked and in-process foreign duplicate-group controls preserve six body outcomes in custom public Output and one suite XML file on both supported compilers and both JUnit filename formats. In-process serial/parallel configurations, exclusions and same-session recovery pass24 additional controls below. Complete owned/foreign failure domain and final evaluation remain open. |
-| 2d.5 | in progress | The current94-case SBT2 consumer batch checks foreign stock cache skips, explicit reruns, owned conservative reruns, changed suite/scanned-implementation digests and same-session launch-failure recovery on Scala2.13/3. Complete per-suite history and final evaluation remain open. |
-| 2d.6 | in progress | Current `test` and `testQuick` checks consume an edited scanned implementation despite unchanged stock suite digests, and rerun after a suite edit changes its digest. Both supported compilers pass the combined batch below; final evaluation remains open. |
-| 2d.7 | in progress | The current524-context checkpoint includes24 property/environment controls on both compilers/modes: unchanged compiled payloads and stock digests,384 exact body/XML cases and24 fresh resources. External UTF-8, activation and memoization controls also pass below; extension policies and final evaluation remain open. |
-| 2d.8 | in progress | Current combined consumer batch preserves complete suite execution after individual/partial selections through `test` and `testQuick`, including forked individual-to-complete controls on Scala2.13/3. Full domain and final evaluation remain open. |
-| 2d.9 | in progress | Sixteen current SBT2 concurrency controls verify three overlapping bodies per suite, distinct thread/PID receipts and exact listener/XML identities on Scala2.13/3, in process and forked, with host limits one/two. The independent audit reconciles240 bodies/XML cases, sixteen released resources and eight distinct fork targets. Complete concurrency domain and final evaluation remain open. |
-| 2d.10 | in progress | Current524-context checkpoint includes28 actual-client, eight partial-delivery, six repeated-fork-group, twelve completed-foreign and twelve active-foreign cancellation/recovery controls across both compilers/modes. Held finalizers/callbacks are joined and exact owned/foreign outcomes reconcile; remaining platform and final evaluations stay open. |
-| 2d.11 | in progress | All43 drivers pass524 current SBT2 command contexts on Scala2.13/3 with independent audits of bodies, events, XML, lifetimes and recorded process shutdown. The checkpoint adds opaque selection and property/environment cases to the preceding452 controls. Complete extension/client inventory and final evaluation stay open. |
-| 2d.12 | in progress | JVM schema-4 file streams deliver both starts and a sibling completion while another body is held on Scala2.13/3, in process and forked, below. Complete streaming domain and final evaluation remain open; IDE evaluation is deferred by the owner. |
-| 2d.13 | in progress | Published stock/distage callback comparisons pass40 commands on both supported compilers, in process and forked, with direct setup/body/cleanup ordering guards, caller loader checks and same-session recovery below. Complete framework-option/classloader domain and final evaluation remain open. |
-| 2d.14 | in progress | Two aggregated projects with independent Test/Integration target directories pass80 current context checks on Scala2.13/3. Inherited opaque user result loggers preserve the active receipt and four inspection identities; complete configuration domain and final evaluation remain open. |
-| 2d.15 | in progress | Current524-context checkpoint preserves original foreign frameworks/events exactly once, including twelve completed-foreign and twelve active-foreign cancellation/recovery commands on both compilers/modes. Active cancellation retains36 original foreign events and216 owned/foreign XML cases; remaining platform and final evaluations stay open. |
-| 2d.16 | in progress | Current524-context checkpoint includes52 selection-reason controls and48 opaque filter/exception/recovery controls on both compilers/modes. Audits reconcile cached/request/configured exclusions, actual predicate calls and physical no-ops without counting excluded tests as executed. Final evaluation remains outstanding. |
-| 2d.17 | in progress | Bootstrap61 checks per compiler plus120 host/store contracts include28 memory/file projections of repeated and partially delivered groups, selector/duration/failure identity and process/count rejection. Fourteen real-client partial/repeated commands reconcile300 callbacks without omissions, duplicates or late delivery. Complete streaming lifecycle and final evaluation remain open. |
-| 2d.18 | in progress | Published JVM controls on both supported compilers, in process and forked, reject shared release failures, retain all15 successful body results plus five suite errors, and recover through incremental test/testQuick with fresh resources in the same session below. Complete caching domain and final evaluation remain open. |
-| 2d.19 | in progress | Four public SBT discovery/fingerprint controls pass in process and forked on both supported compilers, with94 host execution/inspection cases,558 physical bodies and574 XML cases. Complete mode/sharing inventory and final evaluation remain open. |
-| 2d.20 | in progress | Public framework/task wrapping and logger-reference normalization address captured omissions, task-Throwable loss and overwritten group maps. The earlier SDK-template replacement loses custom initializer hooks in both supported lanes. The correction preserves preceding raw initializers, chained self-references and replacement semantics;226 public SBT2 controls pass below. Complete initializer/input and historical0a domains and final evaluation remain open. |
-| 2d.21 | in progress | List/plan, selected IDs and memoization pass 174 published SBT1/2 cases; activation/filter source/CLI checks hold, while full request domain and final evaluation remain open. |
-| 2d.22 | in progress | Current432-command batch reconciles selected logical outcomes and marked cancellation reports in process and forked, including finalizer failures, completed foreign results and recovery. The stock JUnit and lost-fork-report reproductions now pass through the owned correction. Complete host-callback outcomes and final evaluation remain open. |
-| 2d.23 | in progress | Current audit passes eighteen resolved Compile classpaths and eighteen published POMs across all runner layers/platforms/supported compilers;46 production sources import no SBT implementation. JVM variants use only the public test interface. Production Node/Native target host execution and final evaluation remain open. |
-| 2e.1 | in progress | Local checkpoint 08661a1ae preserves all 2,478 baseline cases across both compilers and all three platforms; JS/Native use the base runner with no ScalaTest-family classpath entries. Final evaluation remains open. |
-| 2e.2 | in progress | Base runner checkpoint passes 826 checks on all six supported lanes; The corrected higher provider passes523 checks on each of the four JS/Native compiler lanes and646 on each JVM compiler lane. Final evaluation remains open. |
-| 2e.3 | in progress | Target provider checkpoint 20f899de2 executes real DI/effect/configuration and Lifecycle controls on JS/Native under both supported compilers; full SDK integration and final evaluation remain open. |
-| 2e.4 | in progress | Production TestSuite retention and JS/Native loaders pass six802-check producer lanes and eight real target commands on both compilers below. Unannotated suites reconstruct from serialized tasks; higher DI target integration and final evaluation remain open. |
-| 2e.5 | in progress | Production SDK checkpoints verify 72 stock-policy contexts, 44 configuration/aggregation captures, 44 real ScalaCheck mixed histories, inspection and recovery controls. The corrected provider additionally passes64 tracked DI/scanned-plugin histories across both compilers/platforms, including untracked configuration and memoization. The corrected host/provider passes20 DI failure/recovery histories with420 terminal records. Complete target matrix and final evaluation remain open. |
-| 2e.6 | in progress | Production JS/Native bootstrap requires reconstruction from serialized suite identities; 24 real SDK contexts on Scala3.9/2.13 pass the independent audit below. Complete host integration and final evaluation remain open. |
-| 2e.7 | in progress | Production target cancellation preserves fifteen results and five held releases. The tracked host candidate additionally preserves all five suite XML files, explicit cancellation errors and same-session recovery on both compilers/platforms; host limits one/two pass below. The corrected production host additionally passes24 tracked real DI finalizer-cancellation/recovery histories across both compilers/platforms and host limits one/two. Complete effect interruption and final evaluation remain open. |
-| 2e.8 | in progress | Production target bootstrap reconstructs fresh executable suites from serialized definitions, uses async JS completion and executes each selected group in one actual SDK process. Both compiler/platform consumer lanes pass below; complete host/sharing integration and final evaluation remain open. |
-| 3.1 | in progress | Fresh current-artifact six-lane coverage consumer batch: all six actual SBT exits0,1200 ordinary/instrumented assertion checks and18 branch-qualified reports. Corrected stale86-check audit and independent audit0; phase review remains open. |
-| 3.2 | in progress | Current six-lane corrected audit verifies12 normal publications after coverageOff/clean,exact compiled bytes and no instrumentation/POM dependency. Current repository assertion/base publication controls also pass; phase review remains open. |
+| 2d.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.5 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.9 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.10 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.11 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.12 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger check follows. |
+| 2d.13 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.14 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.15 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.16 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.17 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.18 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.19 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.20 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.21 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.22 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2d.23 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2e.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2e.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2e.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2e.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2e.5 | done | Non-IDE scope reviewed and verified below; every IDE portion remains owner-deferred and is not passed. Final-head source/ledger check follows. |
+| 2e.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2e.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 2e.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 3.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 3.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
 | 4.1 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.2 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.3 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.4 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.5 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.6 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
-| 5.1 | in progress | Current162 published JAR/POM pairs and ten CI lanes are vendor-free; final phase review remains open. |
-| 5.2 | in progress | Candidate source/graph review verifies layer placement and unpublished test projects; complete final-head evaluation remains open. |
-| 5.3 | in progress | All150 surviving migrated source correspondences are hash-verified and contain no org.scalatest/org.scalactic package reference. Final phase review remains open. |
-| 5.4 | in progress | Current613 reports preserve all5314 baseline IDs and statuses after fresh Docker replay; additional3886-case/38-combination comparison also passes. Final phase review remains open. |
-| 5.5 | in progress | All72 tracked legacy adapter files are removed; current publication and CI retain no adapter. Final phase review remains open. |
-| 5.6 | in progress | Current JS and Native CI pass both compilers; explicit platform carve-outs are recorded. Final phase review remains open. |
-| 5.7 | in progress | Current Native lanes execute typed DI/configuration and four overlapping memoized Lifecycle bodies with one acquisition/release from the higher test-only project. Final phase review remains open. |
-| 5.8 | in progress | The151-source facility trace preserves exact Git originals/diffs and concrete suite routes;17 replacement sources are unchanged. Final semantic review remains open. |
-| 5.9 | in progress | Current site action and independent output/input audit pass with required-plugin and approved factory-migration guidance. Final phase review remains open. |
+| 5.1 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.2 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.3 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.4 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.5 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.6 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.7 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.8 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| 5.9 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
 | O.1 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | O.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
@@ -149,22 +149,22 @@ head. The spike reports are design evidence, not implementation verification.
 | O.12 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.13 | done | Non-IDE four-front-end/common integration contract reviewed and verified below. The IntelliJ portion stays owner-deferred and is not passed. |
 | O.14 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
-| O.15 | in progress | Current source-compatibility inventory and dependency graph retain plain suites except required test-only layer relocations. Final phase review remains open. |
+| O.15 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
 | O.16 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.17 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.18 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.19 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
-| O.20 | in progress | Current524-context JVM and48-build Node/Native consumer captures verify ordinary suite names,sharing/group boundaries and exact body/report sets; finite host review remains open. |
-| O.21 | in progress | Public SBT2 host bindings and measured substitution controls are implemented and exercised by the current consumer captures; finite source/API review remains open. |
-| O.22 | in progress | JS/Native loadedTestFrameworks composition and real mixed-framework controls pass on both compilers; finite target review remains open. |
-| O.23 | in progress | Current JVM and target cache/input controls include scanned implementations,resources,activation/memoization and opaque-extension rerun decisions; finite host review remains open. |
-| O.24 | in progress | Public sbt.testing framework/task reconstruction and resource sharing controls pass actual consumer processes; finite host review remains open. |
+| O.20 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.21 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.22 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.23 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.24 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
 | O.25 | done | 2026-10-07 reviewed positive step/current evaluation recorded below; all scoped inputs remain equal to the sealed review. |
 | O.26 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | O.27 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
-| O.28 | in progress | Correlated protocol terminal records,console/JUnit projections and four approved JUnit duration checks have current execution evidence; finite reporting review remains open. |
-| O.29 | in progress | Current six-lane published consumer coverage and repository branch/assertion controls pass; Scoverage supplies instrumentation. Final phase review remains open. |
-| O.30 | in progress | Coverage/report transport is separate from execution accounting; no new instrumentation engine or per-test attribution is introduced. Final phase review remains open. |
+| O.28 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.29 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
+| O.30 | done | 2026-10-07 final finite review supports positive step/current evaluation below; scoped subjects and evidence rehash0. Whole-goal final-head check follows. |
 | O.31 | not started | Deferred by the owner's2026-10-05 instruction; excluded from this run and not passed. |
 | O.32 | not started | Deferred by the owner's2026-10-05 instruction; excluded from this run and not passed. |
 | O.33 | done | Historical step evaluation verified and recorded below; superseded by 5.5, whose final evaluation remains separate. |
@@ -22228,3 +22228,90 @@ these2b/2c public-boundary evaluations but remains open for the remaining host/
 coverage/retirement evaluations. No whole-goal or IDE completion is claimed.
 Every final clause will receive source-applicability verification again at the
 whole-goal final head.
+
+Phase2a/2b/2c evaluation commit:
+078be156f80055b6f231a74efd09b717edd22717 (2026-10-07). A post-commit
+source check verifies all292 reviewed non-ledger subjects still equal. Current
+item-state inventory has142 fixed IDs:82 done,52 in progress under the remaining
+finite review,and eight explicitly owner-deferred IDE IDs. This count is a ledger
+closure count,not a fraction of runtime implementation effort or a completion-time
+estimate. No additional heavy process is running during the final review.
+
+## 2026-10-07: reviewed completion of SBT,target,coverage and retirement phases
+
+The finite read-only2de-3-5-final-acceptance-readonly-review-first report supports
+all52 remaining in-scope clauses,with no material implementation/evidence gap.
+Root directly read its complete final sealed REVIEW.md. Sealed hashes:
+REVIEW.md0921c546589c9b040d1474ddbab80957666df628b298cd7348961785c5a97180;
+manifest.jsonfbe556d985c00d6949cf3ad0d96954ddfad42600aac8194ada9e0a446f65d65a;
+inspection.json5a94569939c9a3dcf947886672ae6e74aa84a406a39dbad826c1a7587148befd.
+The first root hash check ran before the final seal and stopped on an evolving
+report/inspection hash; it is preserved as a preseal-hash-failure receipt. It
+establishes no product defect and is not treated as a passing source check.
+After the explicit seal,root reread the final complete report and rehashed all
+2617 immutable copies (351 repository,2266 evidence) and350 current non-ledger
+subjects. Capture2de35-ledger-evaluation-current-source-first records actual0,
+seal-time HEAD078be156f80055b6f231a74efd09b717edd22717 and all exact hashes.
+
+This ledger-only commit,Complete reviewed SBT target coverage and retirement phases,
+is the evaluation commit for2d,2e,3 and5. It records positive step/current final
+evaluations for2d.1–23,2e.1–8,3.1–2,5.1–9,O.15,O.20–24,O.28–30,G.1.
+Reviewed production/build/fixture subjects remain unchanged from the applicable
+completed commands and the preceding sealed reviews. Their actual heads,argv,
+artifact versions,task-cache behavior,successes/intentional errors and source
+qualifications remain explicit; they did not execute at this ledger commit.
+IDE portions of2d.12,2e.5,G.1 andO.13 remain deferred. Step4/O.31/O.32 remain
+not started under the owner's exclusion,not passed or implemented.
+
+The exact evidence-key/item map is the sealed report. Its key execution bindings
+are the43 individual actual0 JVM SBT drivers/524 command contexts,12 Node/Native
+contracts/48 actual SBT builds,and current six coverage combinations. The target
+parent/DI driver original1 is preserved: an unanchored FORTIFY predicate matched
+a successful compile line. Its reproduced/corrected same-capture qualification0
+changes no runtime execution or acceptance criterion. The coverage controller
+original1 at obsolete86 checks remains preserved against six actual0 SBT runs
+with100 current checks twice per lane. All113 source/build inputs remain exact;
+18 independently parsed branch reports and12 normal witness publications pass.
+Current162 primary normal JAR/POM pairs also contain no instrumentation or retired
+vendor dependency across53868 executable payload members.
+
+The reviewer directly reconciles156 selected host contexts,774 physical body
+records and1424 project-scoped XML records,without presenting those as the entire
+524/48 inventory. Synthetic suite-selector errors remain visible errors and are
+not physical bodies; expected rejected commands inside diagnostic drivers remain
+rejections. Concurrent listeners,selection/history/input inheritance,host limits
+one/two,partial-to-full runs,process death/cancellation/recovery and joined
+finalization are concretely mapped. The measured conservative owned digest-map
+omission explicitly reruns unknown input closures; it is not an invented tracked
+cache hit or a claim to observe success-store put calls. Public SDK2 bindings and
+actual target processes preserve group/fork boundaries and original foreign tasks.
+
+Retirement has exact5314 baseline identities/statuses in613 reports,plus3886
+retained original additional-module cases across38 combinations. The explicit
+per-case exceptions retain six plan-permitted ScalaMock removals and two approved
+JUnit package/reporter moves;16 supplemental records remain additions,not old
+identities. Each ordinary JVM domain has375 retained original identities plus two
+new override cases,not377 unchanged originals. All72 adapter paths remain absent;
+150 surviving mapped sources have no retired package symbols. Each of thirteen
+facility families has its applicable replacement source and executed controls.
+All6current JUnit fixture inputs equal the eighth capture: both actual JVM
+commands0,preserved original checker name,and four duration predicates each pass
+>=2seconds (2.313–2.317s on2.13;2.237–2.241s on3.9). This is separate from ordinary
+migration case counts and uses the production JUnit pipeline.
+
+Current130-node/296-scoped-edge graph is acyclic and respects test-only runner
+layering. Native executes the original0b typed configuration/DI and Identity/IO/
+ZIO lifecycle/failure controls,including four overlapping memoized bodies with
+one acquire/release,above testkit-core. Shared JS/Native identity domains and
+explicit platform source carve-outs are qualified. Site actual0 and all44 current
+site source inputs qualify user-facing new-library/required-plugin/factory guidance.
+No browser execution or Scala3 target coverage is claimed under the fixed scope.
+
+The unchanged-subject full final check is prepared as
+python3 -B /srv/nvme/tmp/izumi-impl/final-goal-head-source-and-ledger-audit.py
+--repo-root /home/pavel/work/safe/7mind/izumi
+--evidence-dir /srv/nvme/tmp/izumi-impl/5-whole-goal-final-head-audit-first.
+It will check the clean final head,all preceding/current reviewed subjects and
+sealed evidence,exact142-ID agreement,and134 done/eight owner-deferred states.
+Its actual final-head/result receipt is required before whole-goal completion.
+No heavy SBT/compiler/linker process remains active in the observed sandbox.
