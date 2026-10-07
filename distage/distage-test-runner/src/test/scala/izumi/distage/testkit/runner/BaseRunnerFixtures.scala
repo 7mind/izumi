@@ -33,6 +33,7 @@ object BaseRunnerFixtures {
       if (!condition) throw new IllegalStateException(message)
     }
     FrontendAssertionFixtures.run(verify)
+    PlainOrderingFixtures.main(Array.empty)
     CauseSnapshotFixtures.run(verify)
     val framed = FramedChannelFixtures.run(() => FramedChannelFixtures.memory(), "memory", ec, verify)
     val identity = CatalogueIdentity(BuildId("base-build"), BuildTargetId("base-target"), CatalogueId("base-catalogue"))

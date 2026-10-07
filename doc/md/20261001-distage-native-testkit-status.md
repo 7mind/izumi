@@ -19212,3 +19212,95 @@ are still pending; no complete migration is claimed yet. Its source-diff
 inventory records65 migrated suite files,51 with only import-line changes.
 Additional changes are recorded separately for exception, matcher, step-logging
 and absence-check facilities in migration-source-diff-inventory.json.
+
+## 2026-10-07: plain WordSpec ordering regression reproduced
+
+The twelfth six-module execution exits1 after1290.223s on Scala2.13,
+with1639 frozen inputs unchanged. All earlier module lanes pass, including the
+repaired configuration module. Framework JVM executes23 cases with one failure:
+RoleAppTest's TerminatingHandler stderr check captures basicConfig's error
+twice instead of once. Its original assertion remains unchanged. The provider
+currently starts all plain bodies concurrently, including same-suite bodies
+that redirect process-global stderr and mutate environment/configuration state.
+
+A deterministic public-session reproduction uses a controlled execution context
+and a pending first body. Before releasing it, the second body and its start
+event execute. The first fixture capture fails compilation after133.442s due
+an unused import, with1647 inputs unchanged. After removing only that import,
+the second capture fails for the expected ordering reason after75.944s, also
+unchanged. Captures:5-plain-ordering-reproduction-first/ and
+5-plain-ordering-reproduction-second/. Authoritative ScalaTest documentation
+states that ordinary async-style suites run tests serially unless opted into
+parallel execution:https://www.scalatest.org/user_guide/async_testing.
+
+The correction registers ordinary AnyWordSpec/AsyncWordSpec bodies as sequential
+within each suite. The shared plain provider still starts independent suites
+concurrently and preserves explicitly registered provider behavior. RunOne is
+invoked only when a sequential body's turn starts, preserving start events and
+measured durations. Results are restored to selected-test order. The retained
+reproduction also checks an independent suite runs while another suite's first
+body is pending. The full twelve base/higher and two Docker main regression
+lanes run in5-plain-ordering-main-controls-first/,1647 frozen inputs.
+
+The thirteenth six-module batch includes this correction and the current shared
+assertion utilities. It restores FunctoidTest's original assumption call rather
+than converting it to a precondition. Its complete42 execution lanes run with
+framework JVM first after the base controls, so the reproduced stderr failure
+is checked before repeating expensive later Native links. The prior complete
+compiler preflights remain historical; each current test task compiles its
+changed dependencies. Captures:5-distage-plain-migration-worktree-thirteenth/.
+The ordering correction and whole migration remain unverified until these
+batches and independent audits pass. No assertion or acceptance item is weakened.
+
+## 2026-10-07: actual published wiring macro consumer in progress
+
+A separate worktree at83c394c79 prepares a normal-artifact JVM consumer on
+Scala2.13.18 and3.9.0. Its application is compiled in a separate subproject;
+configured and default SpecWiring constructor calls and WiringAssertions calls
+request actual compiler materialization, with no supplied PlanCheckMaterializer.
+The missing-dependency application uses the existing onlyWarn option and must
+then fail the assertion at runtime. Two registered suites must execute four
+wiring bodies, and the explicitly owned executor must terminate.
+
+Capture:5-wiring-macro-published-consumers-first/, with1650 frozen publication
+inputs and four frozen consumer inputs. Each compiler publishes three JVM
+artifacts normally under1.3.0-M5-wiring-macro-SNAPSHOT before its consumer runs.
+The fixture and independent POM/classpath/archive audit are prepared; results
+remain pending. This is a bounded actual-macro check, not the final publication
+evaluation or full imports-only suite inventory.
+
+The first macro consumer exits1 after26.819s, four frozen inputs unchanged.
+Only assertWiringCompileTime(app) without cfg fails Scala2.13 compilation:
+PlanCheckConfig has existential fields and the macro rejects a nonconstant type.
+The equivalent published legacy ScalaTest WiringAssertions call also exits1
+after18.484s with the identical diagnostic, four unchanged inputs. Captures:
+5-wiring-default-cfg-legacy-reproduction-first/ and the first consumer;
+independent-legacy-default-limitation-audit.json validates both failure modes.
+The original default-cfg assertion call is therefore a pre-existing limitation,
+not a migrated-call regression; no production correction is proposed for it.
+
+The positive consumer now supplies PlanCheckConfig.empty explicitly for that
+assertion, retaining actual materialization of its literal defaults. It still
+checks omitted runtime flags and both configured/default constructors. The
+first publication source inputs are archived before this fixture-only edit.
+The revised complete publication/consumer batch is captured separately in
+5-wiring-macro-published-consumers-second/; its results remain pending.
+
+## 2026-10-07: default plain-suite ordering correction verified
+
+The main regression batch exits0 on both compilers:499.321s onScala2.13.18
+and700.730s onScala3.9.0, with1647 frozen inputs unchanged per process.
+Independent audit exits0, retaining base845 checks on each of six lanes and
+higher691 JVM/568 JS/568 Native on each compiler:8724 controls overall.
+The ordering fixture executes five case outcomes per lane, thirty overall,
+checking serial same-suite bodies/events and overlapping independent suites.
+Docker again retains exactly30 discovered suites and62 reported successful
+cases per compiler,124 overall, with no ScalaTest/Scalactic in its graph or
+classpath. No original migration assertion is removed.
+
+Commands and reports:5-plain-ordering-main-controls-first/; independent audit:
+python3 /srv/nvme/tmp/izumi-impl/5-plain-ordering-main-controls-first/audit.py.
+Audit SHA256:575178fc2bad44e4a5ec3866eda8b80e751de0024976dfbd97707f1a0ea2f5f2.
+The previously failing framework JVM migration lane already reports23 successful
+cases in the still-running thirteenth candidate batch. Complete migration and
+parent-step/final evaluation remain open until its remaining lanes finish.

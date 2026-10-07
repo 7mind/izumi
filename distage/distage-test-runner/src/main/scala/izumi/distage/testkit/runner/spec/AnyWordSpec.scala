@@ -68,7 +68,7 @@ abstract class AnyWordSpec extends TestAssertions with TestSuite {
       PlainRegisteredTest(TestDescriptor(id, registration.path.mkString(" "), registration.location, EffectiveSettings(Vector.empty, memoization = true)), registration.body)
     }
     val provider = context.provider(ProviderId("plain"), () => new PlainExecutionProvider(context.executionContext))
-    provider.add(tests)
+    provider.addSequential(tests)
     RegisteredSuite(descriptor, tests.map(_.descriptor), provider)
   }
 }

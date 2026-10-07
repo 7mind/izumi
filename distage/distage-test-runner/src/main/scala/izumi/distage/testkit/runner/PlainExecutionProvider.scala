@@ -9,9 +9,15 @@ final case class PlainRegisteredTest(descriptor: TestDescriptor, body: Execution
 
 final class PlainExecutionProvider(executionContext: ExecutionContext) extends ExecutionProvider {
   private var registered = Vector.empty[PlainRegisteredTest]
+  private var sequentialSuites = Set.empty[SuiteId]
 
   private[runner] def add(tests: Vector[PlainRegisteredTest]): Unit = {
     registered ++= tests
+  }
+
+  private[runner] def addSequential(tests: Vector[PlainRegisteredTest]): Unit = {
+    sequentialSuites ++= tests.map(_.descriptor.id.suite)
+    add(tests)
   }
 
   override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = {
@@ -37,7 +43,18 @@ final class PlainExecutionProvider(executionContext: ExecutionContext) extends E
       override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
       override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
         implicit val ec: ExecutionContext = executionContext
-        Future.sequence(bodies.map(runOne(_, context))).map(results => ProviderOutcome(results, Vector.empty, context.cancellation.isRequested))
+        val groups = bodies.groupBy(_.descriptor.id.suite).toVector.map { case (suite, tests) =>
+          if (sequentialSuites.contains(suite)) {
+            tests.foldLeft(Future.successful(Vector.empty[TestResult])) { (previous, test) =>
+              previous.flatMap(results => runOne(test, context).map(results :+ _))
+            }
+          } else Future.sequence(tests.map(runOne(_, context)))
+        }
+        Future.sequence(groups).map { completed =>
+          val byId = completed.flatten.map(result => result.id -> result).toMap
+          val results = bodies.map(test => byId(test.descriptor.id))
+          ProviderOutcome(results, Vector.empty, context.cancellation.isRequested)
+        }
       }
     })
   }
