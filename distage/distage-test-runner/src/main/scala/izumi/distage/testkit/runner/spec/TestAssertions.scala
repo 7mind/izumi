@@ -1,5 +1,6 @@
 package izumi.distage.testkit.runner.spec
 
+import izumi.distage.testkit.runner.TestCancelled
 import izumi.fundamentals.assertions.*
 
 import scala.reflect.ClassTag
@@ -14,7 +15,19 @@ trait TestAssertions extends Assertions with FrontendAssertions {
 
   final def succeed: Assertion = ()
 
+  final def fail(): Nothing = fail("Test failed")
+
   final def fail(message: String): Nothing = throw failure(message)
+
+  final def cancel(message: String): Nothing = throw new TestCancelled(message)
+
+  final def assume(condition: Boolean): Unit = {
+    if (!condition) cancel("Assumption failed")
+  }
+
+  final def assume(condition: Boolean, clue: => Any): Unit = {
+    if (!condition) cancel(s"Assumption failed: $clue")
+  }
 
   final def fail(cause: Throwable): Nothing = {
     val assertion = failure(Option(cause.getMessage).getOrElse(cause.getClass.getName))

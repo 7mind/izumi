@@ -18784,3 +18784,102 @@ compilers. Each compiler has its own process and report directory; all1633
 compiler inputs are frozen. Commands/manifests are in
 5-remaining-migration-baseline-first/. No candidate source edits are applied
 to that baseline checkout.
+
+## 2026-10-07: higher assertion frontend defects reproduced
+
+Published higher-runner consumers on Scala2.13.18 and3.9.0 compile-fail for
+five missing inherited utilities: intercept, assertThrows, assertCompiles, fail
+and cancel. Their exact logs and compiler completion records are in
+5-distage-assertion-api-reproduction-first/. The first controller incorrectly
+expected assume to be absent as well; Predef supplies that name. The retained
+Scala2 log independently qualifies the five actual missing methods, and the
+corrected controller qualifies Scala3. No compiler failure is attributed to
+assume's existence.
+
+A separate runtime reproduction at
+5-distage-assumption-reproduction-first/ executes a single SpecIdentity case
+with assume(false, "unavailable fixture") under each supported compiler.
+Both builds compile and run, then fail exactly because the observed test
+status is Failed rather than the required Cancelled. Both captured actual
+exits are1; the reproduction controller exits0 with its frozen inputs unchanged.
+
+The main candidate now makes DistageSpec inherit TestAssertions, sharing
+exception/compiler assertions and the tested failure/cancel methods with the
+plain frontend. Explicit assumption overloads convert false conditions into
+TestCancelled and leave successful conditions' clue suspended. Three direct
+evaluation controls and four actual frontend outcome sessions cover the change.
+All four spec types must retain failure diagnostics, cancellation reasons,
+sibling execution and exact terminal callbacks. The twelve-lane base/higher
+JVM/JS/Native compiler batch is running from
+5-distage-assertion-frontend-controls-first/, with1634 frozen compiler inputs.
+This candidate is not yet committed as verified.
+
+The first remaining-suite baseline command fails while applying listeners: two
+JVM-only generated project IDs were incorrectly given a JVM suffix. No suite
+execution or code defect is inferred from that controller error. Generated
+build.sbt confirms the unsuffixed Docker/module-filtering project IDs; the
+second capture uses them with unchanged code and separate compiler processes.
+Evidence is retained in5-remaining-migration-baseline-first/ and
+5-remaining-migration-baseline-second/.
+
+The first twelve-lane assertion control capture exits1 after218.792s with
+all1634 inputs unchanged. All three Scala2.13 base controls pass845 checks.
+The higher fixture then compile-fails: its literal Nothing-returning fail/cancel
+bodies ambiguously match the DSL's effect/Functoid overloads, and its diagnostic
+traversal uses cause instead of the protocol's causes vector. The corrected
+fixture uses explicitly Unit-returning failure/cancel helper bodies and the
+actual causes field; no DSL or production Throwable transport changes are
+applied for these fixture errors. The second full control batch runs from
+5-distage-assertion-frontend-controls-second/.
+
+Remaining-suite baseline Scala2.13 now completes actual0 after456.854s with
+all1633 compiler inputs unchanged. Fresh reports contain439 BIO cases,62
+Docker cases,377 legacy testkit JVM cases,165 legacy testkit JS cases and one
+module-filtering case; Scala3 is in flight. Console reporting explicitly shows
+19 cancelled legacy cases per platform, whereas the stock SBT XML projection
+marks all of those XML entries successful. Those XML entries establish selected
+case identities, not actual success. The full baseline qualification must retain
+the cancelled outcomes through an independent event capture before migration
+comparison; the initial XML-only outcome classifier is insufficient.
+
+## 2026-10-07: verified shared assertion frontend checkpoint
+
+The second full frontend control batch completes actual0 on both supported
+compilers: Scala2.13.18 after313.456s and Scala3.9.0 after381.185s. All1634
+frozen compiler inputs remain unchanged in each process. The independent audit
+exits0 and verifies845 base checks per JVM/JS/Native lane, plus674 higher JVM
+and551 higher JS/Native checks per compiler:8622 checks across twelve lanes.
+Four actual spec frontends execute24 isolated sessions and96 case outcomes,
+including preserved structured failures, explicit cancellation reasons, false-
+assumption cancellation, suspended discovery and exactly-once callbacks.
+
+Commands, logs and completion records are retained in
+5-distage-assertion-frontend-controls-second/. Its independent audit is run with
+python3 -B /srv/nvme/tmp/izumi-impl/5-distage-assertion-frontend-controls-second/audit.py.
+The audit JSON SHA256 is e6653380b3dad997b9bd56e82a15b960023fa9b8839070c9ddee7905d8416da4.
+This commits a bounded frontend checkpoint; published higher-consumer rechecks,
+complete compatibility inventories and final-head acceptance remain open.
+
+The remaining-suite baseline also completes actual0 on Scala3.9 after390.987s,
+with all1633 inputs unchanged. Its fresh reports contain438 BIO cases,62 Docker
+cases,377 legacy testkit JVM cases,165 legacy testkit JS cases and one filtering
+case. Scala2.13 has439 BIO cases; comparisons must retain the per-compiler
+baseline rather than assert equality across compilers. Legacy cancellation
+outcomes still require independent SDK event capture; XML-only success labels
+are not qualified outcomes.
+
+The fifth isolated six-module migration capture completes actual1 after1063.383s
+with all1633 inputs unchanged. Native core emits308 successful body records and
+32 suite errors. Every suite error retains UTFDataFormatException from the
+Native SDK NestedTestSelector serializer: the74917-byte aggregate protocol
+frame exceeds writeUTF's65535-byte payload limit. The failing source/log/XML
+are retained in5-distage-plain-migration-worktree-fifth/2.13.18/.
+
+The isolated candidate now fragments SDK carrier frames and reassembles them
+in execution and inspection handlers, keeping logical protocol messages intact.
+Checks cover maximum protocol length, Unicode/NUL modified-UTF round trips,
+owner/order violations and truncated frames. The sixth full migration batch
+runs from5-distage-plain-migration-worktree-sixth/ with1636 frozen inputs. It
+adds the protocol JVM/JS/Native controls,38 host scenarios,8 inspection scenarios
+and actual core JS/Native list/plan commands to the migration matrix. This
+transport correction is not yet claimed verified or integrated into main.

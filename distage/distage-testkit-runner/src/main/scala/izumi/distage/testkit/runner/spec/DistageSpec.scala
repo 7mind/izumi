@@ -11,14 +11,13 @@ import izumi.distage.testkit.runner.*
 import izumi.distage.testkit.runner.di.{DistageExecutionProvider, DistageRunnerOptions, RegisteredDistageTest, ResolvedDistageTest}
 import izumi.distage.testkit.runner.impl.services.TestConfigLoader
 import izumi.distage.testkit.spec.{DistageTestEnv, TestConfiguration}
-import izumi.fundamentals.assertions.Assertions
 import izumi.fundamentals.platform.language.SourceFilePosition
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 
 import scala.util.control.NonFatal
 
 abstract class DistageSpec[F[_]](implicit val tagMonoIO: TagK[F], val defaultModulesIO: DefaultModule[F])
-  extends TestConfiguration with DistageTestEnv with PluginLoaderFactoryConfiguration with Assertions with TestSuite {
+  extends TestConfiguration with DistageTestEnv with PluginLoaderFactoryConfiguration with TestAssertions with TestSuite {
   private final class Registration(val path: Vector[String], val location: SourceLocation, val position: SourceFilePosition, val function: Functoid[F[Any]])
   private var prefix = Vector.empty[String]
   private var registrations = Vector.empty[Registration]

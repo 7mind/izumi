@@ -1,9 +1,10 @@
 package izumi.distage.testkit.runner
 
-import izumi.distage.testkit.protocol.{BuildTargetId, FailurePhase}
+import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.spec.{AnyWordSpec, AsyncWordSpec, TestAssertions}
 import izumi.fundamentals.assertions.{AssertionContext, AssertionFailure, CompiledText, ValueRenderer}
-import scala.concurrent.ExecutionContext
+import java.util.concurrent.atomic.AtomicInteger
+import scala.concurrent.{ExecutionContext, Future}
 
 object FrontendAssertionFixtures {
   private trait SelfTypedRegistration { this: AnyWordSpec =>
@@ -35,6 +36,17 @@ object FrontendAssertionFixtures {
       val _: Unit = succeed
       val message = intercept[AssertionFailure](fail("explicit failure"))
       verify(message.getMessage.contains("explicit failure"), "Explicit failures retain their diagnostic text")
+      verify(intercept[AssertionFailure](fail()).getMessage.contains("Test failed"), "Parameterless failures carry an assertion diagnostic")
+      var cancellationMessages = 0
+      val stopped = intercept[TestCancelled](cancel { cancellationMessages += 1; "unsupported platform" })
+      verify(stopped.getMessage == "unsupported platform" && cancellationMessages == 1, "Explicit cancellation retains its message and evaluates it once")
+      var assumptionConditions = 0
+      var assumptionClues = 0
+      assume({ assumptionConditions += 1; true }, { assumptionClues += 1; "unused clue" })
+      verify(assumptionConditions == 1 && assumptionClues == 0, "Successful assumptions evaluate the condition once and leave the clue suspended")
+      val unavailable = intercept[TestCancelled](assume({ assumptionConditions += 1; false }, { assumptionClues += 1; "unavailable fixture" }))
+      verify(assumptionConditions == 2 && assumptionClues == 1 && unavailable.getMessage.contains("unavailable fixture"), "False assumptions evaluate once and retain the cancellation clue")
+      verify(intercept[TestCancelled](assume(false)).getMessage == "Assumption failed", "Unclued false assumptions cancel with an explicit reason")
       val caused = intercept[AssertionFailure](fail(original))
       verify(caused.getCause eq original, "Throwable failures retain the original cause")
       verify(RunnerFailure.fromThrowable(FailurePhase.Test, caused).assertion.nonEmpty, "Helper assertion failures carry structured protocol diagnostics")
@@ -87,6 +99,37 @@ object FrontendAssertionFixtures {
       var references = 0
       def evaluatedFactory: scala.collection.Factory[String, List[String]] = { references += 1; factory }
       verify((evaluatedFactory ne null) && references == 1, "Reference comparisons evaluate the receiver exactly once")
+    }
+  }
+
+  def outcomes(identity: CatalogueIdentity, context: ExecutionContext, verify: (Boolean, String) => Unit): Future[Unit] = {
+    implicit val ec: ExecutionContext = context
+    val bodies = new AtomicInteger(0)
+    final class OutcomeSuite extends AnyWordSpec {
+      "plain failure" in { bodies.incrementAndGet(); fail() }
+      "explicit cancellation" in { bodies.incrementAndGet(); cancel("unsupported platform") }
+      "sibling" in { bodies.incrementAndGet(); succeed }
+    }
+    final class RecordingSink extends EventSink {
+      private var events = Vector.empty[ProtocolMessage.Event]
+      override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event }
+      def completed: Vector[TestResult] = synchronized { events.collect { case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, result)) => result } }
+    }
+    val sink = new RecordingSink
+    val session = new RunSession(identity, Vector(() => new OutcomeSuite), context, sink)
+    val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
+    verify(catalogue.tests.size == 3 && bodies.get() == 0, "Discovery leaves failure and cancellation bodies suspended")
+    val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
+    session.execute(RunId("frontend-outcomes"), request).map { outcome =>
+      val results = outcome.results.map(result => result.id.path.head -> result).toMap
+      verify(results.view.mapValues(_.status).toMap == Map("plain failure" -> TestStatus.Failed, "explicit cancellation" -> TestStatus.Cancelled, "sibling" -> TestStatus.Succeeded), "Explicit failure and cancellation preserve each sibling's terminal status")
+      def retainsAssertion(failure: Failure): Boolean =
+        (failure.exceptionClass.endsWith("AssertionFailure") && failure.assertion.nonEmpty && failure.message.contains("Test failed")) || failure.causes.exists(retainsAssertion)
+      verify(results("plain failure").failure.exists(retainsAssertion), "Parameterless failure retains its assertion diagnostic in the protocol cause tree")
+      verify(results("explicit cancellation").failure.exists(_.message == "unsupported platform"), "Cancelled test reports retain the supplied reason")
+      verify(!outcome.successful && !outcome.cancelled && outcome.failures.isEmpty, "Explicit test cancellation does not request application cancellation")
+      verify(bodies.get() == 3, "Failure and cancellation bodies execute exactly once without suppressing their sibling")
+      verify(sink.completed.size == 3 && sink.completed.toSet == outcome.results.toSet, "Callbacks report each failure, cancellation and successful sibling exactly once")
     }
   }
 

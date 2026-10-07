@@ -64,7 +64,7 @@ object BaseRunnerFixtures {
     verify(first.resolve(request.copy(selection = Selection.Only(Vector.empty, Vector.empty))).isLeft, "Empty explicit selection must reject")
     verify(first.resolve(request.copy(overrides = inherited.copy(axes = Vector(AxisChoice(AxisId("unknown"), AxisValue("value")))))).isLeft, "Plain providers reject unsupported activation axes")
 
-    framed.flatMap(_ => first.execute(RunId("first"), request)).flatMap { selected =>
+    framed.flatMap(_ => FrontendAssertionFixtures.outcomes(identity, ec, verify)).flatMap(_ => first.execute(RunId("first"), request)).flatMap { selected =>
       verify(selected.successful && selected.results.map(_.id) == Vector(futureId), "Only selected Future body may execute")
       verify(syncBodies.get() == 0 && futureBodies.get() == 1, "Future body completes through the session execution context")
       val events = firstSink.snapshot
