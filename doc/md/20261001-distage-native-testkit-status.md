@@ -129,7 +129,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.1 | in progress | Verified logstage checkpoint: all16 resolved update/Test classpaths exclude ScalaTest-family dependencies and use only the base runner. Other modules and full retirement remain outstanding. |
 | 5.2 | not started | No evaluation point passed yet. |
 | 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
-| 5.4 | in progress | Independent logstage migration audit reconciles all16 lanes,94 suite reports and634 successful baseline case identities. Other modules and final-head evaluation remain outstanding. |
+| 5.4 | in progress | Separate logstage executions/discovery pass, but the audit found cross-compiler XML overwrites. Scala3 distage baseline qualifies21 lanes; fresh Scala2 distage and old/current logstage report recaptures are running. Full reconciliation/final evaluation remain open. |
 | 5.5 | not started | No evaluation point passed yet. |
 | 5.6 | not started | No evaluation point passed yet. |
 | 5.7 | not started | No evaluation point passed yet. |
@@ -18470,3 +18470,138 @@ and14 guard references. These include comments and are neither suite counts
 nor proof of active coupling; the guard implementation already inherits the
 new framework-neutral TestAssertions. A commented ScalaTest import remains in
 TraverseTest. Exact retirement classification requires inspecting each use.
+
+Local verified logstage checkpoint commit:
+`ec02f7bce6fda3f9a1cf010389c9b35016976a29`. No push occurred.
+
+## 2026-10-07: next distage plain-suite baseline in progress
+
+The36-lane baseline batch for core-api, core, extension-config, extension-logstage,
+extension-plugins and framework is running at `ec02f7bce`, with compiler inputs
+frozen. It captures discovery and public `Test/testFull` execution on Scala2.13
+and3.9 across JVM/JS/Native. Exact argv, input hashes and report directories are
+`/srv/nvme/tmp/izumi-impl/5-distage-plain-migration-baseline-first/command.json`.
+No migration edits to these modules have been applied. The audit must reconcile
+actual XML cases with discovery before these captures establish a baseline.
+
+
+## 2026-10-07: guard assertion inheritance regression reproduced
+
+The first36-lane baseline batch stops at `distage-coreJVM/Test/compileIncremental`
+with actual SBT/controller1 after241.889s and unchanged frozen inputs. Core-api
+JVM/JS/Native each passes its two discovered cases. Core compilation produces
+100 errors: mixing legacy ScalaTest suites with ScalatestGuards adds both
+ScalaTest's implicit-parameter `assert` and the new plain `assert`; calls are
+ambiguous. The captured diagnostics explicitly name both macro methods. This
+is a current regression before the next migration, not a valid full baseline.
+Exact diagnostics and completion remain in
+`5-distage-plain-migration-baseline-first/`.
+
+After this failing reproduction, the guard now composes a private TestAssertions
+instance instead of inheriting its methods. Its broken-body interception still
+uses the same plain assertion implementation, while suite assertion resolution
+remains with the frontend. Two portable guard cases verify exactly-once body
+evaluation, acceptance of a thrown failure, and rejection of successful bodies
+with AssertionFailure. The second large baseline will include all six platform
+project lanes with these controls, plus the original36 distage lanes. No suite
+imports have been migrated yet.
+
+The second42-lane batch is running from
+`5-distage-plain-migration-baseline-second/command.json`, with1633 compiler
+inputs frozen including the new guard suite. Scala2.13 platform-test lanes
+pass168 JVM,153 JS and155 Native cases. Core's60 JVM test sources now compile
+without the reproduced ambiguity, and all366 legacy core cases pass across38
+suites with zero failures, cancellations, ignored or pending tests. This closes
+the original Scala2.13 compilation reproduction; the full baseline and Scala3
+guard verification remain in flight. No next-module migration edits exist.
+
+Scala2.13 legacy core also passes302 JS and308 Native cases. Native BasicTest
+accounts for209.221s in its XML report; the otherwise quiet target was executing
+a long test, not a reproduced deadlock. All32 Native suites complete with no
+failed/canceled/ignored/pending cases. A host thread dump captured during the
+pause is preserved as `host-thread-dump.txt`; it alone did not establish a
+deadlock. The process exited normally before a further CPU sample could be
+taken, and the large batch continued to configuration tests. No execution-policy
+mitigation or test-input reduction was applied.
+
+
+## 2026-10-07: compiler-specific XML capture defect and correction
+
+The second42-lane producer completes actual SBT/controller0 in3536.66s with
+all1633 compiler inputs unchanged. Every execution succeeds. Full baseline
+postprocessing fails for the expected capture reason: the directory labeled
+Scala2.13 core JVM contains three Scala3-only suite files. `testListeners +=`
+survives the compiler switch, so the Scala3 run also writes through the earlier
+Scala2.13 listener and overwrites shared XML files. This is a capture defect,
+not a runner-source or test execution failure. The original capture remains
+intact; no compiler-labeled XML is silently treated as independent evidence.
+
+The same defect affects both earlier logstage captures: all15 core JVM XML
+files are byte-identical between their2.13 and3.9 directories. Their separate
+producer execution counts, discovery and clean publication checks remain
+observations, but the compiler-specific XML qualification must be strengthened.
+The logstage checkpoint's final acceptance remains open; the source commit is
+not reverted because this observation does not reproduce an implementation
+failure.
+
+The final compiler's21 Scala3 lanes in the new distage baseline are independent
+of the earlier compiler's writes and pass a separate audit. They contain188
+suite reports and1679 successful cases, with the explicit empty plugin JS lane
+preserved. `baseline-3.9.0.json` SHA256 is
+`6e78037baf15d7a61f8104d810d7c8ec7a6ed4a2ce46c58862d70b68dc9183a3`;
+`audit-3.9.0.py` and `independent-baseline-3.9.0-audit.json` are beside it.
+The correction uses separate compiler processes and fresh report directories
+for the Scala2.13 recapture. It preserves the valid Scala3 capture and avoids
+repeating that half. A disposable worktree at3907277af recaptures the original
+Scala2.13 logstage baseline; the main checkout recaptures the21 Scala2.13
+distage/platform lanes plus eight current logstage lanes. No suites, test
+inputs or source implementations are changed to repair reporting evidence.
+
+The compiler-specific recaptures are in flight: main checkout
+`5-scala213-report-recapture-first/` has29 lanes; disposable worktree
+`5-logstage-legacy-scala213-recapture-first/` has eight original logstage lanes
+at3907277af. Both use one compiler, fresh directories and frozen inputs. They
+run in separate checkouts, with default compiler/backend parallelism retained.
+The SBT JVM heap is12G because the preceding6G batch recorded6.3% GC pause
+over89 seconds; this is a tool resource setting, not a test-input or production
+execution change. No elapsed-time improvement is claimed before measurement.
+
+The original logstage Scala2.13 recapture completes actual SBT/controller0 in
+684.051s with all1632 frozen inputs unchanged. Its independent audit passes
+all eight discovery/execution lanes,47 XML suite reports and317 successful
+cases. `5-logstage-legacy-scala213-recapture-first/baseline.json` SHA256 is
+`a4dcbb566f45028a274cc75e8bf2f79cd59728d20e9106369b715940a9e56103`.
+The main29-lane recapture remains in flight; the old/new comparison is not yet
+qualified. The next65-source-file migration and six-module build-input patches
+are prepared under `5-distage-plain-migration-preparation-first/`, unapplied.
+Inspection also identifies existing parameterless fail() and cancel(message)
+uses without counterparts in TestAssertions; compilation reproduction and
+replacement validation remain required before migration completion.
+
+The independent published-artifact API reproduction now fails for the expected
+reasons on both supported compilers: parameterless fail() matches neither
+existing overload, and cancel is undefined. Each actual SBT compile exit is1;
+the reproduction controller exits0 after verifying both diagnostic categories
+and unchanged witness/build inputs. Commands, compiler logs and completion
+records are in `5-frontend-fail-cancel-api-reproduction-first/`. The consumers
+resolve `1.3.0-M5-logstage-migration-SNAPSHOT`; no main-checkout source or build
+input changed while its recapture was running. Frontend corrections and runtime
+classification controls remain pending.
+
+The testkit microsite page now contains the required SBT plugin installation
+steps, platform plugin activation and supported SBT/Scala versions. This
+Markdown edit is outside the producer's compiler-input set and remains pending
+site validation; the remaining legacy examples and execution helper have not
+yet been migrated.
+
+The guard correction is now a verified sub-step: the original42-lane producer
+exits0 with unchanged inputs and both legacy core compiler matrices pass.
+A separate report audit verifies the two new exactly-once guard controls on
+all six compiler/platform lanes (12 cases,zero failures/errors/skips), using
+fresh Scala2.13 reports and the retained final-compiler Scala3 reports. Exact
+report paths and hashes are in
+`5-scala213-report-recapture-first/guard-specific-report-audit.json` (audit0).
+Composition removes the competing inherited plain assert overload while still
+intercepting broken bodies with the same assertion implementation. This
+checkpoint does not qualify the still-running full Scala2.13 baseline or close
+any whole-phase/final acceptance item.
