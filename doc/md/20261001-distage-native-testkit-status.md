@@ -20462,3 +20462,54 @@ in this milestone. Parent/final acceptance gates remain open.
 
 Implementation milestone commit: `231262f00b1454d81e409a9c1ad1395b24fa97b7`. The source-identical qualification
 above covers this code; the final-head acceptance evaluation remains pending.
+
+
+### 2026-10-07 — refreshed develop rebase and normal runtime factory draft
+
+At an idle integration milestone, fetched develop over HTTPS with
+`env GIT_CONFIG_GLOBAL=/dev/null git fetch https://github.com/7mind/izumi.git develop:refs/remotes/origin/develop`
+(actual exit 0), avoiding the host's HTTPS-to-SSH rewrite and its unavailable
+host-key verification. Rebased the clean branch with `git rebase origin/develop`
+(actual exit 0, no conflicts). Current rebased milestone is
+`046c0417cd4048f2a0b1684fb7609d5191ad28a6`, with refreshed develop
+`b8e6a9388483e54080c94e5536b7ae9feb3b9e26` verified as an ancestor (exit 0).
+The source diff against pre-rebase `b4ddbbe43` is exactly the upstream Scala 3
+FunctoidMacroMethods conversion change. Receipt:
+`/srv/nvme/tmp/izumi-impl/5-main-refresh-rebase-second.json`.
+Historical commit IDs above retain their original evidence provenance;
+final-head source applicability and broad validation remain open.
+
+The isolated normal runtime draft restores the protected runtime hook and
+uses a session-owned factory to retain the same runner graph and prepared plan.
+Compatible policies share one provider; conflicting effect/lifecycle/override
+policies reject registration. Direct controls exercise real MiniBIO, Cats IO,
+and ZIO runtime allocations, held override finalizers, shared memoization,
+inspection close, execution, active cancellation, and independent runner-graph
+and outer-allocation failures. They are draft evidence, not final acceptance.
+
+`5-normal-runtime-wired-direct-second` reproduced a clean cancellation being
+misreported as finalizer failure in the existing provider controls (compile 0,
+runtime 1). `5-normal-runtime-registered-direct-first` reproduced it through
+the restored protected hook. Instrumented
+`5-normal-runtime-cancellation-observation-first` recorded an actual interruption
+signal and the original InterruptedException becoming a Scala Future
+ExecutionException wrapper. The correction recognizes only that observed
+interruption identity and its Future wrapper; independent graph, interruption,
+and outer-allocation errors remain retained.
+
+`5-normal-runtime-cancellation-after-second`: compile exit 0 (9.798s),
+real factory/registered controls exit 0 (4.844s), existing JVM provider controls
+exit 0 (12.760s; 695 checks); all captured inputs unchanged. Command manifest
+SHA-256 `ab2c7020a28dfe726cc3923ed49c2d58685c673b8abe56c47a042b905cf5cae0`.
+Direct compiler harness suppresses the existing TestConfig.forSuite deprecation
+only; all other warnings remain fatal. The source snapshot precedes the
+subsequent fixture registration and upstream macro copy, so it is not evidence
+for those later changes.
+
+`5-normal-runtime-platform-first` now captures the complete normal runtime
+draft plus upstream macro change: 1728 frozen source inputs, 73 scoped commands
+per compiler, including ordinary suites, core/engine controls, six runner
+platform lanes, CLI and held standalone interruption. Qualification is running.
+Pre-publication cancellation is being developed separately in
+runtime-prepublication-worktree. Normal runtime replacement and final legacy
+retirement remain WIP; no final acceptance item is closed by these draft checks.
