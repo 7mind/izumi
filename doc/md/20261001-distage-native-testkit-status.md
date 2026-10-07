@@ -21013,3 +21013,52 @@ graph and finalization. The CI site generator/check is in progress; no L4 or
 5.9 closure is claimed. Both original retirement producer checkouts remain
 source-frozen. The43-driver current JVM consumer batch is prepared but awaits
 matching final host publication before launch.
+
+
+### 2026-10-07 — complete retired Scala3 publication and host artifacts
+
+The final retirement Scala3.9 batch completes all77 commands with actual0 after
+2046.814s; all1652 frozen inputs remain unchanged. Its ordinary/runtime audit
+passes exact377/164/164 original cases and121/38/38 reports,887 base controls per
+platform and872/749/749 provider controls. Separate raw-log lifetime audit checks
+eleven actual CLI subprocesses, all nine closed-plan completion observations,
+held caller finalization and no RejectedExecutionException. Evidence:
+5-final-retirement-publication-second/audit.py and
+3.9.0/independent-cli-lifetime-audit.json; log SHA256
+5564f819e7a4258b8c4391dd7b20516b949e852876b37ae4f3c29a2b9f429c81.
+An initial auxiliary audit used nonexistent fixture marker spellings and failed
+before writing a result; the corrected audit checks the actual emitted contract
+lines. The enclosing producer result is unchanged.
+
+The separate pinned3.8.4 protocol/host publication completes all six commands
+with actual0 after268.683s and unchanged1652 inputs. Independent publication
+payload/POM audit qualifies83 Scala3/host primary pairs and28116 executable
+members byte-for-byte against current candidate compiler outputs. Combined with
+Scala2.13,162 pairs and53845 members are now qualified. Every dependency/POM
+boundary is vendor-free; the base-runner dependency bound and absence of fixture
+or coverage payloads hold. Evidence:5-final-retirement-artifacts-scala3-host-first/
+audit.json. Downstream consumer validation is separate.
+
+The43-driver JVM and12-driver JS/Native consumer batches are now running against
+this qualified private publication, with frozen current templates and JAR/POM
+inputs. Their task histories and pending results do not yet close any acceptance
+item. Separate3.8.4 protocol/host controls and the plain Scala3 framework
+consumer are also in progress.
+
+The first actual CI site action fails before project load: JS-only generation
+omits the Native SDK, but project/distageTestkit.sbt unconditionally includes
+Native companion source. Actual1 after76.183s with1701 inputs unchanged retains
+the expected missing scala.scalanative diagnostic. In the isolated site checkout,
+companion source directories are now selected using installed SDK dependencies.
+The repeated actual site action loads the JS-only metadata build successfully
+and continues documentation compilation. Evidence:5-final-retirement-site-ci-first/
+and5-final-retirement-site-ci-second/. Main and the other producer checkouts are
+unchanged until this correction is qualified; final L4 remains open.
+
+Current Maven compiler metadata and the actual3.10.0 POM expose a non-prerelease
+coordinate (metadata lastUpdated20261005093319), while GitHub release API and
+maintainer thread still list3.10.0-RC3 as Scala Next. This source inconsistency
+is preserved in5-final-compiler-release-verification-first/. Additional published
+macro/compiler consumers will use the available3.10.0 coordinate to satisfy the
+publication baseline conservatively. Producer targets stay pinned3.9.0/2.13.18;
+no prerelease or production compiler upgrade is introduced.
