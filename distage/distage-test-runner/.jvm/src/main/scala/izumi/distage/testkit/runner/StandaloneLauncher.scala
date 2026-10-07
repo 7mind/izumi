@@ -4,8 +4,10 @@ import izumi.distage.testkit.protocol.{BuildId, BuildTargetId, CatalogueId, Cata
 
 import java.nio.file.Paths
 import java.util.concurrent.{Executors, TimeUnit}
-import scala.concurrent.{Await, ExecutionContext}
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutorService}
 import scala.concurrent.duration.Duration
+import scala.util.{Failure, Try}
 
 object StandaloneLauncher {
   private final val ShutdownSeconds = 30L
@@ -25,13 +27,58 @@ object StandaloneLauncher {
       try {
         val executor = Executors.newWorkStealingPool()
         val context = ExecutionContext.fromExecutorService(executor)
-        try Await.result(ApplicationLauncher.run(identity, factories, context, source, new FramedProtocolOutput(sink)), Duration.Inf)
-        finally {
-          context.shutdown()
-          require(context.awaitTermination(ShutdownSeconds, TimeUnit.SECONDS), "Launcher execution context did not terminate")
-        }
+        val operation = try {
+          val active = ApplicationLauncher.start(identity, factories, context, source, new FramedProtocolOutput(sink))
+          // Join shutdown outside the executor being released.
+          active.copy(completion = active.completion.transform(result => releaseContext(context, result))(ExecutionContext.global))
+        } catch { case cause: Throwable => throw releaseContext(context, Failure(cause)).failed.get }
+        awaitCompletion(operation)
       } finally sink.close()
     } finally source.close()
     if (!result.successful) sys.exit(1)
+  }
+
+  private def releaseContext[A](context: ExecutionContextExecutorService, result: Try[A]): Try[A] = {
+    try {
+      context.shutdown()
+      require(context.awaitTermination(ShutdownSeconds, TimeUnit.SECONDS), "Launcher execution context did not terminate")
+      result
+    } catch {
+      case cause: Throwable => result.failed.toOption match {
+        case None => Failure(cause)
+        case Some(original) =>
+          val combined = new RuntimeException("Application execution and launcher shutdown failed", original)
+          combined.addSuppressed(cause)
+          Failure(combined)
+      }
+    }
+  }
+
+  private def awaitCompletion(operation: ApplicationExecution): ApplicationResult = {
+    val interruptions = ListBuffer.empty[Throwable]
+    var result = Option.empty[Try[ApplicationResult]]
+    try {
+      while (result.isEmpty) {
+        try {
+          val _ = Await.ready(operation.completion, Duration.Inf)
+          result = operation.completion.value
+        } catch {
+          case cause: InterruptedException =>
+            interruptions += cause
+            try operation.cancel() catch { case failure: Throwable => interruptions += failure }
+        }
+      }
+      val settled = result.get
+      (settled.failed.toOption.toList ++ interruptions.toList) match {
+        case Nil => settled.get
+        case cause :: Nil => throw cause
+        case primary :: additional =>
+          val combined = new RuntimeException("Multiple failures while awaiting application completion", primary)
+          additional.foreach(combined.addSuppressed)
+          throw combined
+      }
+    } finally {
+      if (interruptions.nonEmpty) Thread.currentThread().interrupt()
+    }
   }
 }

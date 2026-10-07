@@ -7,6 +7,7 @@ import scala.util.{Failure as Failed, Success, Try}
 import scala.util.control.NonFatal
 
 final case class ApplicationResult(successful: Boolean, outcome: Option[RunOutcome])
+final case class ApplicationExecution(completion: Future[ApplicationResult], cancel: () => Unit)
 
 object ApplicationLauncher {
   def run(
@@ -15,7 +16,15 @@ object ApplicationLauncher {
     context: ExecutionContext,
     source: ProtocolFrameSource,
     output: ProtocolOutput,
-  ): Future[ApplicationResult] = {
+  ): Future[ApplicationResult] = start(identity, factories, context, source, output).completion
+
+  def start(
+    identity: CatalogueIdentity,
+    factories: Vector[() => TestSuite],
+    context: ExecutionContext,
+    source: ProtocolFrameSource,
+    output: ProtocolOutput,
+  ): ApplicationExecution = {
     implicit val ec: ExecutionContext = context
     val observed = new ObservedOutput(output)
     var application = Option.empty[TestApplication]
@@ -48,12 +57,14 @@ object ApplicationLauncher {
         application.foreach { value => commands :+= value.accept(ProtocolMessage.Cancel(value.run)) }
     }
     val settled: Future[Vector[Try[Unit]]] = Future.sequence(commands.map(_.transform(result => Success(result))))
-    settled.flatMap { results =>
+    val completed = settled.flatMap { results =>
       inputFailure.orElse(results.collectFirst { case Failed(cause) => cause }) match {
         case Some(cause) => Future.failed(cause)
         case None => Future.successful(observed.result)
       }
     }
+    val activeApplication = application
+    ApplicationExecution(completed, () => activeApplication.foreach(_.cancel()))
   }
 
   private final class ObservedOutput(delegate: ProtocolOutput) extends ProtocolOutput {

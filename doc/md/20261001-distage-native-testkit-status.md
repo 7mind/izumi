@@ -20215,3 +20215,109 @@ This section accompanies the local integration commit. The separate retirement
 candidate is still running. Normal-provider runtime customization, standalone
 caller wiring, repository-wide dependency closure and final evaluation remain
 open; no parent or final acceptance item is marked done here.
+
+## 2026-10-07: retirement candidate qualified; deletion order retained
+
+The preceding main integration is local commit
+4fe050699b87131c58e2167e63190d2469809610. The isolated retirement candidate
+at legacy-retirement-worktree qualifies independently in
+5-legacy-retirement-candidate-first: Scala 2.13.18 actual exit 0 in 947.288
+seconds; Scala 3.9.0 actual exit 0 in 851.784 seconds; all 1645 inputs unchanged
+at detached base 44bd67cbf1ab89952535377aa064314a34aa49af. Its command.json
+files preserve the complete argv and scoped commands. Command
+`python3 /srv/nvme/tmp/izumi-impl/5-legacy-retirement-candidate-first/extended-audit.py`
+exits 0, including ordinary identity/outcome reconciliation. It preserves
+377/164/164 ordinary-project cases, 847 base checks per platform,
+691/568/568 higher checks and the main integration's core/engine/filter checks
+per compiler after removal of the legacy projects and dependency declarations.
+Scoped resolved dependencies and classpaths are vendor-free. Audit SHA256s are
+4ee4b567eb82334d914b323d5ad77620f9e09cbe69e1a4a0e8e9c4c247c2ffad
+(ordinary) and
+2a963f0e8d84fd46fa4abbabd91650c17d975d63c6fdccf870666f9d9417acd8
+(extended); verified 1645-input archive SHA256 is
+27146adcc92db5cdad41d638c54c914a29224fc7aa34e70706deb6aee69105e6.
+
+The read-only review legacy-retirement-readonly-review-first/REVIEW.md,
+SHA256 9d5d98eecc962e0aca711c50a168dc76e69e893246168fe0bcefdc0e56a363d6,
+checks all 34 original and 32 mapped source hashes and the changed dependency
+edges. Only the plan-permitted ScalaMock integration case and temporary bridge
+fixture are unmapped. No additional mapping defect or dependency cycle is found.
+It also identifies the plan's deletion-order condition: every used facility must
+be replaced before deleting the old artifact. Main therefore retains the legacy
+artifact until ordinary suite runtime customization and standalone caller wiring
+are replaced and validated. These isolated producer results do not close that
+condition, global dependency/publication closure, or any final acceptance gate.
+
+## 2026-10-07: standalone interruption reproduced and correction validating
+
+5-standalone-interruption-before-fourth compiles with the pinned Scala 2.13.18
+compiler against 41 copied, hashed actual main artifacts and exits 1 at runtime
+for the expected invariant. Interrupting the actual StandaloneLauncher caller
+returns with cancellation=false, released=false and restoredFlag=false. Exact
+compile/run argument arrays and logs are captured. Earlier harness attempts do
+not reproduce this defect: Scala CLI stops during version resolution; a direct
+compile setup lacks its expected reflect classpath member; the third probe's
+empty plan is rejected before its body runs. The fourth uses a valid individual
+test inspection and reaches the actual interrupted caller.
+
+The correction exposes an explicit ApplicationExecution cancellation handle,
+requests session cancellation on caller interruption, waits for command and
+test finalization, drains the owned launcher executor on an external context,
+and restores the caller flag after that boundary. Independent execution and
+shutdown/interruption failures remain observable. The unchanged fourth probe
+passes in 5-standalone-interruption-after-first: compile 0, runtime 0 in 4.940
+seconds, unchanged inputs; cancellation=true, released=true, restoredFlag=true.
+The SBT task caller's distinct cleared-flag policy is unchanged.
+
+The first combined regression capture, 5-standalone-owned-caller-main-first,
+passes all six base/higher platform controls on Scala 2, then exits 1 in 254.527
+seconds because the original CLI fixture child inherits SBT's launcher classpath
+from in-process runMain and cannot load StandaloneLauncher. This is a harness
+classpath failure, not a reproduction of the interruption defect. The owned
+Scala 3 Java process group is stopped to avoid repeating that configuration:
+actual 143 in 97.125 seconds, all 1717 inputs unchanged. Exact ownership and
+intervention receipt and the frozen-source archive are preserved. The next
+combined batch retains every scenario and uses Test/fork=true for the JVM base
+project. It additionally exercises a held finalizer, repeated caller interruption
+and terminal frame reconciliation. Production correction and this checkpoint's
+broader validation remain in progress.
+
+## 2026-10-07: standalone caller correction verified on both compilers
+
+5-standalone-owned-caller-main-second passes all 12 commands per compiler:
+Scala 2.13.18 actual exit 0 in 167.577 seconds and Scala 3.9.0 actual exit 0
+in 264.357 seconds; all 1717 frozen inputs remain unchanged at base
+4fe050699b87131c58e2167e63190d2469809610. The command.json files preserve
+the exact JVM fork setting and complete argv. Every original scenario remains:
+success, inspection, planning failure, test failure, stale build/catalogue,
+unknown ID, cancel-only, pre-cancel, empty channel and normalized selection.
+These run real standalone child JVMs with original exit/outcome/frame checks.
+The additional StandaloneInterruptionFixtures runs the actual launcher, holds
+finalization after cancellation, interrupts its caller again, then releases it.
+It verifies one cancellation action, awaited finalization, restored interrupt
+flag, terminated caller, contiguous events, exactly one cancelled selected
+result and a last terminal completion frame. A duplicate cancellation action
+would fail the fixture's create-new signal operation.
+
+All six base controls pass 847 checks each; all six higher controls pass
+691/568/568 checks per compiler. Command
+`python3 /srv/nvme/tmp/izumi-impl/5-standalone-owned-caller-main-second/audit.py`
+exits 0, independently reconciles each of the 11 original process scenarios
+and the new interruption scenario, checks source stability and real protocol
+frames, and finds no raw RejectedExecutionException. Audit SHA256 is
+c1d275fa6f2827b7fa7a54dd6425661419cd22cf6993034738425479128aa2bc.
+The verified 1717-input source archive SHA256 is
+f4ba9b40290ef4c758dceb95162271f8aa99fcfe05ba3eb9c66b4a4b7b3ba90d.
+This section accompanies the local standalone correction commit. DistageSpec
+runtime configuration, retained-plan ownership and final evaluations stay open.
+
+The bounded design review 5-normal-runtime-ownership-readonly-design-first/
+REVIEW.md, SHA256
+9314bbbb8472e94bfd312cf5d5f94a733693440b39d09d53f905869a143dcc78,
+finds no fixed requirement forbidding outer-runner provisioning after validated
+selection. A retained runner graph must keep the exact PreparedRun owner and
+have an explicit joined close for inspection-only sessions. Partial-provider
+planning and invalid returned-plan rejection must close every acquired owner;
+failed queue tails and publication races must not skip cleanup. The existing
+testRunnerRuntime hook shape and equal-default cross-suite sharing must remain,
+while incompatible policies fail explicitly. This is design evidence only.
