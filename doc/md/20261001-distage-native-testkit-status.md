@@ -129,7 +129,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.1 | in progress | Verified logstage checkpoint: all16 resolved update/Test classpaths exclude ScalaTest-family dependencies and use only the base runner. Other modules and full retirement remain outstanding. |
 | 5.2 | not started | No evaluation point passed yet. |
 | 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
-| 5.4 | in progress | Compiler-isolated recaptures qualify the42-lane distage/platform baseline (3259 cases) and exact16-lane old/new logstage report parity (634 cases). The next six-module migration is in flight. A further ten-lane baseline qualifies2087 cases, including76 independently captured cancellations; full reconciliation/final evaluation remain open. |
+| 5.4 | in progress | Compiler-isolated recaptures qualify the42-lane distage/platform baseline (3259 cases) and exact16-lane old/new logstage report parity (634 cases). The six-module migration passes all42 lanes below with3259 cases. A further ten-lane baseline qualifies2087 cases, including76 independently captured cancellations; remaining legacy migration, full reconciliation and final evaluation remain open. |
 | 5.5 | not started | No evaluation point passed yet. |
 | 5.6 | not started | No evaluation point passed yet. |
 | 5.7 | not started | No evaluation point passed yet. |
@@ -19450,3 +19450,337 @@ correction are verified. Combined-head regression, legacy testkit retirement,
 complete imports-only/O.1 audit, parent reviews and final gates remain open.
 
 The engine-project change is committed locally asaef0f4fb4.
+
+## 2026-10-07: combined-head62-lane regression in progress
+
+The six-module/SDK/absence migration is committed locally asca3522946.
+A combined-head batch freezes1659 inputs at this commit and runs62 runtime
+lanes:base, higher, engine-test project, all42 migrated module/platform lanes,
+and Docker, onScala2.13/3.9. It first compiles31 test projects and cleans the
+two Native engine source-move outputs. Protocol/host frame controls run on the
+pinned3.8.4 compiler; all eight JS/Native inspection commands are retained.
+The independent audit combines baseline identities and engine/Docker markers.
+Final version/platform gates and ScalaTest retirement still remain open.
+
+The first command preparation mistakenly used a guessed testDistage inspection
+key instead of the already verified distageList/distagePlan keys. Its owned
+process group is terminated before completing the batch:actual143 after63.603s,
+no source inputs changed. This is a command preparation error, not a reproduced
+production failure. The corrected commands are copied from the passed candidate
+and run separately in5-combined-migration-main-second/. Results remain pending.
+
+An isolated legacy-testkit-migration-worktree starts fromca3522946 for the
+remaining legacy-suite inventory and migration. No legacy suite migration is
+yet verified there. The main compiler inputs remain frozen during its batch.
+
+## 2026-10-07: remaining legacy migration and literal-margin reproduction
+
+The isolated ordinary-suite candidate copies26 existing source/resource files
+into an unpublished cross-platform distage-testkit-runner-test project above
+core and the higher runner. Nine legacy runtime/interruption/reporter/adapter
+files remain separately inventoried; original sources are not yet removed.
+The first six-lane candidate stops at its Scala2.13 JVM compiler preflight:
+actual1 after211.957s,1686 frozen inputs unchanged. Its28 errors identify
+unmigrated AssertZIO/assertIO/Assertion facilities, an unused imported assertion
+macro, and two literal-string stripMargin compilation assertions. This is not
+a passing migration result. The missing effect imports/calls are corrected in
+the worktree; the literal-margin defect is isolated before any production fix.
+Captures:5-legacy-testkit-migration-inventory-first/ and
+5-legacy-ordinary-migration-first/, under the established scratch directory.
+
+A separate published-artifact mixin witness compiles unchanged suite bodies
+with imports switched from the old abstract spec to the new DistageSpec alias.
+All four JVM compilations pass:Scala2.13 legacy17.074s/new15.430s and
+Scala3.9 legacy18.532s/new19.092s,actual0 with three inputs unchanged each.
+The independent hash/body audit in5-mixin-import-compatibility-first/audit.json
+verifies import-only parity. No DistageSpec inheritance refactor is warranted
+by these observations; full ordinary compatibility remains outstanding.
+
+The new base-runner fail-first fixture includes margin-stripped literal calls
+for all three compilation assertion methods, member lookup, diagnostic retention,
+and non-execution. Scala2.13 fails with four expected literal-string rejections:
+actual1 after79.262s, frozen inputs unchanged. Scala3.9 comparison is running.
+Capture:5-compilation-margin-reproduction-first/. Production macros are unchanged
+at this reproduction checkpoint. No acceptance gate is closed.
+
+The main62-lane batch remains live with its inputs frozen. A narrowly captured
+JVM thread snapshot shows a runnable Coursier resolution worker in
+reverseDependencies/remainingDependencies; the distage-coreNative update stream
+has an Updating record without Done updating. This identifies active dependency
+resolution work, not an established deadlock or passing runtime result.
+Snapshot:5-combined-migration-main-second/2.13.18/thread-snapshot-20261007.txt.
+
+The Scala3.9 isolated probe also fails for all four margin-stripped literal
+calls:actual1 after85.303s, unchanged inputs, with the expected statically-known
+String diagnostic. negative-audit.json records both compiler failures. Candidate
+macros now normalize only direct literals and the standard Predef augmentString
+literal stripMargin form before invoking the original compilation checks.
+Existing suite source retains its stripMargin calls. The Scala2 base fixture
+then compiles, but5-legacy-ordinary-migration-second/ stops on two errors from
+an incorrect replacement Assertion import:actual1 after99.457s, unchanged
+inputs. The alias is in runner.spec, not fundamentals.assertions; corrected.
+A fresh5-legacy-ordinary-migration-third/ batch precompiles the base and ordinary
+projects and includes six base controls plus six ordinary migration execution
+lanes. Its results are pending; the worktree inputs remain frozen.
+
+The main batch is stopped after a second snapshot confirms continued Coursier
+resolution without command progress:actual143 after2128.735s,1659 inputs
+unchanged. Only its verified owned process group482543 is signalled. This is an
+incomplete combined regression, not a product failure or success. A cache-isolated
+Native core compiler probe starts in5-native-core-resolution-isolation-first/.
+Its Global/localCacheDirectory is fresh, and only the generated Native core
+update/resolution-cache directories are moved aside; quarantine.json records
+the reversible same-filesystem locations. An initial cross-filesystem rename
+attempt fails before moving any cache; the same-filesystem retry succeeds.
+No tracked production source changes in this diagnostic probe.
+
+The third ordinary candidate stops at Native compilation:actual1 after270.396s,
+1686 frozen inputs unchanged. JVM/JS ordinary preflights and all Scala2 base
+preflights pass; runtime lanes have not executed. Three PlanCheck macro calls
+fail with RuntimePluginScanningNotSupportedOnScalaNative from StaticTestMain
+and Fixture2.TestRoleAppMain. Their existing static JS plugin configuration
+branches are extended to Native in the worktree; JVM scanning remains available.
+The fourth combined candidate is running with both compiler/platform matrices.
+
+The independent partial-migration baseline selects357 JVM cases per compiler
+(338 success,19 cancelled) and155 JS cases per compiler (136 success,19
+cancelled). The inventory records all ten excluded suite IDs, which cover the
+still-pending runtime/interruption/XML checks and permitted ScalaMock removal.
+This is a partial selection for candidate validation, not permission to remove
+any pending suite or a completed repository-wide reconciliation.
+Baseline:5-legacy-testkit-migration-inventory-first/ordinary-selected-baseline.json.
+
+## 2026-10-07: cache-isolated Native recovery and actual legacy execution
+
+The cache-isolated main Native core compiler probe completes actual0 after
+120.577s,1659 frozen inputs unchanged. Its update stream reaches Done updating
+and its64 production/52 test sources compile. This establishes recovery under
+cache isolation, not the root cause of the previous resolution workload.
+The full62-lane main regression restarts on the sameca3522946 source inputs in
+5-combined-migration-main-third/, with a fresh Global/localCacheDirectory.
+All scoped outputs/listeners retain the independent combined audit. Results
+remain pending and main compiler inputs stay frozen.
+
+The fourth ordinary candidate compiles past the reproduced unsupported package
+scans, then stops with UTF8 string too large:one compiler diagnostic is70166
+characters. Actual1 after138.839s,1686 inputs unchanged. The Scala2 compilation
+assertion macro now emits diagnostics in16000 UTF-16-unit chunks, assembled with
+List.mkString, so no single constant exceeds the modified-UTF8 class-file limit.
+It does not shorten the diagnostic. A standalone public-macro witness checks a
+long Unicode diagnostic against the complete independently constructed expected
+text. The earlier macro fails class emission; the candidate compiles and runs,
+retaining all96063 UTF-16 units. Exact commands/results/source hash are captured
+in5-long-compilation-diagnostic-witness-first/. This is source-artifact consumer
+evidence, not a normal publication or Scala3/all-platform closure.
+
+The fifth combined candidate passes all six Scala2 compiler preflights and the
+three846-check base runtime lanes, including the margin-stripped compilation
+assertions. The ordinary JVM run reports357 cases:316 success,19 cancelled,
+22 failed. Actual1 after222.768s,1686 inputs unchanged. Failures are13 memoization
+checks and nine compilation-diagnostic checks; JS/Native ordinary execution and
+Scala3 have not yet run in that capture. No predicate, expected cancellation,
+or selected baseline case is removed.
+
+A separate minimal explicit-fail witness passes compilation then reproduces
+message clipping at runtime:rendered1132 characters from a16019-character
+explicit message, retained=false, actual1. Capture:
+5-explicit-failure-message-reproduction-first/. The helper builds its diagnostic
+with standard expression-excerpt limits; the candidate changes only explicit
+helper failures to retain their complete message. Ordinary expression assertion
+render limits remain unchanged. A frontend regression verifies the complete
+message. The next combined batch runs both compilers even if one fails, and adds
+temporary key-only instrumentation of memoization bootstrap/plan equality.
+No configuration values are printed; the instrumentation must be removed before
+integration. Capture:5-legacy-ordinary-migration-sixth/, results pending.
+
+The explicit-message positive witness runs against the newly compiled helper
+with unchanged witness source:actual0,rendered16127/original16019 characters,
+retained=true. Capture:5-explicit-failure-message-positive-first/. The sixth
+Scala2 batch passes three847-check base lanes and every prior compilation
+assertion case in the ordinary JVM suite. Its357 cases now reconcile as324
+success,19 cancelled,14 memoization failures:actual1 after209.543s,1686 inputs
+unchanged. The independent XML audit confirms13 memoization/nine compilation failures
+in the fifth capture; the sixth has14 memoization failures, including one
+additional failing memoization case. This changing subset is retained as
+evidence of ordering or sharing sensitivity, not omitted from reconciliation.
+
+All ten temporary memoization probes show equal bootstrap plans, bootstrap
+modules and runtime plans across the affected environments. Thus bootstrap
+merge-criterion inequality is not supported by these observations. Memoization
+plans/tree sharing and actual resource creation remain to be investigated.
+The Scala3 sixth-batch process is confirmed live; its result is pending.
+
+
+## 2026-10-07: verified assertion checkpoint and outer memoization diagnosis
+
+The sixth ordinary migration capture is terminal on both compilers. Scala2.13
+actual1 after209.543s and Scala3.9 actual1 after315.678s; all1686 frozen inputs
+remain unchanged. Each compiler passes all three base runtime lanes with847
+checks each. Every preceding ordinary compilation assertion case passes.
+The ordinary JVM357 cases reconcile as324 success/19 cancelled/14 memoization
+failures on2.13 and325 success/19 cancelled/13 memoization failures on3.9.
+Independent audit:5-legacy-ordinary-migration-sixth/
+independent-frontend-checkpoint-audit.json. Frozen source archive SHA256:
+936f3e21258e3b3c77b86d14f33f0f463cbcb8ef7ceaa76cb59f38de00688261.
+The assertion-only change is committed locally in the isolated checkout as
+9e9aacccc473587de2bf696704addffefeed3fdf. Main integration waits for its frozen
+combined batch to become terminal. Ordinary migration itself is not verified.
+
+The targeted16-case JVM memoization reproduction remains failing:
+5-memoization-migration-diagnosis-first/,actual1 after121.688s,1686 inputs
+unchanged. Temporary provisioning probes observe eight MemoizedInstance,
+eight Level1,three Level2 and one Level3 creations through the actual DI
+provider path. Earlier equal-bootstrap/plan observations compare only within
+already-partitioned execution groups; they do not establish equality between
+those groups. The earlier inference against bootstrap inequality is therefore
+limited and cannot rule out an outer partitioning defect. A second diagnostic
+capture compares execution parameters and differing default-module binding keys
+before grouping. No production correction is made from this hypothesis yet.
+
+The main combined regression's Scala2.13 producer is terminal actual0 after
+2415.925s with1659 inputs unchanged. Scala3.9 is live. This is producer evidence;
+the full independent combined audit and acceptance closure remain pending.
+
+
+The second outer-group diagnostic is terminal actual1 after81.746s,1686 inputs
+unchanged. It observes16 tests,ten environments andten execution groups.
+Across all distinct suites the non-module execution fields compare equal;
+only cats.Async[zio.Task] and cats.Parallel[zio.Task] binding definitions differ.
+Their providers capture a freshly constructed ZIOCatsEffectInstancesModule's
+private CatsEffectInstances object. This prevents otherwise equivalent suites
+from reaching shared-plan comparison. Exact log and source hashes are retained
+in5-memoization-migration-diagnosis-second/.
+
+The candidate removes that captured field and binds one constructor-derived
+CatsEffectInstances helper in the DI graph; Async/Parallel factories take it
+as an explicit dependency. The existing16 sharing/override cases remain the
+regression check. No per-effect global cache, custom-default erasure or fixture
+predicate change is introduced. Temporary planner/provisioning probes are
+removed. A twelve-runtime-lane ordinary/base validation runs both compilers and
+all platforms in5-legacy-ordinary-migration-seventh/. Results are pending.
+The core-root correction and ordinary migration remain unverified.
+
+Documentation candidate edits replace the remaining framework SpecWiring import
+with runner.spec.SpecWiring, explain required-plugin migration and platform
+artifact selection, and describe effectful forced-root lifetimes. Site/mdoc
+validation is pending; these edits do not establish5.9 orL4 completion.
+
+
+The seventh Scala2 producer is terminal actual1 after314.123s,1686 inputs
+unchanged. All three847-check base lanes pass. The ordinary JVM357 cases
+(338 success/19 cancelled) and JS155 cases (136 success/19 cancelled) independently
+match every selected baseline identity and outcome. All16 JVM memoization cases
+now pass with the original sharing/override expectations. Audit:
+5-legacy-ordinary-migration-seventh/2.13.18/independent-partial-parity-audit.json.
+
+Native execution reports37 suite-level planning errors, each preserving
+RuntimePluginScanningNotSupportedOnScalaNative for package xxx. The generic
+fixture omits its runtime package scan on JS but currently enables it on Native.
+This is an actual failing execution reproduction, not a successful Native
+migration; no Native body parity is claimed. Extending that existing static
+branch to Native waits for both frozen seventh producers to terminate.
+The Scala3 producer is still live. Final migration and root-correction
+verification remain open pending all-platform/engine regression.
+
+
+The independent Scala2.13 main module audit passes after its producer exit0:
+1580 preserved cases/182 suites across21 migrated module/platform lanes,
+three845-check base controls, andfour SDK list/plan inspections. JS resolves
+302 cases and Native308; selected identities match their recorded baselines.
+The large Native plan frame retains215152 characters. Capture/audit:
+5-combined-migration-main-third/2.13.18/independent-migration-audit.json.
+The complete engine/higher/Docker combined audit still waits forScala3.9.
+
+
+The seventh Scala3 producer is terminal actual1 after540.130s with1686 frozen
+inputs unchanged. Its ordinary JVM357 and JS155 cases match their selected
+baseline outcomes (338/136 success respectively,19 cancelled each), including
+all16 memoization cases. Native again reports37 suite-level errors for the
+unsupported xxx package scan. The seventh source archive preserves1686 inputs,
+SHA256:812f10bbf736d81d4746b84238aaa16d9a05be92dcbc7122cc141bad6e56553b.
+Its26-source diff inventory has ten unchanged files,twelve imports-only files,
+andfour assertion/matcher facility replacements requiring final review.
+No original legacy sources are deleted and no pending legacy case is retired.
+
+After both producers terminate, the existing JS static-loading condition in the
+generic fixture is extended to Native. A30-runtime-lane candidate starts in
+5-legacy-ordinary-migration-eighth/:six ordinary, six base, six higher frontend,
+six engine-test ownership andsix distage-core lanes across both compilers.
+Independent selected identities/outcomes, engine markers, custom default-module
+preservation and vendor-free classpaths remain required. Results are pending;
+this change adds Native coverage without changing the JVM/JS condition.
+
+
+The eighth Scala2 producer is terminal actual1 after347.199s,1686 inputs
+unchanged. All155 Native ordinary cases now execute:133 success,19 cancelled,
+three failed. Every failure is in CompileTimePlanCheckerTest; JVM357 andJS155
+remain passing with their selected baseline outcomes. The later higher/engine/
+core commands are not reached in this compiler capture. Scala3 remains live.
+
+Reading the actual Native NIR diagnostic constants identifies why the expected
+compiler diagnostics differ: the bad-config case reports file-not-found for
+check-test-bad.conf, whose fixture resource exists only under framework/.jvm;
+Fixture3.TestRoleAppMainFailing's diagnostic reports unsupported Native runtime
+scanning in its application/bootstrap plugin configuration; CustomCheckEntrypoint
+reports the same unsupported scanning through TestEntrypointBase. These are
+captured compiler diagnostics, not inferred only from the final predicate.
+Artifact paths/hashes and decoded diagnostic strings:
+5-legacy-ordinary-migration-eighth/2.13.18/
+native-plan-compiler-diagnostic-strings.json. A strings utility is not on the
+ambient PATH; a bounded printable-byte extraction reads the concrete NIR file.
+The original expected-error predicates remain unchanged. Corrections wait for
+both eighth producers to terminate: supply the original bad-config resource to
+the Native test compilation and use the existing static plugin definitions for
+the affected Native fixture entrypoints. No production macro patch is warranted
+by these observations. Full Native parity and all30 regression lanes remain open.
+
+
+The eighth Scala3 producer also terminates actual1 after351.854s,1686 frozen
+inputs unchanged. It matches JVM357/JS155 selected baseline outcomes, and Native
+155 cases reconcile as133 success/19 cancelled/three failures in the same
+plan-check cases asScala2.13. No additional failing case is omitted.
+
+Once both producers terminate, only the affected Fixture3.TestRoleAppMainFailing
+application/bootstrap static-loading guards and TestEntrypointBase guard gain
+Native. The original check-test-bad.conf fixture bytes are copied into the
+ordinary Native test resource directory; the expected diagnostic predicates
+remain unchanged. The next30-lane batch is5-legacy-ordinary-migration-ninth/,
+freezing1688 inputs including both source and Native-copy resource bytes.
+It runs independent higher/engine/core controls before the ordinary execution
+lanes so a later ordinary failure cannot suppress their results. Both compilers
+run even if the first fails. This is a validation candidate, not a completed
+ordinary migration or root-correction acceptance result. Main remains frozen by
+5-combined-migration-main-third/Scala3.9; no main source integration or new
+main commit is made during that producer.
+
+
+## 2026-10-07: verified combined62-lane main milestone and assertion integration
+
+Both combined producers are terminal actual0 onca3522946:Scala2.13 after
+2415.925s andScala3.9 after2456.947s,1659 frozen inputs unchanged each.
+The independent combined audit exits0. Module parity preserves3259 cases/
+370 suite reports across42 module/platform lanes. Six base845-check lanes,
+six higher691/568/568-check lanes, six engine-test lanes retaining all ten
+original cases, andtwo Docker62-case lanes pass. The engine checks preserve
+custom defaults for the same effect and production/dummy owner concurrency;
+the Native four-body memoized resource acquires/releases exactly once.
+Protocol235 checks per3.8.4 platform, host38 controls andeight SDK list/plan
+inspections pass. The largest observed current Native plan frame is241059
+characters. The module audit also confirms vendor-free resolved classpaths.
+
+Capture:5-combined-migration-main-third/. Combined independent audit SHA256:
+3fcc0cb75036cc8c9efd7722d8c263bc03f1c9b4a8701e232b8fd083b89b20c2.
+Compiler module audit SHA256 values:Scala2.13
+cf8626da60c7cee3a73f3871196651bfee951ff489d1482261f487a8ac6e021a;
+Scala3.9 cfaf07429e7aadc7ea137f6cf655b2e7ff70605e3cbaf16c30a946fcd91c73bb.
+This is a verified combined checkpoint; final-head/version gates remain open.
+
+After the main producer becomes terminal, the four assertion source/fixture
+payloads from verified local commit9e9aacc are integrated byte-for-byte.
+Their previous main bytes are checked against9e9aacc's parent before replacement.
+The current ledger is retained manually instead of merging its older snapshot.
+The assertion checkpoint remains six847-check lanes plus all passing ordinary
+JVM compilation cases on both compilers; the preceding62-lane run applies to
+ca3522946 before this four-file integration. The isolated corrected30-lane
+candidate is still live and its inputs remain frozen. No production core-root
+correction or unverified ordinary-suite migration is integrated yet.

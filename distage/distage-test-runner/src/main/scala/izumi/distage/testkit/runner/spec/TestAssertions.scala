@@ -55,6 +55,6 @@ trait TestAssertions extends Assertions with FrontendAssertions {
 
   private def failure(message: String): AssertionFailure = new AssertionFailure(
     AssertionDiagnostic(ExpressionSource(SourceIdentity.Virtual("test-assertion"), SourceSpan.Unavailable, CompiledText.Available(message)), Vector.empty),
-    AssertionContext.standard,
+    AssertionContext.standard.copy(limits = RenderLimits.standard.copy(excerptCharacters = Int.MaxValue, totalCharacters = Int.MaxValue)),
   )
 }

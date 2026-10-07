@@ -36,6 +36,9 @@ object FrontendAssertionFixtures {
       val _: Unit = succeed
       val message = intercept[AssertionFailure](fail("explicit failure"))
       verify(message.getMessage.contains("explicit failure"), "Explicit failures retain their diagnostic text")
+      val longMessage = List.fill(2000)("message ").mkString + "required-end-marker"
+      val completeMessage = intercept[AssertionFailure](fail(longMessage))
+      verify(completeMessage.getMessage.contains(longMessage), "Explicit failures retain their complete message beyond expression excerpt limits")
       verify(intercept[AssertionFailure](fail()).getMessage.contains("Test failed"), "Parameterless failures carry an assertion diagnostic")
       var cancellationMessages = 0
       val stopped = intercept[TestCancelled](cancel { cancellationMessages += 1; "unsupported platform" })
@@ -61,6 +64,12 @@ object FrontendAssertionFixtures {
       assertDoesNotCompile("val value =")
       verify(intercept[AssertionFailure](assertCompiles("val value =")).getMessage.nonEmpty, "Syntax errors follow the same compilation assertion contract")
       assertCompiles("evaluations += 1")
+      assertCompiles("""|evaluations += 1
+                        |val value: Int = memberValue""".stripMargin)
+      assertDoesNotCompile("""|val value: String = memberValue""".stripMargin)
+      val marginFailure = intercept[AssertionFailure](assertCompiles("""|val value: String = memberValue""".stripMargin))
+      verify(marginFailure.getMessage.contains("String"), "Margin-stripped compilation assertions retain compiler diagnostics")
+      assertTypeError("""|val value: String = memberValue""".stripMargin)
       verify(evaluations == 2, "Compilation assertions never execute the checked code")
 
       assertTypeError("val value: String = memberValue")
