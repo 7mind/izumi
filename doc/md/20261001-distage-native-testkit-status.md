@@ -19304,3 +19304,31 @@ Audit SHA256:575178fc2bad44e4a5ec3866eda8b80e751de0024976dfbd97707f1a0ea2f5f2.
 The previously failing framework JVM migration lane already reports23 successful
 cases in the still-running thirteenth candidate batch. Complete migration and
 parent-step/final evaluation remain open until its remaining lanes finish.
+
+## 2026-10-07: published wiring macro consumers verified
+
+The revised actual-macro batch exits0 throughout. Scala2.13 publication takes
+90.758s and its consumer16.093s; Scala3.9 publication takes174.945s and its
+consumer16.042s. All1650 publication inputs and four consumer inputs remain
+unchanged. Six normal JVM artifacts are published under the private version
+1.3.0-M5-wiring-macro-SNAPSHOT, with unmodified normal-version framework parents.
+
+Independent audit exits0:two consumer lanes execute eight wiring bodies and six
+assertion checks overall. The separately compiled application permits genuine
+compiler materialization; fixture sources contain no explicit materializer.
+Both SpecWiring(app,cfg) and SpecWiring(app) work with omitted runtime flags,
+and the literal empty configuration materializes for the explicit-cfg assertion.
+The missing-dependency onlyWarn macro retains its failed-plan diagnostic and
+raises AssertionFailure when the assertion executes. Consumer classpaths resolve
+actual private Ivy artifacts, with no fallback producer classes, ScalaTest,
+Scalactic or coverage instrumentation. The caller-owned executor is joined.
+
+Commands/reports:5-wiring-macro-published-consumers-second/. Audit command:
+python3 /srv/nvme/tmp/izumi-impl/5-wiring-macro-published-consumers-second/audit.py.
+Audit SHA256:59356553e0cec1e25646b98259d52e032ca47141cab74b0be977aca94211c1d0.
+Frozen1650-input source archive SHA256:cfba1511a4894859e202b423e33570d304fb4e9857ead355b8547815d0ffff1c.
+All four consumer files are copied to main with exact verified payloads.
+This closes the bounded actual-wiring-macro consumer task, not the complete
+ordinary-suite inventory or final combined-head publication evaluation.
+
+The default plain ordering correction is committed locally as67146f46b.
