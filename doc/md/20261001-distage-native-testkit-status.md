@@ -20012,3 +20012,53 @@ separately in5-owned-runtime-caller-first. The SBT helper's intentionally cleare
 flag is unchanged. Configurable outer runtime integration, non-empty resource
 bearing runner overrides, caller integration and all parent/final gates remain
 open. This is a bounded completion-boundary checkpoint, not full runtime parity.
+
+
+## 2026-10-07: approved JUnit package/reporter migration verified
+
+Main local commit063b0a7f5 integrates the qualified standalone consumer in
+ test-fixtures/junit-regression-consumer. The owner-approved suite identity
+changes fromorg.scalatest.tools.distagetest.JUnitXmlRegressionTest to
+izumi.distage.testkit.reporting.JUnitXmlRegressionTest. Its one case keeps the
+exact original name:intra-suite parallel tests must each be reported in JUnit
+XML with non-zero per-test time. Four auxiliary SpecIdentity bodies are isolated
+in a separate consumer project. Their full test names and two-second sleep
+values match the original anonymous inner suite; a bounded start gate additionally
+requires all four bodies to start concurrently. The original XML-existence,
+parseability, minimum test-count, four-name and per-test minimum-duration
+predicates are retained. The consumer is above the host plugin/target libraries
+and creates no repository project-graph cycle.
+
+Both fresh normal-artifact publication lanes pass in
+5-junit-regression-migration-second:Scala2 actual0 after129.294s,Scala3 actual0
+after204.725s. Library publications use2.13/3.9; host plugin and its separately
+published protocol switch to pinnedScala3.8.4. A first publication attempt
+reproduced theScala2 protocol/Scala3 host-project mismatch; this is corrected by
+that explicit host compiler switch. No allowMismatchScala workaround is used.
+
+The sixth consumer validates the real SDK writer but does not establish the
+production plugin wrapper:the plugin needs explicit enablePlugins. Any earlier
+claim that the sixth capture already used HostJUnitReportListener is superseded.
+The seventh fixture rejects an out-of-task listener inspection because no host
+receipt is active. The final eighth fixture checks the actual listener inside
+each active testExecution task and requires HostJUnitReportListener before
+execution. Both consumer producers pass:Scala2 actual0 after49.542s,Scala3
+actual0 after55.418s, six frozen fixture inputs unchanged. Two migrated outer
+cases and eight auxiliary parallel bodies execute and report successfully.
+All eight actual durations are at least2 seconds (observed range
+2.237–2.317seconds). Each lane explicitly reports the production wrapper active for
+both projects; the captured resolved classpaths contain no ScalaTest family.
+
+The driver initially reproduced SBT2 input-key/task and uncached-result-format
+errors; the dependency now uses uncached Test/testFull. A producer then passed
+its real-body assertions while the Python auditor looked in an assumed target
+path. The capture task now copies reports from target.value, supporting the
+actual configured layout. No missing-report assertion was relaxed. The final
+independent audit exits0 and reconciles the original baseline case, the approved
+class identity, report hashes, measured durations, active wrapper and1548
+unchanged product-publication inputs. Audit SHA256:
+5ab6aeda8bb3399ce9d98af037a216716d8f608ad25f6d7d16b77213acb64b71.
+Reproduction/publication commands and qualified reports remain in these captures.
+Main consumer sources match the qualified payloads byte-for-byte. Runtime
+boundary commit52b6e3fe1 and factory correction9f7fba15b are local. Retirement
+of the old XML source and final-head5.4/5.8/5.9 gates remain open.
