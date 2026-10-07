@@ -33,10 +33,10 @@ head. The spike reports are design evidence, not implementation verification.
 | --- | --- | --- |
 | L1 | in progress | Combined db4461cdc production sources pass all six JVM lanes on JDK17/21/25 with1817 unchanged inputs per lane. Scala2.13 reports1628 cases and Scala3 reports1660 per lane. Final item review remains open. |
 | L2 | in progress | Combined db4461cdc production sources pass both JS lanes: Scala2.13 coverage879 reported cases and Scala3 test911, each with19 skips, no failures and1817 unchanged inputs. Both reproduced linker defects are corrected; final item review remains open. |
-| L3 | in progress | Combined db4461cdc production sources pass Native Scala2.13:931 reported cases,19 skips, no failures and1817 unchanged inputs. Scala3 remains in flight. |
-| L4 | in progress | Host and sandbox Docker5.8.7 connectivity is restored through the owner-executed six-hour exchange-directory relay. Current site replay is queued after serialized CI, publication and consumers. No current site pass is claimed. |
-| L5 | in progress | Actual combined regeneration and clean generated-file diff pass at c4ac0d0cd; reproduced coverage-classpath correction is regenerated below. Final-head recheck remains open. |
-| L6 | in progress | Part-1 verification below; full gate remains outstanding. |
+| L3 | in progress | Combined db4461cdc production sources pass both Native lanes: Scala2.13 has931 reported cases and Scala3 has968, each with19 skips, zero failure/error and1817 unchanged inputs. Independent input/XML/source audit passes; final item review remains open. |
+| L4 | in progress | Current frozen combined site lane exits0 after215.29s through the restored relay. Independent audit verifies1817 frozen inputs,44 rendered files,21 Markdown pages and3003 API HTML pages, with zero mdoc errors. Final item review remains open. |
+| L5 | in progress | Actual root sbtgen --js --native and empty generated-file diff pass at27b5f3de7; all generator inputs and output hashes are recorded in the final-generator capture. Final item review remains open. |
+| L6 | in progress | Current full publication passes with162 audited JAR/POM pairs, including50 Native variants across2.13/3.9 and the fixed3.8.4 protocol. Native delivery and module coverage review remain open. |
 | G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
 | 1a.1 | in progress | No evaluation point passed yet. |
 | 1a.2 | in progress | No evaluation point passed yet. |
@@ -76,7 +76,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 2b.7 | in progress | Resource-free plain registration and raw DI/four-spec discovery pass nine lanes below; final evaluation outstanding. |
 | 2b.8 | in progress | Atomic registration and owner-approved loader factories pass nine producer and nine published-consumer lanes below, including opaque/warmed-worker isolation and held-resource overlap. Complete custom-hook audit and final evaluation outstanding. |
 | 2b.9 | in progress | Duplicate plain and distage path/suite/test IDs reject in all nine JVM/JS/Native lanes below; final evaluation outstanding. |
-| 2b.10 | in progress | Tracked fixture verifies150 direct source forms, nine inherited forms and two preserved originals against exact Git blobs. Current-artifact JVM original-form probes pass on both compilers; three complete CI class/report binding captures are verified below. Original-form JS replay, remaining platform bindings, hook/O.1 reconciliation and final review remain open. |
+| 2b.10 | in progress | Tracked original forms and all six CI source/class/report bindings pass. Original generic JVM and Node replays pass both compilers with75 distinct63-success/4-skip/8-cancel outcomes. B3/B4 reviewer reconciles209 concrete routes, parent controls and approved hooks; final acceptance remains open. |
 | 2b.11 | in progress | Plain factories and raw DI finalization gates pass below, including transport/finalizer failures; complete front-end and final evaluation outstanding. |
 | 2c.1 | in progress | Typed application agrees on discovered, planned and executed IDs in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
 | 2c.2 | in progress | Application rejects unknown IDs and actual DI axis values before provisioning in all nine producer and audited published-consumer lanes below; standalone/host clients and final evaluation remain open. |
@@ -129,12 +129,12 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.1 | in progress | Retirement integrated below;162 published JAR/POM pairs are vendor-free. Final-head CI and publication applicability remain open. |
 | 5.2 | in progress | Candidate source/graph review verifies layer placement and unpublished test projects; complete final-head evaluation remains open. |
 | 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
-| 5.4 | in progress | Compiler-isolated recaptures qualify the42-lane distage/platform baseline (3259 cases) and exact16-lane old/new logstage report parity (634 cases). The six-module migration passes all42 lanes below with3259 cases. A further ten-lane baseline qualifies2087 cases, including76 independently captured cancellations; remaining legacy migration, full reconciliation and final evaluation remain open. |
+| 5.4 | in progress | The66-lane5314-case migration baseline now binds to613 current CI reports by exact identity. All differences are110 Docker successes changed to skips while the sandbox endpoint was unavailable. Current relay-enabled Docker replays are in flight; final reconciliation/review remain open. |
 | 5.5 | in progress | The72 tracked legacy adapter files are removed in the integration below; final-head evaluation remains open. |
 | 5.6 | in progress | Published runner and target consumer matrices pass both compilers/platforms; full66-lane module parity and final CI remain open. |
 | 5.7 | in progress | Current published higher-runner controls include Native DI/configuration and memoized Lifecycle execution; final-head evaluation remains open. |
 | 5.8 | in progress | assertTypeError and normalized WordSpec names pass all six833-check base controls and both published-consumer probes. Logstage failure/step-note replacements pass; remaining facilities stay open. |
-| 5.9 | in progress | Migrated installation/factory guide compiles in the successful candidate site action below; final-head qualification remains open. |
+| 5.9 | in progress | Current site action and independent output/input audit pass with required-plugin and approved factory-migration guidance. Final phase review remains open. |
 | O.1 | in progress | Factory migrations preserve the tested eager/captured-definition memoization controls and existing engine/spec fixtures below. Complete planning/merging/memoization/effect inventory and final evaluation outstanding. |
 | O.2 | in progress | Effect APIs have explicit requested return types; runtime checkpoints below. |
 | O.3 | in progress | Explicit suspension capability; Cats/BIO law checkpoints below. |
@@ -21712,3 +21712,118 @@ while preserving probe scope. Four direct ParserFailureHandler copies differ
 from final sources solely in import order; no exact-byte claim is made for them.
 Current full publication, point positions, published consumers and site execution
 remain queued serially. No item or parent phase is closed by this checkpoint.
+
+## 2026-10-07: completed current validation batch and original Node compatibility
+
+Production checkpoint db4461cdc and current fixture checkpoint27b5f3de7 match
+all1415 production/generator sources in each of the frozen candidate CI lanes.
+The captures retain their actual base95b52a25e plus the nine-file patch SHA256
+0d9c7326d1afe368dce48620834c00d612588cbe2ece65ed2c4e3e9a375fe2c9;
+they are not relabeled as commands launched from27b5f3de7. All ten actions exit0,
+with1817 frozen inputs unchanged and no XML failure/error. Evidence root:
+/srv/nvme/tmp/izumi-impl/5-platform-linkage-final-ci-candidate-first/.
+
+| Lane | Reports | Passed | Skipped | Actual exit |
+| --- | --- | --- | --- | --- |
+| JVM17/21/25 Scala2.13 coverage, each |273|1554|74|0|
+| JVM17/21/25 Scala3 test, each |274|1586|74|0|
+| JS21 Scala2.13 coverage |123|860|19|0|
+| JS21 Scala3 test |124|892|19|0|
+| Native21 Scala2.13 test |137|912|19|0|
+| Native21 Scala3 test |139|949|19|0|
+
+Command python3 -B /srv/nvme/tmp/izumi-impl/platform-linkage-final-ci-independent-audit-second.py
+exits0, rehashing inputs/logs/XML and matching current production sources in all
+ten lanes. Its first version required exactly one cached stdout marker and used
+JS control counts for JVM; the failed audit is preserved. The corrected auditor
+records actual marker occurrences and platform-specific control counts. Neither
+cached stdout nor XML is relabeled as fresh execution of every body.
+
+The serialized supplemental pipeline also exits0. Commands are preserved in
+5-platform-linkage-completion-pipeline-first and each child command.json:
+1c-platform-linkage-point-positions-first executes2.13 point-position fixtures on
+JVM/JS/Native with-Yrangepos:false; all three commands exit0 with97 controls each.
+Independent point-position audit verifies actual compiler options, raw markers,
+input hashes and unchanged assertion fixture sources.
+
+5-platform-linkage-publication-first publishes normal2.13.18,3.9.0 and fixed3.8.4
+host/protocol outputs in three serialized successful commands, using8GiB heap.
+The earlier4GiB compiler heap failure remains preserved. Version:
+1.3.0-M5-platform-linkage-0d9c7326d-SNAPSHOT. Its artifact-audit/audit.json verifies
+162 JAR/POM pairs and53868 payload entries against exact compiler outputs;50
+pairs are Native. Compiler split:79 Scala2.13,76 Scala3.9 and seven fixed3.8.4.
+Test-only fixtures, vendor-family modules and normal-artifact instrumentation are
+excluded by that audit. Current published consumers on3.9.0 and3.10.0 each run
+100 plain,12 Cats and13 BIO controls on each of JVM/JS/Native:375 per compiler,
+750 total, plus compiler-consumer plan-check and ScalaRelease materialization.
+All four consumer commands exit0. Command python3 -B
+/srv/nvme/tmp/izumi-impl/platform-linkage-published-consumer-independent-audit.py
+exits0, rehashing all inputs/current published dependencies and actual resolved
+classpath entries. These are separate consumers of the audited publication.
+
+The original generic Node replay uses the tracked exact original declarations,
+unchanged helper sources and ten byte-identical concrete leaf declarations.
+Commands python3 -B /srv/nvme/tmp/izumi-impl/original-generic-js-current-publication-controls-fourth.py
+and original-generic-js-current-publication-controls-fifth.py preserve the final
+passing2.13.18 and3.9.0 actions, respectively. Each exits0 with11 suites and75
+unique original results:63 Succeeded, four Skipped and eight Cancelled. The
+cancellations remain precisely original test5/skip and test6/assume in the four
+base leaves, with TestCancelled failures. session.close is joined before the
+success marker. Each compiler uses current audited published production JARs,
+not the CI helper/test JARs or duplicated binary suite definitions. Earlier
+harness failures are preserved: SBT2 platform dependency syntax, double platform
+suffixes, missing underscore kind-projector flags and missing-Yretain-trees.
+No original body or production runtime was changed to fix those harness inputs.
+Command python3 -B /srv/nvme/tmp/izumi-impl/original-generic-js-current-independent-audit-second.py
+exits0 and independently verifies source copies, exact Git leaf declarations,
+338 inputs per lane,75 case identities/statuses and55/56 resolved CP entries.
+Its first audit wrongly checked the start of a full hierarchical path instead
+of the last segment; that failure is retained separately.
+
+All six source/class/report binding variants now pass: third capture adds
+JS3active97/compiled95/reported94 and Native2active92/compiled90/reported90;
+fourth adds Native3active94/compiled92/reported92. The required read-only B3/B4
+report is directly read and hashed:2b10-parent-hook-reconciliation-review-first/
+REVIEW.md SHA2569b01788f0d035bb4c08ce0f3bcb3142b163b07ab2cb723729ada1573407a76c8.
+Its5148 checks find no blocking defect or missing active route. It reconciles209
+concrete candidates with977 representative XML identities, counts abstract
+parents and deliberate negative controls through actual concrete parent oracles,
+and preserves exact hook/source history. Five built-in interruption runtime
+hooks remain; no ordinary eligible original source overrides makePluginloader.
+The old opaque-runtime count of two is lexical: one transparent wrapper plus its
+forwarding call, not two independently opaque runtimes. Private SDK-facility
+migration remains distinct from the approved public factory exception. Twenty-five
+current production/fixture sources match all six CI maps in150 comparisons.
+This bounded review does not itself close a parent phase or final acceptance.
+
+The first current site attempt exits1 after a Docker health timeout, selecting
+pre-OOM reusable PostgreSQL containers with stale runtime state; direct loopback
+probes refused their advertised ports. The site's own failed lifecycle removes
+those two selected containers. A separately created owned PostgreSQL diagnostic
+then passes inside readiness and external loopback TCP connection, and its own
+cleanup exits0. No broad container cleanup or production change is performed.
+The identical-code site retry5-platform-linkage-site-relay-second exits0 after
+215.29s with1817 unchanged frozen inputs, zero mdoc errors and26 retained warnings.
+Command python3 -B /srv/nvme/tmp/izumi-impl/platform-linkage-site-independent-audit.py
+exits0, rehashing inputs/logs and1459 current production/microsite sources;
+44 files,21 rendered Markdown pages and3003 API HTML pages are retained. This
+supports stale pre-OOM reusable container state as the failed attempt's cause;
+it is not a blanket claim about every host networking failure.
+
+Command python3 -B /srv/nvme/tmp/izumi-impl/platform-linkage-final-generator-check.py
+runs actual root bash sbtgen.sc --js --native at27b5f3de7, then git diff --exit-code
+build.sbt project/plugins.sbt project/build.properties; both exit0, all generator
+inputs unchanged and generated outputs byte-identical.
+
+The exhaustive current per-case comparison at5-module-identities-current-ci-audit-third
+binds all613 previously reconciled module XML reports and5314 cases. Every
+identity remains present. Fifty-four Docker suite reports have110 total outcome
+differences:55 successes per compiler became skipped while normal sandbox Docker
+connectivity was unavailable. All other outcomes equal the baseline. This audit
+has actualExit1 and is not called a complete parity pass. Its index spans64
+nonempty module/compiler/platform combinations within66 baseline command lanes.
+The earlier suffix-only auditor failed on three JVM-only project names; that
+harness failure remains preserved. Current relay-enabled whole-Docker-module
+replays on both compilers are serialized with6GiB SBT heap and one SBT concurrent
+task. No other large CI batch is repeated. Final reviews continue; no parent
+phase is declared done solely from successful aggregate commands.

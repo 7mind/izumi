@@ -29,3 +29,12 @@ imports select the new runner. This is an explicit extraction, not an imports-on
 claim about the whole mixed compilation unit. Its original project supported JVM
 and JS. The repository's added Native port separately guards unavailable package
 scanning while preserving the test bodies.
+
+`GenericCompatibilityMain.scala` and `GenericJSCompatibilityMain.scala` execute
+the original generic forms through the public session boundary on JVM and Node.
+Both check 11 suites and 75 distinct results: 63 successes, four unavailable
+integration skips, and eight deliberate skip/assume cancellations. They verify
+selected identities, cancellation failures, and session closure before reporting
+completion. The JS consumer uses separately published production artifacts and
+the repository's required compiler flags; its concrete leaf declarations remain
+identical to their original Git source.
