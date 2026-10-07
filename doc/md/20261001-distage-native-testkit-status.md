@@ -19843,3 +19843,57 @@ before compilation. Scala3 additionally cleans the core JVM test consumer to
 check its actual current macro expansion. No production source changes are made.
 Both compiler captures freeze the same1688 inputs. Native diagnostic parity,
 the Scala3 factory case and complete30-lane acceptance remain in progress.
+
+## 2026-10-07: module-filtering parity, compiler control and Native JSON fixtures
+
+The isolated module-filtering migration in5-module-filtering-migration-first
+passes both producers:Scala2.13 actual0 after246.420s andScala3.9 actual0 after
+254.302s,1689 frozen inputs unchanged. Its independent audit exits0. The new
+unpublished JVM project depends on ordinary runner tests in Test scope and
+discovers only SbtModuleFilteringTest, preserving the original single case's
+identity and successful outcome exactly. Dependency tests are not discovered.
+Resolved update/fullClasspath outputs contain no ScalaTest-family dependencies,
+and publishLocal skips publication. The source case is copied byte-for-byte;
+the inherited fixture already uses the new SpecIdentity. Capture and commands:
+5-module-filtering-migration-first/{2.13.18,3.9.0}/command.json. This is an isolated
+verified checkpoint; integration and retirement of the old project remain open.
+
+The compiler-context witness in5-compilation-context-witness-first terminates
+actual0 after237.231s,1660 frozen inputs unchanged. Both direct Scala3.9
+typeCheckErrors and the current assertCompiles reject the factory snippet.
+The independent audit confirms both controls. This falsifies the narrower
+hypothesis that the current assertion macro necessarily loses that diagnostic;
+it does not establish that the original suite failure is repaired. No assertion
+production patch follows. The temporary witness source is archived with SHA256
+4948eb7efb86c2ae8ddbdb7e197821f40cb12bbb5af47bc2fe1e099589b8a49c
+and removed after producer/audit completion. The tenth Scala3 cold original-suite
+evaluation remains pending. The public compiler contract is documented at
+https://www.scala-lang.org/api/3.9.0/scala/compiletime/testing.html.
+
+The tenth Scala2 producer is terminal actual1 after1120.436s,1688 frozen inputs
+unchanged. Native ordinary execution now has two failures instead of three.
+The custom-check case passes after actual consumer recompilation. The remaining
+bad-config diagnostic is a JSON syntax error from the copied HOCON resource,
+rather than the required typed configuration error. The bootstrap fixture's
+runtime plan retains the missing dependency but also reports missing basicConfig,
+so its unchanged expected issue count is2 rather than1. Actual XML failures and
+the new Native NIR diagnostics establish both causes. The Native consumer's new
+artifact SHA256 is3b0e84a8acdf01ab45fd457d664a9e2ccaf93189d0cf3a1c4b55f399e9a7ef1d.
+No assertion predicate is changed.
+
+In the now-idle separate legacy-runtime-migration-worktree, the Native bad-config
+resource becomes equivalent JSON retaining int="abc", and fixture3.json supplies
+the original BasicConfig(a=false,b=2),activation=null values. The recorded Native
+ConfigLocationProvider searches fixture3.json; the original JVM resource remains
+unchanged. The generator already orders Test/copyResources before
+Test/compileIncremental for this library artifact, so no new ordering setting is
+needed. The next capture,5-legacy-ordinary-migration-eleventh, freezes1690 inputs
+and adds the two module-filtering executions to the preceding30 runtime lanes.
+Results remain pending. Its separate checkout permits correction without
+changing the still-live tenth Scala3 inputs.
+
+The owner explicitly approves moving JUnitXmlRegressionTest from
+org.scalatest.tools.distagetest to an izumi package and testing the new production
+JUnit reporter, preserving the case name and four parallel-duration checks.
+This authorized identity change is recorded before implementation; the original
+source remains and no completed replacement is claimed.
