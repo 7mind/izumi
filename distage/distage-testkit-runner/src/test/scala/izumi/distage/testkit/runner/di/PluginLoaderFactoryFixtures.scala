@@ -76,7 +76,7 @@ private[di] object PluginLoaderFactoryFixtures {
         override protected def distageSuiteId: EngineSuiteId = EngineSuiteId(name)
         override protected def makePluginLoaderFactory(): PluginLoaderFactory = factory
         "body" in { stats.bodies.incrementAndGet().discard() }
-      }), context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = { val _ = event } })
+      }), context, FixtureSupport.silentSink())
       val before = stats.created.get()
       verify(owner + " discovery suspends factory materialization", session.discover().map(_.tests.size) == Right(2) && stats.created.get() == before)
       val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))

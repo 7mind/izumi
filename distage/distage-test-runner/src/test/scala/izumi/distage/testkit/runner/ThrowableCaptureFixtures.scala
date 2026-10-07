@@ -11,11 +11,6 @@ import scala.util.Try
 private[runner] object ThrowableCaptureFixtures {
   private final case class Sample(name: String, create: () => Throwable, message: String, causes: Vector[String], suppressed: Vector[String], failedField: Option[String])
 
-  private final class RecordingSink extends EventSink {
-    private var recorded = Vector.empty[ProtocolMessage.Event]
-    override def accept(event: ProtocolMessage.Event): Unit = synchronized(recorded :+= event)
-    def events: Vector[ProtocolMessage.Event] = synchronized(recorded)
-  }
 
   def run(context: ExecutionContext, verify: (Boolean, String) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
@@ -51,7 +46,7 @@ private[runner] object ThrowableCaptureFixtures {
       check(captured.get, original, sample, failedFields, verify)
       final class Suite extends AnyWordSpec { "failure" in { throw original } }
       val identity = CatalogueIdentity(BuildId("throwable-capture"), BuildTargetId("capture-target"), CatalogueId(sample.name))
-      val sink = new RecordingSink
+      val sink = new FixtureSupport.RecordingSink
       val session = new RunSession(identity, Vector(() => new Suite), context, sink)
       session.execute(RunId(sample.name), RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))).map { outcome =>
         verify(!outcome.successful && outcome.results.size == 1 && outcome.results.head.status == TestStatus.Failed && outcome.results.head.failure.nonEmpty, sample.name + " public runner must retain its failing body result")

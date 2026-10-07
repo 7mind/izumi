@@ -14,39 +14,34 @@ private[runner] object PlanOwnershipFixtures {
       val releasing = Promise[Unit]()
       val release = Promise[Unit]()
       val acquisition = Promise[ExecutionPlan]()
-      var events = Vector.empty[ProtocolMessage.Event]
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event } }
-      def suite(name: String, fails: Boolean): TestSuite = new TestSuite {
-        override def register(registration: RegistrationContext): RegisteredSuite = {
-          val descriptor = SuiteDescriptor(SuiteId(name), name)
-          val test = TestDescriptor(TestId(registration.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-          val provider = new ExecutionProvider {
-            override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(selected)
-            override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
-              if (fails) Future.failed(new IllegalStateException("Controlled other-provider planning failure"))
-              else {
-                val plan = new ExecutionPlan {
-                  override val tests: Vector[TestDescriptor] = if (mode == "invalid-identities") Vector.empty else selected
-                  override val inspection: PlanInspection = if (mode == "invalid-inspection") PlanInspection.individualTests(Vector.empty) else PlanInspection.individualTests(selected.map(_.id))
-                  override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
-                    val _ = executions.incrementAndGet()
-                    val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
-                    execution.emit(ProviderEvent.TestStarted(test.id))
-                    execution.emit(ProviderEvent.TestCompleted(result))
-                    Future.successful(ProviderOutcome(Vector(result), Vector.empty, cancelled = false))
-                  }
-                  override def close(): Future[Unit] = {
-                    val _ = closes.incrementAndGet()
-                    val _ = releasing.trySuccess(())
-                    release.future
-                  }
+      val sink = new FixtureSupport.RecordingSink
+      def events: Vector[ProtocolMessage.Event] = sink.events
+      def suite(name: String, fails: Boolean): TestSuite = FixtureSupport.suite(name, Vector("body")) { registered =>
+        val test = registered.head
+        new FixtureSupport.Provider {
+          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
+            if (fails) Future.failed(new IllegalStateException("Controlled other-provider planning failure"))
+            else {
+              val plan = new ExecutionPlan {
+                override val tests: Vector[TestDescriptor] = if (mode == "invalid-identities") Vector.empty else selected
+                override val inspection: PlanInspection = if (mode == "invalid-inspection") PlanInspection.individualTests(Vector.empty) else PlanInspection.individualTests(selected.map(_.id))
+                override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
+                  val _ = executions.incrementAndGet()
+                  val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
+                  execution.emit(ProviderEvent.TestStarted(test.id))
+                  execution.emit(ProviderEvent.TestCompleted(result))
+                  Future.successful(ProviderOutcome(Vector(result), Vector.empty, cancelled = false))
                 }
-                if (mode == "close-during-planning") { val _ = acquisition.success(plan); release.future.map(_ => plan) }
-                else Future.successful(plan)
+                override def close(): Future[Unit] = {
+                  val _ = closes.incrementAndGet()
+                  val _ = releasing.trySuccess(())
+                  release.future
+                }
               }
+              if (mode == "close-during-planning") { val _ = acquisition.success(plan); release.future.map(_ => plan) }
+              else Future.successful(plan)
             }
           }
-          RegisteredSuite(descriptor, Vector(test), provider)
         }
       }
       val factories = Vector(() => suite("OwnedPlan", false)) ++ (if (mode == "other-provider-failure") Vector(() => suite("FailedPlan", true)) else Vector.empty)

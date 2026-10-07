@@ -6,10 +6,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 
 private[runner] object CloseAdmissionFixtures {
   def run(verify: (Boolean, String) => Unit): Future[Unit] = {
-    implicit val ec: ExecutionContext = new ExecutionContext {
-      override def execute(task: Runnable): Unit = task.run()
-      override def reportFailure(cause: Throwable): Unit = throw cause
-    }
+    implicit val ec: ExecutionContext = FixtureSupport.inlineContext()
     val identity = CatalogueIdentity(BuildId("close-admission"), BuildTargetId("close-target"), CatalogueId("close-catalogue"))
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
     def exercise(application: Boolean): Future[Unit] = {
@@ -22,12 +19,9 @@ private[runner] object CloseAdmissionFixtures {
         override def register(registration: RegistrationContext): RegisteredSuite = {
           val descriptor = SuiteDescriptor(SuiteId("CloseAdmission"), "CloseAdmission")
           val test = TestDescriptor(TestId(registration.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-          val provider = new ExecutionProvider {
-            override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(selected)
+          val provider = new FixtureSupport.Provider {
             override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
-              val plan = new ExecutionPlan {
-                override val tests: Vector[TestDescriptor] = selected
-                override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+              val plan = new FixtureSupport.Plan(selected) {
                 override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
                   cancellation = Some(execution.cancellation)
                   val registration = execution.cancellation.onRequest(() => release.future)
@@ -48,7 +42,7 @@ private[runner] object CloseAdmissionFixtures {
       }
       val run = RunId(if (application) "queued-application" else "active-session")
       val output = new ProtocolOutput { override def accept(message: ProtocolMessage): Unit = () }
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () }
+      val sink = FixtureSupport.silentSink()
       val (completed, closed) = if (application) {
         val app = new TestApplication(run, identity, Vector(() => suite), ec, output)
         val executing = app.accept(ProtocolMessage.Request(RequestOperation.Execute, run, request))

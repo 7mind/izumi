@@ -152,7 +152,7 @@ private[di] object RuntimePreparationCancellationFixtures {
       "masked allocation never executes" in { val _ = state.bodies.incrementAndGet() }
     }
     val identity = CatalogueIdentity(BuildId("masked-acquisition"), BuildTargetId(label), CatalogueId("close"))
-    val session = new RunSession(identity, Vector(() => suite), context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = { val _ = event } })
+    val session = new RunSession(identity, Vector(() => suite), context, FixtureSupport.silentSink())
     val resolved = session.resolve(RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))).fold(failure => throw new IllegalStateException(failure.message), value => value)
     val planning = session.plan(resolved)
     val checked = state.entered.future.flatMap { _ =>
@@ -208,7 +208,7 @@ private[di] object RuntimePreparationCancellationFixtures {
       "invalid inspection never executes" in { val _ = state.bodies.incrementAndGet() }
     }
     val identity = CatalogueIdentity(BuildId("inspection-projection"), BuildTargetId("invalid-uid"), CatalogueId("owned"))
-    val session = new RunSession(identity, Vector(() => suite), context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = { val _ = event } })
+    val session = new RunSession(identity, Vector(() => suite), context, FixtureSupport.silentSink())
     val resolved = session.resolve(RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))).fold(failure => throw new IllegalStateException(failure.message), value => value)
     val planning = session.plan(resolved)
     state.entered.future.flatMap { _ =>

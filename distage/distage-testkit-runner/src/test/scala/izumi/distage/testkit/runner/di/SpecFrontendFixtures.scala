@@ -29,8 +29,8 @@ private[di] object SpecFrontendFixtures {
     implicit val ec: ExecutionContext = context
     val stats = new Statistics
     val identity = CatalogueIdentity(BuildId("spec-fixtures"), BuildTargetId("spec-target"), CatalogueId("spec-catalogue"))
-    var events = Vector.empty[ProtocolMessage.Event]
-    val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event } }
+    val sink = new FixtureSupport.RecordingSink
+    def events: Vector[ProtocolMessage.Event] = sink.events
     val session = new RunSession(identity, factories(stats), context, sink)
     val initialRouter = StaticLogRouter.instance.get()
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
@@ -76,7 +76,7 @@ private[di] object SpecFrontendFixtures {
     implicit val ec: ExecutionContext = context
     val stats = new Statistics
     val identity = CatalogueIdentity(BuildId("unselected-specs"), BuildTargetId("spec-target"), CatalogueId("unselected-specs"))
-    val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () }
+    val sink = FixtureSupport.silentSink()
     val session = new RunSession(identity, factories(stats), context, sink)
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     val selected = catalogue.tests.find(_.id.path == Vector("identity", "should", "dependency")).getOrElse(throw new IllegalStateException("Missing unselected-specs control test"))
@@ -113,7 +113,7 @@ private[di] object SpecFrontendFixtures {
         }
         "body" in { (resource: Resource) => stats.body(resource) }
       }
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () }
+      val sink = FixtureSupport.silentSink()
       val session = new RunSession(identity, Vector(() => suite), context, sink)
       val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
       verify(kind + " planning hook is suspended during discovery", session.discover().isRight && hooks.get() == 0 && stats.acquired.get() == 0 && stats.bodies.get() == 0)

@@ -15,8 +15,8 @@ private[di] object SpecCompatibilityFixtures {
     val identity = CatalogueIdentity(BuildId("spec-compatibility"), BuildTargetId("spec-target"), CatalogueId("import-only"))
     val expected = expectedIds(identity.target)
     Vector("first", "repeated").foldLeft(Future.successful(())) { (before, name) => before.flatMap { _ =>
-      var events = Vector.empty[ProtocolMessage.Event]
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event } }
+      val sink = new FixtureSupport.RecordingSink
+      def events: Vector[ProtocolMessage.Event] = sink.events
       val factories = Vector[() => TestSuite](
         () => new AutoSetTestkitTest,
         () => new DistageSequentialTestOrderingTestId,

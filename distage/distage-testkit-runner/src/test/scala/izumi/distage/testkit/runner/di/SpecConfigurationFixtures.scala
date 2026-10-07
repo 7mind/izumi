@@ -69,7 +69,7 @@ private[di] object SpecConfigurationFixtures {
       }
       factory
     }
-    val session = new RunSession(identity, factories, context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () })
+    val session = new RunSession(identity, factories, context, FixtureSupport.silentSink())
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     verify(name + " discovery suspends the injected configuration loader", stats.loads.get() == before && stats.acquired.get() == before && stats.bodies.get() == before)
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))

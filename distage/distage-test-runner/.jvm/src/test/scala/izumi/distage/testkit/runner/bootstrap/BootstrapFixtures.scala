@@ -168,24 +168,19 @@ object BootstrapFixtures {
       override def register(registration: RegistrationContext): RegisteredSuite = {
         val suite = SuiteDescriptor(SuiteId(name), name)
         val test = TestDescriptor(TestId(registration.target, suite.id, Vector("interrupted body"), None), "interrupted body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-        val provider = new ExecutionProvider {
-          override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(selected) }
-          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-            override val tests: Vector[TestDescriptor] = selected
-            override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
-            override def execute(context: RunExecutionContext): Future[ProviderOutcome] = Future {
-              context.emit(ProviderEvent.TestStarted(test.id))
-              entered.countDown()
-              val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TimeoutSeconds)
-              while (!context.cancellation.isRequested && System.nanoTime() < deadline) Thread.sleep(CancellationPollMillis)
-              require(context.cancellation.isRequested, "Task interruption did not cancel its provider")
-              finalizing.countDown()
-              require(releaseCancellation.await(TimeoutSeconds, TimeUnit.SECONDS), "Cancelled provider finalizer was not released")
-              val result = TestResult(test.id, TestStatus.Cancelled, None, 0L)
-              context.emit(ProviderEvent.TestCompleted(result))
-              ProviderOutcome(Vector(result), Vector.empty, cancelled = true)
-            }(registration.executionContext)
-          })
+        val provider = FixtureSupport.provider { (_, context) =>
+          Future {
+            context.emit(ProviderEvent.TestStarted(test.id))
+            entered.countDown()
+            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TimeoutSeconds)
+            while (!context.cancellation.isRequested && System.nanoTime() < deadline) Thread.sleep(CancellationPollMillis)
+            require(context.cancellation.isRequested, "Task interruption did not cancel its provider")
+            finalizing.countDown()
+            require(releaseCancellation.await(TimeoutSeconds, TimeUnit.SECONDS), "Cancelled provider finalizer was not released")
+            val result = TestResult(test.id, TestStatus.Cancelled, None, 0L)
+            context.emit(ProviderEvent.TestCompleted(result))
+            ProviderOutcome(Vector(result), Vector.empty, cancelled = true)
+          }(registration.executionContext)
         }
         RegisteredSuite(suite, Vector(test), provider)
       }
@@ -233,32 +228,27 @@ object BootstrapFixtures {
         override def register(registration: RegistrationContext): RegisteredSuite = {
           val suite = SuiteDescriptor(SuiteId(name), name)
           val test = TestDescriptor(TestId(registration.target, suite.id, Vector("held callback"), None), "held callback", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-          val provider = registration.provider(ProviderId("held-host-callback"), () => new ExecutionProvider {
-            override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(selected) }
-            override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-              override val tests: Vector[TestDescriptor] = selected
-              override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
-              override def execute(context: RunExecutionContext): Future[ProviderOutcome] = Future {
-                require(acquired.incrementAndGet() == 1, "Held provider acquired twice")
-                try {
-                  val first = selected.find(_.id.suite.value == primary).get
-                  val result = TestResult(first.id, TestStatus.Succeeded, None, 0L)
-                  context.emit(ProviderEvent.TestStarted(first.id))
-                  context.emit(ProviderEvent.TestCompleted(result))
-                  require(context.cancellation.isRequested, "Fatal SDK callback did not cancel the provider")
-                  val cancelled = selected.filterNot(_.id == first.id).map { descriptor =>
-                    val value = TestResult(descriptor.id, TestStatus.Cancelled, None, 0L)
-                    context.emit(ProviderEvent.TestCompleted(value))
-                    value
-                  }
-                  ProviderOutcome(result +: cancelled, Vector.empty, cancelled = true)
-                } finally {
-                  held.countDown()
-                  require(release.await(TimeoutSeconds, TimeUnit.SECONDS), "Held provider finalizer was not released")
-                  require(released.incrementAndGet() == 1, "Held provider released twice")
+          val provider = registration.provider(ProviderId("held-host-callback"), () => FixtureSupport.provider { (selected, context) =>
+            Future {
+              require(acquired.incrementAndGet() == 1, "Held provider acquired twice")
+              try {
+                val first = selected.find(_.id.suite.value == primary).get
+                val result = TestResult(first.id, TestStatus.Succeeded, None, 0L)
+                context.emit(ProviderEvent.TestStarted(first.id))
+                context.emit(ProviderEvent.TestCompleted(result))
+                require(context.cancellation.isRequested, "Fatal SDK callback did not cancel the provider")
+                val cancelled = selected.filterNot(_.id == first.id).map { descriptor =>
+                  val value = TestResult(descriptor.id, TestStatus.Cancelled, None, 0L)
+                  context.emit(ProviderEvent.TestCompleted(value))
+                  value
                 }
-              }(registration.executionContext)
-            })
+                ProviderOutcome(result +: cancelled, Vector.empty, cancelled = true)
+              } finally {
+                held.countDown()
+                require(release.await(TimeoutSeconds, TimeUnit.SECONDS), "Held provider finalizer was not released")
+                require(released.incrementAndGet() == 1, "Held provider released twice")
+              }
+            }(registration.executionContext)
           })
           RegisteredSuite(suite, Vector(test), provider)
         }
@@ -363,18 +353,11 @@ final class BootstrapFinalizingSuite extends TestSuite {
   override def register(context: RegistrationContext): RegisteredSuite = {
     val suite = SuiteDescriptor(SuiteId(getClass.getName), getClass.getSimpleName)
     val descriptor = TestDescriptor(TestId(context.target, suite.id, Vector("finalized test"), None), "finalized test", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-    val provider = new ExecutionProvider {
-      override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
-      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-        override val tests: Vector[TestDescriptor] = selected
-        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
-        override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
-          val result = TestResult(descriptor.id, TestStatus.Succeeded, None, 0L)
-          context.emit(ProviderEvent.TestStarted(descriptor.id))
-          context.emit(ProviderEvent.TestCompleted(result))
-          Future.successful(ProviderOutcome(Vector(result), Vector(RunnerFailure.message(FailurePhase.Finalization, "finalizer failed")), cancelled = false))
-        }
-      })
+    val provider = FixtureSupport.provider { (_, context) =>
+      val result = TestResult(descriptor.id, TestStatus.Succeeded, None, 0L)
+      context.emit(ProviderEvent.TestStarted(descriptor.id))
+      context.emit(ProviderEvent.TestCompleted(result))
+      Future.successful(ProviderOutcome(Vector(result), Vector(RunnerFailure.message(FailurePhase.Finalization, "finalizer failed")), cancelled = false))
     }
     RegisteredSuite(suite, Vector(descriptor), provider)
   }
@@ -392,9 +375,7 @@ final class BootstrapArgumentSuite extends TestSuite {
         require(overrides.axes == axes.take(1) && overrides.axisFilters == axes.drop(1) && overrides.memoization == MemoizationOverride.Disabled, "Framework lost normalized overrides")
         Right(selected.map(_.copy(settings = EffectiveSettings(axes, memoization = false))))
       }
-      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-        override val tests: Vector[TestDescriptor] = selected
-        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new FixtureSupport.Plan(selected) {
         override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
           require(selected.map(_.id) == Vector(second), "Framework executed an unselected path or variant")
           val results = selected.map { test =>
@@ -416,22 +397,15 @@ final class BootstrapChannelLossSuite extends TestSuite {
   override def register(context: RegistrationContext): RegisteredSuite = {
     val suite = SuiteDescriptor(SuiteId(getClass.getName), getClass.getSimpleName)
     val test = TestDescriptor(TestId(context.target, suite.id, Vector("channel loss"), None), "channel loss", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-    val provider = new ExecutionProvider {
-      override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(selected) }
-      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-        override val tests: Vector[TestDescriptor] = selected
-        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
-        override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
-          val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
-          context.emit(ProviderEvent.TestStarted(test.id))
-          try {
-            context.emit(ProviderEvent.TestCompleted(result))
-            require(context.cancellation.isRequested, "Common application failed to cancel the provider on host output loss")
-            println("BOOTSTRAP_CHANNEL_LOSS_CANCELLATION_OK observed=provider error=original")
-            Future.successful(ProviderOutcome(Vector(result), Vector.empty, cancelled = true))
-          } finally println("BOOTSTRAP_CHANNEL_LOSS_CLEANUP_OK phase=before_task_return")
-        }
-      })
+    val provider = FixtureSupport.provider { (_, context) =>
+      val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
+      context.emit(ProviderEvent.TestStarted(test.id))
+      try {
+        context.emit(ProviderEvent.TestCompleted(result))
+        require(context.cancellation.isRequested, "Common application failed to cancel the provider on host output loss")
+        println("BOOTSTRAP_CHANNEL_LOSS_CANCELLATION_OK observed=provider error=original")
+        Future.successful(ProviderOutcome(Vector(result), Vector.empty, cancelled = true))
+      } finally println("BOOTSTRAP_CHANNEL_LOSS_CLEANUP_OK phase=before_task_return")
     }
     RegisteredSuite(suite, Vector(test), provider)
   }

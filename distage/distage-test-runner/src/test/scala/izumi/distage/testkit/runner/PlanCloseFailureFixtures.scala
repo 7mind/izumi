@@ -20,27 +20,21 @@ private[runner] object PlanCloseFailureFixtures {
       val closes = new AtomicInteger(0)
       val releasing = Promise[Unit]()
       val release = Promise[Unit]()
-      def suite(name: String, acquisitionFails: Boolean, closeFailure: Throwable): TestSuite = new TestSuite {
-        override def register(registration: RegistrationContext): RegisteredSuite = {
-          val descriptor = SuiteDescriptor(SuiteId(name), name)
-          val test = TestDescriptor(TestId(registration.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-          val provider = new ExecutionProvider {
-            override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(selected)
-            override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
-              if (acquisitionFails) Future.failed(planning)
-              else Future.successful(new ExecutionPlan {
-                override val tests: Vector[TestDescriptor] = if (mode == "invalid-plan" || mode == "multiple-plans") Vector.empty else selected
-                override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
-                override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = Future.failed(new IllegalStateException("Failure controls must not execute bodies"))
-                override def close(): Future[Unit] = {
-                  val _ = closes.incrementAndGet()
-                  val _ = releasing.trySuccess(())
-                  release.future.flatMap(_ => Future.failed(closeFailure))
-                }
-              })
-            }
+      def suite(name: String, acquisitionFails: Boolean, closeFailure: Throwable): TestSuite = FixtureSupport.suite(name, Vector("body")) { _ =>
+        new FixtureSupport.Provider {
+          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
+            if (acquisitionFails) Future.failed(planning)
+            else Future.successful(new ExecutionPlan {
+              override val tests: Vector[TestDescriptor] = if (mode == "invalid-plan" || mode == "multiple-plans") Vector.empty else selected
+              override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+              override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = Future.failed(new IllegalStateException("Failure controls must not execute bodies"))
+              override def close(): Future[Unit] = {
+                val _ = closes.incrementAndGet()
+                val _ = releasing.trySuccess(())
+                release.future.flatMap(_ => Future.failed(closeFailure))
+              }
+            })
           }
-          RegisteredSuite(descriptor, Vector(test), provider)
         }
       }
       val factories = Vector(() => suite("OwnedFailure", false, original)) ++ (mode match {
@@ -70,7 +64,7 @@ private[runner] object PlanCloseFailureFixtures {
           }
         }
       } else {
-        val session = new RunSession(identity, factories, context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () })
+        val session = new RunSession(identity, factories, context, FixtureSupport.silentSink())
         val selected = session.resolve(request).fold(failure => throw new IllegalStateException(failure.message), value => value)
         val operation = session.plan(selected)
         releasing.future.flatMap { _ =>

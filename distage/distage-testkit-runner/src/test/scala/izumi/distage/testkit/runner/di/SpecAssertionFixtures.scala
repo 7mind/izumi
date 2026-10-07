@@ -69,12 +69,6 @@ private[di] object SpecAssertionFixtures {
     assertions.assume(true, "available fixture")
   }
 
-  private final class RecordingSink extends EventSink {
-    private var events = Vector.empty[ProtocolMessage.Event]
-    override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event }
-    def completions: Vector[TestResult] = synchronized { events.collect { case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, result)) => result } }
-  }
-
   def run(context: ExecutionContext, verify: (String, Boolean) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
     val frontends = Vector[(String, Counters => TestSuite)](
@@ -85,7 +79,7 @@ private[di] object SpecAssertionFixtures {
     )
     frontends.foldLeft(Future.successful(())) { case (before, (name, construct)) => before.flatMap { _ =>
       val counters = new Counters
-      val sink = new RecordingSink
+      val sink = new FixtureSupport.RecordingSink
       val identity = CatalogueIdentity(BuildId("assertion-frontend"), BuildTargetId(name), CatalogueId("four-specs"))
       val session = new RunSession(identity, Vector(() => construct(counters)), context, sink)
       val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)

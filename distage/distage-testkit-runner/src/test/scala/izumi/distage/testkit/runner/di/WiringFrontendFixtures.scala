@@ -45,7 +45,7 @@ private[di] object WiringFrontendFixtures {
     Vector(false, true).foldLeft(Future.successful(())) { (before, runtime) => before.flatMap { _ =>
       val selected = new App
       val identity = CatalogueIdentity(BuildId("wiring-frontends"), BuildTargetId("wiring"), CatalogueId(runtime.toString))
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () }
+      val sink = FixtureSupport.silentSink()
       val session = new RunSession(identity, Vector(() => WiringFixtureSuite.make(selected, runtime)), context, sink)
       val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
       val expected = if (runtime) 2 else 1

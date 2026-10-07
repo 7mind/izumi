@@ -82,29 +82,22 @@ final class StandaloneInterruptedSuite extends TestSuite {
     val directory = Paths.get(context.target.value)
     val suite = SuiteDescriptor(SuiteId(getClass.getName), "StandaloneInterruptedSuite")
     val test = TestDescriptor(TestId(context.target, suite.id, Vector("held finalizer"), None), "held finalizer", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-    val provider = new ExecutionProvider {
-      override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(tests) }
-      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-        override val tests: Vector[TestDescriptor] = selected
-        override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
-        override def execute(run: RunExecutionContext): Future[ProviderOutcome] = {
-          val registration = run.cancellation.onRequest(() => {
-            val _ = Files.createFile(directory.resolve("cancelled"))
-            Future.unit
-          })
-          run.emit(ProviderEvent.TestStarted(test.id))
-          Future {
-            val _ = Files.createFile(directory.resolve("started"))
-            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TimeoutSeconds)
-            while (!Files.exists(directory.resolve("release")) && System.nanoTime() < deadline) Thread.sleep(PollMillis)
-            require(Files.exists(directory.resolve("release")), "Fixture finalizer was not released")
-            val _ = Files.createFile(directory.resolve("released"))
-            val result = TestResult(test.id, if (run.cancellation.isRequested) TestStatus.Cancelled else TestStatus.Succeeded, None, 1L)
-            run.emit(ProviderEvent.TestCompleted(result))
-            ProviderOutcome(Vector(result), Vector.empty, run.cancellation.isRequested)
-          }(ExecutionContext.global).flatMap(value => registration.close().map(_ => value)(ExecutionContext.global))(ExecutionContext.global)
-        }
+    val provider = FixtureSupport.provider { (_, run) =>
+      val registration = run.cancellation.onRequest(() => {
+        val _ = Files.createFile(directory.resolve("cancelled"))
+        Future.unit
       })
+      run.emit(ProviderEvent.TestStarted(test.id))
+      Future {
+        val _ = Files.createFile(directory.resolve("started"))
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TimeoutSeconds)
+        while (!Files.exists(directory.resolve("release")) && System.nanoTime() < deadline) Thread.sleep(PollMillis)
+        require(Files.exists(directory.resolve("release")), "Fixture finalizer was not released")
+        val _ = Files.createFile(directory.resolve("released"))
+        val result = TestResult(test.id, if (run.cancellation.isRequested) TestStatus.Cancelled else TestStatus.Succeeded, None, 1L)
+        run.emit(ProviderEvent.TestCompleted(result))
+        ProviderOutcome(Vector(result), Vector.empty, run.cancellation.isRequested)
+      }(ExecutionContext.global).flatMap(value => registration.close().map(_ => value)(ExecutionContext.global))(ExecutionContext.global)
     }
     RegisteredSuite(suite, Vector(test), provider)
   }

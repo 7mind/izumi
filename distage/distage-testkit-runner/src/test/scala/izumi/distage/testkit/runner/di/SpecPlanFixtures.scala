@@ -131,7 +131,7 @@ private[di] object SpecPlanFixtures {
       "second" in { (_: Conflicting) => bodies.incrementAndGet().discard() }
     }
     val identity = CatalogueIdentity(BuildId("plan-fixture"), BuildTargetId("plan-target"), CatalogueId("planning-failure"))
-    val session = new RunSession(identity, Vector(() => suite), context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = { val _ = event } })
+    val session = new RunSession(identity, Vector(() => suite), context, FixtureSupport.silentSink())
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     verify("failed plan discovery suspends configuration and bodies", configurations.get() == 0 && bodies.get() == 0)
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
@@ -164,7 +164,7 @@ private[di] object SpecPlanFixtures {
       }
     }
     val identity = CatalogueIdentity(BuildId("plan-fixture"), BuildTargetId("plan-target"), CatalogueId("colliding-keys"))
-    val session = new RunSession(identity, Vector(() => suite), context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = { val _ = event } })
+    val session = new RunSession(identity, Vector(() => suite), context, FixtureSupport.silentSink())
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     verify("colliding set values are distinct and discovery remains suspended", first != second && first.hashCode() == second.hashCode() && bodies.get() == 0)
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))

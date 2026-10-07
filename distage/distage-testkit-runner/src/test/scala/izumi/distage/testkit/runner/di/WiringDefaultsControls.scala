@@ -19,7 +19,7 @@ private[di] trait WiringDefaultsControls {
       val app = new WiringFrontendFixtures.App
       val factory = () => if (mode == "configured") withConfig(app) else withDefaults(app)
       val identity = CatalogueIdentity(BuildId("wiring-defaults"), BuildTargetId("wiring"), CatalogueId(mode))
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () }
+      val sink = FixtureSupport.silentSink()
       val session = new RunSession(identity, Vector(factory), context, sink)
       val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
       verify("omitted wiring arguments register both legacy checks without planning", catalogue.tests.size == 2 && app.plans.get() == 0)

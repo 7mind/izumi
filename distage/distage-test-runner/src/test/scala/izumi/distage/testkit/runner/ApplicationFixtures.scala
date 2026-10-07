@@ -8,15 +8,6 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.control.NonFatal
 
 object ApplicationFixtures {
-  private final class RecordingOutput extends ProtocolOutput {
-    private var recorded = Vector.empty[ProtocolMessage]
-    override def accept(message: ProtocolMessage): Unit = synchronized {
-      require(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "Application output must round-trip")
-      recorded :+= message
-    }
-    def messages: Vector[ProtocolMessage] = synchronized(recorded)
-  }
-
   def run(identity: CatalogueIdentity, context: ExecutionContext, verify: (Boolean, String) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
     val constructions = new AtomicInteger(0)
@@ -26,7 +17,7 @@ object ApplicationFixtures {
       "a b" should { "c" in { val _ = bodies.incrementAndGet(); () } }
       "a" should { "b c" in { val _ = bodies.incrementAndGet(); () } }
     }
-    val output = new RecordingOutput
+    val output = new FixtureSupport.RecordingOutput
     val run = RunId("application-plain")
     val application = new TestApplication(run, identity, Vector(() => new Plain), context, output)
     val inherited = RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit)
@@ -94,30 +85,18 @@ object ApplicationFixtures {
       .map(_ => println("APPLICATION_FIXTURES_OK selection=validated plan=reused cancellation=immediate finalization=awaited delivery=retained"))
   }
 
-  private def suite(provider: ExecutionProvider, name: String): TestSuite = new TestSuite {
-    override def register(context: RegistrationContext): RegisteredSuite = {
-      val descriptor = SuiteDescriptor(SuiteId(name), name)
-      val test = TestDescriptor(TestId(context.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-      RegisteredSuite(descriptor, Vector(test), provider)
-    }
-  }
+  private def suite(provider: ExecutionProvider, name: String): TestSuite = FixtureSupport.suite(name, Vector("body"))(_ => provider)
 
   private def reentrantCommands(identity: CatalogueIdentity, verify: (Boolean, String) => Unit): Future[Unit] = {
-    implicit val inline: ExecutionContext = new ExecutionContext {
-      override def execute(runnable: Runnable): Unit = runnable.run()
-      override def reportFailure(cause: Throwable): Unit = throw cause
-    }
+    implicit val inline: ExecutionContext = FixtureSupport.inlineContext()
     val plans = new AtomicInteger(0)
     val executions = new AtomicInteger(0)
     val gate = Promise[ExecutionPlan]()
     var prepared = Option.empty[ExecutionPlan]
-    val provider = new ExecutionProvider {
-      override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(tests) }
+    val provider = new FixtureSupport.Provider {
       override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
         plans.incrementAndGet()
-        prepared = Some(new ExecutionPlan {
-          override val tests: Vector[TestDescriptor] = selected
-          override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+        prepared = Some(new FixtureSupport.Plan(selected) {
           override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
             executions.incrementAndGet()
             val results = tests.map { test =>
@@ -136,7 +115,7 @@ object ApplicationFixtures {
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
     var application = Option.empty[TestApplication]
     var pendingPlan = Option.empty[Future[Unit]]
-    val output = new RecordingOutput
+    val output = new FixtureSupport.RecordingOutput
     val reentrant = new ProtocolOutput {
       override def accept(message: ProtocolMessage): Unit = {
         output.accept(message)
@@ -170,7 +149,7 @@ object ApplicationFixtures {
       override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = (overrides, resolutions.incrementAndGet()); Right(tests) }
       override def plan(tests: Vector[TestDescriptor]): Future[ExecutionPlan] = { val _ = (tests, plans.incrementAndGet()); throw cause }
     }
-    val output = new RecordingOutput
+    val output = new FixtureSupport.RecordingOutput
     val run = RunId("application-planning-failure")
     val application = new TestApplication(run, identity, Vector(() => suite(provider, "PlanningFailure")), context, output)
     val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
@@ -192,7 +171,7 @@ object ApplicationFixtures {
     val acquired = new AtomicInteger(0)
     val released = new AtomicInteger(0)
     val writesAfterFailure = new AtomicInteger(0)
-    val output = new RecordingOutput
+    val output = new FixtureSupport.RecordingOutput
     val deliveryError = new IllegalStateException("event channel failed")
     val oracleError = new IllegalStateException("deliberately failing held-state oracle")
     val sink = new ProtocolOutput {
@@ -203,13 +182,10 @@ object ApplicationFixtures {
           output.accept(message)
       }
     }
-    val provider = new ExecutionProvider {
-      override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(tests) }
+    val provider = new FixtureSupport.Provider {
       override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
         plans.incrementAndGet()
-        Future.successful(new ExecutionPlan {
-          override val tests: Vector[TestDescriptor] = selected
-          override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
+        Future.successful(new FixtureSupport.Plan(selected) {
           override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
             acquired.incrementAndGet()
             val registration = execution.cancellation.onRequest(() => { val _ = cancelled.trySuccess(()); Future.unit })
@@ -267,7 +243,7 @@ object ApplicationFixtures {
 
   private def terminalCancellation(identity: CatalogueIdentity, context: ExecutionContext, verify: (Boolean, String) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
-    val output = new RecordingOutput
+    val output = new FixtureSupport.RecordingOutput
     val run = RunId("terminal-cancellation")
     var application = Option.empty[TestApplication]
     var cancellation = Option.empty[Future[Unit]]

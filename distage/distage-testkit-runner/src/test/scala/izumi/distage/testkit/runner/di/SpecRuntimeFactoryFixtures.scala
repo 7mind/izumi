@@ -77,8 +77,8 @@ private[di] object SpecRuntimeFactoryFixtures {
         else if (mode == "selected") Vector(() => new SharingSuite(stats, ignored, "first"), () => new SharingSuite(stats, runtime, "second"))
         else Vector(() => new SharingSuite(stats, runtime, "first"), () => new SharingSuite(stats, runtime, "second"))
       val identity = CatalogueIdentity(BuildId("runtime-factory"), BuildTargetId(label), CatalogueId(mode))
-      var events = Vector.empty[ProtocolMessage.Event]
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event } }
+      val sink = new FixtureSupport.RecordingSink
+      def events: Vector[ProtocolMessage.Event] = sink.events
       val session = new RunSession(identity, suites, context, sink)
       val _ = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
       val suspended = stats.outerAcquired.get() == 0 && stats.graphAcquired.get() == 0 && stats.acquired.get() == 0 && stats.bodies.get() == 0

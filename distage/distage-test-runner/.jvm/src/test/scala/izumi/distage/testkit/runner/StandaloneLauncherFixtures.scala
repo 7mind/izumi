@@ -19,10 +19,8 @@ final class LauncherPlanningFailureSuite extends TestSuite {
   override def register(context: RegistrationContext): RegisteredSuite = {
     val descriptor = SuiteDescriptor(SuiteId(getClass.getName), "LauncherPlanningFailureSuite")
     val test = TestDescriptor(TestId(context.target, descriptor.id, Vector("planning failure"), None), "planning failure", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-    val provider = new ExecutionProvider {
-      override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(tests) }
-      override def plan(selected: Vector[TestDescriptor]): scala.concurrent.Future[ExecutionPlan] = scala.concurrent.Future.successful(new ExecutionPlan {
-        override val tests: Vector[TestDescriptor] = selected
+    val provider = new FixtureSupport.Provider {
+      override def plan(selected: Vector[TestDescriptor]): scala.concurrent.Future[ExecutionPlan] = scala.concurrent.Future.successful(new FixtureSupport.Plan(selected) {
         override val inspection: PlanInspection = PlanInspection(Vector.empty, Vector.empty, Vector(PlanFailure(tests.map(_.id), RunnerFailure.message(FailurePhase.Planning, "Controlled CLI planning failure"))))
         override def execute(context: RunExecutionContext): scala.concurrent.Future[ProviderOutcome] = { val _ = context; throw new IllegalStateException("CLI inspection must not execute") }
       })

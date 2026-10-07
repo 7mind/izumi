@@ -53,7 +53,7 @@ private[di] object SpecPluginRequestFixtures {
     implicit val ec: ExecutionContext = context
     val stats = new Statistics
     val identity = CatalogueIdentity(BuildId("plugin-requests"), BuildTargetId("request-target"), CatalogueId(owner))
-    val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = { val _ = event } }
+    val sink = FixtureSupport.silentSink()
     val session = new RunSession(identity, Vector(() => new Suite(stats)), context, sink)
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     verify(owner + " plugin request discovery leaves loading and bodies suspended", catalogue.tests.size == 1 && stats.requests.isEmpty && stats.observed.isEmpty)

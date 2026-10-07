@@ -120,12 +120,7 @@ object FrontendAssertionFixtures {
       "explicit cancellation" in { bodies.incrementAndGet(); cancel("unsupported platform") }
       "sibling" in { bodies.incrementAndGet(); succeed }
     }
-    final class RecordingSink extends EventSink {
-      private var events = Vector.empty[ProtocolMessage.Event]
-      override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event }
-      def completed: Vector[TestResult] = synchronized { events.collect { case ProtocolMessage.Event(_, RunEvent.TestCompleted(_, result)) => result } }
-    }
-    val sink = new RecordingSink
+    val sink = new FixtureSupport.RecordingSink
     val session = new RunSession(identity, Vector(() => new OutcomeSuite), context, sink)
     val catalogue = session.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     verify(catalogue.tests.size == 3 && bodies.get() == 0, "Discovery leaves failure and cancellation bodies suspended")
@@ -139,7 +134,7 @@ object FrontendAssertionFixtures {
       verify(results("explicit cancellation").failure.exists(_.message == "unsupported platform"), "Cancelled test reports retain the supplied reason")
       verify(!outcome.successful && !outcome.cancelled && outcome.failures.isEmpty, "Explicit test cancellation does not request application cancellation")
       verify(bodies.get() == 3, "Failure and cancellation bodies execute exactly once without suppressing their sibling")
-      verify(sink.completed.size == 3 && sink.completed.toSet == outcome.results.toSet, "Callbacks report each failure, cancellation and successful sibling exactly once")
+      verify(sink.completions.size == 3 && sink.completions.toSet == outcome.results.toSet, "Callbacks report each failure, cancellation and successful sibling exactly once")
     }
   }
 
@@ -148,10 +143,7 @@ object FrontendAssertionFixtures {
     var bodies = 0
     val _ = new MixedSuite(() => { bodies += 1 })
     verify(bodies == 0, "Self-typed suite mixins register through the public DSL without executing bodies")
-    val inlineContext = new ExecutionContext {
-      override def execute(task: Runnable): Unit = task.run()
-      override def reportFailure(cause: Throwable): Unit = throw cause
-    }
+    val inlineContext = FixtureSupport.inlineContext()
     val padded = new PaddedSuite(() => { bodies += 1 }).register(new RegistrationContext(BuildTargetId("padded-name-fixture"), inlineContext))
     verify(padded.tests.map(_.displayName) == Vector("padded scope should padded case"), "Plain word specifications trim scope and leaf names like the legacy frontend")
     verify(padded.tests.head.id.path == Vector("padded scope", "should", "padded case"), "Normalized word-spec identities match their display names")

@@ -70,8 +70,8 @@ private[di] object SpecRegistrationFixtures {
     )
     cases.foldLeft(Future.successful(())) { case (before, (kind, paths, message)) => before.flatMap { _ =>
       val counters = new Counters
-      var events = Vector.empty[ProtocolMessage.Event]
-      val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event } }
+      val sink = new FixtureSupport.RecordingSink
+      def events: Vector[ProtocolMessage.Event] = sink.events
       val identity = catalogueIdentity(frontend.name + "-duplicate-" + kind)
       val factories = paths.map { path => () => { counters.factories.incrementAndGet().discard(); frontend.create(counters, path) } }
       val session = new RunSession(identity, factories, context, sink)

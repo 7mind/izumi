@@ -9,15 +9,13 @@ private[runner] object PlanAggregationFixtures {
   def run(identity: CatalogueIdentity, context: ExecutionContext, verify: (Boolean, String) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
     val executions = new AtomicInteger(0)
-    var events = Vector.empty[ProtocolMessage.Event]
-    val sink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = synchronized { events :+= event } }
+    val sink = new FixtureSupport.RecordingSink
+    def events: Vector[ProtocolMessage.Event] = sink.events
     def suite(name: String): TestSuite = new TestSuite {
       override def register(registration: RegistrationContext): RegisteredSuite = {
         val descriptor = TestDescriptor(TestId(identity.target, SuiteId(name), Vector("test"), None), "test", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-        val provider = new ExecutionProvider {
-          override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(tests)
-          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-            override val tests: Vector[TestDescriptor] = selected
+        val provider = new FixtureSupport.Provider {
+          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new FixtureSupport.Plan(selected) {
             override val inspection: PlanInspection = PlanInspection(
               Vector(DependencyKey(DependencyKeyId(7), "same label"), DependencyKey(DependencyKeyId(13), "same label")),
               Vector(

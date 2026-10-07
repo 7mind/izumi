@@ -14,30 +14,22 @@ private[runner] object PlanningDepthFixtures {
       val first = cause("first")
       val second = cause("second")
       val identity = CatalogueIdentity(BuildId("planning-depth"), BuildTargetId("depth-target"), CatalogueId(closeFails.toString))
-      def suite(name: String, original: Throwable, ownsPlan: Boolean): TestSuite = new TestSuite {
-        override def register(registration: RegistrationContext): RegisteredSuite = {
-          val descriptor = SuiteDescriptor(SuiteId(name), name)
-          val test = TestDescriptor(TestId(registration.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-          val provider = new ExecutionProvider {
-            override def resolve(selected: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = Right(selected)
-            override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
-              if (!ownsPlan) Future.failed(original)
-              else Future.successful(new ExecutionPlan {
-                override val tests: Vector[TestDescriptor] = selected
-                override val inspection: PlanInspection = PlanInspection.individualTests(selected.map(_.id))
-                override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = Future.failed(new IllegalStateException("Rejected planning must not execute"))
-                override def close(): Future[Unit] = Future.failed(original)
-              })
-            }
+      def suite(name: String, original: Throwable, ownsPlan: Boolean): TestSuite = FixtureSupport.suite(name, Vector("body")) { _ =>
+        new FixtureSupport.Provider {
+          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
+            if (!ownsPlan) Future.failed(original)
+            else Future.successful(new FixtureSupport.Plan(selected) {
+              override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = Future.failed(new IllegalStateException("Rejected planning must not execute"))
+              override def close(): Future[Unit] = Future.failed(original)
+            })
           }
-          RegisteredSuite(descriptor, Vector(test), provider)
         }
       }
       val firstCaptured = RunnerFailure.fromThrowable(FailurePhase.Planning, first)
       val secondCaptured = RunnerFailure.fromThrowable(FailurePhase.Finalization, second)
       val run = RunId("depth-" + closeFails)
       verify(ProtocolCodec.validate(ProtocolMessage.Rejected(run, firstCaptured)).isRight && ProtocolCodec.validate(ProtocolMessage.Rejected(run, secondCaptured)).isRight, "Independent failures at the graph-depth bound are representable")
-      val session = new RunSession(identity, Vector(() => suite("FirstFailure", first, false), () => suite("SecondFailure", second, closeFails)), context, new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () })
+      val session = new RunSession(identity, Vector(() => suite("FirstFailure", first, false), () => suite("SecondFailure", second, closeFails)), context, FixtureSupport.silentSink())
       val request = RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))
       val selected = session.resolve(request).fold(failure => throw new IllegalStateException(failure.message), value => value)
       session.plan(selected).map { result =>

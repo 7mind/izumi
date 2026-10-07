@@ -73,10 +73,8 @@ object ApplicationLauncherFixtures {
         val _ = registrations.incrementAndGet()
         val descriptor = SuiteDescriptor(SuiteId("FailedLauncherPlan"), "FailedLauncherPlan")
         val test = TestDescriptor(TestId(registration.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-        val provider = new ExecutionProvider {
-          override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(tests) }
-          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-            override val tests: Vector[TestDescriptor] = selected
+        val provider = new FixtureSupport.Provider {
+          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new FixtureSupport.Plan(selected) {
             override val inspection: PlanInspection = PlanInspection(Vector.empty, Vector.empty, Vector(PlanFailure(tests.map(_.id), failure)))
             override def execute(context: RunExecutionContext): Future[ProviderOutcome] = { val _ = (context, executions.incrementAndGet()); throw new IllegalStateException("Failed plan inspection must not execute") }
           })
@@ -103,33 +101,23 @@ object ApplicationLauncherFixtures {
     }.transform { result => source.close(); channel.close(); result }
   }
   private def inputFailure(make: () => FramedChannelFixtures.Channel, label: String, identity: CatalogueIdentity, request: RunRequest, verify: (Boolean, String) => Unit): Future[Unit] = {
-    implicit val inline: ExecutionContext = new ExecutionContext {
-      override def execute(command: Runnable): Unit = command.run()
-      override def reportFailure(cause: Throwable): Unit = throw cause
-    }
+    implicit val inline: ExecutionContext = FixtureSupport.inlineContext()
     val entered = Promise[Unit]()
     val cancelled = Promise[Unit]()
     val release = Promise[Unit]()
     val released = new AtomicInteger(0)
     val original = new IllegalArgumentException("Controlled launcher input failure")
     val run = RunId("launcher-input-failure")
-    val provider = new ExecutionProvider {
-      override def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]] = { val _ = overrides; Right(tests) }
-      override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new ExecutionPlan {
-        override val tests: Vector[TestDescriptor] = selected
-        override val inspection: PlanInspection = PlanInspection.individualTests(tests.map(_.id))
-        override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
-          val registration = context.cancellation.onRequest(() => { val _ = cancelled.trySuccess(()); Future.unit })
-          tests.foreach(test => context.emit(ProviderEvent.TestStarted(test.id)))
-          val _ = entered.trySuccess(())
-          release.future.flatMap { _ =>
-            val _ = released.incrementAndGet()
-            val results = tests.map(test => TestResult(test.id, TestStatus.Cancelled, None, 0L))
-            results.foreach(result => context.emit(ProviderEvent.TestCompleted(result)))
-            registration.close().map(_ => ProviderOutcome(results, Vector.empty, context.cancellation.isRequested))
-          }
-        }
-      })
+    val provider = FixtureSupport.provider { (plannedTests, context) =>
+      val registration = context.cancellation.onRequest(() => { val _ = cancelled.trySuccess(()); Future.unit })
+      plannedTests.foreach(test => context.emit(ProviderEvent.TestStarted(test.id)))
+      val _ = entered.trySuccess(())
+      release.future.flatMap { _ =>
+        val _ = released.incrementAndGet()
+        val results = plannedTests.map(test => TestResult(test.id, TestStatus.Cancelled, None, 0L))
+        results.foreach(result => context.emit(ProviderEvent.TestCompleted(result)))
+        registration.close().map(_ => ProviderOutcome(results, Vector.empty, context.cancellation.isRequested))
+      }
     }
     val suite = new TestSuite {
       override def register(context: RegistrationContext): RegisteredSuite = {

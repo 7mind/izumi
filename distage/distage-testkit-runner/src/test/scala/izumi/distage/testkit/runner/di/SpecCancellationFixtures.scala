@@ -97,7 +97,7 @@ private[di] object SpecCancellationFixtures {
     val zio = new Statistics(false)
     val stats = Vector(cats, zio)
     val identity = CatalogueIdentity(BuildId("parallel-cancellation"), BuildTargetId("parallel-target"), CatalogueId("cats-zio"))
-    val sink = new ParallelRecordingSink
+    val sink = new FixtureSupport.RecordingSink
     val factories: Vector[() => TestSuite] = Vector[() => TestSuite](
       () => new CatsSuite(cats, TestConfig.Parallelism.Fixed(2)),
       () => new ZIOSuite(zio, TestConfig.Parallelism.Fixed(2)),
@@ -207,12 +207,6 @@ private[di] object SpecCancellationFixtures {
     Future.firstCompletedOf(Vector(signal, timer.map(_ => timeout()))).transformWith { result =>
       cancel().flatMap(_ => timer.transformWith(_ => Future.fromTry(result)))
     }
-  }
-
-  private final class ParallelRecordingSink extends EventSink {
-    private var recorded = Vector.empty[ProtocolMessage.Event]
-    override def accept(event: ProtocolMessage.Event): Unit = synchronized { recorded :+= event }
-    def events: Vector[ProtocolMessage.Event] = synchronized(recorded)
   }
 
   private final class RecordingSink(stats: Statistics) extends EventSink {

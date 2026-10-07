@@ -31,11 +31,6 @@ private[runner] object AssertionTransportFixtures {
     }
   }
 
-  private final class RecordingSink extends EventSink {
-    private var recorded = Vector.empty[ProtocolMessage.Event]
-    override def accept(event: ProtocolMessage.Event): Unit = synchronized(recorded :+= event)
-    def events: Vector[ProtocolMessage.Event] = synchronized(recorded)
-  }
 
   def run(context: ExecutionContext, verify: (Boolean, String) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
@@ -378,7 +373,7 @@ private[runner] object AssertionTransportFixtures {
     implicit val ec: ExecutionContext = context
     final class Suite extends AnyWordSpec { "assertion transport" should { name in { body() } } }
     val identity = CatalogueIdentity(BuildId("assertion-transport"), BuildTargetId("portable"), CatalogueId(name))
-    val sink = new RecordingSink
+    val sink = new FixtureSupport.RecordingSink
     val session = new RunSession(identity, Vector(() => new Suite), context, sink)
     session.execute(RunId(name), RunRequest(identity, Selection.All, RunOverrides(Vector.empty, Vector.empty, MemoizationOverride.Inherit))).map {
       outcome =>

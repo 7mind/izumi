@@ -68,7 +68,7 @@ object PlainOrderingFixtures {
     val separateContext = new ControlledContext
     val separateMarks = new Marks
     var independentStarted = false
-    val separateSink = new EventSink { override def accept(event: ProtocolMessage.Event): Unit = () }
+    val separateSink = FixtureSupport.silentSink()
     val separateSession = new RunSession(identity, Vector(() => new OrderedSuite(separateMarks), () => new IndependentSuite(() => independentStarted = true)), separateContext, separateSink)
     val _ = separateSession.discover().fold(failure => throw new IllegalStateException(failure.message), value => value)
     val separateOutcome = separateSession.execute(RunId("separate-suites"), request)
