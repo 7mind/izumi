@@ -31,7 +31,7 @@ head. The spike reports are design evidence, not implementation verification.
 
 | Item | State | Evaluation-point evidence |
 | --- | --- | --- |
-| L1 | in progress | Part-1 verification below; full gate remains outstanding. |
+| L1 | in progress | Serial f8911f8c CI passes Scala2.13 on JDK17/21/25 and Scala3 on JDK17/21 below. JDK25 Scala3 reproduces a separate registration oracle defect; its correction has bounded controls below. Complete final evaluation remains open. |
 | L2 | in progress | Part-1 verification below; full gate remains outstanding. |
 | L3 | in progress | Part-1 and full Native CI checkpoint verification below; parent-step and final evaluation remain outstanding. |
 | L4 | in progress | Candidate site action actual0 after2704.189s,1701 frozen inputs unchanged;44 rendered files and3003 API pages audited below. Final-head qualification remains open. |
@@ -21350,3 +21350,103 @@ cgroup; no host configuration change is attempted. Original failed and interrupt
 captures remain preserved. Current main is regenerated with actual sbtgen after
 the classpath correction; final CI,facility/compatibility inventories and all
 required final acceptance evaluations remain open.
+
+## 2026-10-07: serial final CI, resource limits and registration ownership correction
+
+The serial second final-CI batch runs isolated f8911f8c checkouts with1814
+frozen inputs per lane. JDK21/17 Scala3 each passes actual0 with274 reports,
+1660 cases and19 skipped cases. JDK21/17/25 Scala2.13 coverage each passes actual0
+with273 reports and1628 cases. The independent completion auditor rehashes
+commands, logs, inputs and XML, compares every reported identity with the preceding
+CI capture, and requires executed base/provider controls. Evidence:
+5-final-head-ci-batch-second/*/command.json, completion.json, preserved Mdl
+metadata and independent-completed-lanes-audit.json. Remaining lanes are still
+running; these outcomes do not establish the completed batch or final L1-L4.
+
+An actual JVM resource observation records eight-CPU affinity, effective
+MaxHeapSize=6442450944 and MaxMetaspaceSize=1073741824. The inherited larger
+defaults are overridden by those effective limits. The sandbox cgroup mount
+is not writable. Evidence:jvm-jdk25-scala3-test/resource-runtime-observation.json.
+Only one heavy SBT/compiler/linker action runs at a time. The small direct
+reproduction controls below use256/512MiB heaps and two processors.
+
+The Scala2.13 JS coverage lane stalls in fundamentals-orphansJS update. Two
+thread dumps show runnable Coursier graph reconciliation, with approximately54s
+additional thread CPU time between captures; they do not establish a lock
+deadlock. After455s without log progress, only the verified owned action process
+group is sent SIGTERM. Mdl records actual1 after545.879s, no test reports and
+unchanged1814 inputs. Evidence:js-nojvm-jdk21-scala2.13-coverage/owned-stop.json,
+thread-dump-first.txt, thread-dump-second.txt and completion.json. Its failed
+capture is retained. The prior generated-update-cache isolation recovery remains
+a possible recovery, not a proven root-cause correction or current JS pass.
+
+JDK25 Scala3 finishes actual1 after335.150s. All274 XML reports have zero
+failed/error cases and the provider872 marker is present, but the actual Mdl
+test stdout fails RegistrationLinkageFixtures' global thread-name assertion.
+The negative-control graph/outer release exceptions in stderr do not establish
+the failure's cause. Evidence:the preserved #test/meta.json, stdout.log and
+stderr.log. This lane stays failed despite its successful reported test cases.
+
+The fail-first registration reproduction uses the unchanged compiled f8911f8c
+fixture. It holds an unrelated work-stealing pool live after the original
+thread snapshot, observes one terminated recovery-body pool, and fails exactly
+the original assertion:ownedPools=1,ownedTerminated=true,unrelatedTerminated=false.
+Java actual1 after0.768s, log SHA256
+fce745b65baaf80fb4dba9bc6a5be805101857bef37a362566f171cd31c2d8d6.
+Evidence:5-registration-thread-ownership-repro-second/command.json,
+completion.json and reproduction.log. The first harness did not intercept
+Scala's println(Object) dispatch and failed its own control; it is retained
+and establishes no ownership defect.
+
+RegistrationLinkageFixtures now records callback ForkJoinPool references in
+an explicitly local queue and requires those observed executors to terminate.
+The healthy recovery guarantees a nonempty observation. The same held-unrelated
+probe now passes on2.13.18 and3.9.0. Direct strict single-file compilation and
+full BaseRunnerFixtures execution each pass actual0 on both compilers against
+frozen final-CI artifacts plus the exact corrected fixture classes. Both retain
+887 base checks,61 bootstrap checks,three registration groups,four discovery
+errors and one recovery body. All captured inputs are unchanged. Evidence:
+5-registration-thread-ownership-correction-first/*/command.json,
+*-completion.json and independent-audit.json. The proof covers the observed
+recovery callback executor, not every possible executor allocation. Production
+shutdown code is unchanged; aggregate final-head SBT CI remains open.
+
+The bounded read-only correction review independently verifies101 preserved
+records, exact corrected source copies, the expected fail-first assertion and
+both compiler/control outcomes. It finds no introduced material defect and
+explicitly retains the observed-callback ownership limit. Evidence:
+5-registration-thread-ownership-readonly-review-first/REVIEW.md SHA256
+ccd755ef6c8d04ab0b70a5989118e0e6b4ce636307400e749cf94269702f3010.
+The later ledger append and other CI/final evaluations are outside that review.
+
+## 2026-10-07: bounded facility and compatibility inventories
+
+5-final-facility-compatibility-evidence-first records13 replacement families,
+17 source files,51 plain imports-only files and22 ordinary unchanged/import-only
+files. Four further ordinary files use effect-wrapped ScalaTest Assertion or
+matchers and follow the plan's explicit facility-migration clause. Those are not
+new exceptions to the imports-only guarantee. The73-source set includes helpers,
+resources and inactive platform/compiler variants; presence in a JVM frozen-input
+dictionary does not prove compilation or execution of all73 sources.
+
+The bounded read-only inventory review independently preserves205 records with
+zero hash mismatches. It identifies WithCirceTest as an imports-only file outside
+the73-source set and confirms the composed66-lane matrix is not all repository
+tests. Evidence:5-final-facility-compatibility-readonly-review-first/REVIEW.md
+SHA256a206c0cef06bfd9c0d4dc4b25e46a4444d92420294ddafe4ca648f3d4da2b323.
+The preceding two-correction/D1 review preserves71 records with zero mismatches:
+5-reproduced-ci-corrections-readonly-review-first/REVIEW.md SHA256
+59cb69316251945d937659f3ef95204230164e0b14748de1911a8d8503a1b21e.
+Neither review closes final acceptance or includes later CI outcomes.
+
+A broader mechanical scan preserves original blobs and complete diffs separately
+at aefd8fea0 and the actual rebased develop baseline b8e6a9388. The latter has151
+direct legacy WordSpec/Spec-declaring files:115 unchanged after deleting only
+import lines,35 with additional edits and one permitted ScalaMock removal.
+OptionalDependencyTest213 and WithCirceTest have explicit moved-source mappings.
+The earlier baseline retains its separate pre-rebase/version/Native provenance.
+Evidence:5-exhaustive-suite-source-compatibility-{first,second}/inventory.json,
+originals/ and diffs/. These are mechanical classifications, not a determination
+of every eligible suite or every inherited suite route. Complete eligibility,
+per-facility/per-case behavior, approved factory diffs and current execution/
+artifact applicability remain required for2b.10,5.8 andO.1.

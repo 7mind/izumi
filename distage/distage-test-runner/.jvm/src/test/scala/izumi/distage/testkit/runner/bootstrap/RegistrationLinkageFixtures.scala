@@ -6,7 +6,7 @@ import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import sbt.testing.{Event, EventHandler, Status, SuiteSelector, TaskDef}
 
-import java.util.concurrent.{CountDownLatch, TimeUnit}
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, ForkJoinPool, ForkJoinWorkerThread, TimeUnit}
 import scala.jdk.CollectionConverters.*
 
 object RegistrationLinkageFixtures {
@@ -30,7 +30,7 @@ object RegistrationLinkageFixtures {
     watchdog.setDaemon(true)
     watchdog.start()
     try {
-      val previousThreads = Thread.getAllStackTraces.keySet().asScala.toSet
+      val ownedExecutors = new ConcurrentLinkedQueue[ForkJoinPool]()
       val framework = new Framework
       val flags = Array("--build-id", "registration-linkage", "--target-id", "jvm", "--catalogue-id", "two-suites")
       val runner = framework.runner(flags, Array.empty, getClass.getClassLoader)
@@ -40,7 +40,13 @@ object RegistrationLinkageFixtures {
       def collect(definitions: Array[TaskDef]): Vector[Vector[Event]] = runner.tasks(definitions).toVector.map { task =>
         var events = Vector.empty[Event]
         val handler = new EventHandler {
-          override def handle(event: Event): Unit = { events :+= event }
+          override def handle(event: Event): Unit = {
+            Thread.currentThread() match {
+              case worker: ForkJoinWorkerThread => ownedExecutors.add(worker.getPool)
+              case _ => ()
+            }
+            events :+= event
+          }
         }
         require(task.execute(handler, Array.empty).isEmpty, "Registration fixture returned nested tasks")
         require(events.forall(_.fullyQualifiedName() == task.taskDef().fullyQualifiedName()), "Registration failure changed suite ownership")
@@ -61,7 +67,7 @@ object RegistrationLinkageFixtures {
       require(recovery.size == 1 && recovery.head.size == 1 && recovery.head.head.status() == Status.Success, "Healthy group after registration failure did not recover")
       verifyFailure()
       require(runner.done().isEmpty, "Registration linkage runner did not finish")
-      require(!Thread.getAllStackTraces.keySet().asScala.filterNot(previousThreads.contains).exists(thread => thread.isAlive && thread.getName.startsWith("ForkJoinPool-")), "Registration failure retained an application executor")
+      require(!ownedExecutors.isEmpty && ownedExecutors.asScala.forall(_.isTerminated), "Registration callback executors must terminate before host completion")
       println("JVM_REGISTRATION_LINKAGE_FIXTURES_OK groups=3 errors=4 recoveryBodies=1 executors=terminated")
     } finally {
       completed.countDown()
