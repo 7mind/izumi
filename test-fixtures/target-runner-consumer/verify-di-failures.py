@@ -4,7 +4,6 @@ from collections import Counter
 import json, re, shutil, sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import load_module, run_lanes
 
@@ -99,16 +98,8 @@ def main():
     for compiler in args.scala_version:
         for platform in ['js','native']:
             suffix=('sjs1' if platform=='js' else 'native0.5')+'_'+('3' if compiler.startswith('3.') else '2.13')
-            prepared_args=argparse.Namespace(**vars(args));prepared_args.artifact_version=di.dependency_revision('distage-testkit-runner_'+suffix,args.artifact_version,'distage-test-runner_'+suffix)
-            command,prepared=prepare(prepared_args,compiler,platform,paths);command['argv']=[('-Dfixture.artifact-version='+args.artifact_version) if value.startswith('-Dfixture.artifact-version=') else value for value in command['argv']];build=Path(command['cwd']);(build/'project/ProductionInterruption.scala').unlink()
-            for path in (build/'shared').glob('*.scala'):path.unlink()
-            for path in TEMPLATE.glob('*.scala'):shutil.copyfile(path,build/'shared'/path.name)
-            external = build/'external-configuration.txt';external.write_text('')
-            platform_source=build/('platform-'+platform)/'Platform.scala'
-            text=platform_source.read_text()
-            reader=('scala.scalajs.js.Dynamic.global.require("fs").readFileSync('+json.dumps(str(external))+', "utf8").asInstanceOf[String]' if platform=='js' else '{ val input = scala.io.Source.fromFile('+json.dumps(str(external))+'); try input.mkString finally input.close() }')
-            method='  def overrideConfiguration(config: io.circe.JsonObject): io.circe.JsonObject = { val snapshot = '+reader+'.trim; if (snapshot.isEmpty) config else config.add("snapshot", io.circe.Json.fromString(snapshot)) }\n'
-            platform_source.write_text(text.replace('object Platform {','object Platform {\n'+method))
+            command,prepared=di.prepare_di(args,compiler,platform,paths,TEMPLATE,di.failure_suites(TEMPLATE),False)
+            build=Path(command['cwd'])
             definition=build/'build.sbt';text=definition.read_text().replace('ProductionJsInterruptionPlugin','DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin','DistageTestkitNativePlugin').replace('distage-test-runner_','distage-testkit-runner_')
             text=text.replace('val common = Seq(',policy.CONTROLS+CONTROLS+'\nval common = Seq(\n'+policy.SETTINGS+SETTINGS)
             definition.write_text(text)

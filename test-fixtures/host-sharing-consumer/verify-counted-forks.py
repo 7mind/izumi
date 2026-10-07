@@ -7,7 +7,7 @@ import shutil
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_process, sha
+from fixture_harness import freeze_driver, run_process, sha
 
 ROOT=Path(__file__).resolve().parents[2]
 LANE_TIMEOUT_SECONDS=600
@@ -73,7 +73,7 @@ def main():
     evidence=arguments.evidence_dir.resolve()
     evidence.mkdir(parents=True,exist_ok=False)
     driver=evidence/'driver.py'
-    shutil.copy2(__file__,driver)
+    freeze_driver(__file__,driver)
     (evidence/'driver.json').write_text(json.dumps(dict(original=str(Path(__file__).resolve()),frozen=str(driver),sha256=sha(driver)),indent=2)+'\n')
     fixture=ROOT/'test-fixtures/host-sharing-consumer'
     sources=[fixture/'build.sbt',*sorted((fixture/'src').rglob('*.scala'))]

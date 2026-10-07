@@ -9,6 +9,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import TextIO, TypedDict
 import signal
+import shutil
 import subprocess
 
 
@@ -35,6 +36,11 @@ def load_module(name: str, path: Path) -> ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def freeze_driver(driver: Path | str, destination: Path) -> None:
+    shutil.copy2(driver, destination)
+    shutil.copy2(__file__, destination.parent / 'fixture_harness.py')
 
 
 def terminate_process(process: subprocess.Popen, grace_seconds: float) -> None:

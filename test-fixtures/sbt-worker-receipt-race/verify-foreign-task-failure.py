@@ -7,7 +7,7 @@ import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, run_process, sha
+from fixture_harness import freeze_driver, load_module, run_process, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 600
@@ -75,7 +75,7 @@ def main():
     parser.add_argument('--evidence-dir', type=Path, required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve(); out.mkdir()
-    shutil.copy2(__file__,out/'driver.py')
+    freeze_driver(__file__,out/'driver.py')
     shutil.copy2(Path(__file__).with_name('verify-command-groups.py'),out/'verify-command-groups.py')
     outcomes = []
     for scala in args.scala_version:

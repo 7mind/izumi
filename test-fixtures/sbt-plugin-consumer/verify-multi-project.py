@@ -8,7 +8,7 @@ import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_process
+from fixture_harness import freeze_driver, run_process
 
 TIMEOUT_SECONDS = 600
 SUITES = ['SuiteA','SuiteB','SuiteC','SuiteD','SuiteE']
@@ -118,7 +118,7 @@ def main():
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     out = args.evidence_dir.resolve(); out.mkdir()
-    shutil.copy2(__file__,out/'driver.py')
+    freeze_driver(__file__,out/'driver.py')
     sources = sorted((repo/'test-fixtures/host-sharing-consumer/src/test/scala').rglob('*.scala'))
     outcomes = []
     for scala in args.scala_version:

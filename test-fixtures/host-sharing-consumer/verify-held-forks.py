@@ -4,7 +4,7 @@ import argparse, json, os, re, shutil, subprocess, time
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import sha, wait_process
+from fixture_harness import freeze_driver, sha, wait_process
 
 ROOT=Path(__file__).resolve().parents[2]
 LANE_TIMEOUT_SECONDS=240
@@ -124,7 +124,7 @@ def main():
     parser.add_argument('--scala-version',required=True,nargs='+',choices=['3.9.0','2.13.18'])
     parser.add_argument('--artifact-version',required=True)
     args=parser.parse_args(); evidence=args.evidence_dir.resolve(); evidence.mkdir(parents=True,exist_ok=False)
-    shutil.copy2(__file__,evidence/'driver.py'); fixture=ROOT/'test-fixtures/host-sharing-consumer'
+    freeze_driver(__file__,evidence/'driver.py'); fixture=ROOT/'test-fixtures/host-sharing-consumer'
     sources=[fixture/'build.sbt',*sorted((fixture/'src').rglob('*.scala'))]
     original=[dict(path=str(p),sha256=sha(p)) for p in sources]
     (evidence/'inputs.json').write_text(json.dumps(original,indent=2)+'\n')

@@ -4,7 +4,7 @@ import argparse, json, re, shutil, subprocess, time
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import sha, wait_process
+from fixture_harness import freeze_driver, sha, wait_process
 
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=180
@@ -116,7 +116,7 @@ Test / SELECTED / testResultLogger := {
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--evidence-dir',type=Path,required=True);a=parser.parse_args()
-    out=a.evidence_dir.resolve();out.mkdir(exist_ok=False);shutil.copy2(__file__,out/'driver.py');outcomes=[]
+    out=a.evidence_dir.resolve();out.mkdir(exist_ok=False);freeze_driver(__file__,out/'driver.py');outcomes=[]
     for sdk in ['2.0.9']:
         for mode in ['normal','held']:
             lane=out/('sbt'+sdk+'-'+mode);build=lane/'build';(build/'project').mkdir(parents=True);(build/'src/test/scala').mkdir(parents=True);audit=lane/'audit';audit.mkdir()

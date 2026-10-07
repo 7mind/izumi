@@ -7,7 +7,7 @@ import shutil
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_process, sha
+from fixture_harness import freeze_driver, run_process, sha
 
 ROOT=Path(__file__).resolve().parents[2]
 EVENT_COUNT=15
@@ -80,7 +80,7 @@ def main():
     arguments=parser.parse_args()
     evidence=arguments.evidence_dir.resolve()
     evidence.mkdir(parents=True,exist_ok=False)
-    shutil.copy2(__file__,evidence/'driver.py')
+    freeze_driver(__file__,evidence/'driver.py')
     outcomes=[]
     for mode in ['normal','halt']:
         lane=evidence/mode

@@ -6,7 +6,7 @@ import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_process, sha
+from fixture_harness import freeze_driver, run_process, sha
 
 TIMEOUT_SECONDS = 240
 BUILD = r'''
@@ -94,7 +94,7 @@ def main():
     args = parser.parse_args()
     out = args.evidence_dir.resolve()
     out.mkdir()
-    shutil.copy2(__file__, out / 'driver.py')
+    freeze_driver(__file__, out / 'driver.py')
     framework_driver = Path(__file__).with_name('verify-command-groups.py')
     spec = importlib.util.spec_from_file_location('foreign_groups', framework_driver)
     assert spec is not None and spec.loader is not None

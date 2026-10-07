@@ -4,7 +4,7 @@ import argparse, json, re, shutil
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, run_process, sha
+from fixture_harness import freeze_driver, load_module, run_process, sha
 
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=240
@@ -66,7 +66,7 @@ captureMixedFixture := {
 
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--evidence-dir',required=True,type=Path); parser.add_argument('--artifact-version',required=True); parser.add_argument('--sbt-version',nargs='+',required=True,choices=['2.0.9']); parser.add_argument('--scala-version',nargs='+',required=True,choices=['3.9.0','2.13.18']); a=parser.parse_args()
-    out=a.evidence_dir.resolve(); out.mkdir(exist_ok=False); shutil.copy2(__file__,out/'driver.py')
+    out=a.evidence_dir.resolve(); out.mkdir(exist_ok=False); freeze_driver(__file__,out/'driver.py')
     helper=ROOT/'test-fixtures/host-sharing-consumer/verify-held-forks.py'
     module = load_module('held_source', helper)
     source=module.SOURCE.replace('HeldDeliveryFramework','CompletionAuditFramework').replace('distage-held-delivery-control','distage-mixed-completion-control')

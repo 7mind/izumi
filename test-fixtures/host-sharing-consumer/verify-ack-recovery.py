@@ -5,7 +5,7 @@ import argparse, json, shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, run_process, sha
+from fixture_harness import freeze_driver, load_module, run_process, sha
 
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=240
@@ -45,7 +45,7 @@ def main():
     parser.add_argument('--scala-version',required=True,choices=['3.9.0','2.13.18'])
     parser.add_argument('--evidence-dir',required=True,type=Path)
     args=parser.parse_args()
-    out=args.evidence_dir.resolve();out.mkdir(exist_ok=False);shutil.copy2(__file__,out/'driver.py')
+    out=args.evidence_dir.resolve();out.mkdir(exist_ok=False);freeze_driver(__file__,out/'driver.py')
     global_helper=ROOT/'test-fixtures/host-sharing-consumer/verify-global-exit-ack.py'
     held_helper=ROOT/'test-fixtures/host-sharing-consumer/verify-held-forks.py'
     control=load_module('global_membership',global_helper);held=load_module('held_framework',held_helper)

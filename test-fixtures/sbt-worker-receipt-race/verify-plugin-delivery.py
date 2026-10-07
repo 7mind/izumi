@@ -11,7 +11,7 @@ import time
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, sha
+from fixture_harness import freeze_driver, load_module, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 240
@@ -73,7 +73,7 @@ def main():
     args = parser.parse_args()
     out = args.evidence_dir.resolve()
     out.mkdir(exist_ok=False)
-    shutil.copy2(__file__, out / 'driver.py')
+    freeze_driver(__file__, out / 'driver.py')
     helper = ROOT / 'test-fixtures/sbt-worker-receipt-race/verify-held-batch.py'
     module = load_module('held_batch', helper)
     shutil.copy2(helper, out / 'source-helper.py')

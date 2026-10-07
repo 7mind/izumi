@@ -9,7 +9,7 @@ import time
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import sha, wait_process
+from fixture_harness import freeze_driver, sha, wait_process
 
 TIMEOUT_SECONDS = 240
 SOURCE = r'''package fixture
@@ -195,7 +195,7 @@ def main():
     parser.add_argument('--expected-overlap-report', choices=['rejected','complete'], required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve(); out.mkdir()
-    shutil.copy2(__file__,out/'driver.py')
+    freeze_driver(__file__,out/'driver.py')
     build = out/'build'; (build/'project').mkdir(parents=True)
     source = build/'src/test/scala/GroupFramework.scala'; source.parent.mkdir(parents=True)
     source.write_text(SOURCE); (build/'build.sbt').write_text(BUILD)

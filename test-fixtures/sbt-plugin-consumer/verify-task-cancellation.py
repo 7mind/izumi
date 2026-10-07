@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_process, sha
+from fixture_harness import freeze_driver, run_process, sha
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -266,7 +266,7 @@ def main():
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     root = args.repo_root.resolve(); out = args.evidence_dir.resolve(); out.mkdir()
-    shutil.copy2(__file__, out / 'driver.py')
+    freeze_driver(__file__, out / 'driver.py')
     build = out / 'build'; (build / 'project').mkdir(parents=True)
     source = build / 'src/test/scala'; source.mkdir(parents=True)
     audit = json.dumps(str(build / 'audit'))

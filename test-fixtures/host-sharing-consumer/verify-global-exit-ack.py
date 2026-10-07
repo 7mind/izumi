@@ -5,7 +5,7 @@ import argparse, json, os, shutil, signal, subprocess, time
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, sha
+from fixture_harness import freeze_driver, load_module, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 360
@@ -261,7 +261,7 @@ def main():
     parser.add_argument('--scala-version',required=True,nargs='+',choices=['3.9.0','2.13.18'])
     parser.add_argument('--framework-order',required=True,choices=['own-first','foreign-first'])
     args=parser.parse_args()
-    out=args.evidence_dir.resolve(); out.mkdir(exist_ok=False); shutil.copy2(__file__,out/'driver.py')
+    out=args.evidence_dir.resolve(); out.mkdir(exist_ok=False); freeze_driver(__file__,out/'driver.py')
     helper=ROOT/'test-fixtures/host-sharing-consumer/verify-held-forks.py'
     module = load_module('held_source', helper)
     source=module.SOURCE.replace('HeldDeliveryFramework','DynamicCompletionFramework').replace('distage-held-delivery-control','distage-dynamic-completion-control')
