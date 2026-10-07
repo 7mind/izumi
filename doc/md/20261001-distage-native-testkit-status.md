@@ -31,42 +31,42 @@ head. The spike reports are design evidence, not implementation verification.
 
 | Item | State | Evaluation-point evidence |
 | --- | --- | --- |
-| L1 | in progress | Combined db4461cdc production sources pass all six JVM lanes on JDK17/21/25 with1817 unchanged inputs per lane. Scala2.13 reports1628 cases and Scala3 reports1660 per lane. Final item review remains open. |
-| L2 | in progress | Combined db4461cdc production sources pass both JS lanes: Scala2.13 coverage879 reported cases and Scala3 test911, each with19 skips, no failures and1817 unchanged inputs. Both reproduced linker defects are corrected; final item review remains open. |
-| L3 | in progress | Combined db4461cdc production sources pass both Native lanes: Scala2.13 has931 reported cases and Scala3 has968, each with19 skips, zero failure/error and1817 unchanged inputs. Independent input/XML/source audit passes; final item review remains open. |
-| L4 | in progress | Current frozen combined site lane exits0 after215.29s through the restored relay. Independent audit verifies1817 frozen inputs,44 rendered files,21 Markdown pages and3003 API HTML pages, with zero mdoc errors. Final item review remains open. |
-| L5 | in progress | Actual root sbtgen --js --native and empty generated-file diff pass at27b5f3de7; all generator inputs and output hashes are recorded in the final-generator capture. Final item review remains open. |
-| L6 | in progress | Current full publication passes with162 audited JAR/POM pairs, including50 Native variants across2.13/3.9 and the fixed3.8.4 protocol. Native delivery and module coverage review remain open. |
+| L1 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| L2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| L3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| L4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| L5 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| L6 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
-| 1a.1 | in progress | No evaluation point passed yet. |
-| 1a.2 | in progress | No evaluation point passed yet. |
-| 1a.3 | in progress | No evaluation point passed yet. |
-| 1a.4 | in progress | No evaluation point passed yet. |
-| 1a.5 | in progress | Released 23.1.0.14 artifacts and bounded Native BIO build/runtime/publication now verified below; higher Native graph and final evaluation remain outstanding. |
-| 1a.6 | in progress | No evaluation point passed yet. |
-| 1a.7 | in progress | No evaluation point passed yet. |
-| 1a.8 | in progress | Bounded core checkpoint 732228776 verifies the Native 0b DI/configuration and four-body parallel memoized Lifecycle checks on all three compilers below; parent-step evaluation remains outstanding. |
-| 1a.9 | in progress | All three full Native-only CI lanes pass with the serial-link policy below; parent-step and final evaluation remain outstanding. |
-| 1a.10 | in progress | No evaluation point passed yet. |
-| 1a.11 | in progress | Bounded logstage checkpoint below passes all nine producer lanes and Native published shutdown/drain controls; final-head evaluation remains outstanding. |
-| 1b.1 | in progress | Plain-core Native build, execution, and publication checkpoint below; final recheck outstanding. |
-| 1b.2 | in progress | Plain-core strict Scala 3.9 checkpoint below; final recheck outstanding. |
-| 1b.3 | in progress | Cleaned published-artifact consumer checkpoint below; final recheck outstanding. |
-| 1b.4 | in progress | No evaluation point passed yet. |
-| 1c.1 | in progress | Current plain-core checkpoint: all nine baseline targets pass; final recheck outstanding. |
-| 1c.2 | in progress | Current plain-core checkpoint: six additional range-mode runs pass; final recheck outstanding. |
-| 1c.3 | in progress | Resolved-graph review and all nine published POMs pass below; final recheck outstanding. |
-| 1c.4 | in progress | Independent portable oracle and external review probes pass below; final recheck outstanding. |
-| 1c.5 | in progress | Current plain-core semantics and diagnostic checkpoint below; final recheck outstanding. |
-| 1d.1 | in progress | Cats matrix, nine BIO runtime lanes and published JVM/JS/Native consumers below; final evaluation outstanding. |
-| 1d.2 | in progress | Cats matrix, nine BIO runtime lanes and published JVM/JS/Native consumers below; final evaluation outstanding. |
-| 1d.3 | in progress | Actual BIO defects and typed-error preservation verified on all nine lanes and published consumers below; final evaluation outstanding. |
-| 1d.4 | in progress | Legacy display checkpoint passes on six JVM/JS lanes below; parent-step evaluation outstanding. |
-| 1d.5 | in progress | Explicit suspension boundary and runtime adapters below; final recheck outstanding. |
-| 2a.1 | in progress | Scala 3.9 verification below; gate remains outstanding. |
-| 2a.2 | in progress | Scala 3.9 verification below; gate remains outstanding. |
-| 2a.3 | in progress | Scala 3.9 verification below; gate remains outstanding. |
-| 2a.4 | in progress | Scala 3.9 verification below; gate remains outstanding. |
+| 1a.1 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.5 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.6 | done | Historical step evaluation verified and recorded below; superseded by 5.6, whose final evaluation remains separate. |
+| 1a.7 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.8 | done | Historical step evaluation verified and recorded below; superseded by 5.7, whose final evaluation remains separate. |
+| 1a.9 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.10 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1a.11 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1b.1 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1b.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1b.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1b.4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1c.1 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1c.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1c.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1c.4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1c.5 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1d.1 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1d.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1d.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 1d.4 | done | Historical step evaluation verified and recorded below; superseded by 5.5, whose final evaluation remains separate. |
+| 1d.5 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 2a.1 | waiting on Podman test-network recovery | Compilation and all other module/platform checks are qualified; fresh Docker execution remains required because the old runner source manifest is incomplete. Guarded host DNS repair is pending. |
+| 2a.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 2a.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| 2a.4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | 2b.1 | in progress | Base runner checkpoint: nine artifact POMs and 18 resolved Compile/Test classpaths satisfy the fundamentals/protocol bound below; final evaluation outstanding. |
 | 2b.2 | in progress | Current generated/observed graphs match: 109 nodes, 213 scoped records, no cycle; final evaluation outstanding. |
 | 2b.3 | in progress | Five fundamentals test projects run all 42 lanes; 51 actual publishLocal requests create no artifacts below; final evaluation outstanding. |
@@ -129,23 +129,23 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.1 | in progress | Retirement integrated below;162 published JAR/POM pairs are vendor-free. Final-head CI and publication applicability remain open. |
 | 5.2 | in progress | Candidate source/graph review verifies layer placement and unpublished test projects; complete final-head evaluation remains open. |
 | 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
-| 5.4 | in progress | The66-lane5314-case migration baseline now binds to613 current CI reports by exact identity. All differences are110 Docker successes changed to skips while the sandbox endpoint was unavailable. Current relay-enabled Docker replays are in flight; final reconciliation/review remain open. |
+| 5.4 | in progress | The66-lane5314-case migration baseline now binds to613 current CI reports by exact identity. All differences are110 Docker successes changed to skips while the sandbox endpoint was unavailable. The relay-enabled Scala2.13 replay fails with real post-OOM aardvark/netavark errors; host diagnosis is pending. Final reconciliation/review remain open. |
 | 5.5 | in progress | The72 tracked legacy adapter files are removed in the integration below; final-head evaluation remains open. |
 | 5.6 | in progress | Published runner and target consumer matrices pass both compilers/platforms; full66-lane module parity and final CI remain open. |
 | 5.7 | in progress | Current published higher-runner controls include Native DI/configuration and memoized Lifecycle execution; final-head evaluation remains open. |
 | 5.8 | in progress | assertTypeError and normalized WordSpec names pass all six833-check base controls and both published-consumer probes. Logstage failure/step-note replacements pass; remaining facilities stay open. |
 | 5.9 | in progress | Current site action and independent output/input audit pass with required-plugin and approved factory-migration guidance. Final phase review remains open. |
 | O.1 | in progress | Factory migrations preserve the tested eager/captured-definition memoization controls and existing engine/spec fixtures below. Complete planning/merging/memoization/effect inventory and final evaluation outstanding. |
-| O.2 | in progress | Effect APIs have explicit requested return types; runtime checkpoints below. |
-| O.3 | in progress | Explicit suspension capability; Cats/BIO law checkpoints below. |
-| O.4 | in progress | No evaluation point passed yet. |
-| O.5 | in progress | No evaluation point passed yet. |
-| O.6 | in progress | No evaluation point passed yet. |
-| O.7 | in progress | No evaluation point passed yet. |
-| O.8 | in progress | No evaluation point passed yet. |
-| O.9 | in progress | No evaluation point passed yet. |
-| O.10 | in progress | No evaluation point passed yet. |
-| O.11 | in progress | Separate Cats/BIO artifacts above their runtimes; dependency verification outstanding. |
+| O.2 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.3 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.4 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.5 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.6 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.7 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.8 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.9 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.10 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.11 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | O.12 | in progress | Portable protocol checkpoint passes all nine producer lanes, twelve published consumers and four isolated-loader exchanges; real transports and final evaluation remain outstanding. |
 | O.13 | in progress | Four spec entry points run on the base provider contract in six JVM/JS lanes below; common plugin/framework/IDE integration and final evaluation outstanding. |
 | O.14 | in progress | Five test projects retain original packages, source variants and supported platforms below; final evaluation outstanding. |
@@ -160,18 +160,18 @@ head. The spike reports are design evidence, not implementation verification.
 | O.23 | not started | No evaluation point passed yet. |
 | O.24 | not started | No evaluation point passed yet. |
 | O.25 | in progress | Finite launcher takes explicit suite factories; JVM CLI uses explicit named no-argument factories, with ten actual child processes per compiler below. Published/current host/final evaluation stays open. |
-| O.26 | in progress | No evaluation point passed yet. |
-| O.27 | in progress | No evaluation point passed yet. |
+| O.26 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
+| O.27 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | O.28 | not started | No evaluation point passed yet. |
 | O.29 | not started | No evaluation point passed yet. |
 | O.30 | not started | No evaluation point passed yet. |
 | O.31 | not started | No evaluation point passed yet. |
 | O.32 | not started | No evaluation point passed yet. |
-| O.33 | in progress | Unit-to-Assertion bridge resides in the existing separate legacy artifact. |
+| O.33 | done | Historical step evaluation verified and recorded below; superseded by 5.5, whose final evaluation remains separate. |
 | O.34 | not started | No evaluation point passed yet. |
 | O.35 | not started | No evaluation point passed yet. |
 | O.36 | in progress | Scala 3.9 verification below; gate remains outstanding. |
-| O.37 | in progress | No evaluation point passed yet. |
+| O.37 | done | 2026-10-07 reviewed evaluation recorded in the phase-completion entry below; current scoped sources match the sealed review. |
 | O.38 | in progress | Sessions, resolution, plans and application commands use typed models; JSON encoding occurs at portable protocol/frame boundaries below. Full host and final evaluation stay open. |
 
 ## 2026-10-02: step 1a part 1, in progress
@@ -21827,3 +21827,171 @@ harness failure remains preserved. Current relay-enabled whole-Docker-module
 replays on both compilers are serialized with6GiB SBT heap and one SBT concurrent
 task. No other large CI batch is repeated. Final reviews continue; no parent
 phase is declared done solely from successful aggregate commands.
+
+## 2026-10-07: remaining migration identities and post-OOM Docker network failure
+
+Local evidence commit8ee71c7cfb853ffe5508bd7d2f2a07d1db420462 records the completed
+CI/publication/site/Node-compatibility batch. No production source changes follow
+that commit. The additional-module comparison
+5-additional-module-identities-current-ci-audit-first executes with actual0:
+all3886 original fundamentals, ordinary-suite and module-filtering identities and
+outcomes bind to current frozen CI reports across38 combinations. These overlap
+the66-module matrix and are not added to its5314 count. Sixteen additional cases
+are recorded individually:12 platform guard controls and four runner-override
+lifetime controls. Eight per-platform/compiler exceptions record only the
+plan-permitted ScalaMock removal and owner-approved JUnit package/reporter move;
+Native compares the original JS ordinary-suite domain, without claiming an old
+Native original. Historical cancellation callbacks are compared to current
+skipped XML; typed runtime statuses and direct original-form controls remain
+separate evidence. Command:
+python3 -B /srv/nvme/tmp/izumi-impl/final-additional-module-identities-audit.py.
+
+The exact66-matrix/current-source comparison at
+5-module-matrix-current-source-applicability-first/applicability.json records1634
+matches and18 explicit deltas. It does not relabel the entire old build as current.
+All archived Docker source inputs match current source bytes. The old manifest
+also records matching engine/provider/protocol and bootstrap production inputs,
+but omits13 current Scala sources. These include PreparedTestRuntime.scala,
+nine test fixtures, and three new ProcessExit companions. The old worktree's
+PreparedTestRuntime bytes equal current cfbfa530461b25935ecf79172d00780cbbe2087fd3247cf60b97a604bc13ff92;
+that mutable worktree alone does not establish execution-time provenance.
+Historical Docker success therefore does not yet establish an unchanged complete
+runner closure. Fresh Docker execution remains required for that qualification.
+The18 recorded deltas include assertion failure rendering, platform delegation,
+two base-runner fixtures, generator/project metadata, requirements, guide and
+consumer driver. Current CI/publication independently covers the new companions.
+
+The Docker replay's first harness exits1 before execution because an SBT set
+expression failed to quote a hyphenated project name. Replacing it with
+LocalProject("distage-framework-docker") is a harness-only correction. The second
+replay executes with6GiB heap/1GiB metaspace/eight CPUs, in one SBT lane. It exits1
+after157.593s with1817 unchanged source inputs. It retains all62 selected test
+identities:20 successes and42 failed setup/body results, plus30 suite-level
+Transport errors. The42 failures contain Podman HTTP500 diagnostics: netavark
+cannot start aardvark-dns because10.89.0.1/10.89.1.1/10.89.2.1 are unavailable
+in the restored rootless network state. No successful Docker parity is claimed,
+and the Scala3 replay is not launched after that failure. Evidence:
+5-final-docker-module-relay-controls-second/2.13.18/{command.json,completion.json,
+run.log,reports.json}. The run retains every actual result, so its92 SBT report
+entries are not92 executed bodies.
+
+The common run-level diagnostic also exceeds the existing1MiB protocol frame
+limit. ProtocolFixtures explicitly distinguishes valid in-process schemas from
+oversized producer-frame rejection; this is a tested resource policy, not by
+itself a newly inferred codec defect. Independent audit
+5-final-docker-failed-run-accounting-first exits0, rehashing raw reports/logs and
+reconciling all62 selected identities plus30 explicit suite Transport errors.
+An overall failure remains visible. No protocol limit or production behavior is
+changed speculatively. The preliminary description of a reporting failure is
+qualified by this observed result accounting.
+
+The required host-side read-only network diagnosis is prepared and shell-syntax
+checked at/tmp/exchange/pavel/izumi-docker-network-after-oom-check.sh. Its service
+user is podsvc-llm, UID77778, confirmed from the earlier owner-executed recovery
+script; no guessed llm-user command is sent. The environment skill requires this
+host execution. No host network changes, blanket container cleanup, or repeated
+large batches are performed while the owner runs the diagnosis. Process/memory
+observation showed one SBT process and83GiB available host RAM at the replay;
+container/runtime concurrency remains distinct from SBT task scheduling.
+
+Pinned3.9.0 compiler-help capture2a-scala390-backend-default-current-first has
+actualExit0 and directly prints-Ybackend-parallelism Default1. All eight compiler
+classpath JARs are hashed. Omitting that flag in the current generator therefore
+uses the observed serial default, rather than inferring it from passing builds.
+
+## 2026-10-07: final facility trace and guarded host DNS recovery
+
+Command python3 -B /srv/nvme/tmp/izumi-impl/final-facility-use-trace-second.py
+exits0. Capture5-final-facility-per-source-trace-second records151 original/current
+source correspondences,35 additional-facility classifications and120 imports-only
+flags (these are distinct attributes, not disjoint counts). It rehashes the exact
+original Git blobs and full source diffs, binds concrete execution/report routes
+from the parent-hook review, and checks17 replacement sources unchanged. The
+trace inventories lexical occurrences, including comments/imports; it does not
+automatically prove every occurrence executed. A first harness failed on the
+explicitly removed ScalaMock source and remains preserved; the corrected harness
+handles only that permitted removal. Final semantic review remains required.
+
+The owner executed the second network diagnostic. Its output was read and copied
+to5-host-network-restoration-diagnosis-second with SHA256
+5c21c78196c8fea470e4ae3f320b16ac9645ad8f1d017b4b088155f094b98dbf.
+It confirms Podman5.8.7 API/service availability and only the10.88.0.1 default
+bridge in the rootless namespace; custom10.89.0/1/2 gateways and an aardvark
+process are absent. A direct Docker inventory confirms all seven running
+containers use the default network. Fresh owned32MiB/one-CPU detached probes
+on all three custom networks fail125 with the same missing-address DNS error;
+finally blocks remove only the probe containers, each with exit0. Capture:
+5-host-restored-network-probe-second. The attached first probes' upgrade errors
+are retained as harness-level evidence, not direct network proof.
+
+A shell-syntax-checked host repair is prepared at
+/tmp/exchange/pavel/izumi-docker-network-after-oom-repair-dns.sh. It aborts unless
+there is no aardvark process, no running container on the affected networks,
+all three gateways are absent and the expected DNS files have matching gateway
+headers. Under aardvark.lock it moves only the three stale DNS files and an
+existing PID file to a timestamped backup outside the active DNS directory.
+It preserves containers and network definitions. The environment skill requires
+owner execution; that execution and its output remain pending. No host mutation
+is claimed from preparing the script. Fresh network probes must pass before
+repeating the bounded Docker module replay.
+
+Command python3 -B
+/srv/nvme/tmp/izumi-impl/final-consumer-publication-payload-applicability-first.py
+exits0 after comparing all162 immutable primary publication pairs consumed by
+the prior524-context host batch with the current audited publication. Capture:
+5-final-consumer-publication-payload-applicability-first. There are44,277 exact
+payload matches,9,738 changed entries,23 additions and no removals. These
+differences are recorded, not classified automatically as semantically equal.
+All100 PreparedTestRuntime class/TASTy/NIR entries across JVM2/JVM3/Native2/Native3
+match byte-for-byte. JS class/TASTy entries match; JS IR differs along with other
+JS IR payloads and requires source/position applicability review. JVM base-runner,
+core, protocol and all three SBT-plugin payloads differ only in MANIFEST. The
+higher JVM runner additionally differs in macro-expanded SpecWiring and
+WiringAssertions classes. This publication evidence supports applicability review
+for the real consumer batch; it does not recover the older Docker run's missing
+frozen source or turn this comparison into fresh runtime execution.
+
+## 2026-10-07: reviewed completion of phases1a–1d and prescribed lanes
+
+The read-only reviewer sealed1abcd-2a-final-acceptance-readonly-review-first:
+REVIEW.md SHA2561f4880fcb6307efe1bbb21ba7a78752d0dc2dedcf859f92778cdb77321f8c603,
+manifest.json SHA256707e64a2a78d504690e4789f95abdf07fbb80e8e6ed9a2df24e76eb4aa694f4e,
+inspection.json SHA25605096480bf7191fec2c73813fb177dee7fe47f201258fc21ff2b2de60e5fb0fe.
+Root directly read the complete report and rehashed all three sealed artifacts.
+The reviewer verified3,339 evidence copies and188 current repository comparisons;
+it distinguishes its inspected subset from root's broader source/case inventories.
+The subsequent root source check1abcd-ledger-evaluation-current-source-first
+verifies188 current non-ledger repository inputs unchanged.
+
+This ledger-only commit, named Complete reviewed Native and assertion phases,
+is the step-evaluation commit for1a,1b,1c and1d. Its scoped production/build
+inputs equal reviewed head8ee71c7cfb853ffe5508bd7d2f2a07d1db420462 and the frozen
+CI/publication/consumer inputs. It does not claim old commands executed at the
+evaluation commit. The sealed report's clause map assigns the exact commands,
+raw results and source bindings per item. The corresponding ledger captures above
+retain their execution heads, argv, unchanged-input maps, actual exits and logs.
+
+Positive step and current final evaluations are recorded for all1a.1–11,
+1b.1–4,1c.1–5 and1d.1–5;L1–L6;2a.2–4;O.2–11,O.26,O.27,O.33,O.37.
+Transitional1a.6/1a.8/1d.4/O.33 preserve their historical Native-ScalaTest,
+core-engine and bridge observations and explicit5.6/5.7/5.5 supersessions.
+Those final superseding clauses are not closed by this phase evaluation.
+Final clauses remain subject to source applicability/reverification at the eventual
+whole-goal final head. No IDE requirement or whole-goal completion is claimed.
+
+The principal current evidence is the ten prescribed CI processes, all actual0:
+JVM17/21/25 each2.13 coverage and3.9 test;JS21 both compilers;Native21 both
+compilers. Their XML contains13,033 successes and520 explicit skips, zero
+failure/error. Cached task/log evidence is retained without claiming every body
+ran freshly. Publication has162 JAR/POM pairs,50 Native variants, all Native
+payloads contain NIR and all test-only projects publish nothing. Four independent
+published macro/assertion consumer builds run750 assertion/effect checks on
+3.9/3.10 across JVM/JS/Native and expand PlanCheck/ScalaRelease entrypoints.
+Three point-position2.13 controls each run97 checks. Site actual0 and root
+generation/empty diff actual0 independently qualify L4/L5.
+
+2a.1 and aggregate phase2a remain waiting on fresh Docker execution after
+Podman test-network DNS recovery. The incomplete historical runner input map
+cannot be replaced by equality of only the42 Docker subjects. Independent
+2a.2–4 are done;O.36's formal2a step boundary remains open. All phases2b/2c,
+real host acceptance, coverage and final migration evaluations continue.
