@@ -203,7 +203,7 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
         val application = new TestApplication(run, request.identity, factories, executionContext, output)
         activeApplication = Some(application)
         if (cancellation.isRequested) application.cancel()
-        val execution = application.accept(ProtocolMessage.Request(RequestOperation.Execute, run, request))
+        val execution = RunnerCompletion.after(application.accept(ProtocolMessage.Request(RequestOperation.Execute, run, request)), () => application.close())(executionContext)
         interruption.await(Await.result(execution, Duration.Inf), () => cancel())
         terminal.getOrElse(throw new IllegalStateException("Application returned without a terminal response"))
       }.toEither

@@ -169,7 +169,7 @@ object BaseRunnerFixtures {
         val selectedId = catalogue(invalid).tests.head.id
         verify(invalid.resolve(RunRequest(identity, Selection.Only(Vector.empty, Vector(selectedId)), inherited)).isLeft, "Provider resolution must not reintroduce an unselected registered test")
         ProviderBoundaryFixtures.run(identity, verify)
-      }.flatMap(_ => PlanAggregationFixtures.run(identity, ec, verify)).flatMap(_ => ApplicationFixtures.run(identity, ec, verify)).flatMap(_ => ApplicationLauncherFixtures.run(() => FramedChannelFixtures.memory(), "memory", ec, verify)).flatMap(_ => registrationOwnership(ec, verify)).flatMap(_ => CancellationFixtures.run(ec, verify)).flatMap(_ => AssertionTransportFixtures.run(ec, verify)).flatMap(_ => ThrowableCaptureFixtures.run(ec, verify)).map { _ =>
+      }.flatMap(_ => PlanningDepthFixtures.run(ec, verify)).flatMap(_ => PlanCloseFailureFixtures.run(ec, verify)).flatMap(_ => CloseAdmissionFixtures.run(verify)).flatMap(_ => PlanOwnershipFixtures.run(identity, ec, verify)).flatMap(_ => PlanAggregationFixtures.run(identity, ec, verify)).flatMap(_ => ApplicationFixtures.run(identity, ec, verify)).flatMap(_ => ApplicationLauncherFixtures.run(() => FramedChannelFixtures.memory(), "memory", ec, verify)).flatMap(_ => registrationOwnership(ec, verify)).flatMap(_ => CancellationFixtures.run(ec, verify)).flatMap(_ => AssertionTransportFixtures.run(ec, verify)).flatMap(_ => ThrowableCaptureFixtures.run(ec, verify)).map { _ =>
         println(s"BASE_RUNNER_FIXTURES_OK checks=${checks.get()} sessions=isolated finalization=awaited")
       }
     }

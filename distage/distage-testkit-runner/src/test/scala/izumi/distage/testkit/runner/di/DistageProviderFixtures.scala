@@ -69,7 +69,7 @@ object DistageProviderFixtures {
         .flatMap(_ => SpecCancellationFixtures.run(context, checks.verify))
         .flatMap(_ => SpecCancellationFixtures.parallel(context, checks.verify))
         .flatMap(_ => SpecCancellationFixtures.applicationChannelLoss(context, checks.verify))
-        .flatMap(_ => ResourceFinalizationFixtures.run(context, checks.verify))
+        .flatMap(_ => PreparedRuntimeFixtures.run(context, checks.verify)).flatMap(_ => ResourceFinalizationFixtures.run(context, checks.verify))
         .flatMap(_ => SpecActivationFixtures.run(context, checks.verify))
         .flatMap(_ => ApplicationPlanningFailureFixtures.run(context, checks.verify))
         .flatMap(_ => SpecPlanFixtures.run(context, checks.verify))

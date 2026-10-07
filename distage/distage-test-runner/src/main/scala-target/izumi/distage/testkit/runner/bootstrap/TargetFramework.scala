@@ -223,10 +223,8 @@ private[bootstrap] final class TargetTask(
           else Future.unit
         }
       }
-      response.transformWith { result =>
-        connection.close().flatMap(_ => Future.fromTry(result))
-      }
-    }.andThen { case _ => owner.end(application) }
+      RunnerCompletion.after(RunnerCompletion.after(response, () => application.close()), () => connection.close())
+    }.transformWith(result => RunnerCompletion.after(Future.fromTry(result), () => application.close())).andThen { case _ => owner.end(application) }
   }
 }
 

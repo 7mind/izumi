@@ -5,7 +5,7 @@ import izumi.distage.testkit.protocol.{BuildId, BuildTargetId, CatalogueId, Cata
 import java.nio.file.Paths
 import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutorService}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutorService, Future}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Try}
 
@@ -32,13 +32,13 @@ object StandaloneLauncher {
           // Join shutdown outside the executor being released.
           active.copy(completion = active.completion.transform(result => releaseContext(context, result))(ExecutionContext.global))
         } catch { case cause: Throwable => throw releaseContext(context, Failure(cause)).failed.get }
-        awaitCompletion(operation)
+        awaitCompletion(operation.completion, operation.cancel)
       } finally sink.close()
     } finally source.close()
     if (!result.successful) sys.exit(1)
   }
 
-  private def releaseContext[A](context: ExecutionContextExecutorService, result: Try[A]): Try[A] = {
+  private[runner] def releaseContext[A](context: ExecutionContextExecutorService, result: Try[A]): Try[A] = {
     try {
       context.shutdown()
       require(context.awaitTermination(ShutdownSeconds, TimeUnit.SECONDS), "Launcher execution context did not terminate")
@@ -54,18 +54,18 @@ object StandaloneLauncher {
     }
   }
 
-  private def awaitCompletion(operation: ApplicationExecution): ApplicationResult = {
+  private[runner] def awaitCompletion[A](completion: Future[A], cancel: () => Unit): A = {
     val interruptions = ListBuffer.empty[Throwable]
-    var result = Option.empty[Try[ApplicationResult]]
+    var result = Option.empty[Try[A]]
     try {
       while (result.isEmpty) {
         try {
-          val _ = Await.ready(operation.completion, Duration.Inf)
-          result = operation.completion.value
+          val _ = Await.ready(completion, Duration.Inf)
+          result = completion.value
         } catch {
           case cause: InterruptedException =>
             interruptions += cause
-            try operation.cancel() catch { case failure: Throwable => interruptions += failure }
+            try cancel() catch { case failure: Throwable => interruptions += failure }
         }
       }
       val settled = result.get

@@ -3,13 +3,11 @@ package izumi.distage.testkit.runner
 import izumi.distage.testkit.protocol.*
 
 import java.util.UUID
-import java.util.concurrent.{Executors, TimeUnit}
-import scala.concurrent.{Await, ExecutionContext}
-import scala.concurrent.duration.Duration
+import java.util.concurrent.Executors
+import scala.concurrent.ExecutionContext
+import scala.util.Failure
 
 object InspectionLauncher {
-  private final val ShutdownSeconds = 30L
-
   def main(arguments: Array[String]): Unit = {
     require(arguments.nonEmpty, "Inspection requires list or plan, request arguments, -- and suite classes")
     val operation = arguments.head match {
@@ -35,12 +33,12 @@ object InspectionLauncher {
     val executor = Executors.newWorkStealingPool()
     val context = ExecutionContext.fromExecutorService(executor)
     val application = new TestApplication(RunId(UUID.randomUUID().toString), request.identity, factories, context, output)
-    try Await.result(application.accept(ProtocolMessage.Request(operation, application.run, request)), Duration.Inf)
-    finally {
-      application.cancel()
-      context.shutdown()
-      require(context.awaitTermination(ShutdownSeconds, TimeUnit.SECONDS), "Inspection execution context did not terminate")
-    }
+    val completion = try {
+      val response = application.accept(ProtocolMessage.Request(operation, application.run, request))
+      RunnerCompletion.after(response, () => application.close())(context)
+        .transform(result => StandaloneLauncher.releaseContext(context, result))(ExecutionContext.global)
+    } catch { case cause: Throwable => throw StandaloneLauncher.releaseContext(context, Failure(cause)).failed.get }
+    StandaloneLauncher.awaitCompletion(completion, () => application.cancel())
     response match {
       case Some(_: ProtocolMessage.Resolved) if operation == RequestOperation.Resolve => ()
       case Some(ProtocolMessage.Planned(_, plan)) if operation == RequestOperation.Plan && plan.inspection.failures.isEmpty => ()

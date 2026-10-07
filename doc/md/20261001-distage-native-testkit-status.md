@@ -20321,3 +20321,141 @@ planning and invalid returned-plan rejection must close every acquired owner;
 failed queue tails and publication races must not skip cleanup. The existing
 testRunnerRuntime hook shape and equal-default cross-suite sharing must remain,
 while incompatible policies fail explicitly. This is design evidence only.
+
+
+### 2026-10-07 — owned plan/session close: intermediate controls and failed captures
+
+This remains an intermediate Phase 5 seam. Main starts at `2f33f06d8`;
+normal configurable `DistageSpec.testRunnerRuntime()` wiring, runtime cancellation
+before prepared-plan publication, observed outer runner-graph finalizers, and final
+ScalaTest artifact retirement remain open. None of the controls below closes those
+facilities or a parent acceptance gate.
+
+The isolated `runtime-policy-worktree` starts at detached
+`4fe050699b87131c58e2167e63190d2469809610`, with the qualified standalone sources
+copied from main before this close work. `normal-runtime-worktree` starts at main
+`2f33f06d8` and receives the frozen intermediate source inputs. Source hashes and
+copy receipts, rather than either detached HEAD alone, identify evaluated code.
+Both worktrees remain local; no push.
+
+- `5-prepared-runtime-repeat-close-before-first`: pinned Scala 2.13.18 direct
+  compiler actual exit 0 (2.972s); actual runtime exit 1 (0.414s); inputs unchanged.
+  The original helper's second inspection close requests interruption while its
+  runner finalizer is held. The actual failure retains `InterruptedException`.
+  This is the failing reproduction, not the earlier compile-only helper result.
+- `5-prepared-runtime-repeat-close-after-first`: identical held-finalizer control
+  with memoized close admission; compile/runtime actual exits 0 (2.919s/0.415s),
+  unchanged inputs. Four invariants pass: retained acquired runner, close waits
+  for release, repeated close issues no interruption, and identical close future.
+- `5-plan-ownership-direct-first`: compile actual exit 1, unchanged inputs.
+  The direct compiler classpath omitted the base/higher fixture test jars;
+  missing fixture symbols are harness errors, not runtime reproductions.
+  The second preparation stops before compilation because a broad test-jar match
+  selects historical snapshot variants. Both setup failures are excluded from
+  behavioral evidence; the corrected harness selects the observed M5 snapshot.
+- `5-plan-ownership-direct-third`: compile/base/higher actual exits 0
+  (7.913s/1.541s/9.334s), unchanged inputs. Base reports 863 checks, higher JVM
+  695. This evaluates the first six plan ownership controls and four helper
+  checks, before later reviewed admission/depth corrections. A direct JVM
+  witness is not compiler/platform qualification.
+- `5-plan-ownership-platform-first`: actual Scala 2.13 exit 1 (301.467s),
+  1720 unchanged inputs; Scala 3 not launched. Base 863 checks passes on
+  JVM/JS/Native and higher JVM 695 passes; higher JS fixture compilation fails
+  because shared `QuasiIORunner` wrapper uses JVM/Native-only `runBlocking`.
+  The wrapper's blocking method is moved to platform fixture traits. Frozen
+  archive contents independently match all 1720 input hashes; archive SHA256
+  `4aeea001d01088bac6fd64692b8a3d9bc3344755b77379dec12624759f34bcd8`.
+- `5-close-admission-before-first`: compile 0/runtime 1 (0.615s), unchanged
+  inputs. Deterministic inline callbacks reproduce both reviewed predictions:
+  application close while Execute waits for planning fails to request
+  cancellation; session close returns before a held provider cancellation
+  finalizer. Both control gates are opened and joined before assertion failure.
+- `5-close-admission-after-first`: compile/runtime 0 (runtime 0.515s), unchanged
+  inputs. Application close cancels every admitted queue; session execution
+  publishes a promise under its admission lock and close joins that promise
+  plus owned-plan release. All four original cancellation/join checks pass.
+- `5-plan-ownership-platform-second`: Scala 2.13 actual exit 1 (59.796s),
+  1725 unchanged inputs; Scala 3 not launched. A new failure-control source
+  inferred `Some[String]` for a variable later assigned `None`; the fixture
+  boundary is corrected to explicit `Option[String]`. No production fix or
+  platform success is inferred from this compiler failure.
+- `5-planning-depth-before-first`: compile 1 due to that same fixture Option
+  error; no program executed and no failure-graph defect evidence.
+- `5-planning-depth-before-second`: compile 0/runtime 1, unchanged inputs.
+  Independently captured failures at `ProtocolCodec.MaxFailureDepth` validate,
+  but both two-provider failure composition and planning-plus-close failure
+  produce `Failure graph depth exceeds its limit` rejection validation errors.
+- `5-planning-depth-after-first`: compile/runtime 0, unchanged inputs. Failure
+  composition now follows the existing raw-capture depth policy: preserve both
+  independent roots and replace an overflowing descendant with an explicit
+  Transport depth-limit failure. Both compositions validate and round-trip;
+  original throwables remain unmodified. The wire boundary cannot represent
+  descendants beyond its fixed nesting limit; this is explicit diagnostic
+  evidence, not a claim that unlimited graphs can be transported.
+
+Every named capture is under `/srv/nvme/tmp/izumi-impl/`; its exact command,
+frozen source and jar hashes, output and terminal receipts are retained there.
+New held-state fixture checks sample before release but assert after opening
+and joining their gates, so an assertion failure cannot strand that owner.
+The broad corrected capture and read-only review remain pending at this entry.
+
+
+### 2026-10-07 — owned close seam qualified and integrated
+
+`5-plan-ownership-direct-fourth` compiles the final seam and executes the
+complete JVM fixture entry points: base 887 checks and higher 695, actual exits
+0, unchanged inputs. The production and fixture snapshots exactly match the
+subsequent compiler/platform source archive.
+
+`5-plan-ownership-platform-third` retains Scala 2.13's ten successful scoped
+commands (base clean/compile/run on JVM/JS/Native and higher runs on all three),
+then terminal actual exit 1 at 230.269s. All 1726 inputs remain unchanged. Its
+CLI fixture stops before starting a child: the capture harness omitted the
+`cli` parent directory, yielding `NoSuchFileException`. This failed overall
+capture is retained and never relabeled as exit 0.
+
+`5-plan-ownership-platform-fourth` asserts the identical 1726 input dictionary
+and supplements Scala 2.13 with the real held-caller fixture (actual exit 0,
+62.573s). Its generated command filter selects only `standaloneInterruption`;
+the independent audit detects that the original CLI suite is still absent.
+`5-plan-ownership-cli-fifth` supplies those eleven actual Scala 2.13 CLI child
+cases against the exact-source direct-fourth compiled classes and qualified,
+hashed dependency jars. It exits 0 at 6.757s, inputs unchanged; its 16 compiled
+source snapshots match the platform archive, and every original exit/frame
+expectation passes. This direct CLI supplement avoids a second SBT producer
+while Scala 3 is active; it is recorded as its actual invocation, not as an
+SBT command.
+
+Scala 3.9's fourth capture executes all twelve scoped commands successfully,
+actual exit 0 at 363.136s, unchanged 1726 inputs. Per compiler the completed
+composition establishes base 887 x 3 and higher 695/572/572, forty added base
+checks and four added higher checks per platform. Fourteen new base scenarios
+(six owner cases, two admission races, four independent close failures, two
+failure-depth boundaries) accompany the original fixtures. Both compilers
+retain all eleven standalone CLI cases and the real held-finalizer caller
+interruption control. Normal Finished/Completed events follow owner release;
+inspection-only closure emits no execution events. Independent output/close
+and planning/close causes remain observable without mutating suppression-
+disabled originals; nested overflow receives the existing explicit Transport
+boundary diagnostic.
+
+The correction review finds no remaining material defect in this bounded seam.
+It excludes normal configurable runtime wiring, pre-publication runtime
+cancellation, and final artifact retirement. Its 74 evidence copies and 23
+archive source copies are independently hash-verified; all source archive
+members in both third and fourth captures match their declared inputs.
+
+Evidence hashes:
+
+- composed audit: `30d5f901fb4630fc165596d59c6a9d1f619fae48e89da7eff26fa39e3176802c`.
+- third frozen source: `6019a9a6ef8480d23f7286137868c90a2c6afd479c60b99d20bcdec39310d109`.
+- fourth frozen source: `216294c8f7ab61f9b6bd7dca709c1420612e4def0ad086468f717bf6a025c65f`.
+- correction review: `d9e412723e98b24fc9babff91e9a686d3d91ac0cba3e00445822dba7488c3504`.
+- correction manifest: `9c9977045a7e6d00a09ac8a80c7b349921a0f1ee5fbb27fe7b080fe45459682b`.
+- correction inspection: `8b4fbae846195d23420847082497a0a97301b15cd47bf1851372ff93e28c020d`.
+- integration receipt: `5b1587f7b124d12d5005c7ee10fc9b94eede80d7f61807e36cb7d87454e505f5`.
+
+The idle main checkout receives only the qualified seam sources; all 1726
+translated source input hashes match before commit. Subsequent runtime factory
+and policy edits stay isolated in normal-runtime-worktree and are not included
+in this milestone. Parent/final acceptance gates remain open.

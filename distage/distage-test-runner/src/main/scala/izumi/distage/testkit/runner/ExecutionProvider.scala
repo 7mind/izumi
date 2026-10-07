@@ -25,6 +25,7 @@ trait ExecutionPlan {
   val tests: Vector[TestDescriptor]
   val inspection: PlanInspection
   def execute(context: RunExecutionContext): Future[ProviderOutcome]
+  def close(): Future[Unit] = Future.unit
 }
 
 final case class ProviderOutcome(results: Vector[TestResult], failures: Vector[Failure], cancelled: Boolean)
@@ -128,6 +129,15 @@ final class TestCancelled(message: String) extends RuntimeException(message)
 
 object RunnerFailure {
   def message(phase: FailurePhase, message: String): Failure = Failure(phase, "TestApplicationError", message, Vector.empty, Vector.empty, None, Vector.empty, Vector.empty)
+
+  private[runner] def appendSuppressed(primary: Failure, additional: Vector[Failure]): Failure = {
+    def bounded(current: Failure, depth: Int): Failure = {
+      if (depth == ProtocolCodec.MaxFailureDepth && (current.causes.nonEmpty || current.suppressed.nonEmpty)) {
+        message(FailurePhase.Transport, "Exception failure graph depth exceeds the protocol limit")
+      } else current.copy(causes = current.causes.map(bounded(_, depth + 1)), suppressed = current.suppressed.map(bounded(_, depth + 1)))
+    }
+    bounded(primary.copy(suppressed = primary.suppressed ++ additional), 1)
+  }
 
   private[runner] def unreported(reported: Vector[Failure], returned: Vector[Failure]): Vector[Failure] = {
     var remaining = reported

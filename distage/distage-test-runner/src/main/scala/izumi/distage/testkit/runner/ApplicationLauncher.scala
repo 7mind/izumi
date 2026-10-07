@@ -57,13 +57,14 @@ object ApplicationLauncher {
         application.foreach { value => commands :+= value.accept(ProtocolMessage.Cancel(value.run)) }
     }
     val settled: Future[Vector[Try[Unit]]] = Future.sequence(commands.map(_.transform(result => Success(result))))
-    val completed = settled.flatMap { results =>
+    val responses = settled.flatMap { results =>
       inputFailure.orElse(results.collectFirst { case Failed(cause) => cause }) match {
         case Some(cause) => Future.failed(cause)
         case None => Future.successful(observed.result)
       }
     }
     val activeApplication = application
+    val completed = RunnerCompletion.after(responses, () => activeApplication.fold(Future.unit)(_.close()))
     ApplicationExecution(completed, () => activeApplication.foreach(_.cancel()))
   }
 
