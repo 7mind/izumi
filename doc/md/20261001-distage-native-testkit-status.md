@@ -129,7 +129,7 @@ head. The spike reports are design evidence, not implementation verification.
 | 5.1 | in progress | Verified logstage checkpoint: all16 resolved update/Test classpaths exclude ScalaTest-family dependencies and use only the base runner. Other modules and full retirement remain outstanding. |
 | 5.2 | not started | No evaluation point passed yet. |
 | 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
-| 5.4 | in progress | Compiler-isolated recaptures qualify the42-lane distage/platform baseline (3259 cases) and exact16-lane old/new logstage report parity (634 cases). The next six-module migration is in flight; full reconciliation/final evaluation remain open. |
+| 5.4 | in progress | Compiler-isolated recaptures qualify the42-lane distage/platform baseline (3259 cases) and exact16-lane old/new logstage report parity (634 cases). The next six-module migration is in flight. A further ten-lane baseline qualifies2087 cases, including76 independently captured cancellations; full reconciliation/final evaluation remain open. |
 | 5.5 | not started | No evaluation point passed yet. |
 | 5.6 | not started | No evaluation point passed yet. |
 | 5.7 | not started | No evaluation point passed yet. |
@@ -18883,3 +18883,89 @@ runs from5-distage-plain-migration-worktree-sixth/ with1636 frozen inputs. It
 adds the protocol JVM/JS/Native controls,38 host scenarios,8 inspection scenarios
 and actual core JS/Native list/plan commands to the migration matrix. This
 transport correction is not yet claimed verified or integrated into main.
+
+## 2026-10-07: remaining-suite outcome baseline qualified
+
+The legacy JVM/JS event recapture completes actual0 on both compilers, after
+173.334s (Scala2.13) and148.783s (Scala3.9), with1633 frozen inputs unchanged
+per process. Its listener uses SBT2.0.9's public TestReportListener API and
+records each actual SDK selector/status independently of XML. Commands, listener
+source, logs and events are retained in5-remaining-migration-event-baseline-first/.
+
+python3 -B /srv/nvme/tmp/izumi-impl/5-remaining-migration-baseline-second/audit.py
+exits0. It verifies the original ten-lane baseline's successful completion,
+unchanged inputs and discovery/XML case identities, then reconciles every legacy
+case against the recaptured events under exactly the same input hashes. Each
+legacy compiler/platform lane has19 Cancelled cases. The qualified baseline
+contains429 suite reports and2087 cases, including76 cancellations; its SHA256
+is b48093618bbf3d0b029183d5e397ceb7f0e726d4995674a541979b2677739d63.
+The original XML success labels remain recorded as xmlOutcome and do not replace
+the observed cancellation outcomes.
+
+BIO law replacement is isolated inbio-laws-migration-worktree, based on1d6707438.
+It replaces the local discipline/ScalaTest shim with direct ScalaCheck execution,
+preserving the rule property names and the original minimum successful sample
+count10. Pinned ScalaTest3.3.0-alpha.2 and ScalaCheck1.19.0 sources establish the
+parameter defaults; their captured source files remain in
+5-remaining-migration-preparation-first/. The generator succeeds at pinned0.0.122.
+
+The first full BIO candidate capture exits1 after196.964s with1563 recorded
+source/build hashes unchanged:439 JVM cases,98 failures, all in ZIOLawsTest.
+The new parallel plain provider executes law properties against their shared
+mutable Ticker/TestContext; failures include negative virtual-clock advances
+and falsified effect equality. The second candidate serializes property checks
+per law suite. It exits1 after103.838s with1633 inputs unchanged:all law checks
+pass, but two unchanged MiniBIO held-finalization cases time out after2s.
+No timeout or asserted lifetime invariant is weakened.
+
+The third candidate replaces worker-blocking monitor serialization with a
+per-suite Future queue. Each property's returned Future retains its own outcome;
+previous completion orders the next property even when the previous property
+fails. This preserves independent law results while serializing the shared
+virtual clock. The complete six-lane compiler/platform batch is running from
+5-bio-laws-migration-third/, with1633 frozen inputs. No BIO migration completion
+or causal proof of the two timeout failures is claimed before its checks pass.
+
+## 2026-10-07: shared frontend publications and consumers verified
+
+The normal publication producer completes actual0 after374.870s on Scala2.13
+and442.574s on Scala3.9, with all1634 frozen inputs unchanged per process at
+1d6707438. Eighteen normal assertion/base/higher runner artifacts publish under
+the private version1.3.0-M5-assertion-frontend-SNAPSHOT. Independent audit exits0
+and verifies the generated POM versions/dependency boundaries, actual publication
+records and absence of Scoverage invocation references in the packaged payloads.
+Its SHA256 is d1674df366f9cc1f52b7b124d7d8054ddf2b21350886cad5f3b49058d09a049c.
+
+Separate published consumers complete actual0 after18.470s and21.025s. Each
+compiles the formerly missing inherited APIs, executes the unchanged false-
+assumption witness as Cancelled, and verifies actual utility/failure/cancellation
+outcomes. The API witness uses explicitly Unit-returning fail/cancel helpers to
+avoid the already-recorded DSL overload ambiguity; this is not an imports-only
+compatibility witness. The independent audit verifies all five frozen inputs,
+eight case outcomes and resolution of the three private JVM artifact versions,
+with no ScalaTest/Scalactic/Scoverage classpath entries. Its SHA256 is
+4b75dcbe079efdf6aaee6a275c65e0e83992197faf4fef6c43fa9a265df51f23.
+Commands/logs/manifests are retained in5-distage-assertion-frontend-publication-first/
+and5-distage-assertion-published-consumers-first/. Full final publication and
+ordinary-suite/custom-hook compatibility gates remain open.
+
+The sixth six-module migration capture completes actual1 after1036.886s with
+1636 inputs unchanged. The carrier correction passes235 protocol controls on
+each JVM/JS/Native lane at3.8.4,38 host scenarios and8 inspection scenarios.
+Most importantly, the original Native core transport reproduction now reports
+308 passed cases and zero errors. The batch subsequently compile-fails in the
+configuration JVM fixture on seven unconverted informational And calls; no
+remaining module completion is inferred. Those calls now use println with the
+same messages. The seventh capture precompiles all42 compiler/platform lanes
+before running the full execution matrix, avoiding a late compile error after
+expensive Native execution. Captures are retained by their numbered directory.
+
+The third BIO candidate exits1 after113.923s for a fixture compile error: the
+plain frontend has no public executionContext member. The fourth attempts to
+reuse AsyncWordSpec but exits1 after91.156s because MiniBIOAsyncEnv already
+supplies that member. These are migration-harness compile failures, not failed
+law outcomes. The fifth uses a small per-suite Future queue with the plain
+frontend's protected sessionExecutionContext, preserving the existing law
+environments. Scala2.13 completes actual0 after148.697s with1633 inputs
+unchanged; all JVM/JS/Native BIO lanes succeed. Scala3.9 and exact baseline
+reconciliation remain in flight in5-bio-laws-migration-fifth/.
