@@ -20729,3 +20729,22 @@ are no longer necessary, and retired support-module documentation links are
 updated. Microsite draft prose now describes retirement and selected-launcher
 ownership; its final build remains pending. None of these prepared removals is
 integrated into main yet.
+
+
+The bounded normal runtime milestone is integrated into the idle main checkout
+from exactly13 Scala source/fixture files qualified by unchanged
+5-runtime-closed-plan-reuse-after-first and its independent review. Before-copy
+main bytes match the isolated rebased base, and after-copy bytes match both the
+pre-command manifest and frozen compiler snapshots. Receipt SHA-256: 1563bbd0d8a39cc8805a6dfb3ac95369591aa3523f941dfb6bd5654a949ec8a3.
+This commits session-owned configurable runner factories, preserved mixed-runtime
+group selection, pre-publication planning shutdown, failed inspection cleanup
+and closed-plan admission. Broader all-platform and published-client qualification
+remain open; opaque custom-runtime compatibility remains waiting on owner.
+The separate retirement candidate is not included.
+
+Read-only review SHA-256:250c12fe4b15e6a84733085850b5ae997e62518d05b2cc26983f8b6849c1fca5;
+manifest69296df69f714afd0a694e6f33d98a99d8d6867c9ec8b3bca4d60327a4ddaec2;
+inspectionb5d5e8e89c7f83791ba96d5bf8e77f00556e98cd3fc7243149bb879cf7d58124.
+Schema1 retains20 source/reference revisions and259 evidence inputs. Concurrent
+raw-plan closure and late fixture callback predictions are not reproduced defects;
+platform qualification remains required. No parent/final acceptance gate closes.

@@ -34,6 +34,7 @@ final class RunSession(
 ) {
   private val registrationContext = new RegistrationContext(identity.target, executionContext)
   private val cancellation = new Cancellation
+  private val planningCancellation = new Cancellation
   private var discovery = Option.empty[Either[Failure, Catalogue]]
   private var registered = Vector.empty[RegisteredSuite]
   private var planningStarted = false
@@ -58,6 +59,7 @@ final class RunSession(
       }
     }
     admitted.foreach { case (requested, owners, execution) =>
+      planningCancellation.request()
       if (synchronized(executionStarted)) cancel()
       val settled = owners.map(_.transformWith {
         case Success(owner) => owner.close.transform(result => Success(result))
@@ -75,7 +77,12 @@ final class RunSession(
     completion
   }
 
-  def cancel(): Unit = cancellation.request()
+  def cancel(): Unit = {
+    cancellation.request()
+    if (synchronized(ownedPlans.exists(!_.isCompleted))) planningCancellation.request()
+  }
+
+  private[runner] def cancelPlanning(): Unit = planningCancellation.request()
 
   def discover(): Either[Failure, Catalogue] = synchronized {
     discovery match {
@@ -169,7 +176,7 @@ final class RunSession(
       case Some(failure) => Future.successful(Left(failure))
       case None =>
         val plans = resolved.providers.zip(admissions).map { case (group, admission) =>
-          val acquisition = try group.provider.plan(group.tests) catch { case NonFatal(cause) => Future.failed(cause) }
+          val acquisition = try group.provider.plan(group.tests, planningCancellation) catch { case NonFatal(cause) => Future.failed(cause) }
           val _ = admission.completeWith(acquisition.map(new OwnedPlan(_)))
           admission.future.map { owner =>
             val value = owner.plan

@@ -57,7 +57,7 @@ private[di] object PreparedRuntimeFixtures {
     }
   }
 
-  private final class EmptyReporter extends TestReporter {
+  private[di] final class EmptyReporter extends TestReporter {
     override def beginScope(id: ScopeId): Unit = ()
     override def endScope(id: ScopeId): Unit = ()
     override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()

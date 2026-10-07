@@ -19,6 +19,10 @@ final case class RegisteredSuite(descriptor: SuiteDescriptor, tests: Vector[Test
 trait ExecutionProvider {
   def resolve(tests: Vector[TestDescriptor], overrides: RunOverrides): Either[Failure, Vector[TestDescriptor]]
   def plan(tests: Vector[TestDescriptor]): Future[ExecutionPlan]
+  def plan(tests: Vector[TestDescriptor], cancellation: Cancellation): Future[ExecutionPlan] = {
+    val _ = cancellation
+    plan(tests)
+  }
 }
 
 trait ExecutionPlan {

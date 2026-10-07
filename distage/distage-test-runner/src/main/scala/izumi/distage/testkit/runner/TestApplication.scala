@@ -48,6 +48,7 @@ final class TestApplication(
     }
     admitted.foreach { case (requested, previous) =>
       cancel()
+      session.cancelPlanning()
       val _ = requested.completeWith(previous.transformWith(_ => session.close()))
     }
     completion

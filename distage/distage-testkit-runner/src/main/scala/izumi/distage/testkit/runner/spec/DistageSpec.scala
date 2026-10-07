@@ -8,7 +8,7 @@ import izumi.distage.roles.model.meta.RolesInfo
 import izumi.distage.testkit.model.{DistageTest, SuiteId as EngineSuiteId, SuiteMeta, TestConfig, TestEnvironment, TestId as EngineTestId, TestMeta}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
-import izumi.distage.testkit.runner.di.{DistageExecutionProvider, DistageRunnerOptions, RegisteredDistageTest, ResolvedDistageTest}
+import izumi.distage.testkit.runner.di.{DistageExecutionProvider, DistageRunnerOptions, RegisteredDistageTest, ResolvedDistageTest, TestRunnerRuntime}
 import izumi.distage.testkit.runner.impl.services.TestConfigLoader
 import izumi.distage.testkit.spec.{DistageTestEnv, TestConfiguration}
 import izumi.fundamentals.platform.language.SourceFilePosition
@@ -24,6 +24,7 @@ abstract class DistageSpec[F[_]](implicit val tagMonoIO: TagK[F], val defaultMod
   private var ownedProvider = Option.empty[DistageExecutionProvider]
 
   override protected def config: TestConfig = TestConfig.forSuite(getClass)
+  protected def testRunnerRuntime(): TestRunnerRuntime = TestRunnerRuntime.defaultPlatformRuntime
   protected def distageSuiteName: String = getClass.getSimpleName.stripSuffix("$")
   protected def distageSuiteId: EngineSuiteId = EngineSuiteId(getClass.getName)
   protected final lazy val testEnv: TestEnvironment = makeTestEnv()
@@ -70,7 +71,8 @@ abstract class DistageSpec[F[_]](implicit val tagMonoIO: TagK[F], val defaultMod
 
   final override def register(context: RegistrationContext): RegisteredSuite = synchronized {
     require(ownedProvider.isEmpty, "Suite instance cannot be shared between sessions")
-    val execution = context.provider(ProviderId("distage"), () => new DistageExecutionProvider(context.executionContext, new TestConfigLoader.TestConfigLoaderImpl, DistageRunnerOptions(false, false)))
+    val runtime = testRunnerRuntime()
+    val execution = context.provider(ProviderId("distage"), () => new DistageExecutionProvider(context.executionContext, new TestConfigLoader.TestConfigLoaderImpl, DistageRunnerOptions(false, false), runtime))
     ownedProvider = Some(execution)
     val suite = distageSuiteId
     val meta = SuiteMeta(suite, distageSuiteName, getClass.getName)
@@ -83,7 +85,7 @@ abstract class DistageSpec[F[_]](implicit val tagMonoIO: TagK[F], val defaultMod
         ResolvedDistageTest(test.copy(settings = effective.settings), engineTest.asInstanceOf[DistageTest[AnyF]])
       })
     }
-    execution.add(tests)
+    execution.add(tests, runtime)
     RegisteredSuite(descriptor, tests.map(_.descriptor), execution)
   }
 }

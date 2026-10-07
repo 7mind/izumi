@@ -4,18 +4,13 @@ import izumi.distage.model.definition.{Activation, Axis}
 import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestConfig, TestEnvironment, TestMeta}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
+import izumi.distage.testkit.runner.api.TestFinalizationReporter
 import izumi.distage.testkit.runner.impl.services.{TestActivationResolver, TestConfigLoader}
 import izumi.distage.testkit.spec.{SessionTestEnvironment, TestEnvironmentFactory}
 import izumi.distage.plugins.load.{PluginLoader, PluginLoaderFactory}
-import izumi.functional.bio.Exit
-import izumi.functional.bio.impl.MiniBIOAsync
-import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.QuasiIORunner
-import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
 
-import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure as FutureFailure, Success}
 import scala.util.control.NonFatal
@@ -29,17 +24,17 @@ final class DistageExecutionProvider(
   executionContext: ExecutionContext,
   configLoader: TestConfigLoader,
   options: DistageRunnerOptions,
+  runtime: TestRunnerRuntime,
 ) extends ExecutionProvider {
+  def this(executionContext: ExecutionContext, configLoader: TestConfigLoader, options: DistageRunnerOptions) =
+    this(executionContext, configLoader, options, TestRunnerRuntime.defaultPlatformRuntime)
+
   private val pluginLoaders = new SessionPluginLoaders
   private[distage] def defaultPluginLoaderFactory: PluginLoaderFactory = pluginLoaders.defaultFactory
   private[distage] def pluginLoader(factory: PluginLoaderFactory): PluginLoader = pluginLoaders.load(factory)
   private[distage] val environments = new SessionTestEnvironment(new SessionEnvironmentFactory(new TestEnvironmentFactory.Impl, new SessionBootstrapFactory))
-  private type RunnerF[A] = MiniBIOAsync[Throwable, A]
   private val configuration = new SessionTestConfigLoader(configLoader)
-  private val engine = new DistageEngine[RunnerF](configuration, options)
-  private val runtime = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-  private val effectRunner = QuasiIORunner.fromBIO[MiniBIOAsync](using runtime)
-  private val completionRuntime = new TestRuntime[RunnerF](Lifecycle.pure(effectRunner), IzPlatform.platformGlobalExecutionContext)
+  private var registeredRuntimes = Map.empty[TestId, TestRunnerRuntime]
   private var registrations = Vector.empty[RegisteredDistageTest]
   private var resolutions = Map.empty[TestDescriptor, DistageTest[AnyF]]
   private var planned = false
@@ -80,6 +75,11 @@ final class DistageExecutionProvider(
     })
   }
 
+  private[distage] def add(tests: Vector[RegisteredDistageTest], factory: TestRunnerRuntime): Unit = synchronized {
+    add(tests)
+    registeredRuntimes ++= tests.map(test => test.descriptor.id -> factory)
+  }
+
   private[distage] def add(tests: Vector[RegisteredDistageTest]): Unit = synchronized {
     require(!planned, "Distage provider registration is already frozen")
     val all = registrations ++ tests
@@ -106,7 +106,9 @@ final class DistageExecutionProvider(
     }
   }
 
-  override def plan(tests: Vector[TestDescriptor]): Future[ExecutionPlan] = {
+  override def plan(tests: Vector[TestDescriptor]): Future[ExecutionPlan] = plan(tests, new Cancellation)
+
+  override def plan(tests: Vector[TestDescriptor], cancellation: Cancellation): Future[ExecutionPlan] = {
     implicit val ec: ExecutionContext = executionContext
     val selected = synchronized {
       require(!planned, "Distage provider planning has already started")
@@ -117,53 +119,78 @@ final class DistageExecutionProvider(
       }
     }
     val reporter = new DistageProviderReporter(tests)
-    val runner = engine.runner(reporter, reporter)
-    effectRunner.runFuture(runner.plan(selected)).map { prepared =>
-      new ExecutionPlan {
+    final class Finalization extends TestFinalizationReporter {
+      private var observed = Vector.empty[Throwable]
+      def failures: Vector[Failure] = synchronized(observed.map(RunnerFailure.fromThrowable(FailurePhase.Finalization, _)))
+      override def failure(cause: Throwable): Unit = synchronized { observed :+= cause }
+    }
+    val finalization = new Finalization
+    tests.headOption.flatMap(test => registeredRuntimes.get(test.id)).getOrElse(runtime).prepare(reporter, reporter, finalization, _.isInstanceOf[TestCancelled], selected, configuration, options, cancellation).flatMap { prepared =>
+      try Future.successful(new ExecutionPlan {
         override val tests: Vector[TestDescriptor] = reporter.tests
         override val inspection: PlanInspection = DistagePlanInspection(prepared.planned.out, tests)
-        private val started = new AtomicBoolean(false)
+        private var execution = Option.empty[Promise[ProviderOutcome]]
+        private var closing = Option.empty[Promise[Unit]]
+
+        override def close(): Future[Unit] = {
+          val (completion, admitted) = synchronized {
+            closing match {
+              case Some(previous) => (previous.future, None)
+              case None =>
+                val requested = Promise[Unit]()
+                closing = Some(requested)
+                (requested.future, Some((requested, execution)))
+            }
+          }
+          admitted.foreach { case (requested, active) =>
+            val released = active match {
+              case Some(executing) => executing.future.transform(_ => Success(()))
+              case None => prepared.close()
+            }
+            val _ = requested.completeWith(released)
+          }
+          completion
+        }
 
         override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
-          require(started.compareAndSet(false, true), "Distage execution plan has already started")
+          val completion = synchronized {
+            require(closing.isEmpty, "Distage execution plan is closed")
+            require(execution.isEmpty, "Distage execution plan has already started")
+            val admitted = Promise[ProviderOutcome]()
+            execution = Some(admitted)
+            admitted
+          }
           reporter.begin(context)
-          if (context.cancellation.isRequested) Future.successful(reporter.cancelled())
-          else {
-            // Register interruption before allowing synchronous provisioning to start.
-            val start = Promise[Unit]()
-            val F = MiniBIOAsync.WeakAsyncForMiniBIOAsync
-            val effect = F.flatMap(F.fromFuture(_ => start.future))(_ => runner.runPrepared(prepared))
-            val operation = completionRuntime.start { _ =>
-              val (execution, interrupt) = runtime.unsafeRunAsyncAsInterruptibleFuture(effect)
-              (execution, () => effectRunner.runFuture(interrupt.interrupt))
-            }
-            val registration = context.cancellation.onRequest(operation.stop)
-            start.success(())
+          def failures(cause: Throwable): Vector[Failure] = Vector(RunnerFailure.fromThrowable(FailurePhase.Finalization, cause))
+          val result = if (context.cancellation.isRequested) prepared.close().transform { released =>
+            val retained = released.failed.toOption.toVector.flatMap(failures)
+            Success(reporter.cancelRemaining(retained ++ RunnerFailure.unreported(retained, finalization.failures)))
+          } else {
+            val registration = context.cancellation.onRequest(() => prepared.stop())
+            val operation = prepared.execute()
             operation.completion.transformWith { result =>
               registration.close().transform { stopped =>
-                val cancelled = context.cancellation.isRequested
-                def failed(cause: Throwable): Vector[Failure] = Vector(RunnerFailure.fromThrowable(FailurePhase.Finalization, cause))
                 val executionFailures = result match {
-                  case Success(Exit.Success(_)) => Vector.empty
-                  case Success(Exit.Interruption(_, others, _)) if cancelled => others.toVector.flatMap(failed)
-                  case Success(Exit.Interruption(cause, _, _)) => failed(cause)
-                  case Success(Exit.Termination(cause, _, _)) => failed(cause)
-                  case Success(Exit.Error(cause, _)) => failed(cause)
-                  case FutureFailure(cause) => failed(cause)
-                }
-                val interruptionFailures = stopped match {
                   case Success(_) => Vector.empty
-                  case FutureFailure(cause) => failed(cause)
+                  case FutureFailure(cause) => prepared.failures(cause, context.cancellation.isRequested).flatMap(failures)
                 }
-                val failures = executionFailures ++ RunnerFailure.unreported(executionFailures, interruptionFailures)
+                val interruptionFailures = stopped.failed.toOption.toVector.flatMap(failures)
+                val retained = executionFailures ++ RunnerFailure.unreported(executionFailures, interruptionFailures ++ finalization.failures)
                 Success(
-                  if (cancelled) reporter.cancelRemaining(failures)
-                  else if (executionFailures.nonEmpty) reporter.abortRemaining(failures)
-                  else reporter.outcome(failures, cancelled = false)
+                  if (context.cancellation.isRequested) reporter.cancelRemaining(retained)
+                  else if (executionFailures.nonEmpty) reporter.abortRemaining(retained)
+                  else reporter.outcome(retained, cancelled = false)
                 )
               }
             }
           }
+          val _ = completion.completeWith(result)
+          completion.future
+        }
+      }) catch {
+        case NonFatal(cause) => prepared.close().transformWith {
+          case Success(_) => Future.failed(cause)
+          case FutureFailure(release) => Future.failed(new TestRuntime.RuntimeCompletionException(cause, List(release)))
         }
       }
     }

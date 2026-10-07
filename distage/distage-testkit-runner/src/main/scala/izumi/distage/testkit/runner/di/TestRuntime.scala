@@ -65,11 +65,14 @@ final class TestRuntime[F[_]](
     (result.failed.toOption.toList ++ additional) match {
       case Nil => result
       case cause :: Nil => Failure(cause)
-      case primary :: others => Failure(new RuntimeCompletionException(primary, others))
+      case primary :: others => Failure(new TestRuntime.RuntimeCompletionException(primary, others))
     }
   }
 
-  private final class RuntimeCompletionException(primary: Throwable, additional: List[Throwable])
+}
+
+private[di] object TestRuntime {
+  final class RuntimeCompletionException(val primary: Throwable, val additional: List[Throwable])
     extends RuntimeException("Multiple failures during test runtime completion", primary) {
     additional.foreach(addSuppressed)
   }
