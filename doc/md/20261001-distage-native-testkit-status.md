@@ -20863,3 +20863,36 @@ new owned runtime dispatch control. Exact diffs/hashes are retained in
 5-runtime-factory-owner-migration-inventory-first/. RuntimeOverrideLifecycle and
 the new real factory fixtures supply additional held lifecycle/override checks.
 Migration validation and final source reconciliation remain open.
+
+
+### 2026-10-07 — observed retirement graph and compiler-scoped publication
+
+The first followthrough Scala2.13 command ends actual1 after369.678s with
+all1652 inputs unchanged. Its six corrected provider/CLI commands pass,
+including872/749/749 provider checks with no rejected callbacks. The graph
+observation completes before publication: independent reconciliation matches
+130 observed project nodes and296 scoped dependency records exactly to the
+source-derived graph, with no duplicate nodes or cycles. Receipt/log hashes
+are retained in5-final-retirement-generated-graph-first/observed-reconciliation.json.
+This qualifies graph equality only; it does not turn the failed producer into
+successful publication.
+
+Root publishLocal under Scala2.13 also requests the SBT plugins fixed at3.8.4;
+SBT rejects their projectDependencies against the switched2.13 protocol. The
+reproduction retains that exact mismatch. The corrected publication driver
+uses fundamentals/distage/logstage aggregations for each supported target
+compiler, then publishes the protocol and three production host plugins under
+3.8.4 in a separate process. No mismatch allowance or project-version override
+is added to production build code. Evidence uses the private local version
+1.3.0-M5-final-retirement-SNAPSHOT.
+
+To overlap the remaining broad module checks safely, an additional disposable
+checkout reproduces the current retirement candidate exactly: all1652 frozen
+source inputs match, with a retained full binary patch and source receipt in
+5-final-module-validation-source-receipt.json. The host reports48 processors
+and80GiB available memory before this third build starts. Each checkout has
+one SBT producer and the configured Native link limit remains unchanged.
+The module batch covers the21 distage/platform projects per compiler plus
+BIO JVM/JS/Native, eight logstage projects and Docker. Its exact-case baseline
+combines the independently qualified pre-migration inventories. These checks
+are running, not passed; the candidate remains unintegrated into main.
