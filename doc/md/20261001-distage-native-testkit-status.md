@@ -21102,3 +21102,59 @@ GDB attach using the project's pinned nixpkgs16.3 debugger is rejected by ptrace
 permissions. No inferred runtime correction or host permission change is made.
 Evidence:5-final-retirement-module-matrix-fourth/native-core-host-thread-dump-first.txt
 and native-core-thread-dump-first.txt. The large matrix continues.
+
+
+### 2026-10-07 — published macro consumers and fixed-host CI reproduction
+
+The retired publication passes separate assertion and compiler consumers on
+Scala3.9.0 and the published3.10.0 coordinate. All four captures finish actual0,
+with frozen consumer sources and all162 primary JAR/POM pairs unchanged.
+Independent audit verifies666 original assertion checks across both compilers'
+JVM/JS/Native runs, plain/unary/BIO suspension markers, sixteen vendor-free
+published classpaths, and the valid/missing compile-time plan checks with exact
+consumer ScalaRelease. Evidence:5-final-retirement-macro-consumers-first/
+independent-audit.json and each compiler/fixture command.json, completion.json,
+and run.log. Producer compiler versions remain unchanged; final-head CI gates
+remain open.
+
+The Scala3 published base-runner consumer also passes all nine commands,
+three platform markers, twelve physical bodies and the structured diagnostic/
+throwable checks with332 frozen inputs unchanged. Its independent classpath
+audit verifies exactly the three published runner/assertion/protocol modules
+per platform, with no producer output or vendor framework dependency.
+Evidence:5-final-retirement-remaining-consumers-first/base-scala3/
+independent-audit.json; log SHA256
+ e3bd34f6730d86d0a02c858c187ed87cd29982a325563c941afca9eb63e1e064.
+An auxiliary audit initially matched the older shortened marker and failed;
+the corrected audit checks the complete current emitted contract. Six supported
+coverage lanes are now running as one batch with separate task caches and
+frozen publication inputs. A preparation-only Python syntax check accidentally
+selected a Scala fixture path; the actual verifier's Python syntax check passes
+without a source change.
+
+A fresh isolated final-host-boundary-worktree preserves the retired sources,
+current requirement summaries and selected-SDK metadata correction. The first
+local reproduction fails only the generator staleness check and establishes
+nothing about compiler compatibility. After actual combined regeneration, the
+second reproduction fails for the expected reason: sbt-distage-testkit3.8.4
+has a project dependency on the switched distage-test-protocolJVM2.13.18.
+Actual1 after155.793s, all1653 inputs unchanged; expected diagnostic and log
+hash are recorded in5-final-host-boundary-repro-second/reproduction-audit.json.
+The earlier root publication failure remains independently preserved.
+
+The isolated correction removes the fixed-host aggregate from target root
+aggregation, retains explicit pinned3.8.4 host clean/compile/test commands in
+JVM test/coverage actions, and publishes the host and all three protocol
+variants explicitly in the Scala3 publication action. It does not enable
+allowMismatchScala. A shell-only reproduction also confirms that the former
+CI Docker cleanup passes an unrelated daemon container to deletion; these two
+unscoped cleanup calls are removed from the isolated actions. Owned resource
+finalization remains checked by the existing runtime/consumer fixtures.
+Corrected root aggregation and CI validation are pending; no L1–L6 closure or
+final retirement integration is claimed.
+
+Read-only review of the earlier selected-SDK, DOCKER_HOST passthrough and guide
+corrections finds no material defect in that bounded source. It preserves
+36 inputs with zero drift and excludes pending site/consumer/final gates.
+Evidence:5-final-retirement-ci-corrections-readonly-review-first/REVIEW.md,
+SHA256e3b5742bfa44b70071017a28b06a13c40648cc0bd729ca4f548585234891e71d.
