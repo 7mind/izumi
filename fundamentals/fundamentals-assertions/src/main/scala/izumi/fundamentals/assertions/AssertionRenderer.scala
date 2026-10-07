@@ -1,7 +1,5 @@
 package izumi.fundamentals.assertions
 
-import scala.util.control.NonFatal
-
 object AssertionRenderer {
   def render(diagnostic: AssertionDiagnostic, context: AssertionContext): RenderedAssertion = {
     val limits = context.limits
@@ -64,7 +62,7 @@ object AssertionRenderer {
               output.append(text)
             }
             catch {
-              case NonFatal(cause) =>
+              case cause: Throwable =>
                 renderingFailures += RenderingFailure(index, cause)
                 values += RenderedValue.RenderingFailed(cause)
                 output.append(s"<value renderer failed: ${cause.getClass.getName}>")
@@ -90,7 +88,7 @@ object AssertionRenderer {
           }
       }
     } catch {
-      case NonFatal(cause) => SourceValidation.ProviderFailure(cause)
+      case cause: Throwable => SourceValidation.ProviderFailure(cause)
     }
   }
 

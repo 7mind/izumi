@@ -1,7 +1,5 @@
 package izumi.fundamentals.assertions
 
-import scala.util.control.NonFatal
-
 sealed trait SourceRoot
 object SourceRoot {
   case object Unspecified extends SourceRoot
@@ -168,7 +166,7 @@ object RenderedErrorMessage {
 
   private[assertions] def capture(cause: Throwable): RenderedErrorMessage = {
     try Option(cause.getMessage).map(Available.apply).getOrElse(Unavailable)
-    catch { case NonFatal(error) => AccessorFailed(error) }
+    catch { case error: Throwable => AccessorFailed(error) }
   }
 }
 

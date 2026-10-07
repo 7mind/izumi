@@ -261,6 +261,22 @@ object AssertionFixtures {
     val providerFailure = new SourceProvider { override def read(identity: SourceIdentity): ProvidedSource = throw rendererException }
     val providerRendered = AssertionRenderer.render(AssertionDiagnostic(source, Vector.empty), AssertionContext(SourceRoot.Unspecified, providerFailure, ValueRenderer.standard, RenderLimits.standard))
     oracle.verify(providerRendered.sourceValidation == SourceValidation.ProviderFailure(rendererException), "Provider failures are explicit")
+    val callbackFailures = Vector(new InterruptedException("rendering interrupted"), new LinkageError("rendering linkage failure"))
+    callbackFailures.foreach { callbackFailure =>
+      val throwingRenderer = new ValueRenderer { override def render[A](value: A): String = throw callbackFailure }
+      val rendererContext = AssertionContext(SourceRoot.Unspecified, SourceProvider.unavailable, throwingRenderer, RenderLimits.standard)
+      val preserved = oracle.failure(Assert.assert(one == 2, rendererContext))
+      oracle.verify(preserved.getMessage.contains("value renderer failed") && preserved.diagnostic.observations.nonEmpty, "Every renderer Throwable preserves the assertion diagnostic")
+      oracle.verify(preserved.rendered.renderingFailures.nonEmpty && preserved.rendered.renderingFailures.forall(_.cause eq callbackFailure), "Every renderer Throwable remains available by identity")
+      val throwingProvider = new SourceProvider { override def read(identity: SourceIdentity): ProvidedSource = throw callbackFailure }
+      val providerContext = AssertionContext(SourceRoot.Unspecified, throwingProvider, ValueRenderer.standard, RenderLimits.standard)
+      val providerAssertion = new AssertionFailure(AssertionDiagnostic(source, Vector.empty), providerContext)
+      oracle.verify(providerAssertion.getMessage.contains("source provider failed"), "Every provider Throwable preserves the assertion message")
+      oracle.verify(providerAssertion.rendered.sourceValidation == SourceValidation.ProviderFailure(callbackFailure), "Every provider Throwable remains structured")
+      val throwingAccessor = new RuntimeException("rendering failure") { override def getMessage: String = throw callbackFailure }
+      oracle.verify(RenderedValue.RenderingFailed(throwingAccessor).message == RenderedErrorMessage.AccessorFailed(callbackFailure), "Every renderer error accessor Throwable remains structured")
+      oracle.verify(SourceValidation.ProviderFailure(throwingAccessor).message == RenderedErrorMessage.AccessorFailed(callbackFailure), "Every provider error accessor Throwable remains structured")
+    }
     val pointSource = source.copy(span = SourceSpan.Point(SourcePoint(0, 0, 0)), text = CompiledText.Unavailable)
     val pointRendered = AssertionRenderer.render(AssertionDiagnostic(pointSource, Vector.empty), AssertionContext.standard)
     oracle.verify(pointRendered.text.contains("range unavailable") && pointRendered.text.contains("compiled expression text unavailable"), "Point-only diagnostics state both missing range and text")
