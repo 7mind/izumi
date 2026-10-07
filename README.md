@@ -111,9 +111,9 @@ Projects powered by Izumi
 Izumi on other platforms
 ========================
 
-1. [Chibi Izumi for Python](https://github.com/7mind/izumi-chibi-py) - a basic re-implementation of `distage-core` for Python.
-2. [Chibi Izumi for Typescript](https://github.com/7mind/izumi-chibi-ts) - a basic re-implementation of `distage-core` for Typescript.
-3. DICS - Dependency Injection for C#, an advanced re-implementation of `distage-core` for C# based on Roslyn Analyzers, with extensive Unity support. To be released.
+1.[DICS](https://github.com/PlayQ/dics) - Dependency Injection for C#, an advanced re-implementation of `distage-core` for C# based on Roslyn Analyzers, with extensive Unity support. Battle-tested.
+2. [Chibi Izumi for Python](https://github.com/7mind/izumi-chibi-py) - a basic re-implementation of `distage-core` for Python.
+3. [Chibi Izumi for Typescript](https://github.com/7mind/izumi-chibi-ts) - a basic re-implementation of `distage-core` for Typescript.
 
 Contributors
 ============
