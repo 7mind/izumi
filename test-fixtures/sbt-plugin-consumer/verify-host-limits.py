@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import argparse
-import hashlib
 import json
-import os
 import re
 import shutil
-import signal
-import subprocess
 from xml.etree import ElementTree
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / 'test-fixtures/host-sharing-consumer'
@@ -92,8 +92,7 @@ final class HostWindow(directory: Path, limit: Int, log: sbt.util.Logger) extend
 '''
 
 
-def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
 
 
 def main():
@@ -181,17 +180,7 @@ def main():
                 (lane / 'commands.json').write_text(json.dumps(dict(cwd=str(build), argv=argv, inputs=generated), indent=2) + '\n')
                 print('HOST_LIMIT_LANE_START ' + str(lane), flush=True)
                 with (lane / 'run.log').open('x') as log:
-                    process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-                    try:
-                        code = process.wait(timeout=LANE_TIMEOUT_SECONDS)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(process.pid, signal.SIGTERM)
-                        try:
-                            process.wait(timeout=SHUTDOWN_GRACE_SECONDS)
-                        except subprocess.TimeoutExpired:
-                            os.killpg(process.pid, signal.SIGKILL)
-                            process.wait()
-                        code = 124
+                    code = run_process(argv, build, log, LANE_TIMEOUT_SECONDS, SHUTDOWN_GRACE_SECONDS)
                     log.write('\nEXIT ' + str(code) + '\n')
                 raw = (lane / 'run.log').read_text()
                 windows = re.findall(r'^\[info\] HOST_WINDOW_OK limit=(\d+) maximum=(\d+) started=5 ended=5 firstEndBodies=15$', raw, re.M)

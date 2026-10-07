@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from xml.etree import ElementTree
-import argparse, hashlib, importlib.util, json, os, shutil, signal, subprocess
+import argparse, json, shutil
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, run_process, sha
 
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=240
 GRACE_SECONDS=10
 
-def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-def definitions(path,name):
-    spec=importlib.util.spec_from_file_location(name,path)
-    module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-    return module
+
+
 
 EXTRA=r'''
 val changeAckMode = inputKey[Unit]("Choose explicit normal or halt-after-ack target completion")
@@ -47,7 +48,7 @@ def main():
     out=args.evidence_dir.resolve();out.mkdir(exist_ok=False);shutil.copy2(__file__,out/'driver.py')
     global_helper=ROOT/'test-fixtures/host-sharing-consumer/verify-global-exit-ack.py'
     held_helper=ROOT/'test-fixtures/host-sharing-consumer/verify-held-forks.py'
-    control=definitions(global_helper,'global_membership');held=definitions(held_helper,'held_framework')
+    control=load_module('global_membership',global_helper);held=load_module('held_framework',held_helper)
     hook=control.HOOK
     needle='          publish("child-ready", pid)'
     replacement='''          val mode = new String(Files.readAllBytes(audit.resolve("ack-fault-mode")), StandardCharsets.UTF_8)
@@ -97,13 +98,7 @@ def main():
     (out/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,originalSources=sources,generatedSources=generated),indent=2)+'\n')
     print('ACK_BOUNDARY_START '+args.scala_version+' '+args.framework_order,flush=True)
     with (out/'run.log').open('x') as log:
-        process=subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-        try:actual=process.wait(timeout=TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid,signal.SIGTERM)
-            try:process.wait(timeout=GRACE_SECONDS)
-            except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
-            actual=124
+        actual = run_process(argv, build, log, TIMEOUT_SECONDS, GRACE_SECONDS)
         log.write('\nEXIT '+str(actual)+'\n')
     failures=[];cases=[];resources=set();receipts=set();parents=set();children=set()
     if actual!=0:failures.append('Actual SBT did not complete baseline/rejection/recovery')

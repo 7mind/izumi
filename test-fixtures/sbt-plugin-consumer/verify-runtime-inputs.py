@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 import argparse
-import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
-import signal
 import subprocess
 from xml.etree import ElementTree
 
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, sha, wait_process
 
 CONTROLS = r'''
 val fixtureRuntimeProperty = settingKey[String]("Untracked plugin input")
@@ -36,8 +37,7 @@ verifyRuntimeInputs := {
 '''
 
 
-def sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+
 
 
 def main():
@@ -51,9 +51,7 @@ def main():
     out = args.evidence_dir.resolve()
     out.mkdir()
     matrix_path = root / 'test-fixtures/sbt-plugin-consumer/verify-matrix.py'
-    spec = importlib.util.spec_from_file_location('matrix', matrix_path)
-    matrix = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(matrix)
+    matrix = load_module('matrix', matrix_path)
     original = root / 'test-fixtures/host-sharing-consumer'
     paths = [original / 'build.sbt', *sorted((original / 'src').rglob('*.scala'))]
     build = out / 'build'
@@ -107,16 +105,7 @@ def main():
         with (out / (environment + '.log')).open('x') as log:
             process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True,
                                        env=dict(os.environ, IZUMI_FIXTURE_ENV_REVISION=environment))
-            try:
-                code = process.wait(timeout=matrix.LANE_TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.wait(timeout=matrix.SHUTDOWN_GRACE_SECONDS)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
-                    process.wait()
-                code = 124
+            code = wait_process(process, matrix.LANE_TIMEOUT_SECONDS, matrix.SHUTDOWN_GRACE_SECONDS)
         classes = Path((build / 'class.directory').read_text())
         assert classes.is_relative_to(build), 'Runtime-input class directory escaped the fixture build'
         current = {str(p.relative_to(classes)): sha(p) for p in classes.rglob('*') if p.is_file() and p.suffix in ['.class', '.tasty']}

@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, hashlib, json, os, re, shutil, signal, subprocess
+import argparse, json, re, shutil
 from xml.etree import ElementTree
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process, sha
+
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 180
 GRACE_SECONDS = 10
@@ -60,7 +64,7 @@ Test / testListeners += new TestsListener {
   override def doComplete(result: TestResult): Unit = println("GENERIC_TASK_THROW_COMPLETE result=" + result)
 }
 '''
-def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--evidence-dir',type=Path,required=True)
@@ -84,13 +88,7 @@ def main():
             (lane/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=inputs),indent=2)+'\n')
             print('TASK_ERROR_GENERIC_LANE '+sdk+' '+mode,flush=True)
             with (lane/'run.log').open('x') as log:
-                process=subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-                try: actual=process.wait(timeout=TIMEOUT_SECONDS)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid,signal.SIGTERM)
-                    try: process.wait(timeout=GRACE_SECONDS)
-                    except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-                    actual=124
+                actual = run_process(argv, build, log, TIMEOUT_SECONDS, GRACE_SECONDS)
                 log.write('\nEXIT '+str(actual)+'\n')
             raw=(lane/'run.log').read_text()
             report_rows=[]

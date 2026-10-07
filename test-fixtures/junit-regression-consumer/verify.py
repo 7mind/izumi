@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 import argparse
-import hashlib
 import json
-import os
 from pathlib import Path
 import shutil
-import signal
-import subprocess
 import time
 import xml.etree.ElementTree as ET
 
 
-def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
+
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process, sha as digest
 
 def main():
     parser = argparse.ArgumentParser()
@@ -49,17 +48,7 @@ def main():
         (lane / "command.json").write_text(json.dumps({"cwd": str(build), "argv": argv, "inputSha256": frozen}, indent=2) + "\n")
         started = time.monotonic()
         with (lane / "run.log").open("w") as log:
-            process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-            try:
-                code = process.wait(timeout=900)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
-                    process.wait()
-                code = 124
+            code = run_process(argv, build, log, 900, 10)
         completion = {"actualExit": code, "elapsedSeconds": round(time.monotonic() - started, 3), "inputsChanged": [path for path, expected in frozen.items() if digest(Path(path)) != expected]}
         (lane / "completion.json").write_text(json.dumps(completion, indent=2) + "\n")
         assert code == 0 and not completion["inputsChanged"], completion

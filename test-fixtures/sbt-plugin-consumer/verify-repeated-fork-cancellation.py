@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from xml.etree import ElementTree as ET
-import argparse,hashlib,importlib.util,json,os,signal,subprocess,tempfile,time,traceback
+import argparse, hashlib, json, os, signal, subprocess, tempfile, time, traceback
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module as module
+
 parser=argparse.ArgumentParser()
 parser.add_argument('--repo-root',type=Path,required=True)
 parser.add_argument('--evidence-dir',type=Path,required=True)
@@ -11,8 +15,7 @@ args=parser.parse_args()
 ROOT=args.repo_root.resolve()
 OUT=args.evidence_dir.resolve()
 OUT.mkdir()
-def module(name,path):
-    spec=importlib.util.spec_from_file_location(name,path);result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result);return result
+
 api=module('client_api',ROOT/'test-fixtures/sbt-plugin-consumer/verify-client-cancellation.py')
 fixture=module('fixture',ROOT/'test-fixtures/sbt-plugin-consumer/verify-task-cancellation.py')
 build=OUT/'build';(build/'project').mkdir(parents=True)

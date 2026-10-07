@@ -6,9 +6,11 @@ import hashlib
 import json
 import os
 import shutil
-import signal
-import subprocess
 import uuid
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 600
@@ -151,13 +153,7 @@ def main():
         (lane/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=inputs,cases=cases),indent=2)+'\n')
         print('TASK_FAILURE_BATCH_START '+scala,flush=True)
         with (lane/'run.log').open('x') as log:
-            process = subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-            try: code = process.wait(timeout=TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid,signal.SIGTERM)
-                try: process.wait(timeout=10)
-                except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-                code = 124
+            code = run_process(argv, build, log, TIMEOUT_SECONDS, 10)
         failures = []; checks = []; resources = set(); parents = set(); children = set()
         if code: failures.append('SBT process failed: inspect run.log')
         else:

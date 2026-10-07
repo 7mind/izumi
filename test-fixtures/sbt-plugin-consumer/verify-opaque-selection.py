@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import argparse
 from collections import Counter
-import hashlib
-import importlib.util
 import json
-import os
 from pathlib import Path
-import signal
-import subprocess
 from xml.etree import ElementTree
 
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, run_process, sha
 
 CONTROLS = r'''
 val prepareSelection = inputKey[Unit]("Prepare one public selection contract")
@@ -90,8 +89,7 @@ captureSelection := Def.uncached {
 '''
 
 
-def sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+
 
 
 def main():
@@ -106,9 +104,7 @@ def main():
     out = args.evidence_dir.resolve()
     out.mkdir()
     matrix_path = root / 'test-fixtures/sbt-plugin-consumer/verify-matrix.py'
-    spec = importlib.util.spec_from_file_location('matrix', matrix_path)
-    matrix = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(matrix)
+    matrix = load_module('matrix', matrix_path)
     original = root / 'test-fixtures/host-sharing-consumer'
     paths = [original / 'build.sbt', *sorted((original / 'src').rglob('*.scala'))]
     build = out / 'build'
@@ -155,17 +151,7 @@ def main():
             '-Dizumi.fixture.external-input=' + str(external), '-Dizumi.fixture.selection-root=' + str(build), *commands]
     (out / 'command.json').write_text(json.dumps(dict(argv=argv, cwd=str(build), inputs=inputs, generated=generated, cases=cases), indent=2) + '\n')
     with (out / 'run.log').open('x') as log:
-        process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        try:
-            code = process.wait(timeout=matrix.LANE_TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
-            try:
-                process.wait(timeout=matrix.SHUTDOWN_GRACE_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait()
-            code = 124
+        code = run_process(argv, build, log, matrix.LANE_TIMEOUT_SECONDS, matrix.SHUTDOWN_GRACE_SECONDS)
     failures = []
     checks = []
     resources = set()

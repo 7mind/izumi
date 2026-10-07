@@ -2,13 +2,14 @@
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import shutil
-import signal
-import subprocess
 
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process
 
 LANE_TIMEOUT_SECONDS = 900
 SHUTDOWN_GRACE_SECONDS = 10
@@ -401,17 +402,7 @@ def main():
             (lane / "commands.json").write_text(json.dumps(dict(cwd=str(build), argv=argv, expected=expected), indent=2) + "\n")
             print("PLUGIN_LANE_START " + str(lane), flush=True)
             with (lane / "run.log").open("x") as log:
-                process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-                try:
-                    code = process.wait(timeout=LANE_TIMEOUT_SECONDS)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGTERM)
-                    try:
-                        process.wait(timeout=SHUTDOWN_GRACE_SECONDS)
-                    except subprocess.TimeoutExpired:
-                        os.killpg(process.pid, signal.SIGKILL)
-                        process.wait()
-                    code = 124
+                code = run_process(argv, build, log, LANE_TIMEOUT_SECONDS, SHUTDOWN_GRACE_SECONDS)
                 log.write("\nEXIT " + str(code) + "\n")
             raw = (lane / "run.log").read_text()
             failures = []

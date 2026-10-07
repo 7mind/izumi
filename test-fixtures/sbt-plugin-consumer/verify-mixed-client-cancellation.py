@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
-import argparse,hashlib,importlib.util,json,os,signal,subprocess,tempfile,time,traceback
+import argparse, hashlib, json, os, signal, subprocess, tempfile, time, traceback
 from pathlib import Path
 from xml.etree import ElementTree
 
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module as module
 
 FOREIGN = r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
@@ -65,10 +69,7 @@ Test / testOptions += {
 '''
 
 
-def module(name,path):
-    spec=importlib.util.spec_from_file_location(name,path)
-    result=importlib.util.module_from_spec(spec);spec.loader.exec_module(result)
-    return result
+
 
 
 def main():

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 import argparse
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
-import importlib.util,json,re,shutil,subprocess,sys
+import json, re, shutil, sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, run_lanes
+
 FIXTURE=Path(__file__).resolve().parent
 sys.path.insert(0,str(FIXTURE))
 from verify import prepare,sha
-spec=importlib.util.spec_from_file_location('policy',FIXTURE/'verify-policy.py');policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
+policy = load_module('policy', FIXTURE / 'verify-policy.py')
 
 CONTROLS='''
 val editExternalConfiguration = inputKey[Unit]("Change untracked configuration input")
@@ -168,10 +171,7 @@ lazy val nativePlugins = project.in(file("plugin-native")).enablePlugins(ScalaNa
             inputs += [dict(path=str(path),sha256=sha(path)) for path in build.rglob('*') if path.is_file()]
             commands.append(command)
     (out/'commands.json').write_text(json.dumps(dict(inputs=inputs,commands=commands),indent=2)+'\n')
-    def run(command):
-        with (out/(command['scala']+'-'+command['platform']+'.log')).open('x') as log:child=subprocess.run(command['argv'],cwd=command['cwd'],stdout=log,stderr=subprocess.STDOUT,timeout=2400)
-        row=dict(scala=command['scala'],platform=command['platform'],actualExit=child.returncode);print(json.dumps(row),flush=True);return row
-    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(run,commands))
+    results = run_lanes(commands, out, 2400)
     mutable={str(Path(command['cwd'])/'shared/FixturePlugin.scala') for command in commands}
     expected_final=(template/'FixturePlugin.scala').read_text().replace('private def implementationRevision: String = "one"','private def implementationRevision: String = "two"').replace('Json.fromString("alpha")','Json.fromString("beta")')
     wrong_edits=[path for path in mutable if Path(path).read_text()!=expected_final]

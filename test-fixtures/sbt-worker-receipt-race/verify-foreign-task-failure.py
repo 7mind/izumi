@@ -1,19 +1,17 @@
 from pathlib import Path
 from xml.etree import ElementTree
 import argparse
-import hashlib
-import importlib.util
 import json
 import os
 import shutil
-import signal
-import subprocess
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, run_process, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 600
-spec = importlib.util.spec_from_file_location('command_groups', Path(__file__).with_name('verify-command-groups.py'))
-groups = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(groups)
+groups = load_module('command_groups', Path(__file__).with_name('verify-command-groups.py'))
 SOURCE = groups.SOURCE.replace('        Array.empty\n', '''        if (mode == "task-error" && definition.fullyQualifiedName() == "fixture.SuiteA") {
           val written = Files.write(audit.resolve("task.throw"),pid.getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE)
           require(Files.isRegularFile(written),"Task throw marker missing")
@@ -67,8 +65,7 @@ captureTaskFailure := {
 }
 '''
 
-def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -99,13 +96,7 @@ def main():
         (lane/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=inputs,cases=cases),indent=2)+'\n')
         print('FOREIGN_TASK_FAILURE_BATCH_START '+scala,flush=True)
         with (lane/'run.log').open('x') as log:
-            process = subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-            try: code = process.wait(timeout=TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid,signal.SIGTERM)
-                try: process.wait(timeout=10)
-                except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-                code = 124
+            code = run_process(argv, build, log, TIMEOUT_SECONDS, 10)
             log.write('\nEXIT '+str(code)+'\n')
         failures = []; checks = []; parents = set(); children = set()
         if code: failures.append('SBT failed: inspect run.log')

@@ -2,14 +2,16 @@
 from pathlib import Path
 from xml.etree import ElementTree
 import argparse
-import hashlib
-import importlib.util
 import json
 import os
 import shutil
 import signal
 import subprocess
 import time
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 240
@@ -59,8 +61,7 @@ captureDelivery := {
 '''
 
 
-def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
 
 
 def main():
@@ -74,9 +75,7 @@ def main():
     out.mkdir(exist_ok=False)
     shutil.copy2(__file__, out / 'driver.py')
     helper = ROOT / 'test-fixtures/sbt-worker-receipt-race/verify-held-batch.py'
-    spec = importlib.util.spec_from_file_location('held_batch', helper)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    module = load_module('held_batch', helper)
     shutil.copy2(helper, out / 'source-helper.py')
     build = out / 'build'
     project = build / 'project'

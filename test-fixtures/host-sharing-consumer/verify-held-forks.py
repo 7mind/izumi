@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, hashlib, json, os, re, shutil, signal, subprocess, time
+import argparse, json, os, re, shutil, subprocess, time
 from xml.etree import ElementTree
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import sha, wait_process
+
 ROOT=Path(__file__).resolve().parents[2]
 LANE_TIMEOUT_SECONDS=240
 HOLD_OBSERVATION_SECONDS=120
@@ -112,7 +116,7 @@ verifyHeldCleanup := UNCACHED {
   streams.value.log.info("HELD_FORK_CLEANUP_OK parent=" + parent.getCanonicalPath)
 }
 '''
-def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--evidence-dir',required=True,type=Path)
@@ -170,12 +174,7 @@ def main():
                         break
                     time.sleep(0.01)
                 if observation is None: failures.append('No held host callback with target done entry was observed')
-                try: actual=process.wait(timeout=LANE_TIMEOUT_SECONDS)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid,signal.SIGTERM)
-                    try: process.wait(timeout=GRACE_SECONDS)
-                    except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-                    actual=124
+                actual = wait_process(process, LANE_TIMEOUT_SECONDS, GRACE_SECONDS)
                 log.write('\nEXIT '+str(actual)+'\n')
             if actual!=0: failures.append('Actual SBT process did not complete both controls')
             raw=(lane/'run.log').read_text()

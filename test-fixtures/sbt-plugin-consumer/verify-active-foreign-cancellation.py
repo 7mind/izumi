@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -12,6 +11,10 @@ import time
 import traceback
 from xml.etree import ElementTree
 
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module as module
 
 FOREIGN_GATE = r'''
         private final val GateTimeoutSeconds = 30L
@@ -27,11 +30,7 @@ FOREIGN_GATE = r'''
 '''
 
 
-def module(name, path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    result = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(result)
-    return result
+
 
 
 def replace_once(text, original, replacement):

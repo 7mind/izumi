@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse,hashlib,importlib.util,json,os,re,shutil,signal,subprocess
+import argparse, json, re, shutil
 from xml.etree import ElementTree
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, run_process, sha
+
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=240
 GRACE_SECONDS=10
@@ -59,12 +63,12 @@ captureMixedFixture := {
   }
 }
 '''
-def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
 def main():
     parser=argparse.ArgumentParser(); parser.add_argument('--evidence-dir',required=True,type=Path); parser.add_argument('--artifact-version',required=True); parser.add_argument('--sbt-version',nargs='+',required=True,choices=['2.0.9']); parser.add_argument('--scala-version',nargs='+',required=True,choices=['3.9.0','2.13.18']); a=parser.parse_args()
     out=a.evidence_dir.resolve(); out.mkdir(exist_ok=False); shutil.copy2(__file__,out/'driver.py')
     helper=ROOT/'test-fixtures/host-sharing-consumer/verify-held-forks.py'
-    spec=importlib.util.spec_from_file_location('held_source',helper); module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    module = load_module('held_source', helper)
     source=module.SOURCE.replace('HeldDeliveryFramework','CompletionAuditFramework').replace('distage-held-delivery-control','distage-mixed-completion-control')
     (out/'completion-framework-source.scala').write_text(source); shutil.copy2(helper,out/'source-helper.py')
     fixture=ROOT/'test-fixtures/host-sharing-consumer'; original=[fixture/'build.sbt',*sorted((fixture/'src').rglob('*.scala'))]; sources=[dict(path=str(p),sha256=sha(p)) for p in original]
@@ -89,13 +93,7 @@ def main():
             generated=[dict(path=str(p),sha256=sha(p)) for p in sorted(build.rglob('*')) if p.is_file()]; (lane/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=generated),indent=2)+'\n')
             print('MIXED_FORK_LANE_START '+sdk+' '+scala,flush=True)
             with (lane/'run.log').open('x') as log:
-                process=subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-                try: actual=process.wait(timeout=TIMEOUT_SECONDS)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid,signal.SIGTERM)
-                    try: process.wait(timeout=GRACE_SECONDS)
-                    except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-                    actual=124
+                actual = run_process(argv, build, log, TIMEOUT_SECONDS, GRACE_SECONDS)
                 log.write('\nEXIT '+str(actual)+'\n')
             failures=[]; cases=[]; parents=set()
             if actual!=0: failures.append('Actual SBT command failed; preserved raw/target evidence requires failure diagnosis')

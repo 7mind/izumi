@@ -1,11 +1,13 @@
 from pathlib import Path
 import argparse
 import json
-import os
-import signal
 import subprocess
 import time
 from xml.etree import ElementTree
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import wait_process
 
 BODY_TIMEOUT_SECONDS = 30
 COMMAND_TIMEOUT_SECONDS = 180
@@ -119,16 +121,7 @@ def main():
                     failures.append('Held-body completion was reported before release')
         finally:
             (audit / 'allow').write_text('release\n')
-            try:
-                actual = process.wait(timeout=COMMAND_TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGTERM)
-                try:
-                    process.wait(timeout=10)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid, signal.SIGKILL)
-                    process.wait()
-                actual = 124
+            actual = wait_process(process, COMMAND_TIMEOUT_SECONDS, 10)
     if actual != 0:
         failures.append('SBT failed: inspect run.log')
     host_pid = int((audit / 'host.pid').read_text())

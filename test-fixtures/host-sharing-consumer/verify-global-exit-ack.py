@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from xml.etree import ElementTree
-import argparse, hashlib, importlib.util, json, os, shutil, signal, subprocess, time
+import argparse, json, os, shutil, signal, subprocess, time
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 360
@@ -247,7 +251,7 @@ HOOK = r'''
     }
 '''
 
-def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
 
 def main():
     parser=argparse.ArgumentParser()
@@ -259,7 +263,7 @@ def main():
     args=parser.parse_args()
     out=args.evidence_dir.resolve(); out.mkdir(exist_ok=False); shutil.copy2(__file__,out/'driver.py')
     helper=ROOT/'test-fixtures/host-sharing-consumer/verify-held-forks.py'
-    spec=importlib.util.spec_from_file_location('held_source',helper); module=importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    module = load_module('held_source', helper)
     source=module.SOURCE.replace('HeldDeliveryFramework','DynamicCompletionFramework').replace('distage-held-delivery-control','distage-dynamic-completion-control')
     source=source.replace('    new Runner {',HOOK+'    new Runner {')
     source=source.replace('val directory = Paths.get(sys.props("izumi.fixture.audit-root"))', 'val directory = if (child) groupDirectory.getOrElse(throw new IllegalStateException("Missing child group")) else Paths.get(sys.props("izumi.fixture.audit-root"))')

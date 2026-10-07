@@ -6,111 +6,41 @@ import hashlib
 import json
 import os
 import shutil
-import signal
-import subprocess
 import uuid
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, run_process
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 600
 PREFIX = 'izumi.fixtures.host.'
 
-FRAMEWORK = r'''package izumi.fixtures.host
-
-import izumi.distage.testkit.protocol.ForkReceiptArguments
-import sbt.testing.{EventHandler, Fingerprint, Framework, Logger, Runner, Task, TaskDef}
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths, StandardOpenOption}
-
-final class OmittingFramework extends Framework {
-  private val delegate = new izumi.distage.testkit.runner.bootstrap.Framework
-  override def name(): String = delegate.name()
-  override def fingerprints(): Array[Fingerprint] = delegate.fingerprints()
-  override def runner(args: Array[String], remote: Array[String], loader: ClassLoader): Runner = {
-    val invocation = ForkReceiptArguments.parse(args.toVector, remote.toVector)
-    val original = delegate.runner(args, remote, loader)
-    val audit = Paths.get(sys.props("izumi.fixture.audit-root"))
-    new Runner {
-      override def args(): Array[String] = original.args()
-      override def remoteArgs(): Array[String] = original.remoteArgs()
-      override def tasks(definitions: Array[TaskDef]): Array[Task] = {
-        val names = definitions.map(_.fullyQualifiedName()).sorted
-        val data = (Vector(ProcessHandle.current().pid().toString) ++ names.toVector).mkString("\n")
-        val _ = Files.write(audit.resolve("target.selected"), data.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
-        val admitted = if (Files.isRegularFile(audit.resolve("omit.flag"))) definitions.filterNot(_.fullyQualifiedName() == "izumi.fixtures.host.SuiteD") else definitions
+fixture = load_module('task_delivery', Path(__file__).with_name('verify-task-failure.py'))
+FRAMEWORK = fixture.FRAMEWORK.replace('ThrowingTaskFramework', 'OmittingFramework')
+start = FRAMEWORK.index('        original.tasks(definitions.sortBy(_.fullyQualifiedName())).map { task => new Task {')
+end = FRAMEWORK.index('        }}', start) + len('        }}')
+FRAMEWORK = FRAMEWORK[:start] + r'''        val admitted = if (Files.isRegularFile(audit.resolve("omit.flag"))) definitions.filterNot(_.fullyQualifiedName() == "izumi.fixtures.host.SuiteD") else definitions
         original.tasks(admitted).map { task => new Task {
           override def taskDef(): TaskDef = task.taskDef()
           override def tags(): Array[String] = task.tags()
           override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = task.execute(handler,loggers)
-        }}
-      }
-      override def done(): String = {
-        val result = original.done()
-        invocation.hostDirectory.foreach { directory =>
-          val entries = Files.list(directory)
-          try entries.forEach { path =>
-            if (path.getFileName.toString.endsWith(".terminal")) {
-              val captured = audit.resolve(path.getFileName)
-              if (Files.exists(captured)) require(Files.mismatch(path,captured) == -1L,"Repeated terminal capture differs")
-              else { val _ = Files.copy(path,captured); () }
-            }
-          } finally entries.close()
-        }
-        result
-      }
-    }
-  }
-}
-'''
-
-SETTINGS = r'''
-lazy val missingSuiteConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)
-val proxyFramework = new TestFramework("izumi.fixtures.host.OmittingFramework")
-Test / testFrameworks := Seq(proxyFramework)
-def proxyExecution(value: Tests.Execution): Tests.Execution = value.copy(options = value.options.map {
-  case Tests.Argument(Some(framework), arguments) if framework == new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework") => Tests.Argument(proxyFramework, arguments*)
-  case other => other
-})
-Test / testSelected / testExecution := Def.uncached { proxyExecution((Test / testSelected / testExecution).value) }
-Test / testQuick / testExecution := Def.uncached { proxyExecution((Test / testQuick / testExecution).value) }
-Test / test / testExecution := Def.uncached { proxyExecution((Test / test / testExecution).value) }
-Test / testResultLogger := {
-  val audit = file(sys.props("izumi.fixture.audit-root"))
-  new TestResultLogger {
-    override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = {
-      IO.write(audit / "host.parent",ProcessHandle.current().pid().toString)
-      val rows = output.events.toVector.sortBy(_._1).map { case (name,result) => Vector(name,result.passedCount,result.failureCount,result.errorCount).mkString("\t") }
-      IO.write(audit / "host.output",rows.mkString("\n"))
-      TestResultLogger.Default.run(log,output,taskName)
-    }
-  }
-}
-val prepareMissingSuite = inputKey[Unit]("Prepare one owned omission control")
-prepareMissingSuite := {
-  val parsed = spaceDelimited("mode").parsed
-  require(parsed.size == 1 && Set("normal","missing","recovery").contains(parsed.head),"Missing omission mode")
-  val audit = file(sys.props("izumi.fixture.audit-root"))
-  IO.delete(audit); IO.createDirectory(audit)
-  IO.delete((Test / target).value / "test-reports")
-  if (parsed.head == "missing") IO.write(audit / "omit.flag","enabled")
-}
-val observeMissingSuite = taskKey[Unit]("Capture a rejected command without leaving the SBT session")
-observeMissingSuite := Def.uncached {
-  val result = (Test / testOnly).toTask(" *SuiteC *SuiteD *SuiteE").result.value
-  require(result.toEither.isLeft,"TARGET_OMISSION_FALSE_SUCCESS")
-  IO.write(file(sys.props("izumi.fixture.audit-root")) / "host.rejected",result.toEither.left.toOption.get.toString)
-}
-val captureMissingSuite = inputKey[Unit]("Freeze physical bodies and original host reports")
-captureMissingSuite := {
-  val parsed = spaceDelimited("case").parsed
-  require(parsed.size == 1,"Missing omission case")
-  val destination = file(sys.props("izumi.fixture.captures")) / parsed.head
-  require(!destination.exists(),"Omission capture must be new")
-  IO.copyDirectory(file(sys.props("izumi.fixture.audit-root")),destination / "audit")
-  IO.copyDirectory((Test / target).value / "test-reports",destination / "test-reports")
-  val roots = (Test / target).value / "distage-fork-receipts"
-  require(!roots.exists() || (roots * "*").get().isEmpty,"Omission command root survived")
-}
-'''
+        }}''' + FRAMEWORK[end:]
+SETTINGS = fixture.SETTINGS
+for before, after in [
+    ('taskFailureConsumer', 'missingSuiteConsumer'),
+    ('ThrowingTaskFramework', 'OmittingFramework'),
+    ('TaskFailure', 'MissingSuite'),
+    ('one owned task-failure control', 'one owned omission control'),
+    ('"task-error"', '"missing"'),
+    ('Missing task-failure mode', 'Missing omission mode'),
+    ('"throw.flag"', '"omit.flag"'),
+    ('TASK_FAILURE_FALSE_SUCCESS', 'TARGET_OMISSION_FALSE_SUCCESS'),
+    ('Missing task-failure case', 'Missing omission case'),
+    ('Task-failure capture must be new', 'Omission capture must be new'),
+    ('Task-failure command root survived', 'Omission command root survived'),
+]:
+    SETTINGS = SETTINGS.replace(before, after)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -144,13 +74,7 @@ def main():
         (lane/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=inputs,cases=cases),indent=2)+'\n')
         print('MISSING_SUITE_BATCH_START '+scala,flush=True)
         with (lane/'run.log').open('x') as log:
-            process = subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-            try: code = process.wait(timeout=TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid,signal.SIGTERM)
-                try: process.wait(timeout=10)
-                except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-                code = 124
+            code = run_process(argv, build, log, TIMEOUT_SECONDS, 10)
         failures = []; checks = []; resources = set(); parents = set(); children = set()
         if code: failures.append('SBT process failed: inspect run.log')
         else:

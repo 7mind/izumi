@@ -5,8 +5,10 @@ import hashlib
 import json
 import os
 import shutil
-import signal
-import subprocess
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process
 
 TIMEOUT_SECONDS = 600
 SUITES = ['SuiteA','SuiteB','SuiteC','SuiteD','SuiteE']
@@ -157,13 +159,7 @@ def main():
         (lane/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=inputs,cases=cases),indent=2)+'\n')
         print('MULTI_PROJECT_BATCH_START scala='+scala,flush=True)
         with (lane/'run.log').open('x') as log:
-            process = subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-            try: code = process.wait(timeout=TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid,signal.SIGTERM)
-                try: process.wait(timeout=10)
-                except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-                code = 124
+            code = run_process(argv, build, log, TIMEOUT_SECONDS, 10)
         failures = []; resources = set(); pids = set(); parents = set(); checks = []
         if code: failures.append('SBT process failed: inspect run.log')
         else:

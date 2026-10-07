@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-import argparse,hashlib,importlib.util,json,os,signal,socket,subprocess,time,threading,traceback,urllib.parse,tempfile
+import argparse, hashlib, json, os, signal, socket, subprocess, time, threading, traceback, urllib.parse, tempfile
 from pathlib import Path
 from xml.etree import ElementTree
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module
+
 WAIT_SECONDS=180
 RELEASE_WAIT_SECONDS=30
 RELEASE_HOLD_SECONDS=.25
@@ -115,7 +119,7 @@ def main():
     args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
     # Reuse the identical suite/resource fixture without its task-interruption proxy.
     path=root/'test-fixtures/sbt-plugin-consumer/verify-task-cancellation.py'
-    spec=importlib.util.spec_from_file_location('task_fixture',path);fixture=importlib.util.module_from_spec(spec);spec.loader.exec_module(fixture)
+    fixture = load_module('task_fixture', path)
     build=out/'build';(build/'project').mkdir(parents=True)
     source=build/'src/test/scala';source.mkdir(parents=True)
     (source/'Suites.scala').write_text(fixture.SOURCE.replace('@AUDIT@',json.dumps(str(build/'audit')))+'\n'+'\n'.join(f'final class {s} extends CancellationSuite' for s in fixture.SUITES)+'\n')

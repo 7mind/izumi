@@ -1,13 +1,15 @@
 from pathlib import Path
 from xml.etree import ElementTree
 import argparse
-import hashlib
 import json
 import os
 import shutil
-import signal
 import subprocess
 import time
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import sha, wait_process
 
 TIMEOUT_SECONDS = 240
 SOURCE = r'''package fixture
@@ -164,8 +166,7 @@ captureGroups := {
 }
 '''
 
-def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
 
 def is_process_alive(pid):
     try:
@@ -236,12 +237,7 @@ def main():
             observations[mode] = observation
             (out/('held-shutdown-'+mode+'-observation.json')).write_text(json.dumps(observation,indent=2)+'\n')
             (audit/'worker.allow').write_text('release after failed process observation\n')
-        try: actual = process.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid,signal.SIGTERM)
-            try: process.wait(timeout=10)
-            except subprocess.TimeoutExpired: os.killpg(process.pid,signal.SIGKILL); process.wait()
-            actual = 124
+        actual = wait_process(process, 10, 10)
         log.write('\nEXIT '+str(actual)+'\n')
     failures = []; cases = []; all_pids = set(); parents = set()
     for mode in exit_modes:

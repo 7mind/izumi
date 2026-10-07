@@ -1,13 +1,13 @@
 from pathlib import Path
 from xml.etree import ElementTree
 import argparse
-import hashlib
 import importlib.util
 import json
-import os
 import shutil
-import signal
-import subprocess
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process, sha
 
 TIMEOUT_SECONDS = 240
 TESTS_PER_SUITE = 3
@@ -73,8 +73,7 @@ captureGroups := {
 '''
 
 
-def sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+
 
 
 def source_from_fork_fixture():
@@ -125,17 +124,7 @@ def main():
     argv = ['direnv', 'exec', str(args.repo_root.resolve()), 'sh', '-c', 'exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"', 'inprocess-command-groups', '-Dfixture.scala-version=' + args.scala_version, '-Dfixture.artifact-version=' + args.artifact_version, '-Dfixture.audit-root=' + str(build / 'audit'), '-Dfixture.captures=' + str(out / 'cases'), *commands]
     (out / 'commands.json').write_text(json.dumps(dict(cwd=str(build), argv=argv, inputs=inputs), indent=2) + '\n')
     with (out / 'run.log').open('x') as log:
-        process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        try:
-            actual = process.wait(timeout=TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait()
-            actual = 124
+        actual = run_process(argv, build, log, TIMEOUT_SECONDS, 10)
         log.write('\nEXIT ' + str(actual) + '\n')
     failures = []
     cases = []

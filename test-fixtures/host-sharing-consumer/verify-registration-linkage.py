@@ -2,12 +2,12 @@
 from pathlib import Path
 from xml.etree import ElementTree
 import argparse
-import hashlib
 import json
-import os
 import shutil
-import signal
-import subprocess
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 300
@@ -71,8 +71,7 @@ captureRegistrationFixture := {
 '''
 
 
-def sha(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
 
 
 def main():
@@ -120,17 +119,7 @@ def main():
     (output / 'commands.json').write_text(json.dumps(dict(cwd=str(build), argv=argv), indent=2) + '\n')
     print(json.dumps(dict(state='started', scala=args.scala_version, log=str(output / 'run.log'))), flush=True)
     with (output / 'run.log').open('x') as log:
-        process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        try:
-            actual_exit = process.wait(timeout=TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
-            try:
-                process.wait(timeout=GRACE_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL)
-                process.wait()
-            actual_exit = 124
+        actual_exit = run_process(argv, build, log, TIMEOUT_SECONDS, GRACE_SECONDS)
         log.write('\nEXIT ' + str(actual_exit) + '\n')
     raw = (output / 'run.log').read_text()
     valid = actual_exit == 0 and raw.count('REGISTRATION_CONSUMER_THROW pid=') == 2 and raw.count('REGISTRATION_CONSUMER_TASK_REJECTED ') == 2 and raw.count('REGISTRATION_CONSUMER_CAPTURE_OK case=') == 3

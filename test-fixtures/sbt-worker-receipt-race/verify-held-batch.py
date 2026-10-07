@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse,hashlib,json,os,re,shutil,signal,subprocess,time
+import argparse, json, re, shutil, subprocess, time
 from xml.etree import ElementTree
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import sha, wait_process
+
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=180
 GRACE_SECONDS=10
@@ -109,7 +113,7 @@ Test / SELECTED / testResultLogger := {
 }
 '''
 
-def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--evidence-dir',type=Path,required=True);a=parser.parse_args()
     out=a.evidence_dir.resolve();out.mkdir(exist_ok=False);shutil.copy2(__file__,out/'driver.py');outcomes=[]
@@ -136,12 +140,7 @@ def main():
                             with (audit/'host.allow').open('x') as f:f.write('release after frozen observation\n')
                             break
                         time.sleep(0.01)
-                try:actual=process.wait(timeout=TIMEOUT_SECONDS)
-                except subprocess.TimeoutExpired:
-                    os.killpg(process.pid,signal.SIGTERM)
-                    try:process.wait(timeout=GRACE_SECONDS)
-                    except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
-                    actual=124
+                actual = wait_process(process, TIMEOUT_SECONDS, GRACE_SECONDS)
                 log.write('\nEXIT '+str(actual)+'\n')
             raw=(lane/'run.log').read_text();bodies=[p.read_text().split('\t') for p in sorted(audit.glob('*.body'))];parent=(audit/'host.parent').read_text() if (audit/'host.parent').is_file() else None;child=(audit/'child.done').read_text() if (audit/'child.done').is_file() else None
             reports=[];reported=[]

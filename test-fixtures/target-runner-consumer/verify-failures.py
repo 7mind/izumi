@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 import argparse
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor
 import json
 from pathlib import Path
 import re
-import subprocess
 import xml.etree.ElementTree as ET
 
 from verify import prepare, sha
 
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_lanes
 
 def configure(command, scenario):
     build = Path(command['cwd'])
@@ -146,14 +148,7 @@ def main():
             inputs.extend(dict(path=str(path), sha256=sha(path)) for path in build.rglob('*') if path.is_file())
             commands.append(command)
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands, scenario=args.scenario), indent=2) + '\n')
-    def run(command):
-        with (out / (command['scala'] + '-' + command['platform'] + '.log')).open('x') as log:
-            result = subprocess.run(command['argv'], cwd=command['cwd'], stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-        row = dict(scala=command['scala'], platform=command['platform'], actualExit=result.returncode)
-        print(json.dumps(row), flush=True)
-        return row
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        results = list(pool.map(run, commands))
+    results = run_lanes(commands, out, 1200)
     changed = [row['path'] for row in inputs if sha(Path(row['path'])) != row['sha256']]
     (out / 'completion.json').write_text(json.dumps(dict(lanes=results, inputsChanged=changed), indent=2) + '\n')
     expected_exit = 1 if args.scenario == 'body' else 0

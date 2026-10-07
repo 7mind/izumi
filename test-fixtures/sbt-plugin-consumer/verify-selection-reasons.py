@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
-import argparse,hashlib,importlib.util,json,os,signal,subprocess,traceback
+import argparse, hashlib, json, subprocess, traceback
 from pathlib import Path
 
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import load_module, run_process
 
 def main():
     parser=argparse.ArgumentParser()
@@ -11,7 +15,7 @@ def main():
     parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
     args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
     matrix_path=root/'test-fixtures/sbt-plugin-consumer/verify-matrix.py'
-    spec=importlib.util.spec_from_file_location('matrix',matrix_path);matrix=importlib.util.module_from_spec(spec);spec.loader.exec_module(matrix)
+    matrix = load_module('matrix', matrix_path)
     original=root/'test-fixtures/host-sharing-consumer';build=out/'build';build.mkdir()
     paths=[original/'build.sbt',*sorted((original/'src').rglob('*.scala'))]
     for path in paths:
@@ -59,13 +63,7 @@ def main():
     argv=['direnv','exec',str(root),'sh','-c','exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"','selection-reasons','-Dizumi.fixture.scala-version='+args.scala_version,'-Dizumi.fixture.version='+args.artifact_version,'-Dizumi.fixture.audit-root='+str(build/'target/body-audit'),'-Dizumi.fixture.captures='+str(out/'cases'),'-Dizumi.fixture.external-input='+str(external),*commands]
     (out/'command.json').write_text(json.dumps(dict(argv=argv,cwd=str(build),head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),inputs=inputs,generated=generated,cases=cases),indent=2)+'\n')
     with (out/'run.log').open('x') as log:
-        process=subprocess.Popen(argv,cwd=build,stdout=log,stderr=subprocess.STDOUT,start_new_session=True)
-        try:code=process.wait(timeout=matrix.LANE_TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid,signal.SIGTERM)
-            try:process.wait(timeout=matrix.SHUTDOWN_GRACE_SECONDS)
-            except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
-            code=124
+        code = run_process(argv, build, log, matrix.LANE_TIMEOUT_SECONDS, matrix.SHUTDOWN_GRACE_SECONDS)
     failures=[];checks=[];raw=(out/'run.log').read_text()
     if code:failures.append('SBT failed: inspect run.log')
     else:

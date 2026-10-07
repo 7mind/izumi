@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 import argparse
-import hashlib
 import json
-import os
 from pathlib import Path
 import shutil
-import signal
-import subprocess
 import traceback
 from xml.etree import ElementTree
+
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import run_process, sha
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -204,8 +204,7 @@ captureCancellation := {
 '''
 
 
-def sha(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+
 
 
 def verify(directory, row, resources, runs):
@@ -289,16 +288,7 @@ def main():
     argv = ['direnv', 'exec', str(root), 'sh', '-c', 'exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"', 'task-cancellation', *commands]
     (out / 'command.json').write_text(json.dumps(dict(argv=argv, cwd=str(build), inputs=inputs, cases=rows), indent=2) + '\n')
     with (out / 'run.log').open('w') as log:
-        process = subprocess.Popen(argv, cwd=build, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
-        try:
-            actual = process.wait(timeout=TIMEOUT_SECONDS)
-        except subprocess.TimeoutExpired:
-            os.killpg(process.pid, signal.SIGTERM)
-            try:
-                process.wait(timeout=SHUTDOWN_GRACE_SECONDS)
-            except subprocess.TimeoutExpired:
-                os.killpg(process.pid, signal.SIGKILL); process.wait()
-            actual = 124
+        actual = run_process(argv, build, log, TIMEOUT_SECONDS, SHUTDOWN_GRACE_SECONDS)
     failures = []; checks = []; resources = set(); runs = set()
     if actual:
         failures.append('SBT failed: inspect run.log')
