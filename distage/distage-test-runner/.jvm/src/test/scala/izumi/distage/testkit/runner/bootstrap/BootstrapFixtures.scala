@@ -190,7 +190,7 @@ object BootstrapFixtures {
         RegisteredSuite(suite, Vector(test), provider)
       }
     }
-    val cancellationRunner = new BootstrapRunner(flags, Array.empty, cancellationFactory, cancellationRequest, None, None)
+    val cancellationRunner = new BootstrapRunner(flags, Array.empty, cancellationFactory, loader, cancellationRequest, None, None)
     val cancellationTask = cancellationRunner.tasks(Array(definitions.head)).head
     val reportingPipe = Pipe.open()
     val cancellationThread = new Thread(() => {
@@ -263,7 +263,7 @@ object BootstrapFixtures {
           RegisteredSuite(suite, Vector(test), provider)
         }
       }
-      val fatalRunner = new BootstrapRunner(flags, Array.empty, factory, request, None, None)
+      val fatalRunner = new BootstrapRunner(flags, Array.empty, factory, loader, request, None, None)
       val fatalTasks = fatalRunner.tasks(definitions)
       val fatalHandler = new EventHandler { override def handle(event: Event): Unit = throw failure }
       val follower = new RecordingHandler

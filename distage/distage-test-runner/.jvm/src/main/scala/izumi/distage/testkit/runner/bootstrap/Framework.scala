@@ -7,7 +7,7 @@ import sbt.testing.{Event, EventHandler, Fingerprint, Framework as SbtFramework,
 
 import java.nio.file.Path
 import java.util.UUID
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.{ForkJoinPool, ForkJoinWorkerThread, TimeUnit}
 import scala.concurrent.{Await, ExecutionContext, Promise}
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
@@ -26,7 +26,7 @@ final class Framework extends SbtFramework {
     val invocation = ForkReceiptArguments.parse(args.toVector, remoteArgs.toVector)
     val request = RequestArguments.parse(invocation.arguments).fold(error => throw new IllegalArgumentException(error.message), value => value)
     val control = if (invocation.commandCompletion) invocation.hostDirectory.map(directory => BootstrapRunContext(directory, ForkProcessId(ProcessHandle.current().pid()), invocation.forked)) else None
-    val runner = new BootstrapRunner(args.clone(), invocation.forwardedRemoteArguments.toArray, name => JvmSuiteLoader.load(name, testClassLoader), request, invocation.eventDirectory, control)
+    val runner = new BootstrapRunner(args.clone(), invocation.forwardedRemoteArguments.toArray, name => JvmSuiteLoader.load(name, testClassLoader), testClassLoader, request, invocation.eventDirectory, control)
     if (invocation.forked) {
       val directory = invocation.hostDirectory.getOrElse(throw new IllegalStateException("Fork receipt activation has no host ownership"))
       if (invocation.commandCompletion) {
@@ -47,6 +47,7 @@ private[bootstrap] final class BootstrapRunner(
   arguments: Array[String],
   remoteArguments: Array[String],
   factory: String => TestSuite,
+  testClassLoader: ClassLoader,
   request: RunRequest,
   eventDirectory: Option[Path],
   controlDirectory: Option[BootstrapRunContext],
@@ -68,7 +69,7 @@ private[bootstrap] final class BootstrapRunner(
         case _ => throw new IllegalArgumentException("Task fingerprint does not identify a distage suite")
       }
     }
-    val invocation = new Invocation(request, definitions.toVector, factory, eventDirectory, controlDirectory)
+    val invocation = new Invocation(request, definitions.toVector, factory, testClassLoader, eventDirectory, controlDirectory)
     invocation.projections.map { projection =>
       new Task {
         private var executed = false
@@ -125,7 +126,7 @@ private[bootstrap] final class BootstrapRunner(
   }
 }
 
-private[bootstrap] final class Invocation(request: RunRequest, definitions: Vector[TaskDef], factory: String => TestSuite, eventDirectory: Option[Path], controlDirectory: Option[BootstrapRunContext]) {
+private[bootstrap] final class Invocation(request: RunRequest, definitions: Vector[TaskDef], factory: String => TestSuite, testClassLoader: ClassLoader, eventDirectory: Option[Path], controlDirectory: Option[BootstrapRunContext]) {
   private final val ShutdownPollSeconds = 1L
   val projections: Vector[SuiteProjection] = definitions.map(new SuiteProjection(_))
   private val completion = Promise[Either[Throwable, RunOutcome]]()
@@ -153,7 +154,14 @@ private[bootstrap] final class Invocation(request: RunRequest, definitions: Vect
   }
 
   private def execute(interruption: TaskInterruption): Either[Throwable, RunOutcome] = {
-    val executor = Executors.newWorkStealingPool()
+    val workerFactory = new ForkJoinPool.ForkJoinWorkerThreadFactory {
+      override def newThread(pool: ForkJoinPool): ForkJoinWorkerThread = {
+        val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
+        worker.setContextClassLoader(testClassLoader)
+        worker
+      }
+    }
+    val executor = new ForkJoinPool(Runtime.getRuntime.availableProcessors(), workerFactory, null, true)
     val executionContext = ExecutionContext.fromExecutorService(executor)
     try {
       val result = Using.Manager { use =>

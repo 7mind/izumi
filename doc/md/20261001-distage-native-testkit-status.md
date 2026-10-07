@@ -19133,3 +19133,48 @@ both sync and Future bodies. Four complete absence bodies match their original
 source after only step-logging and explicit-discard harness adaptations; proof
 is in5-distage-plain-migration-worktree-twelfth/absence-body-preservation-audit.json.
 The remaining twelfth-batch compiler and full-execution outcomes remain pending.
+
+## 2026-10-07: verified JVM worker classloader correction
+
+The four bounded correction/control files are copied to main only after their
+prior main payloads match the candidate base byte-for-byte. The main regression
+batch succeeds on both supported compilers:326.675s on Scala2.13.18 and
+348.244s on Scala3.9.0, with1643 frozen inputs unchanged per process. The full
+JVM base runner controls pass845 checks per compiler, and the focused child
+loader fixture passes both sync/Future bodies per compiler. The complete
+Docker suites again preserve all30 suites/62 cases per compiler with no removed
+vendor entries in their resolved graphs/classpaths. Independent audit exits0.
+
+Capture:5-worker-classloader-main-regression-first/. Audit command:
+python3 /srv/nvme/tmp/izumi-impl/5-worker-classloader-main-regression-first/audit.py.
+Audit SHA256:424b9357fd8d49f1571196af6166bb1306870a0210dd176f6d1b0f219b2b6525.
+The supplied loader now reaches every new invocation worker, correcting the
+reproduced missing-resource failure while retaining pool scheduling/concurrency
+and invocation-owned shutdown. Complete framework/classloader acceptance and
+final-head evaluation remain open.
+
+The twelfth six-module batch completes both compiler preflights successfully:
+163.525s on Scala2.13 and457.112s on Scala3.9,1639 inputs unchanged each.
+The optional-dependency fixture compiles with effect libraries absent and
+required izumi-reflect retained; the child-loader reproduction passes both
+compilers. The full42-lane execution and inspection batches remain in flight.
+
+## 2026-10-07: wiring optional-argument compatibility reproduction
+
+Review of the original wiring API finds cfg/checkAgainAtRuntime defaults that
+the initial portable port omitted. These are existing optional public arguments;
+preserving them is necessary for the plan's imports-only compatibility promise.
+The separate wiring-api-worktree compiles the original call shapes with
+explicit materializers. Both compiler reproductions fail before correction,
+with exactly three expected missing-argument errors and1644 unchanged inputs:
+245.307s on Scala2.13,117.455s on Scala3.9. The first controller's Scala3
+message predicate used the wrong capitalization; independent case-insensitive
+audit confirms the actual captured errors without repeating compilation.
+
+Capture:5-wiring-defaults-reproduction-first/ and
+independent-negative-api-audit.json. The candidate restores the original cfg
+and runtime-recheck defaults in both constructors and WiringAssertions, with
+new default-call discovery/execution controls. Its six-lane full higher-provider
+batch is in5-wiring-defaults-controls-first/,1645 frozen inputs. Compilation
+of ordinary call shapes and actual runtime defaults are being verified; actual
+compiler materialization and the complete imports-only inventory remain open.
