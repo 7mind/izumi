@@ -16,7 +16,7 @@ object AnyCatsEffectSupportModule {
     *
     * For all `F[_]` with available `make[Async[F]]`, `make[Parallel[F]]` and `make[Dispatcher[F]]` bindings.
     *
-    *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+    *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[_]` in `Injector`, `distage-framework` & `distage-testkit-runner`
     *  - Adds `cats-effect` typeclass instances for `F[_]`
     *
     * Depends on `make[Async[F]]`, `make[Parallel[F]]`, `make[Dispatcher[F]]`.

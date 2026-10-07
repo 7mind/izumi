@@ -16,7 +16,7 @@ object AnyBIOSupportModule {
     *
     * For all `F[+_, +_]` with available `make[Async2[F]]`, `make[Temporal2[F]]` and `make[UnsafeRun2[F]]` bindings.
     *
-    *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+    *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using `F[+_, +_]` in `Injector`, `distage-framework` & `distage-testkit-runner`
     *  - Adds [[izumi.functional.bio]] typeclass instances for `F[+_, +_]`
     *
     * Depends on `make[Async2[F]]`, `make[Temporal2[F]]`, `make[UnsafeRun2[F]]`, `make[Fork2[F]]`

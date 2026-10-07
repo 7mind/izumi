@@ -58,7 +58,7 @@ object TestkitRunnerModule {
     * block the running thread. Test parallelism in Identity is achieved via thread pools, which is probably OK for tests.
     *
     * @param isTestCancellation Predicate for determining whether a thrown exception signifies a canceled, not failed, test.
-    *                           e.g. For ScalaTest it's `_.isInstanceOf[org.scalatest.exceptions.TestCanceledException]`
+    *                           e.g. `_.isInstanceOf[izumi.distage.testkit.runner.TestCancelled]`
     *
     * @note a `DistageTest[G]` will be run using `QuasiIORunner[G]` assembled from bindings in [[DistageTest.environment]]
     *       (Most likely the QuasIORunner binding will be found in [[izumi.distage.testkit.model.TestEnvironment.defaultModule]],

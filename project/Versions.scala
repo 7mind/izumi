@@ -5,15 +5,12 @@ object V {
   // foundation
   val kind_projector = "0.13.4"
 
-  val scalatest = "3.3.0-alpha.2"
-  val scalatestplus_scalacheck = "3.3.0.0-alpha.2"
 
   val cats = "2.13.0"
   val cats_effect = "3.7.1"
   val scalac_compat_annotation = "0.1.5"
 
   val discipline = "1.7.0"
-  val discipline_scalatest = "2.3.0"
 
   val zio = "2.1.26"
   val zio_interop_cats = "23.1.0.14"
@@ -52,5 +49,4 @@ object V {
   val paradox_material_theme = "0.7.0"
 
   // test-only
-  val scalamock = "7.5.2"
 }

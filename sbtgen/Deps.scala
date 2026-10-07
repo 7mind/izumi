@@ -12,13 +12,10 @@ object Izumi {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
     val sbtgen = Version.VExpr("V.sbtgen")
     val kind_projector = Version.VExpr("V.kind_projector")
-    val scalatest = Version.VExpr("V.scalatest")
-    val scalatestplus_scalacheck = Version.VExpr("V.scalatestplus_scalacheck")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
     val scalac_compat_annotation = Version.VExpr("V.scalac_compat_annotation")
     val discipline = Version.VExpr("V.discipline")
-    val discipline_scalatest = Version.VExpr("V.discipline_scalatest")
     val zio = Version.VExpr("V.zio")
     val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
     val monix = Version.VExpr("V.monix")
@@ -37,7 +34,6 @@ object Izumi {
     val typesafe_config = Version.VExpr("V.typesafe_config")
     val bytebuddy = Version.VExpr("V.bytebuddy")
     val scala_java_time = Version.VExpr("V.scala_java_time")
-    val scalamock = Version.VExpr("V.scalamock")
     val docker_java = Version.VExpr("V.docker_java")
     val commons_compress = Version.VExpr("V.commons_compress")
     val scalajs_java_securerandom = Version.VExpr("V.scalajs_java_securerandom")
@@ -71,27 +67,7 @@ object Izumi {
   object Deps {
     final val izumi_reflect = Library("dev.zio", "izumi-reflect", V.izumi_reflect, LibraryType.Auto)
 
-    final val scalatest_all = Seq(
-      // repeat `scalatest` dependencies, but exclude `scalatest-expectations`(2.13) and `scalatest_refspec`(sjs1_2.13)
-      // because they're missing in `3.3.0-alpha.2` release
-      Library("org.scalatest", "scalatest-core", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-diagrams", V.scalatest, LibraryType.Auto),
-  //      Library("org.scalatest", "scalatest-expectations", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-featurespec", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-flatspec", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-freespec", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-funspec", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-funsuite", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-matchers-core", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-mustmatchers", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-propspec", V.scalatest, LibraryType.Auto),
-  //      Library("org.scalatest", "scalatest-refspec", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-shouldmatchers", V.scalatest, LibraryType.Auto),
-      Library("org.scalatest", "scalatest-wordspec", V.scalatest, LibraryType.Auto),
 
-      // add scalatestplus scalacheck dependency because the versions have to match scalatest ones
-      Library("org.scalatestplus", "scalacheck-1-18", V.scalatestplus_scalacheck, LibraryType.Auto),
-    )
 
     final val cats_core = Library("org.typelevel", "cats-core", V.cats, LibraryType.Auto)
     final val cats_effect = Library("org.typelevel", "cats-effect", V.cats_effect, LibraryType.Auto)
@@ -109,7 +85,6 @@ object Izumi {
     final val circe_derivation_scala2 = Library("io.circe", "circe-derivation", V.circe_derivation, LibraryType.Auto)
 
     final val discipline = Library("org.typelevel", "discipline-core", V.discipline, LibraryType.Auto)
-    final val discipline_scalatest = Library("org.typelevel", "discipline-scalatest", V.discipline_scalatest, LibraryType.Auto)
 
     final val pureconfig_core = Library("com.github.pureconfig", "pureconfig-core", V.pureconfig, LibraryType.Auto)
     final val pureconfig_magnolia = Library("com.github.pureconfig", "pureconfig-magnolia", V.pureconfig, LibraryType.Auto)
@@ -159,7 +134,6 @@ object Izumi {
 
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scala_java_time_tzdb = Library("io.github.cquiroz", "scala-java-time-tzdb", V.scala_java_time, LibraryType.Auto)
-    final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
     final val scalajs_macrotask_executor = Library("org.scala-js", "scala-js-macrotask-executor", V.scalajs_macrotask_executor, LibraryType.Auto)
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant)
@@ -431,7 +405,7 @@ object Izumi {
               // Scala 3.9.0 scans every classpath root, including sbt's synthesized JDK `rt.jar`, to suggest
               // imports for "not found"/"missing given" errors. On JDK 21+ that parse trips an inner-class
               // assertion (`javax.swing.RepaintManager$PaintManager`) and crashes the compiler instead of
-              // reporting the error; the typecheck-expecting tests in distage-testkit-scalatest hit it
+              // reporting the error; the typecheck-expecting tests in distage-testkit-runner-test hit it
               // deterministically. Disabling the suggestions only loses the "did you mean to import" hints.
               //
               // Tracked in https://github.com/scala/scala3/issues/25451; drop this flag once that is fixed.
@@ -451,7 +425,6 @@ object Izumi {
       )
 
       final val sharedSettings = Defaults.SbtMetaSharedOptions ++ outOfSource ++ crossScalaSources ++ Seq(
-      "testOptions" in SettingScope.Test += """Tests.Argument(new TestFramework("org.scalatest.tools.Framework"), "-oDF")""".raw,
       // sbt 2.0.5+ closes the adhoc test ClassLoader once the test task completes. The ZIO and
       // cats-effect runtimes keep their worker threads alive past that point (ZIO's global
       // `Runtime.default` scheduler cannot be shut down at all), so the next class load on any of
@@ -472,7 +445,6 @@ object Izumi {
       "scalacOptions" ++= wconfOverrides,
       "scalacOptions" in SettingScope.Raw("Compile / sbt.Keys.doc") -= "-Wconf:any:error",
       "scalacOptions" ++= Seq(
-        """s"-Xmacro-settings:scalatest-version=${V.scalatest}"""".raw,
         """s"-Xmacro-settings:is-ci=${insideCI.value}"""".raw,
       ),
       "scalacOptions" ++= Seq(
@@ -550,8 +522,6 @@ object Izumi {
       final lazy val testkitRunner = ArtifactId("distage-testkit-runner")
       final lazy val testkitRunnerTest = ArtifactId("distage-testkit-runner-test")
       final lazy val testkitRunnerSbtModuleFilteringTest = ArtifactId("distage-testkit-runner-sbt-module-filtering-test")
-      final lazy val testkitScalatest = ArtifactId("distage-testkit-scalatest")
-      final lazy val testkitScalatestSbtModuleFilteringTest = ArtifactId("distage-testkit-scalatest-sbt-module-filtering-test")
       final lazy val extensionLogstage = ArtifactId("distage-extension-logstage")
     }
 
@@ -604,7 +574,6 @@ object Izumi {
   )
 
   final val assertionFixtureSettings = Seq(
-    "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
     "testOptions" in SettingScope.Test := Const.EmptySeq,
     "testFull" in SettingScope.Test := """Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed }""".raw,
     "test" in SettingScope.Test := """(Test / testFull).value""".raw,
@@ -617,22 +586,17 @@ object Izumi {
   private def fundamentalsTestSettings(targetName: String): Seq[SettingDef] = Seq(
     "skip" in SettingScope.Raw("publish") := true,
     "testFrameworks" in (SettingScope.Test, Platform.Jvm) :=
-      """Seq(new TestFramework("org.scalatest.tools.Framework"), new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
+      """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
     "testFrameworks" in (SettingScope.Test, Platform.Js) :=
       """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
     "testFrameworks" in (SettingScope.Test, Platform.Native) :=
       """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
     "distageBuildId" in SettingScope.Test := "izumi-repository",
-    "libraryDependencies" in (SettingScope.Project, Platform.Js) ~=
-      """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
-    "libraryDependencies" in (SettingScope.Project, Platform.Native) ~=
-      """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
   ) ++ Seq(Platform.Jvm -> "jvm", Platform.Js -> "js", Platform.Native -> "native").map { case (platform, suffix) =>
     "distageTargetId" in (SettingScope.Test, platform) := s"$targetName-$suffix"
   }
 
   private def plainSuiteSettings(targetName: String): Seq[SettingDef] = Seq(
-    "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
     "testFrameworks" in SettingScope.Test := """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
     "distageBuildId" in SettingScope.Test := "izumi-repository",
   ) ++ Seq(Platform.Jvm -> "jvm", Platform.Js -> "js", Platform.Native -> "native").map { case (platform, suffix) =>
@@ -766,8 +730,6 @@ object Izumi {
         libs = Seq(scala_reflect, fast_classpath_scanner in Scope.Provided.all, scala_java_time_tzdb in Scope.Test.native),
         depends = Seq(Projects.fundamentals.platform, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
         settings = fundamentalsTestSettings("fundamentals-platform-test") ++ testResourcesOnCompileClasspath ++ Seq(
-          "libraryDependencies" in (SettingScope.Project, Platform.Jvm) ~=
-            """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
           "testFrameworks" in (SettingScope.Test, Platform.Jvm) :=
             """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
         ),
@@ -818,8 +780,6 @@ object Izumi {
           Seq(scala_java_time in Scope.Test.js, scala_java_time in Scope.Test.native),
         depends = Seq(Projects.fundamentals.bio, Projects.fundamentals.testSupport).map(_ in Scope.Test.all),
         settings = fundamentalsTestSettings("fundamentals-bio-test") ++ Seq(
-          "libraryDependencies" in (SettingScope.Project, Platform.Jvm) ~=
-            """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
           "testFrameworks" in (SettingScope.Test, Platform.Jvm) :=
             """Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))""".raw,
         ),
@@ -872,6 +832,8 @@ object Izumi {
         depends = Seq.empty,
         platforms = Targets.protocol,
         settings = assertionFixtureSettings ++ Seq(
+          "unmanagedSourceDirectories" in (SettingScope.Compile, Platform.Jvm) +=
+            """file("distage/distage-test-protocol/.jvm/src/main/java").getAbsoluteFile""".raw,
           "scalacOptions" ++= Seq(
             SettingKey(Some(scalaSbt2Plugin), None) := Projects.root.scala3Options("3.8") ++ Projects.root.wconfOverrides,
             SettingKey.Default := Const.EmptySeq,
@@ -976,7 +938,6 @@ object Izumi {
         platforms = Targets.jvm,
         settings = Seq(
           "skip" in SettingScope.Raw("publish") := true,
-          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
           "dependencyClasspath" in SettingScope.Compile :=
             """{
               val classpath = (Compile / dependencyClasspath).value
@@ -1089,28 +1050,7 @@ object Izumi {
           "skip" in SettingScope.Raw("publish") := true,
         ),
       ),
-      Artifact(
-        name = Projects.distage.testkitScalatest,
-        libs = allMonadsOptional ++ Seq(
-          scalamock in Scope.Test.all,
-          portable_scala_reflect in Scope.Compile.js,
-        ) ++ scalatest_all.map(_ in Scope.Compile.all),
-        depends = Seq(Projects.distage.testkitCore, Projects.fundamentals.assertions).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.core, Projects.distage.plugins).map(_ in Scope.Compile.all) ++
-          Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
-        platforms = Targets.jvmJs,
-      ),
-      Artifact(
-        name = Projects.distage.testkitScalatestSbtModuleFilteringTest,
-        libs = Nil,
-        depends = Seq(
-          Projects.distage.testkitScalatest tin Scope.Test.all
-        ),
-        platforms = Targets.jvm,
-        settings = Seq(
-          "skip" in SettingScope.Raw("publish") := true
-        ),
-      ),
+
     )),
     pathPrefix = Projects.distage.basePath,
     defaultPlatforms = Targets.jvmJs,
@@ -1311,7 +1251,6 @@ object Izumi {
           "crossScalaVersions" := Seq("3.8.4"),
           "scalaVersion" := "crossScalaVersions.value.head".raw,
           SettingDef.RawSettingDef("""addSbtPlugin("org.scala-js" % "sbt-scalajs" % V.scalajs_test_interface)"""),
-          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
         ),
         plugins = Plugins(enabled = Seq.empty, disabled = Seq(Plugin("ScoverageSbtPlugin"))),
       ),
@@ -1323,7 +1262,6 @@ object Izumi {
           "crossScalaVersions" := Seq("3.8.4"),
           "scalaVersion" := "crossScalaVersions.value.head".raw,
           SettingDef.RawSettingDef("""addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.12")"""),
-          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
         ),
         plugins = Plugins(enabled = Seq.empty, disabled = Seq(Plugin("ScoverageSbtPlugin"))),
       ),
@@ -1335,7 +1273,6 @@ object Izumi {
           "crossScalaVersions" := Seq("3.8.4"),
           "scalaVersion" := "crossScalaVersions.value.head".raw,
           "sbtVersion" in SettingScope.Raw("pluginCrossBuild") := "2.0.9",
-          "libraryDependencies" ~= """(_.filterNot(m => Set("org.scalatest", "org.scalactic", "org.scalatestplus").contains(m.organization)))""".raw,
         ),
         plugins = Plugins(
           enabled = Seq.empty,
@@ -1359,6 +1296,7 @@ object Izumi {
     pathPrefix = Projects.sbtplugins.basePath,
     groups = Groups.sbt,
     defaultPlatforms = Targets.jvmSbt,
+    dontIncludeInSuperAgg = true,
   )
 
   val izumi: Project = Project(
@@ -1379,7 +1317,7 @@ object Izumi {
     ),
     globalLibs = Seq(
       ScopedLibrary(projector, FullDependencyScope(Scope.Compile, Platform.All, ScalaVersionScope.AllScala2), compilerPlugin = true),
-    ) ++ scalatest_all.map(_ in Scope.Test.all),
+    ),
     rootPlugins = Projects.root.plugins,
     globalPlugins = Projects.plugins,
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(

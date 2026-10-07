@@ -2,14 +2,13 @@
 
 @@toc { depth=2 }
 
-`distage-testkit-core` and the replacement `distage-testkit-runner` also build on
+`distage-testkit-core` and `distage-testkit-runner` build on
 Scala Native. Their default bootstrap loads
 JSON references named `<configBaseName>.json`, `<configBaseName>-reference.json`
 and `<configBaseName>-reference-dev.json`; `configOverrides` take precedence.
 Enable Scala Native resource embedding to bundle these files. Provide plugins
 explicitly through `PluginConfig.const` or compile-time plugin loading: runtime
-classpath scanning is unavailable. The legacy ScalaTest adapter remains on JVM
-and JS.
+classpath scanning is unavailable. The ScalaTest adapter has been retired.
 
 ### Quick Start
 
@@ -62,6 +61,20 @@ Effectful assertions use `assert1` or `assert2` with the corresponding
 @ref[assertion suspension adapter](#assertions). Configure custom plugin loaders
 through `PluginLoaderFactoryConfiguration.makePluginLoaderFactory` so each run
 owns its loader and caches.
+
+The protected `testRunnerRuntime()` hook still supplies the outer launcher.
+The first selected distage suite supplies that factory for the complete sharing
+group, including suites using other effect types. Unselected factories acquire
+nothing. `TestRunnerRuntime.defaultAsyncRuntimeFor` and `asyncRuntimeFor` create
+unacquired factories; the session retains their runner graph from planning
+through execution and releases it before completion. Closing or cancelling a
+run during planning interrupts the planner and waits for owned cleanup.
+
+Custom implementations of `TestRunnerRuntime.runTests` must migrate to
+`TestRunnerRuntime.asyncRuntimeFor`. Supply the runtime `Lifecycle` and runner
+module overrides to that factory so the session can retain the planned graph
+and join its finalizers. An opaque `runTests` callback cannot provide this
+ownership information and is rejected before planning.
 
 `distage-testkit-runner` provides `Spec*` base classes for effect types with kind
 `F[_]`, `F[+_, +_]`, `ZIO[-R, +E, +A]` or `Identity`. Its WordSpec interface

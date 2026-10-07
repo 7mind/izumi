@@ -7,6 +7,7 @@
 # Passthrough
 - `HOME`
 - `USER`
+- `DOCKER_HOST`
 - `OPENSSL_IV`
 - `OPENSSL_KEY`
 - `SONATYPE_SECRET`
@@ -201,12 +202,50 @@ fi
 bash sbtgen.sc "${ARGS[@]}"
 ```
 
+# action: test-sbt-plugins
+
+Run the fixed-compiler SBT host contracts for JVM lanes
+
+```bash
+soft action.gen retain.action.check-sbtgen-staleness
+
+if [[ "${sys.axis.platform}" != "jvm" ]]; then
+  exit 0
+fi
+
+JAVA_HOME="${action.setup-jdk.java-home}"
+PATH="${action.setup-jdk.path}"
+JAVA_OPTIONS="${action.setup-jvm-options.java-options}"
+_JAVA_OPTIONS="$JAVA_OPTIONS"
+read -ra SBT_J_OPTS <<< "${action.setup-jvm-options.sbt-j-opts}"
+
+mkdir -p "${sys.project-root}/target"
+HOST_FIXTURE_DIRECTORY=$(mktemp -d "${sys.project-root}/target/host-fixtures.XXXXXX")
+
+sbt --server -batch -no-colors -v \
+  --java-home "$JAVA_HOME" \
+  "${SBT_J_OPTS[@]}" \
+  "++ 3.8.4" \
+  "sbt-plugins/clean" \
+  "sbt-plugins/Test/compile" \
+  "distage-test-protocol/Test/testFull" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.target.TaskCompletenessTest $HOST_FIXTURE_DIRECTORY/completeness" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.target.ForeignRunReportsTest $HOST_FIXTURE_DIRECTORY/foreign" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.TargetHostFrameworkTest" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.TargetHostInspectionTest" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostJUnitReportsTest $HOST_FIXTURE_DIRECTORY/junit" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostReceiptTest $HOST_FIXTURE_DIRECTORY/receipts" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostForkReportsTest $HOST_FIXTURE_DIRECTORY/forks" \
+  "sbt-distage-testkit/Test/runMain izumi.distage.sbt.HostForeignForkReportsTest $HOST_FIXTURE_DIRECTORY/foreign-forks"
+```
+
 # action: test
 
 Run tests
 
 ```bash
 soft action.gen retain.action.check-sbtgen-staleness
+dep action.test-sbt-plugins
 
 JAVA_HOME="${action.setup-jdk.java-home}"
 PATH="${action.setup-jdk.path}"
@@ -239,7 +278,6 @@ else
     "$VERSION_COMMAND test"
 fi
 
-docker rm "$(docker ps -aq)" || true
 ```
 
 # action: coverage
@@ -248,6 +286,7 @@ Run coverage build
 
 ```bash
 soft action.gen retain.action.check-sbtgen-staleness
+dep action.test-sbt-plugins
 
 JAVA_HOME="${action.setup-jdk.java-home}"
 PATH="${action.setup-jdk.path}"
@@ -283,7 +322,6 @@ else
     "$VERSION_COMMAND coverageReport"
 fi
 
-docker rm "$(docker ps -aq)" || true
 ```
 
 # action: site-test
@@ -379,6 +417,18 @@ if [[ ! -f "$SONATYPE_SECRET" ]] ; then
   exit 1
 fi
 
+HOST_PUBLISH_COMMANDS=()
+if [[ "$VERSION_COMMAND" == "++ 3" ]]; then
+  HOST_PUBLISH_COMMANDS=(
+    "++ 3.8.4"
+    "sbt-plugins/clean"
+    "distage-test-protocolJVM/publishSigned"
+    "distage-test-protocolJS/publishSigned"
+    "distage-test-protocolNative/publishSigned"
+    "sbt-plugins/publishSigned"
+  )
+fi
+
 if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
   sbt --server -batch -no-colors -v \
       --java-home "$JAVA_HOME" \
@@ -387,6 +437,7 @@ if [[ "$CI_BRANCH_TAG_VAL" =~ ^v.*$ ]]; then
       "$VERSION_COMMAND clean" \
       "$VERSION_COMMAND package" \
       "$VERSION_COMMAND publishSigned" \
+      "${HOST_PUBLISH_COMMANDS[@]}" \
       "sonaUpload" \
       "sonaRelease"
 else
@@ -396,6 +447,7 @@ else
       "show credentials" \
       "$VERSION_COMMAND clean" \
       "$VERSION_COMMAND package" \
-      "$VERSION_COMMAND publishSigned"
+      "$VERSION_COMMAND publishSigned" \
+      "${HOST_PUBLISH_COMMANDS[@]}"
 fi
 ```

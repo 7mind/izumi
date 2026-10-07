@@ -34,7 +34,7 @@ head. The spike reports are design evidence, not implementation verification.
 | L1 | in progress | Part-1 verification below; full gate remains outstanding. |
 | L2 | in progress | Part-1 verification below; full gate remains outstanding. |
 | L3 | in progress | Part-1 and full Native CI checkpoint verification below; parent-step and final evaluation remain outstanding. |
-| L4 | not started | No evaluation point passed yet. |
+| L4 | in progress | Candidate site action actual0 after2704.189s,1701 frozen inputs unchanged;44 rendered files and3003 API pages audited below. Final-head qualification remains open. |
 | L5 | not started | No evaluation point passed yet. |
 | L6 | in progress | Part-1 verification below; full gate remains outstanding. |
 | G.1 | in progress | Plain-core public-boundary fixtures pass below; runner-host fixtures remain outstanding. |
@@ -126,15 +126,15 @@ head. The spike reports are design evidence, not implementation verification.
 | 4.4 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.5 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
 | 4.6 | not started | Deferred by the owner's 2026-10-05 instruction; excluded from this run. |
-| 5.1 | in progress | Verified logstage checkpoint: all16 resolved update/Test classpaths exclude ScalaTest-family dependencies and use only the base runner. Other modules and full retirement remain outstanding. |
-| 5.2 | not started | No evaluation point passed yet. |
+| 5.1 | in progress | Retirement integrated below;162 published JAR/POM pairs are vendor-free. Final-head CI and publication applicability remain open. |
+| 5.2 | in progress | Candidate source/graph review verifies layer placement and unpublished test projects; complete final-head evaluation remains open. |
 | 5.3 | in progress | All20 tracked logstage test Scala files use the new assertions/frontends and reference neither package; all16 execution lanes pass. Other modules remain outstanding. |
 | 5.4 | in progress | Compiler-isolated recaptures qualify the42-lane distage/platform baseline (3259 cases) and exact16-lane old/new logstage report parity (634 cases). The six-module migration passes all42 lanes below with3259 cases. A further ten-lane baseline qualifies2087 cases, including76 independently captured cancellations; remaining legacy migration, full reconciliation and final evaluation remain open. |
-| 5.5 | not started | No evaluation point passed yet. |
-| 5.6 | not started | No evaluation point passed yet. |
-| 5.7 | not started | No evaluation point passed yet. |
+| 5.5 | in progress | The72 tracked legacy adapter files are removed in the integration below; final-head evaluation remains open. |
+| 5.6 | in progress | Published runner and target consumer matrices pass both compilers/platforms; full66-lane module parity and final CI remain open. |
+| 5.7 | in progress | Current published higher-runner controls include Native DI/configuration and memoized Lifecycle execution; final-head evaluation remains open. |
 | 5.8 | in progress | assertTypeError and normalized WordSpec names pass all six833-check base controls and both published-consumer probes. Logstage failure/step-note replacements pass; remaining facilities stay open. |
-| 5.9 | in progress | Microsite installation/spec/assertion examples and session-owned helper are being migrated; site compilation and remaining wiring references stay open. |
+| 5.9 | in progress | Migrated installation/factory guide compiles in the successful candidate site action below; final-head qualification remains open. |
 | O.1 | in progress | Factory migrations preserve the tested eager/captured-definition memoization controls and existing engine/spec fixtures below. Complete planning/merging/memoization/effect inventory and final evaluation outstanding. |
 | O.2 | in progress | Effect APIs have explicit requested return types; runtime checkpoints below. |
 | O.3 | in progress | Explicit suspension capability; Cats/BIO law checkpoints below. |
@@ -21158,3 +21158,89 @@ corrections finds no material defect in that bounded source. It preserves
 36 inputs with zero drift and excludes pending site/consumer/final gates.
 Evidence:5-final-retirement-ci-corrections-readonly-review-first/REVIEW.md,
 SHA256e3b5742bfa44b70071017a28b06a13c40648cc0bd729ca4f548585234891e71d.
+
+## 2026-10-07: retirement consumer closure and host CI correction
+
+The six coverage lanes finish with actual0 and unchanged inputs. The independent
+coverage audit reconciles18 reports and12 normal publications after
+coverageOff. Evidence:5-final-retirement-remaining-consumers-first/coverage/
+audit.json and the parent completion.json. This closes that consumer batch;
+final repository CI and phase acceptance remain open.
+
+All43 JVM consumer drivers finish with actual0,453 frozen consumer inputs and
+324 primary publication files unchanged. Eight independently audited semantic
+domains compose524 distinct command contexts after subtracting the eight shared
+in-process concurrency contexts. The combined audit rechecks1652 producer
+inputs,162 primary JAR/POM pairs, driver hashes and recorded process shutdown.
+Evidence:5-final-retirement-jvm-consumer-batch-first/combined-audit.py and
+extended-audit.json, SHA256
+ d931b7b5c36c9d717f8a9ecf173d60eed7155977d9e6d1ca7fd4146faf225060.
+The general audit independently reconciles354 controls,84 fresh runs,84 resource
+attempts and80 successful acquisitions; seven additional domains retain their
+separate body/event/XML/resource reconciliation. Immutable consumer-template
+archives preserve the original source provenance before the oracle edit below.
+
+The12 JS/Native consumer contracts execute48 builds. Eleven original drivers
+pass; the DI driver's original parent remains actual1 because its oracle
+matches Native FORTIFY warnings containing "requires compiling". All four
+underlying DI SBT executions are actual0. The failure is reproduced against
+those captures before changing the oracle. The correction recognizes anchored
+Scala/Java compilation messages, still rejects adversarial genuine compilation
+samples, and passes all64 original DI cases,1060 tests and168 resource lifetimes.
+The one-line correction is now applied to the main verifier, byte-equal to the
+qualified corrected verifier, and replayed through its actual audit(command,out)
+API against all four original lanes. Evidence:
+5-final-retirement-di-oracle-recovery-first/independent-audit.json,
+5-final-retirement-target-consumer-batch-first/qualified-composition-audit.json,
+and5-final-retirement-main-integration-first/di-oracle-audit.json. The original
+failed parent is retained; qualified composition is actual0. Auxiliary audit
+preparation initially used the wrong argument/metadata shape; the corrected
+replay uses the verifier's inspected API and changes no capture.
+
+The bounded compiler-boundary qualification passes actual0 after363.913s:
+pinned3.8.4 host clean/compile, followed by the full2.13 JVM aggregate compile,
+with1653 inputs unchanged. Read-only review confirms that the root exclusion
+removes only four fixed-host leaves. Its host aggregate test task executes zero
+tests, so that invocation establishes compilation only. CI now uses a separate
+explicit host-contract action rather than relying on that empty task.
+
+The actual JVM-only dispatcher first fails because the generator omits
+.jvm/src/main/java and therefore ForkCompletionOwnership from the protocol
+classpath. After explicitly adding the protocol's JVM Java source directory,
+the next run compiles the host and fails because the command uses a JVM-suffixed
+project ID in the JVM-only graph. After using distage-test-protocol, the actual
+mdl dispatcher passes after83.99s with1653 inputs unchanged. Both expected
+failures are preserved with reproduction audits in
+5-final-host-ci-dispatch-first and-second; success is recorded in-third.
+The final CI batch will retain and stream action logs with --keep-run-dir and
+--verbose: Mdl removes successful action directories by default.
+
+Fourteen additional direct-control commands pass actual0 after132.726s, with
+1653 inputs unchanged during execution:18 task-completeness checks,14 protocol
+fork-report checks, four report-failure checks, and both compiler variants of
+bootstrap/command/event/runner/metadata checks. The independent audit preserves
+that pre-dispatch combined-profile scope and records the four configuration
+files changed afterwards. Evidence:5-final-retirement-direct-controls-first/
+independent-audit.json. Final-head CI remains separate.
+
+The site action passes actual0 after2704.189s with1701 frozen inputs unchanged.
+Its output audit verifies all44 input/output file identities,21 rendered
+Markdown pages,3003 API HTML pages, and the required installation and approved
+runtime-factory migration guidance. Evidence:5-final-retirement-site-ci-third/
+independent-audit.json. Auxiliary output audit first assumed all44 files were
+Markdown; inspection establishes44 total files and21 Markdown files. Successful
+Mdl action logs were deleted by its default retention policy; parent command,
+completion, generated output and two live rendering thread dumps remain.
+Final-head site applicability is still outstanding.
+
+The verified retirement sources are integrated into the main checkout:72
+tracked legacy adapter files deleted and16 source/configuration files copied,
+with current plan, acceptance, brief and ledger preserved. The main combined
+build is regenerated using actual sbtgen --js --native. The integration retains
+the selected-SDK metadata correction, fixed-host aggregate boundary, explicit
+JVM host fixtures, explicit pinned host/protocol publication commands, the
+DOCKER_HOST passthrough, and removal of unscoped Docker deletion. Evidence:
+5-final-retirement-main-integration-first/prepared-manifest.json,
+copy-completion.json and generation.log. The full module matrix is still
+running in its frozen independent checkout. No L1-L6 or complete phase/final
+acceptance is claimed by this integration milestone; no push is performed.

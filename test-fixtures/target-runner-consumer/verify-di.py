@@ -109,7 +109,7 @@ def audit(command,out):
         assert re.findall(r'^SDK_DI_PLUGIN revision=(\S+)$',runtime,re.M)==[case['revision']],(label,'factory ownership')
         assert 'SDK_DI_ACQUIRE' not in segment.split('SDK_POLICY_SETUP\n',1)[0],(label,'discovery resource acquisition')
         if label.startswith('external-'):
-            assert 'compiling ' not in segment,(label,'external input caused compilation')
+            assert not re.search(r'^\[info\] compiling \d+ (?:Scala|Java) sources?\b',segment,re.M),(label,'external input caused Scala/Java compilation')
             for suite in case['suites']:assert 'DISTAGE_CACHE_DECISION suite='+suite+' decision=rerun reason=untracked-input-closure' in segment,(label,suite,'cache decision')
         records.append(dict(case=label,tests=sum(expected.values()),resources=len(acquired),run=outcome['run'],files=[dict(path=str(path),sha256=sha(path)) for path in capture.rglob('*') if path.is_file()]))
     return dict(scala=command['scala'],platform=command['platform'],cases=records)

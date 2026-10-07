@@ -3,7 +3,6 @@
 //import cats.effect.IO
 //import izumi.fundamentals.graphs.traverse.DAGTraverser.TraverseState
 //import izumi.fundamentals.graphs.traverse.{DAGTraverserImpl, InterruptionStrategy, MPromise, TraverseStrategy}
-//import org.scalatest.wordspec.AnyWordSpec
 //
 //
 //class TraverseTest extends AnyWordSpec {

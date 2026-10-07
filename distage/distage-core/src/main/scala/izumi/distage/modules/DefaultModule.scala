@@ -18,7 +18,7 @@ import izumi.reflect.{Tag, TagK, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-runner`
   *  - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
   *  - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
