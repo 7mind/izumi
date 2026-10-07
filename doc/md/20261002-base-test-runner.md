@@ -111,7 +111,7 @@ new SessionPluginLoader(packageCache, cache => PluginLoaderDefaultImpl.withPacka
 The factory must construct its loader with the supplied cache and remain
 declarative. The owner caches complete requests separately from package scans.
 Both cache boundaries snapshot their sequence inputs into immutable vectors,
-including request overlays, so Scala 2.12 mutable sequences cannot alter stored
+including request overlays, so caller-owned sequences cannot alter stored
 keys or request-owned payload fields after loading.
 Identical package names, scanner whitelists and exclusion sequences reuse scanned
 definitions within that owner, even when request overlays, debug settings or
@@ -275,18 +275,16 @@ their Test configuration. Production modules do not depend on the test projects.
 Distage core and extension-plugins import platform test helpers through a
 Test dependency on `fundamentals-platform-test`.
 
-`fundamentals-test-support` is an unpublished platform-specific front end.
-Its JVM `izumi.fundamentals.testkit.AnyWordSpec` extends the base runner;
-its JS and Native variants extend ScalaTest during the staged migration to
-step 2e. Five collections suites and the language suite use this import.
-The JVM test projects register both frameworks and send their arguments to
-the corresponding framework explicitly. Suites using additional ScalaTest or
-Scalactic facilities stay on the legacy framework pending their replacement.
+`fundamentals-test-support` is an unpublished front end.
+Its `izumi.fundamentals.testkit.AnyWordSpec` and `AsyncWordSpec` extend the
+base runner on JVM, JS, and Native. Five collections suites and the language
+suite use this import. The test projects enable the distage SBT plugin and
+register its framework. The legacy framework and adapter have been retired.
 
 Run the moved suites with, for example,
 `fundamentals-collections-testJVM/testFull`,
 `fundamentals-collections-testJS/testFull`, or
 `fundamentals-collections-testNative/testFull`. The test projects retain the
-production modules' supported compilers and platforms. BIO remains JVM/JS
-pending the released Native interop artifacts. Circe's Scala 2 derivation tests
+production modules' supported compilers and platforms. BIO supports JVM, JS,
+and Native using the released interop artifacts. Circe's Scala 2 derivation tests
 remain JVM/JS because their dependency has no Native artifact.

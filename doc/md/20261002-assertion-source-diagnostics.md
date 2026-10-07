@@ -32,14 +32,10 @@ val check: IO[Unit] = Assert.assert1[IO](1 + 1 == 2)
 `BIOAssertionSuspension.*`, using `IO2.sync`. For example,
 `Assert.assert2[zio.IO](condition)` is `ZIO[Any, Nothing, Unit]`; assertion and
 operand exceptions become defects. The Cats adapter uses `Sync.delay`.
-Neither adapter infers suspension from `QuasiIO`. The BIO artifact's Native
-variant awaits released interop artifacts; this does not affect the Cats adapter's
-Native variant.
-
-During migration, `izumi.distage.testkit.scalatest.AssertionBridge(check)` adapts
-a successful `Unit` check to ScalaTest's `Assertion` without changing its thrown
-failure. It lives in the separate legacy adapter artifact. The plain assertion
-core and effect adapters depend on no ScalaTest or Scalactic module.
+Neither adapter infers suspension from `QuasiIO`. Both adapters support JVM,
+JS, and Native. The plain assertion core and effect adapters depend on no
+ScalaTest or Scalactic module. The temporary legacy assertion bridge has been
+retired; migrated effect bodies use `assert1` or `assert2` directly.
 
 The Scala 2 implementation uses blackbox macros; Scala 3 uses the public quoted
 API. Both emit the same portable runtime representation. Resolved built-in
@@ -60,8 +56,8 @@ endpoints. A compiler position without a range becomes `SourceSpan.Point`;
 absence of a position becomes `SourceSpan.Unavailable`. Text is copied from the
 compiler's source buffer only when an exact range is available, otherwise
 `CompiledText.Unavailable` records its absence. No compiler pretty-print is
-substituted for the compiled excerpt. Scala 2.12 without `-Yrangepos`, and
-Scala 2.13 with `-Yrangepos:false`, use point positions even if a typed tree
+substituted for the compiled excerpt. Scala 2.13 with `-Yrangepos:false` uses
+point positions even if a typed tree
 contains a synthesized range: such ranges can omit the left comparison operand
 and therefore do not establish an exact expression span.
 
@@ -99,5 +95,5 @@ Excerpt, value, and total-output truncation do not split valid surrogate pairs.
 The assertion fixtures use an independent exception-and-counter oracle rather
 than the assertion being tested. They are specified-origin behavioral checks of
 the public macro/runtime boundary (Blackbox/Group). The module's `Test / test`
-runs their entry point directly, without a ScalaTest or Scalactic dependency;
-the base runner will take over this entry point in the later runner steps.
+runs their entry point directly, without a ScalaTest or Scalactic dependency.
+This keeps the assertion checks below the base runner in the dependency graph.

@@ -4,8 +4,8 @@ The new runner's `DistageSpec` resolves `makePluginLoaderFactory()` when a
 selected suite's environment is resolved. Discovery does not call the hook or
 materialize its factory. `PluginLoaderFactoryConfiguration` supplies the hook
 contract for stackable configuration traits. The inherited zero-argument
-`makePluginloader()` is final on the new front ends; the legacy ScalaTest
-adapter retains its existing hook.
+`makePluginloader()` is final. Custom loader hooks migrate to this factory API;
+the legacy adapter has been retired.
 
 ```scala
 override protected def makePluginLoaderFactory(): PluginLoaderFactory =
