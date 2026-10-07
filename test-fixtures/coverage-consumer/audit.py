@@ -4,6 +4,8 @@ import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
+EXPECTED_ASSERTION_FIXTURE_CHECKS = 100
+
 
 def audit(commands, evidence):
     records = []
@@ -11,7 +13,7 @@ def audit(commands, evidence):
         build = Path(command['cwd'])
         platform = command['platform']
         log = (evidence / (command['label'] + '.log')).read_text()
-        assert log.count('ASSERTION_FIXTURES_OK checks=86') == 2
+        assert log.count(f'ASSERTION_FIXTURES_OK checks={EXPECTED_ASSERTION_FIXTURE_CHECKS}') == 2
         assert log.count('COVERAGE_MACRO_WITNESS success-and-failure') == 2
         assert log.count('COVERAGE_PHYSICAL_BODY suite=LeftSuite ') == 2
         assert log.count('COVERAGE_PHYSICAL_BODY suite=RightSuite ') == 2
