@@ -20814,3 +20814,52 @@ migration. Protected testRunnerRuntime() and built-in factory calls remain
 compatible; ordinary suites retain import-only migration. The scope decision
 is resolved. Inventory, exact diffs and executed O.1 behavior remain required;
 this authorization does not close2b.10 or any implementation acceptance gate.
+
+
+### 2026-10-07 — corrected Native fixture and CLI batch qualified
+
+The corrected six-command Scala2.13 supplement completes actual0 after200.085s
+with all1728 inputs unchanged. Its independent provider/CLI audit verifies
+872/749/749 provider checks on JVM/JS/Native, nine actual closed-plan observations
+with completed closure, all three runtime planning-shutdown and masked-allocation
+controls per platform, eleven actual CLI subprocesses and held-caller shutdown.
+No rejected callback appears. This completes the actual Native fail/pass pair
+for the fixture's late bodyGate completion, and qualifies the latest configured
+runtime source at adb2bb282. Manifest SHA256:
+dde91cf14d9722e09dc1b56b2efb593e4f1bb6c7a63a826775dad52fabc1b30d.
+Log SHA256:d1c69c494dddd132bf12d736e70230a06aa470e8ec87888d3a748f78dea2da0c.
+
+Two preliminary supplement preparations select the wrong metadata kind and
+abort before SBT starts. The corrected preparation uses higherControl. Its
+controller completes Scala2.13, then rejects Scala3's different command count:
+the actual baseline has71 commands on Scala3, versus70 on Scala2.13. This is
+another controller error, not an executed Scala3 failure. The revised Scala3
+capture derives its size from the template and is running74 commands. All
+preliminary captures remain retained; none is recorded as a full passing batch.
+
+Read-only callback review verifies the exact old Native trace and matching
+frozen fixture, the corrected source, interruptible fromFuture semantics and
+complete direct JVM results. REVIEW SHA256:
+bb0e97788a4b34a55cb6bc6897bc6a829d1c38c53f1961f6c70d03279fb98539;
+manifest c35059483d9b73654960ec5d1e837258e3bd2578c26a678baf1fd736618375d9;
+inspection71fc172a8a639c9019cfd29f9f58de2b5ddf263c8252e8b1a2a9c34584567784.
+The local pending Future relies on bounded harness termination if cancellation
+itself fails; the prior post-completion gate also provided no pre-completion
+escape. This fixture limitation does not establish a production cancellation defect.
+
+The first retirement Scala2.13 capture ends actual1 after989.742s with1649
+inputs unchanged, reproducing both the old Native callback and CLI harness
+failures. Its frozen-source case-parity-only audit verifies the same377/164/164
+ordinary case identities/outcomes with the retired graph. The first audit used
+an obsolete generated lambda ordinal; the second verifies the observed42 frame.
+Neither audit claims passing runtime diagnostics. Final-retirement followthrough
+uses corrected fixture, forked CLI, observed project graph and complete local
+publication, with the owner-authorized scope docs frozen. It is running.
+
+The runtime-hook inventory compares original ca3522946 files with current
+migrated files: five protected builtin factory hooks remain in InterruptionTest;
+LegacyRuntimeCallerTest replaces its opaque internal callback wrapper with the
+new owned runtime dispatch control. Exact diffs/hashes are retained in
+5-runtime-factory-owner-migration-inventory-first/. RuntimeOverrideLifecycle and
+the new real factory fixtures supply additional held lifecycle/override checks.
+Migration validation and final source reconciliation remain open.
