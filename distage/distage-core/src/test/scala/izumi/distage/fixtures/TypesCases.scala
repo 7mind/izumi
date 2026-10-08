@@ -26,18 +26,6 @@ object TypesCases {
 
   }
 
-  object TypesCase2 {
-
-    class Dep()
-
-    final case class Parameterized[T](t: T)
-
-    trait ParameterizedTrait[T] {
-      def t: T
-    }
-
-  }
-
   object TypesCase3 {
     class Dep
 
