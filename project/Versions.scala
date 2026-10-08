@@ -1,6 +1,6 @@
 object V {
   // izumi
-  val izumi_reflect = "3.0.8"
+  val izumi_reflect = "3.0.11"
 
   // foundation
   val kind_projector = "0.13.4"
