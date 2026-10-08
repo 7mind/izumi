@@ -366,6 +366,17 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
   ) extends MiniBIOAsync[E1, B]
 
   implicit object WeakAsyncForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with MiniBIOInstance[MiniBIOAsync] with WeakTemporal2[MiniBIOAsync] {
+    // Concrete return types retain the public object's JVM method descriptors.
+    override def sync[A](effect: => A): MiniBIOAsync[Nothing, A] = super.sync(effect)
+    override def syncThrowable[A](effect: => A): MiniBIOAsync[Throwable, A] = super.syncThrowable(effect)
+    override def redeem[E, A, E2, B](r: MiniBIOAsync[E, A])(err: E => MiniBIOAsync[E2, B], succ: A => MiniBIOAsync[E2, B]): MiniBIOAsync[E2, B] = super.redeem(r)(err, succ)
+    override def catchAll[E, A, E2](r: MiniBIOAsync[E, A])(f: E => MiniBIOAsync[E2, A]): MiniBIOAsync[E2, A] = super.catchAll(r)(f)
+    override def sandbox[E, A](r: MiniBIOAsync[E, A]): MiniBIOAsync[Exit.FailureUninterrupted[E], A] = super.sandbox(r)
+    override def traverse[E, A, B](l: Iterable[A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, List[B]] = super.traverse(l)(f)
+    override def shiftBlocking[E, A](f: MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = super.shiftBlocking(f)
+    override def syncInterruptibleBlocking[A](f: => A): MiniBIOAsync[Throwable, A] = super.syncInterruptibleBlocking(f)
+    override def syncBlocking[A](f: => A): MiniBIOAsync[Throwable, A] = super.syncBlocking(f)
+
     override def pure[A](a: A): MiniBIOAsync[Nothing, A] = Sync(() => Exit.Success(a))
     override def flatMap[E, A, B](r: MiniBIOAsync[E, A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIOAsync[E, Nothing] = Fail(() => Exit.Error.forTypedError(v))
