@@ -43,8 +43,8 @@ private[sbt] final class HostCommandCompletion(inherited: ExecuteProgress2, owne
     }
     catch { case cause: Throwable => original = Some(cause); throw cause }
     finally {
-      HostFailures.cleanup(original) {
-        HostFailures.collect(owners)(_.finishCommand()).foreach(throw _)
+      HostFailures.collect(owners)(_.finishCommand()).foreach { cause =>
+        HostFailures.cleanup(original)(throw cause)
       }
     }
   }
