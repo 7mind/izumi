@@ -140,7 +140,17 @@ for cap in args.ci:
             reason = "project absent from this generated platform build"
         elif any("." + p in parts for p in ("jvm", "js", "native") if p != platform):
             reason = "other platform source directory"
-        elif ("scala-2" in parts and command["scala"] != "2.13") or ("scala-3" in parts and command["scala"] != "3"):
+        elif (
+            any(part in parts for part in ("scala-jvm-native", "scala-jvm-native-2", "scala-jvm-native-3")) and platform == "js"
+        ) or (
+            any(part in parts for part in ("scala-js-native", "scala-js-native-2", "scala-js-native-3")) and platform == "jvm"
+        ):
+            reason = "other platform source directory"
+        elif (
+            any(part in parts for part in ("scala-2", "scala-jvm-native-2", "scala-js-native-2")) and command["scala"] != "2.13"
+        ) or (
+            any(part in parts for part in ("scala-3", "scala-jvm-native-3", "scala-js-native-3")) and command["scala"] != "3"
+        ):
             reason = "other compiler source directory"
         elif "scala-derivation" in parts and platform == "native" and command["scala"] == "2.13":
             assert 'if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation")' in build
