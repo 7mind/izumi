@@ -11,7 +11,7 @@ FIXTURE=Path(__file__).resolve().parent
 TEMPLATE=FIXTURE/'di-failures'
 HELD=FIXTURE/'di-cancellation/Held.scala'
 sys.path.insert(0,str(FIXTURE))
-from verify import prepare,sha
+from verify import sha
 di = load_module('di', FIXTURE / 'verify-di.py')
 policy = load_module('policy', FIXTURE / 'verify-policy.py')
 

@@ -10,7 +10,7 @@ from fixture_targets import target_parser, prepare_lanes
 FIXTURE=Path(__file__).resolve().parent
 TEMPLATE=FIXTURE/'di-failures'
 sys.path.insert(0,str(FIXTURE))
-from verify import prepare,sha
+from verify import sha
 di = load_module('di', FIXTURE / 'verify-di.py')
 policy = load_module('policy', FIXTURE / 'verify-policy.py')
 

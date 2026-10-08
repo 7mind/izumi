@@ -24,36 +24,24 @@ val fixtureAudit = settingKey[File]("Owned audit directory for this project and 
 val prepareBatch = inputKey[Unit]("Prepare every owned module/configuration audit")
 val captureBatch = inputKey[Unit]("Freeze every owned module/configuration result")
 
+def auditLogger(inherited: TestResultLogger, audit: File): TestResultLogger =
+  new TestResultLogger {
+    override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = {
+      IO.write(audit / "host.parent",ProcessHandle.current().pid().toString)
+      val rows = output.events.toVector.sortBy(_._1).map { case (name,result) => Vector(name,result.passedCount,result.failureCount,result.errorCount).mkString("\t") }
+      IO.write(audit / "host.output",rows.mkString("\n"))
+      inherited.run(log,output,taskName)
+    }
+  }
+
 def contextSettings: Seq[Def.Setting[?]] = Seq(
   fixtureAudit := baseDirectory.value / "target" / ("audit-" + configuration.value.name),
   testReportsDirectory := target.value / "test-reports",
   fork := true,
   testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"),new TestFramework("izumi.fixtures.host.ForeignFramework")),
   javaOptions ++= Def.uncached { Seq("-Dizumi.fixture.audit-root=" + fixtureAudit.value.getAbsolutePath,"-Dfixture.module-target=" + thisProject.value.id + "/" + configuration.value.name) },
-  testSelected / testResultLogger := {
-    val inherited = (testSelected / testResultLogger).value
-    val audit = fixtureAudit.value
-    new TestResultLogger {
-      override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = {
-        IO.write(audit / "host.parent",ProcessHandle.current().pid().toString)
-        val rows = output.events.toVector.sortBy(_._1).map { case (name,result) => Vector(name,result.passedCount,result.failureCount,result.errorCount).mkString("\t") }
-        IO.write(audit / "host.output",rows.mkString("\n"))
-        inherited.run(log,output,taskName)
-      }
-    }
-  },
-  testQuick / testResultLogger := {
-    val inherited = (testQuick / testResultLogger).value
-    val audit = fixtureAudit.value
-    new TestResultLogger {
-      override def run(log: sbt.util.Logger, output: Tests.Output, taskName: String): Unit = {
-        IO.write(audit / "host.parent",ProcessHandle.current().pid().toString)
-        val rows = output.events.toVector.sortBy(_._1).map { case (name,result) => Vector(name,result.passedCount,result.failureCount,result.errorCount).mkString("\t") }
-        IO.write(audit / "host.output",rows.mkString("\n"))
-        inherited.run(log,output,taskName)
-      }
-    }
-  },
+  testSelected / testResultLogger := auditLogger((testSelected / testResultLogger).value,fixtureAudit.value),
+  testQuick / testResultLogger := auditLogger((testQuick / testResultLogger).value,fixtureAudit.value),
 )
 def moduleSettings: Seq[Def.Setting[?]] = Seq(
   libraryDependencies ++= Seq("io.7mind.izumi" %% "distage-testkit-runner" % sys.props("fixture.artifact-version") % Test,"org.typelevel" %% "cats-effect" % "3.7.1","dev.zio" %% "zio" % "2.1.26" excludeAll("dev.zio" %% "izumi-reflect")),

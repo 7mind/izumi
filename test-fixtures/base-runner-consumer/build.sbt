@@ -13,7 +13,10 @@ lazy val consumer = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossT
     },
   )
   .jvmSettings(
-    Compile / unmanagedSourceDirectories += baseDirectory.value.getParentFile / "src/main/scala-jvm",
+    Compile / unmanagedSourceDirectories += baseDirectory.value.getParentFile / "src/main/scala-jvm-native",
+  )
+  .nativeSettings(
+    Compile / unmanagedSourceDirectories += baseDirectory.value.getParentFile / "src/main/scala-jvm-native",
   )
   .jsSettings(scalaJSUseMainModuleInitializer := true)
 
