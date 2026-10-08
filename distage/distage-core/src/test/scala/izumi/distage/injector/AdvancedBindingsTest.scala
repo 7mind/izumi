@@ -48,9 +48,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
         .add[Service2]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definitionParent)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definitionParent).unsafeGet()
 
     val subInjector = Injector.inherit[Identity](context)
     val planSub = subInjector.planUnsafe(definitionSub)
@@ -70,10 +68,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
         .ref[Service1]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
     val svc = context.get[Service1]
     val set = context.get[Set[Service]]
     assert(set.head eq svc)

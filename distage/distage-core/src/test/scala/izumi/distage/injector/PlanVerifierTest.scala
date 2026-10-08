@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage.{Activation, DIKey, Injector, Lifecycle, Roots}
 import izumi.distage.fixtures.PlanVerifierCases.*
 import izumi.distage.model.definition.Binding.SetElementBinding
-import izumi.distage.model.definition.ModuleDef
+import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.operations.OperationOrigin
 import izumi.distage.model.plan.operations.OperationOrigin.UserBinding
@@ -25,8 +25,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Int].tagged(Axis1.B).fromResource(Lifecycle.makeSimple(2)(_ => ()))
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.Everything, Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.Everything)
   }
 
   "Progression test: Verifier does not handle resources (non-uniform case, Roots.Everything, https://github.com/7mind/izumi/issues/1476)" in {
@@ -58,8 +57,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Int].tagged(Axis1.B).fromResource(Lifecycle.makeSimple(2)(_ => ()))
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Int], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Int])
   }
 
   "Verifier handles resources (non-uniform case)" in {
@@ -76,8 +74,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         })
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Int], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Int])
   }
 
   "Verifier handles simple axis" in {
@@ -91,8 +88,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis2.D).from[ImplD]
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Fork1])
   }
 
   "Verifier handles axis fork that mentions the only applicable axis" in {
@@ -106,8 +102,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis1.B, Axis2.D).from[ImplD]
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Fork1])
   }
 
   "Verifier handles axis fork with only choice along the only applicable axis" in {
@@ -120,8 +115,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[Fork2].tagged(Axis1.B).from[ImplC]
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Fork1])
   }
 
   "Verifier flags axis fork with inapplicable axes" in {
@@ -497,8 +491,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val instance9 = mkInjector().produceGet[Fork1](definition, Activation(Axis1.B, Axis2.D, Axis3.F)).unsafeGet()
     assert(instance9.isInstanceOf[ImplA6])
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Fork1])
   }
 
   "Verifier finds issues around a provided import" in {
@@ -572,8 +565,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .add[ImplD].tagged(Axis1.B)
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Set[Fork2]])
   }
 
   "Verifier handles weak sets: basic case" in {
@@ -587,8 +579,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[ImplD]
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Set[Fork2]])
   }
 
   "Verifier handles weak sets: tagged referenced members" in {
@@ -602,8 +593,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[ImplD].tagged(Axis1.B)
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Set[Fork2]])
   }
 
   "Verifier handles weak sets: missing original member" in {
@@ -616,8 +606,7 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
       make[ImplD]
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork2]], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Set[Fork2]])
   }
 
   "Verifier handles weak sets: named weak references are still weak" in {
@@ -629,8 +618,10 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
         .weak[ImplB]("missing")
     }
 
-    val result = PlanVerifier().verify[Identity](definition, Roots.target[Set[Fork1]], Injector.providedKeys(), Set.empty)
-    assert(result.issues.isEmpty)
+    assertVerified(definition, Roots.target[Set[Fork1]])
   }
 
+  private def assertVerified(definition: ModuleBase, roots: Roots): Unit = {
+    assert(PlanVerifier().verify[Identity](definition, roots, Injector.providedKeys(), Set.empty).issues.isEmpty)
+  }
 }

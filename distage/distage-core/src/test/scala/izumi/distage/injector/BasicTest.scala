@@ -62,9 +62,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       many[ExampleTypedCaseClass[Int]]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     val s = context.get[TypedService[Int]]
     val ss = context.get[Set[ExampleTypedCaseClass[Int]]]
@@ -86,9 +84,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       }
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     val t = context.get[TestClass2]
     val r = context.get[LocatorRef]
@@ -124,10 +120,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
     val definition = PlannerInput.everything(MyClassModule ++ ConfigModule)
 
-    val injector = mkInjector()
-
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[MyClass].a eq context.get[String]("a"))
     assert(context.get[MyClass].b eq context.get[String]("b"))
@@ -151,9 +144,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         .add[Impl3]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[Set[JustTrait]].size == 2)
     assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
@@ -200,9 +191,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         .namedByImpl
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
@@ -239,9 +228,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[TestInstanceBinding].from(new TestInstanceBinding)
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
     val instantiated = context.get[TestCaseClass2]
 
     assert(instantiated.a.z.nonEmpty)
@@ -280,10 +267,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         .add[SetImpl3]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[Service0].set.size == 3)
     assert(context.get[Service1].set.size == 3)
@@ -323,10 +307,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[TestClass]
     })
 
-    val injector = mkInjector()
-
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestClass] != null)
   }
@@ -699,9 +680,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         .add[Service1]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestClass].correctWired())
     assert(context.get[Set[Service]]("named.set.test").size == 2)

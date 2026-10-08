@@ -1,11 +1,9 @@
 package izumi.distage.testkit.runner.impl.services
 
 import distage.config.AppConfig
-import izumi.distage.config.model.{RoleConfig, RoleConfigSource}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.model.ActivationInfo
-import izumi.distage.framework.services.ConfigMerger.ConfigMergerImpl
-import izumi.distage.framework.services.{ConfigFilteringStrategy, ConfigLoader, ConfigLoaderArgs, ConfigLocationProvider, ConfigSourceReader, ModuleProvider}
+import izumi.distage.framework.services.{ConfigLoader, ModuleProvider}
 import izumi.distage.model.definition.Activation
 import izumi.distage.roles.launcher.AppShutdownInitiator
 import izumi.distage.roles.model.meta.RolesInfo
@@ -18,7 +16,7 @@ import izumi.reflect.TagK
   * The purpose of this class is to allow testkit user to override
   * module loading and config loading logic by overriding [[izumi.distage.testkit.model.TestConfig.bootstrapFactory]]
   */
-trait BootstrapFactory {
+trait BootstrapFactory extends BootstrapFactoryPlatformSpecific {
   def makeModuleProvider[F[_]: TagK](
     options: PlanningOptions,
     config: AppConfig,
@@ -29,31 +27,10 @@ trait BootstrapFactory {
   ): ModuleProvider
 
   def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader
-
-  protected def makeConfigLocationProvider(configBaseName: String): ConfigLocationProvider
 }
 
 object BootstrapFactory {
-  object Impl extends BootstrapFactory {
-    override protected def makeConfigLocationProvider(configBaseName: String): ConfigLocationProvider = {
-      ConfigLocationProvider.Default
-    }
-
-    override def makeConfigLoader(configBaseName: String, logger: IzLogger): ConfigLoader = {
-      val configLoaderArgs = ConfigLoaderArgs(global = None, configs = List(RoleConfig(configBaseName, active = true, RoleConfigSource.ConfigDefault)))
-      val merger = new ConfigMergerImpl(
-        logger,
-        enableConfigEnvOverrides = true,
-        new ConfigFilteringStrategy.Raw(
-          alwaysIncludeReferenceRoleConfigs = true, // we expect no user-provided role configs in tests
-          alwaysIncludeReferenceCommonConfigs = true,
-          ignoreAll = false,
-        ),
-      )
-      val locationProvider = makeConfigLocationProvider(configBaseName)
-      new ConfigLoader.LocalFSImpl(logger, merger, locationProvider, configLoaderArgs, new ConfigSourceReader.LocalFSImpl(ClassLoader.getSystemClassLoader))
-    }
-
+  object Impl extends DefaultBootstrapFactoryConfig {
     override def makeModuleProvider[F[_]: TagK](
       options: PlanningOptions,
       config: AppConfig,

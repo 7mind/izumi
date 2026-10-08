@@ -39,9 +39,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
 
-    val injector = mkNoCyclesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
 
     val local = context.get[Subcontext[Identity, Int]]("test")
     assert(context.find[GlobalServiceDependency].nonEmpty)
@@ -73,9 +71,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
 
-    val injector = mkNoCyclesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
 
     val local = context.get[Subcontext[Identity, Int]]("test")
 
@@ -92,9 +88,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
 
     val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]])
 
-    val injector = mkNoCyclesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
 
     val local = context.get[Subcontext[Identity, Int]]
 
@@ -175,8 +169,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       }).localDependency[Int]("arg")
     }
 
-    val injector = mkNoCyclesInjector()
-    val subcontext = injector.produceGet[Subcontext[Identity, Int]](module).unsafeGet()
+    val subcontext = mkNoCyclesInjector().produceGet[Subcontext[Identity, Int]](module).unsafeGet()
 
     val resPlus1 = subcontext.provide[Int]("arg")(1).produceRun(identity)
     val resMinus1 = subcontext.provide[Int]("arg")(-1).produceRun(identity)
@@ -203,8 +196,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       subcontext.provide[Arg](Arg(1)).produce().use(effect => effect)
     }
 
-    val injector = mkNoCyclesInjector()
-    val subcontext = injector.produceGet[Subcontext[Suspend2[Throwable, _], Suspend2[Throwable, Int]]](module).unsafeGet()
+    val subcontext = mkNoCyclesInjector().produceGet[Subcontext[Suspend2[Throwable, _], Suspend2[Throwable, Int]]](module).unsafeGet()
 
     val res = good(subcontext)
 

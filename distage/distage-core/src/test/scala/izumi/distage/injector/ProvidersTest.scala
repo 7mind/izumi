@@ -32,9 +32,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
       make[TestClass].from(implType _)
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     val dependency = context.get[TestDependency]("classdeftypeann1")
     val instantiated = context.get[TestClass]
@@ -52,8 +50,7 @@ class ProvidersTest extends AnyWordSpec with MkInjector {
       }
     })
 
-    val injector = mkInjector()
-    val context = injector.produce(injector.planUnsafe(definition)).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     val dependency = context.get[TestDependency]("classdeftypeann1")
     val instantiated = context.get[TestClass]

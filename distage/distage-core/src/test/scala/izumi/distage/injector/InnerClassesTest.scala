@@ -47,9 +47,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[testProviderModule.TestClass[testProviderModule.type]]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[testProviderModule.TestClass[testProviderModule.type]].a.isInstanceOf[testProviderModule.TestDependency])
   }
@@ -66,10 +64,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
         make[testProviderModule.TestDependency]
       })
 
-      val injector = mkNoCyclesInjector()
-      val plan = injector.planUnsafe(definition)
-
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkNoCyclesInjector().produce(definition).unsafeGet()
 
       assert(context.get[testProviderModule.TestClass[testProviderModule.type]].a.isInstanceOf[testProviderModule.TestDependency])
       assert(context.get[testProviderModule.TestClass[testProviderModule.type]].t == testProviderModule)
@@ -108,9 +103,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[testProviderModule.TestClass[testProviderModule.type]]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[testProviderModule.TestClass[testProviderModule.type]].aValue.isInstanceOf[testProviderModule.TestDependency])
     assert(context.get[testProviderModule.TestClass[testProviderModule.type]].t == testProviderModule)
@@ -127,10 +120,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
       make[TopLevelPathDepTest.TestDependency]
     })
 
-    val injector = mkNoCyclesInjector()
-    val plan = injector.planUnsafe(definition)
-
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
 
     assert(context.get[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]].a != null)
     assert(context.get[TopLevelPathDepTest.TestClass[TopLevelPathDepTest.type]].t == TopLevelPathDepTest)
@@ -194,9 +184,7 @@ class InnerClassesTest extends AnyWordSpec with MkInjector {
     })
 
     def testCase = {
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[TestClass[InnerPathDepTest.this.type]].a != null)
       assert(context.get[InnerPathDepTest.this.type] ne context.get[InnerPathDepTest.type])

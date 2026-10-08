@@ -72,9 +72,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
       make[ByNameSelfReference]
     })
 
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoProxiesInjector().produce(definition).unsafeGet()
 
     val instance = context.get[ByNameSelfReference]
 
@@ -88,9 +86,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
       makeTrait[TraitSelfReference]
     })
 
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoProxiesInjector().produce(definition).unsafeGet()
 
     val instance = context.get[TraitSelfReference]
 
@@ -107,9 +103,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
       makeFactory[FactorySelfReference]
     })
 
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoProxiesInjector().produce(definition).unsafeGet()
 
     val instance = context.get[FactorySelfReference]
 
@@ -174,9 +168,7 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
       make[Int].from(1)
     })
 
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkNoProxiesInjector().produce(definition).unsafeGet()
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)

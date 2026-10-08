@@ -19,9 +19,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
       make[TestClass]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestClass].a != null)
     assert(context.get[TestClass].b != null)
@@ -38,10 +36,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
       make[DummyImplicit].from[MyDummyImplicit]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
     val instantiated = context.get[TestClass]
 
     assert(instantiated.dummyImplicit.isInstanceOf[MyDummyImplicit])
@@ -60,9 +55,7 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
       make[TestClass]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definition).unsafeGet()
 
     assert(context.get[TestClass].b == context.get[TestClass].d)
   }

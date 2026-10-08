@@ -37,9 +37,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
         Activation.empty,
       )
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Int] == 12)
     }
