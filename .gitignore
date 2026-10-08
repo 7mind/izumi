@@ -125,3 +125,5 @@ hs_err_pid*
 test-fixtures/**/__pycache__/
 !sbt-plugins/sbt-distage-testkit/src/main/java/izumi/distage/sbt/target/
 !sbt-plugins/sbt-distage-testkit/src/test/java/izumi/distage/sbt/target/
+
+.codex-worktrees/

@@ -9,188 +9,50 @@ import com.github.sbt.git.SbtGit.GitKeys._
 
 lazy val `fundamentals-basics` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-basics"))
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-basicsJVM` = `fundamentals-basics`.jvm
@@ -202,188 +64,50 @@ lazy val `fundamentals-functional` = crossProject(JVMPlatform, JSPlatform, Nativ
     `fundamentals-basics` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-functionalJVM` = `fundamentals-functional`.jvm
@@ -396,188 +120,50 @@ lazy val `fundamentals-collections` = crossProject(JVMPlatform, JSPlatform, Nati
     `fundamentals-functional` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-collectionsJVM` = `fundamentals-collections`.jvm
@@ -586,199 +172,56 @@ lazy val `fundamentals-collectionsNative` = `fundamentals-collections`.native
 
 lazy val `fundamentals-assertions` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-assertions"))
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testOptions := Seq.empty,
-    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
-    Test / test := (Test / testFull).value,
-    Test / mainClass := {
-      val options = (Test / scalacOptions).value
-      val pointOnly = options.contains("-Yrangepos:false")
-      Some(if (pointOnly) "izumi.fundamentals.assertions.AssertionFixturesWithoutRanges" else "izumi.fundamentals.assertions.AssertionFixtures")
-    },
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_24,
+    setting_25,
+    setting_26,
+    setting_27,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / scalaJSUseMainModuleInitializer := true,
-    Test / scalaJSUseTestModuleInitializer := false
+    setting_21,
+    setting_28,
+    setting_29
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-assertionsJVM` = `fundamentals-assertions`.jvm
@@ -790,197 +233,57 @@ lazy val `fundamentals-assertions-cats` = crossProject(JVMPlatform, JSPlatform, 
     `fundamentals-assertions` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % V.cats_effect
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_32,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testOptions := Seq.empty,
-    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
-    Test / test := (Test / testFull).value,
-    Test / mainClass := Some("izumi.fundamentals.assertions.cats.CatsAssertionFixtures"),
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_24,
+    setting_25,
+    setting_26,
+    setting_31,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / scalaJSUseMainModuleInitializer := true,
-    Test / scalaJSUseTestModuleInitializer := false
+    setting_21,
+    setting_28,
+    setting_29
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-assertions-catsJVM` = `fundamentals-assertions-cats`.jvm
@@ -993,212 +296,67 @@ lazy val `fundamentals-assertions-bio` = crossProject(JVMPlatform, JSPlatform, N
     `fundamentals-bio` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_34,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testOptions := Seq.empty,
-    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
-    Test / test := (Test / testFull).value,
-    Test / mainClass := Some("izumi.fundamentals.assertions.bio.BIOAssertionFixtures"),
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_24,
+    setting_25,
+    setting_26,
+    setting_33,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / scalaJSUseMainModuleInitializer := true,
-    Test / scalaJSUseTestModuleInitializer := false
+    setting_21,
+    setting_28,
+    setting_29
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-assertions-bioJVM` = `fundamentals-assertions-bio`.jvm
 lazy val `fundamentals-assertions-bioJS` = `fundamentals-assertions-bio`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_35
   )
 lazy val `fundamentals-assertions-bioNative` = `fundamentals-assertions-bio`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_35
   )
 
 lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-orphans"))
@@ -1206,195 +364,51 @@ lazy val `fundamentals-orphans` = crossProject(JVMPlatform, JSPlatform, NativePl
     `fundamentals-basics` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_36,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-orphansJVM` = `fundamentals-orphans`.jvm
@@ -1406,197 +420,51 @@ lazy val `fundamentals-language` = crossProject(JVMPlatform, JSPlatform, NativeP
     `fundamentals-basics` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty },
-    libraryDependencies ++= {
-      val version = scalaVersion.value
-      if (version.startsWith("0.") || version.startsWith("3.")) {
-        Seq(
-          ("org.scala-lang" %% "scala3-compiler" % scalaVersion.value).platform(Platform.jvm) % Provided
-        )
-      } else Seq.empty
-    }
+    setting_30,
+    setting_37
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-languageJVM` = `fundamentals-language`.jvm
@@ -1611,208 +479,62 @@ lazy val `fundamentals-platform` = crossProject(JVMPlatform, JSPlatform, NativeP
     `fundamentals-collections` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
-      "io.github.classgraph" % "classgraph" % V.classgraph % Provided
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_39,
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    coverageExcludedPackages := Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]crypto[.]OpenSSLDigest.*").filter(_.nonEmpty).mkString(";")
+    setting_22,
+    setting_38
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-platformJVM` = `fundamentals-platform`.jvm
 lazy val `fundamentals-platformJS` = `fundamentals-platform`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-js" %% "scala-js-macrotask-executor" % V.scalajs_macrotask_executor
-    )
+    setting_40
   )
 lazy val `fundamentals-platformNative` = `fundamentals-platform`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
-    )
+    setting_41
   )
 
 lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-functoid"))
@@ -1822,192 +544,51 @@ lazy val `fundamentals-functoid` = crossProject(JVMPlatform, JSPlatform, NativeP
     `fundamentals-collections` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_42,
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-functoidJVM` = `fundamentals-functoid`.jvm
@@ -2019,200 +600,52 @@ lazy val `fundamentals-json-circe` = crossProject(JVMPlatform, JSPlatform, Nativ
     `fundamentals-platform` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % V.circe
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty },
-    libraryDependencies ++= {
-      val version = scalaVersion.value
-      if (version.startsWith("0.") || version.startsWith("3.")) {
-        Seq(
-          "io.circe" %% "circe-generic" % V.circe
-        )
-      } else Seq.empty
-    }
+    setting_43,
+    setting_30,
+    setting_44
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-json-circeJVM` = `fundamentals-json-circe`.jvm
@@ -2224,189 +657,51 @@ lazy val `fundamentals-test-support` = crossProject(JVMPlatform, JSPlatform, Nat
     `distage-test-runner` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    publish / skip := true,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_45,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-test-supportJVM` = `fundamentals-test-support`.jvm
@@ -2419,211 +714,68 @@ lazy val `fundamentals-platform-test` = crossProject(JVMPlatform, JSPlatform, Na
     `fundamentals-test-support` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.classgraph" % "classgraph" % V.classgraph % Provided
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_51,
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    publish / skip := true,
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_45,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-platform-test-jvm",
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))
+    setting_47,
+    setting_48,
+    setting_47
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-platform-test-js"
+    setting_21,
+    setting_47,
+    setting_49
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-platform-test-native"
+    setting_22,
+    setting_47,
+    setting_50
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-platform-testJVM` = `fundamentals-platform-test`.jvm
 lazy val `fundamentals-platform-testJS` = `fundamentals-platform-test`.js
 lazy val `fundamentals-platform-testNative` = `fundamentals-platform-test`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time-tzdb" % V.scala_java_time % Test
-    )
+    setting_52
   )
 
 lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-collections-test"))
@@ -2632,197 +784,58 @@ lazy val `fundamentals-collections-test` = crossProject(JVMPlatform, JSPlatform,
     `fundamentals-test-support` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    publish / skip := true,
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_45,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-collections-test-jvm"
+    setting_47,
+    setting_53
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-collections-test-js"
+    setting_21,
+    setting_47,
+    setting_54
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-collections-test-native"
+    setting_22,
+    setting_47,
+    setting_55
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-collections-testJVM` = `fundamentals-collections-test`.jvm
@@ -2835,197 +848,58 @@ lazy val `fundamentals-language-test` = crossProject(JVMPlatform, JSPlatform, Na
     `fundamentals-test-support` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    publish / skip := true,
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_45,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-language-test-jvm"
+    setting_47,
+    setting_56
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-language-test-js"
+    setting_21,
+    setting_47,
+    setting_57
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-language-test-native"
+    setting_22,
+    setting_47,
+    setting_58
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-language-testJVM` = `fundamentals-language-test`.jvm
@@ -3038,219 +912,73 @@ lazy val `fundamentals-json-circe-test` = crossProject(JVMPlatform, JSPlatform, 
     `fundamentals-test-support` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-literal" % V.circe % Test
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      "io.circe" %% "circe-generic" % V.circe % Test
-    ) else Seq.empty }
+    setting_66,
+    setting_67
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    publish / skip := true,
-    Test / distageBuildId := "izumi-repository",
-    libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always,
-    libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_45,
+    setting_46,
+    setting_59,
+    setting_60,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-json-circe-test-jvm",
-    Test / unmanagedSourceDirectories += file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile
+    setting_47,
+    setting_61,
+    setting_62
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-json-circe-test-js",
-    Test / unmanagedSourceDirectories += file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile
+    setting_21,
+    setting_47,
+    setting_63,
+    setting_62
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-json-circe-test-native",
-    Test / unmanagedSourceDirectories ++= { if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile) else Seq.empty }
+    setting_22,
+    setting_47,
+    setting_64,
+    setting_65
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-json-circe-testJVM` = `fundamentals-json-circe-test`.jvm
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      "io.circe" %% "circe-derivation" % V.circe_derivation % Test
-    ) else Seq.empty }
+    setting_68
   )
 lazy val `fundamentals-json-circe-testJS` = `fundamentals-json-circe-test`.js
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      "io.circe" %% "circe-derivation" % V.circe_derivation % Test
-    ) else Seq.empty }
+    setting_68
   )
 lazy val `fundamentals-json-circe-testNative` = `fundamentals-json-circe-test`.native
 
@@ -3260,224 +988,70 @@ lazy val `fundamentals-bio-test` = crossProject(JVMPlatform, JSPlatform, NativeP
     `fundamentals-test-support` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
-      "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
-      "org.typelevel" %% "cats-effect-testkit" % V.cats_effect % Test,
-      "org.typelevel" %% "discipline-core" % V.discipline % Test,
-      "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
-      ("org.typelevel" %% "scalac-compat-annotation" % V.scalac_compat_annotation).platform(Platform.jvm) % Provided
-    ) else Seq.empty }
+    setting_72,
+    setting_73
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    publish / skip := true,
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_45,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-bio-test-jvm",
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))
+    setting_47,
+    setting_69,
+    setting_47
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-bio-test-js"
+    setting_21,
+    setting_47,
+    setting_70
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageTargetId := "fundamentals-bio-test-native"
+    setting_22,
+    setting_47,
+    setting_71
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `fundamentals-bio-testJVM` = `fundamentals-bio-test`.jvm
 lazy val `fundamentals-bio-testJS` = `fundamentals-bio-test`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_35
   )
 lazy val `fundamentals-bio-testNative` = `fundamentals-bio-test`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_35
   )
 
 lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("fundamentals/fundamentals-bio"))
@@ -3488,198 +1062,52 @@ lazy val `fundamentals-bio` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
     `fundamentals-basics` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-interop-tracer" % V.zio_interop_cats
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      ("org.typelevel" %% "scalac-compat-annotation" % V.scalac_compat_annotation).platform(Platform.jvm) % Provided
-    ) else Seq.empty }
+    setting_75,
+    setting_76
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    coverageExcludedPackages := Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]uuid[.]__SecureRandomPlatformSpecific[.$]sysrandom.*").filter(_.nonEmpty).mkString(";")
+    setting_22,
+    setting_74
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `fundamentals-bioJVM` = `fundamentals-bio`.jvm
@@ -3688,239 +1116,59 @@ lazy val `fundamentals-bioNative` = `fundamentals-bio`.native
 
 lazy val `distage-test-protocol` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-test-protocol"))
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-parser" % V.circe
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_81,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testOptions := Seq.empty,
-    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
-    Test / test := (Test / testFull).value,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.8.4") => Seq(
-        "-source:3.8",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17",
-        "-Wconf:cat=deprecation:warning",
-        "-Wconf:msg=legacy-binding:silent",
-        "-Wconf:msg=nowarn:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / mainClass := Some("izumi.distage.testkit.protocol.ProtocolFixtures"),
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_24,
+    setting_25,
+    setting_26,
+    setting_77,
+    setting_78,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.8.4",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_79,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Compile / unmanagedSourceDirectories += file("distage/distage-test-protocol/.jvm/src/main/java").getAbsoluteFile
+    setting_80
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.8.4",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_79,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / scalaJSUseMainModuleInitializer := true,
-    Test / scalaJSUseTestModuleInitializer := false
+    setting_21,
+    setting_28,
+    setting_29
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.8.4",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_79,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-test-protocolJVM` = `distage-test-protocol`.jvm
@@ -3933,216 +1181,71 @@ lazy val `distage-test-runner` = crossProject(JVMPlatform, JSPlatform, NativePla
     `distage-test-protocol` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testOptions := Seq.empty,
-    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
-    Test / test := (Test / testFull).value,
-    Test / mainClass := Some("izumi.distage.testkit.runner.BaseRunnerFixtures"),
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_24,
+    setting_25,
+    setting_26,
+    setting_82,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / scalaJSUseMainModuleInitializer := true,
-    Test / scalaJSUseTestModuleInitializer := false,
-    Compile / unmanagedSourceDirectories += file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile
+    setting_21,
+    setting_28,
+    setting_29,
+    setting_83
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Compile / unmanagedSourceDirectories += file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile
+    setting_22,
+    setting_83
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-test-runnerJVM` = `distage-test-runner`.jvm
   .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-sbt" % "test-interface" % V.sbt_test_interface
-    )
+    setting_84
   )
 lazy val `distage-test-runnerJS` = `distage-test-runner`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-js" % "scalajs-test-interface_2.13" % V.scalajs_test_interface
-    )
+    setting_85
   )
 lazy val `distage-test-runnerNative` = `distage-test-runner`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "org.scala-native" %% "test-interface" % "0.5.12"
-    )
+    setting_86
   )
 
 lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-core-api"))
@@ -4153,205 +1256,56 @@ lazy val `distage-core-api` = crossProject(JVMPlatform, JSPlatform, NativePlatfo
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
-      "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect")
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_90,
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-core-api-jvm"
+    setting_87
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-core-api-js"
+    setting_21,
+    setting_88
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-core-api-native"
+    setting_22,
+    setting_89
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-core-apiJVM` = `distage-core-api`.jvm
@@ -4363,162 +1317,28 @@ lazy val `distage-core-proxy-bytebuddy` = project.in(file("distage/distage-core-
     `distage-core-apiJVM` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy" % V.bytebuddy
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_91,
+    setting_23
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .enablePlugins(SitePreviewPlugin)
@@ -4528,189 +1348,50 @@ lazy val `distage-framework-api` = crossProject(JVMPlatform, JSPlatform, NativeP
     `distage-core-api` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-framework-apiJVM` = `distage-framework-api`.jvm
@@ -4725,201 +1406,56 @@ lazy val `distage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform).
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "javax.inject" % "javax.inject" % "1" % Test
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_95,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-core-jvm"
+    setting_92
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-core-js"
+    setting_21,
+    setting_93
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-core-native"
+    setting_22,
+    setting_94
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-coreJVM` = `distage-core`.jvm
@@ -4928,15 +1464,11 @@ lazy val `distage-coreJVM` = `distage-core`.jvm
   )
 lazy val `distage-coreJS` = `distage-core`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_35
   )
 lazy val `distage-coreNative` = `distage-core`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_35
   )
 
 lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("distage/distage-extension-config"))
@@ -4946,235 +1478,71 @@ lazy val `distage-extension-config` = crossProject(JVMPlatform, JSPlatform, Nati
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-extension-config-jvm",
-    Test / resourceGenerators += Def.task {
-                  val _ = (LocalProject("distage-optional-dependency-test") / Compile / compile).value
-                  val classpath = (LocalProject("distage-optional-dependency-test") / Compile / fullClasspath).value
-                  val converter = fileConverter.value
-                  val manifest = (Test / resourceManaged).value / "optional-dependency-classpath.txt"
-                  IO.write(manifest, classpath.map(entry => converter.toPath(entry.data).toUri.toASCIIString).mkString(System.lineSeparator()))
-                  Seq(manifest)
-                }.taskValue
+    setting_96,
+    setting_97
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-extension-config-js"
+    setting_21,
+    setting_98
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-extension-config-native"
+    setting_22,
+    setting_99
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-extension-configJVM` = `distage-extension-config`.jvm
   .settings(
-    libraryDependencies ++= Seq(
-      "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      "com.softwaremill.magnolia1_2" %% "magnolia" % V.magnolia
-    ) else Seq.empty },
-    libraryDependencies ++= { if (Seq(
-      "2.13.18"
-    ) contains scalaVersion.value) Seq(
-      "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig
-    ) else Seq.empty }
+    setting_100,
+    setting_101,
+    setting_102
   )
 lazy val `distage-extension-configJS` = `distage-extension-config`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-generic" % V.circe,
-      "io.circe" %% "circe-parser" % V.circe % Test,
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_103
   )
 lazy val `distage-extension-configNative` = `distage-extension-config`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-generic" % V.circe,
-      "io.circe" %% "circe-parser" % V.circe % Test,
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
-    )
+    setting_103
   )
 
 lazy val `distage-optional-dependency-test` = project.in(file("distage/distage-optional-dependency-test"))
@@ -5184,171 +1552,29 @@ lazy val `distage-optional-dependency-test` = project.in(file("distage/distage-o
     `distage-test-runnerJVM` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_30
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    publish / skip := true,
-    Compile / dependencyClasspath := {
-                  val classpath = (Compile / dependencyClasspath).value
-                  val converter = fileConverter.value
-                  val excluded = (Compile / update).value.configurations.flatMap(_.modules).filter { module =>
-                    (module.module.organization == "org.typelevel" && module.module.name.startsWith("cats-")) ||
-                      (module.module.organization == "dev.zio" && module.module.name.startsWith("zio")) ||
-                      (module.module.organization == "io.monix" && module.module.name.startsWith("monix"))
-                  }.flatMap(_.artifacts.map(_._2)).toSet
-                  classpath.filterNot(entry => excluded.contains(converter.toPath(entry.data).toFile))
-                },
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_45,
+    setting_104,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .enablePlugins(SitePreviewPlugin)
@@ -5362,197 +1588,56 @@ lazy val `distage-extension-logstage` = crossProject(JVMPlatform, JSPlatform, Na
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_108,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-extension-logstage-jvm"
+    setting_105
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-extension-logstage-js"
+    setting_21,
+    setting_106
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-extension-logstage-native"
+    setting_22,
+    setting_107
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-extension-logstageJVM` = `distage-extension-logstage`.jvm
@@ -5568,197 +1653,56 @@ lazy val `distage-extension-plugins` = crossProject(JVMPlatform, JSPlatform, Nat
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.classgraph" % "classgraph" % V.classgraph
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_112,
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-extension-plugins-jvm"
+    setting_109
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-extension-plugins-js"
+    setting_21,
+    setting_110
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-extension-plugins-native"
+    setting_22,
+    setting_111
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-extension-pluginsJVM` = `distage-extension-plugins`.jvm
@@ -5766,12 +1710,7 @@ lazy val `distage-extension-pluginsJVM` = `distage-extension-plugins`.jvm
     `fundamentals-platform-testJVM` % "test->compile,test"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "javax.inject" % "javax.inject" % "1" % Test
-    )
+    setting_113
   )
 lazy val `distage-extension-pluginsJS` = `distage-extension-plugins`.js
 lazy val `distage-extension-pluginsNative` = `distage-extension-plugins`.native
@@ -5788,226 +1727,68 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform, NativePlatf
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
-      "io.circe" %% "circe-parser" % V.circe % Test
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty },
-    libraryDependencies ++= {
-      val version = scalaVersion.value
-      if (version.startsWith("0.") || version.startsWith("3.")) {
-        Seq(
-          ("org.scala-lang" %% "scala3-compiler" % scalaVersion.value).platform(Platform.jvm) % Provided
-        )
-      } else Seq.empty
-    }
+    setting_118,
+    setting_30,
+    setting_37
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-framework-jvm"
+    setting_114
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-framework-js"
+    setting_21,
+    setting_115
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-framework-native",
-    Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
+    setting_22,
+    setting_116,
+    setting_117
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-frameworkJVM` = `distage-framework`.jvm
 lazy val `distage-frameworkJS` = `distage-framework`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-parser" % V.circe
-    )
+    setting_119
   )
 lazy val `distage-frameworkNative` = `distage-framework`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-parser" % V.circe
-    )
+    setting_119
   )
 
 lazy val `distage-framework-docker` = project.in(file("distage/distage-framework-docker"))
@@ -6020,171 +1801,31 @@ lazy val `distage-framework-docker` = project.in(file("distage/distage-framework
     `fundamentals-assertions-bioJVM` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
-      "com.github.docker-java" % "docker-java-core" % V.docker_java,
-      "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java,
-      "org.apache.commons" % "commons-compress" % V.commons_compress
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_121,
+    setting_23
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-framework-docker-jvm",
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_120,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
@@ -6194,188 +1835,50 @@ lazy val `distage-testkit-core` = crossProject(JVMPlatform, JSPlatform, NativePl
     `distage-framework` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+    setting_21
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-testkit-coreJVM` = `distage-testkit-core`.jvm
@@ -6388,195 +1891,57 @@ lazy val `distage-testkit-core-test` = crossProject(JVMPlatform, JSPlatform, Nat
     `distage-test-runner` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
-    publish / skip := true,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
+    setting_45,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-testkit-core-test-jvm"
+    setting_122
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-testkit-core-test-js"
+    setting_21,
+    setting_123
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-testkit-core-test-native",
-    Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
+    setting_22,
+    setting_124,
+    setting_117
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-testkit-core-testJVM` = `distage-testkit-core-test`.jvm
@@ -6591,199 +1956,58 @@ lazy val `distage-testkit-runner` = crossProject(JVMPlatform, JSPlatform, Native
     `fundamentals-assertions-bio` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_126,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testOptions := Seq.empty,
-    Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed },
-    Test / test := (Test / testFull).value,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_24,
+    setting_25,
+    setting_26,
     Seq(Test / unmanagedSourceDirectories += (LocalRootProject / baseDirectory).value / "distage" / "distage-testkit-runner" / "src" / "test" / "scala-legacy"),
-    Test / mainClass := Some("izumi.distage.testkit.runner.di.DistageProviderFixtures"),
+    setting_125,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native")
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / scalaJSUseMainModuleInitializer := true,
-    Test / scalaJSUseTestModuleInitializer := false
+    setting_21,
+    setting_28,
+    setting_29
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+    setting_22
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-testkit-runnerJVM` = `distage-testkit-runner`.jvm
@@ -6798,203 +2022,59 @@ lazy val `distage-testkit-runner-test` = crossProject(JVMPlatform, JSPlatform, N
     `distage-framework` % "test->test;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_130,
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Seq(Test / unmanagedSourceDirectories += (LocalRootProject / baseDirectory).value / "distage" / "distage-testkit-runner" / "src" / "test" / "scala-legacy"),
-    publish / skip := true,
+    setting_45,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-testkit-runner-test-jvm"
+    setting_127
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "distage-testkit-runner-test-js"
+    setting_21,
+    setting_128
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "distage-testkit-runner-test-native",
-    Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
+    setting_22,
+    setting_129,
+    setting_117
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `distage-testkit-runner-testJVM` = `distage-testkit-runner-test`.jvm
@@ -7006,163 +2086,31 @@ lazy val `distage-testkit-runner-sbt-module-filtering-test` = project.in(file("d
     `distage-testkit-runner-testJVM` % "test->compile,test"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "distage-testkit-runner-sbt-module-filtering-test-jvm",
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
-    publish / skip := true,
+    setting_131,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
+    setting_45,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
@@ -7174,214 +2122,66 @@ lazy val `logstage-core` = crossProject(JVMPlatform, JSPlatform, NativePlatform)
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats % Optional,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
-      "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
-    ) else Seq.empty }
+    setting_135,
+    setting_30
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "logstage-core-jvm"
+    setting_132
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "logstage-core-js"
+    setting_21,
+    setting_133
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "logstage-core-native"
+    setting_22,
+    setting_134
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `logstage-coreJVM` = `logstage-core`.jvm
 lazy val `logstage-coreJS` = `logstage-core`.js
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
-    )
+    setting_41
   )
 lazy val `logstage-coreNative` = `logstage-core`.native
   .settings(
-    libraryDependencies ++= Seq(
-      "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
-    )
+    setting_41
   )
 
 lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, NativePlatform).crossType(CrossType.Pure).in(file("logstage/logstage-rendering-circe"))
@@ -7390,201 +2190,56 @@ lazy val `logstage-rendering-circe` = crossProject(JVMPlatform, JSPlatform, Nati
     `distage-test-runner` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core" % V.circe,
-      "io.circe" %% "circe-parser" % V.circe % Test,
-      "io.circe" %% "circe-literal" % V.circe % Test,
-      "io.circe" %% "circe-generic" % V.circe % Test,
-      "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
-      "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_139,
+    setting_23
   )
   .settings(
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .jvmSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "logstage-rendering-circe-jvm"
+    setting_136
   )
   .jsSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("js-native"),
-    scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) },
-    Test / distageTargetId := "logstage-rendering-circe-js"
+    setting_21,
+    setting_137
   )
   .nativeSettings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2."),
-    libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value),
-    Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
-    Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty },
+    setting_15,
+    setting_16,
+    setting_17,
+    setting_18,
+    setting_19,
+    setting_20,
     PlatformSourceSets.settings("jvm-native", "js-native"),
-    libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always,
-    Test / distageTargetId := "logstage-rendering-circe-native"
+    setting_22,
+    setting_138
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
 lazy val `logstage-rendering-circeJVM` = `logstage-rendering-circe`.jvm
@@ -7597,168 +2252,34 @@ lazy val `logstage-adapter-slf4j` = project.in(file("logstage/logstage-adapter-s
     `distage-test-runnerJVM` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % V.slf4j
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_144,
+    setting_23
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "logstage-adapter-slf4j-jvm",
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
-    Compile / compileOrder := CompileOrder.Mixed,
-    Test / compileOrder := CompileOrder.Mixed,
-    Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat,
+    setting_140,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
+    setting_141,
+    setting_142,
+    setting_143,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
@@ -7769,166 +2290,31 @@ lazy val `logstage-sink-slf4j` = project.in(file("logstage/logstage-sink-slf4j")
     `distage-test-runnerJVM` % "test->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.slf4j" % "slf4j-api" % V.slf4j,
-      "org.slf4j" % "slf4j-simple" % V.slf4j % Test
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_146,
+    setting_23
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    Test / distageTargetId := "logstage-sink-slf4j-jvm",
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework")),
-    Test / distageBuildId := "izumi-repository",
+    setting_145,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_47,
+    setting_46,
     Test / compileIncremental := (Test / compileIncremental).dependsOn(Test / copyResources).value
   )
   .enablePlugins(_root_.izumi.distage.sbt.DistageTestkitPlugin, SitePreviewPlugin)
@@ -7976,189 +2362,41 @@ lazy val `microsite` = project.in(file("doc/microsite"))
     `logstage-sink-slf4j` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % V.cats,
-      "org.typelevel" %% "cats-effect" % V.cats_effect,
-      "dev.zio" %% "zio" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
-      "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
-      "org.tpolecat" %% "doobie-core" % V.doobie,
-      "org.tpolecat" %% "doobie-postgres" % V.doobie,
-      "io.circe" %% "circe-generic" % V.circe,
-      "dev.zio" %% "zio-managed" % V.zio excludeAll("dev.zio" %% "izumi-reflect")
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_162,
+    setting_23
   )
   .settings(
-    crossScalaVersions := Seq(
-      "3.9.0",
-      "2.13.18"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_15,
+    setting_16,
     PlatformSourceSets.settings("jvm-native"),
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    SettingKey[Boolean]("ide-skip-project") := true,
-    scalacOptions -= "-Wconf:any:error",
-    scalacOptions -= "-Xsource:3",
-    Compile / sbt.Keys.doc / scalacOptions += "-Xsource:3",
-    coverageEnabled := false,
-    publish / skip := true,
-    DocKeys.prefix := {if (isSnapshot.value) {
-                (s => s"${DocKeys.snapshotSitePrefix}/$s")
-              } else {
-                identity
-              }},
-    previewFixedPort := Some(9999),
-    gitRemoteRepo := "git@github.com:7mind/izumi-microsite.git",
-    mdocIn := baseDirectory.value / "src/main/tut",
-    (Compile / paradox) / sourceDirectory := mdocOut.value,
-    mdocExtraArguments ++= Seq(
-      " --no-link-hygiene"
-    ),
-    (Compile / paradox) / version := version.value,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_147,
+    setting_148,
+    setting_149,
+    setting_150,
+    setting_151,
+    setting_45,
+    setting_152,
+    setting_153,
+    setting_154,
+    setting_155,
+    setting_156,
+    setting_157,
+    setting_158,
     paradoxTheme := Some(ParadoxMaterialTheme.artifact),
     Compile / paradoxProperties ++= ParadoxMaterialTheme.properties(IzumiSite.materialTheme),
     Compile / paradox / mappings += Def.uncached {
@@ -8167,17 +2405,7 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                 conv.toVirtualFile(file.toPath) -> path
               },
     addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
-    SitePlugin.autoImport.makeSite / mappings := Def.uncached {
-                val conv = fileConverter.value
-                val siteMappings = (SitePlugin.autoImport.makeSite / mappings)
-                  .dependsOn(mdoc.toTask(" "))
-                  .value
-                  .map { case (ref, path) => conv.toPath(ref).toFile -> path }
-                ScaladocAnchors
-                  .resolve(siteMappings, (ScalaUnidoc / siteSubdirName).value, target.value / "scaladoc-anchors", streams.value.log)
-                  .mappings
-                  .map { case (file, path) => conv.toVirtualFile(file.toPath) -> path }
-              },
+    setting_159,
     ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true),
     Compile / paradoxTemplate := Def.uncached {
                 val themeDir = (Compile / paradoxThemeDirectory).value
@@ -8185,8 +2413,8 @@ lazy val `microsite` = project.in(file("doc/microsite"))
                 if (overlay.isDirectory) IO.copyDirectory(overlay, themeDir, overwrite = true)
                 new com.lightbend.paradox.template.PageTemplate(themeDir, (Compile / paradoxDefaultTemplateName).value)
               },
-    ScalaUnidoc / siteSubdirName := DocKeys.prefix.value("api"),
-    Paradox / siteSubdirName := DocKeys.prefix.value(""),
+    setting_160,
+    setting_161,
     paradoxProperties ++= Def.uncached(Map(
                 "scaladoc.izumi.base_url" -> s"/${DocKeys.prefix.value("api")}",
                 "scaladoc.base_url" -> s"/${DocKeys.prefix.value("api")}",
@@ -8210,204 +2438,34 @@ lazy val `sbt-distage-testkit-js` = project.in(file("sbt-plugins/sbt-distage-tes
     `sbt-distage-testkit` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    coverageEnabled := false,
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    sbtPlugin := true,
-    sbtPluginPublishLegacyMavenStyle := false,
+    setting_151,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_163,
+    setting_164,
     crossScalaVersions := Seq("3.8.4"),
     scalaVersion := crossScalaVersions.value.head,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.8.4") => Seq(
-        "-source:3.8",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17",
-        "-Wconf:cat=deprecation:warning",
-        "-Wconf:msg=legacy-binding:silent",
-        "-Wconf:msg=nowarn:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
+    setting_77,
+    setting_8,
     pluginCrossBuild / sbtVersion := "2.0.9",
-    crossScalaVersions := Seq(
-      "3.8.4"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_165,
+    setting_16,
     addSbtPlugin("org.scala-js" % "sbt-scalajs" % V.scalajs_test_interface)
   )
   .enablePlugins(SitePreviewPlugin)
@@ -8418,204 +2476,34 @@ lazy val `sbt-distage-testkit-native` = project.in(file("sbt-plugins/sbt-distage
     `sbt-distage-testkit` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    coverageEnabled := false,
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    sbtPlugin := true,
-    sbtPluginPublishLegacyMavenStyle := false,
+    setting_151,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_163,
+    setting_164,
     crossScalaVersions := Seq("3.8.4"),
     scalaVersion := crossScalaVersions.value.head,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.8.4") => Seq(
-        "-source:3.8",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17",
-        "-Wconf:cat=deprecation:warning",
-        "-Wconf:msg=legacy-binding:silent",
-        "-Wconf:msg=nowarn:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
+    setting_77,
+    setting_8,
     pluginCrossBuild / sbtVersion := "2.0.9",
-    crossScalaVersions := Seq(
-      "3.8.4"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
+    setting_165,
+    setting_16,
     addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.5.12")
   )
   .enablePlugins(SitePreviewPlugin)
@@ -8626,420 +2514,80 @@ lazy val `sbt-distage-testkit` = project.in(file("sbt-plugins/sbt-distage-testki
     `distage-test-protocolJVM` % "test->compile;compile->compile"
   )
   .settings(
-    libraryDependencies ++= Seq(
-      "net.bytebuddy" % "byte-buddy" % V.bytebuddy
-    ),
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_91,
+    setting_23
   )
   .settings(
-    coverageEnabled := false,
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    sbtPlugin := true,
-    sbtPluginPublishLegacyMavenStyle := false,
+    setting_151,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_163,
+    setting_164,
     crossScalaVersions := Seq("3.8.4"),
     scalaVersion := crossScalaVersions.value.head,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.8.4") => Seq(
-        "-source:3.8",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17",
-        "-Wconf:cat=deprecation:warning",
-        "-Wconf:msg=legacy-binding:silent",
-        "-Wconf:msg=nowarn:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
+    setting_77,
+    setting_8,
     pluginCrossBuild / sbtVersion := "2.0.9",
-    crossScalaVersions := Seq(
-      "3.8.4"
-    ),
-    scalaVersion := crossScalaVersions.value.head,
-    pluginCrossBuild / sbtVersion := "2.0.9"
+    setting_165,
+    setting_16,
+    setting_166
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin)
 
 lazy val `sbt-izumi-deps` = project.in(file("sbt-plugins/sbt-izumi-deps"))
   .settings(
-    libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
-      compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
-    ) else Seq.empty }
+    setting_23
   )
   .settings(
-    coverageEnabled := false,
-    organization := "io.7mind.izumi",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:product-name=${name.value}",
-      s"-Xmacro-settings:product-version=${version.value}",
-      s"-Xmacro-settings:product-group=${organization.value}",
-      s"-Xmacro-settings:scala-version=${scalaVersion.value}",
-      s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
-    ),
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
-        case _ => Seq.empty
-      }
-    },
-    Compile / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Compile / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    Test / unmanagedSourceDirectories ++= {
-      val version = scalaVersion.value
-      val crossVersions = crossScalaVersions.value
-      import Ordering.Implicits._
-      val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
-      (Test / unmanagedSourceDirectories).value.flatMap {
-        case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
-        case _ => Seq.empty
-      }
-    },
-    closeClassLoaders := false,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Wconf:any:error",
-        "-explaintypes",
-        "-P:kind-projector:underscore-placeholders",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wconf:cat=optimizer:warning",
-        "-Wconf:cat=other-match-analysis:error",
-        "-Vimplicits",
-        "-Vtype-diffs",
-        "-Ybackend-parallelism",
-        math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
-        "-Wdead-code",
-        "-Wextra-implicit",
-        "-Wnumeric-widen",
-        "-Woctal-literal",
-        "-Wvalue-discard",
-        "-Wunused:_",
-        "-Wmacros:default",
-        "-Ycache-plugin-class-loader:always",
-        "-Ycache-macro-class-loader:last-modified",
-        "-Wunused:-synthetics",
-        "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
-        "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
-        "-Wconf:msg=package.object.inheritance:silent",
-        "-Wconf:msg=not.a.valid.main.method:silent",
-        "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
-        "-Wconf:cat=lint-eta-sam:silent",
-        "-release:17"
-      )
-      case (_, "3.9.0") => Seq(
-        "-source:3.9",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
-    scalacOptions ++= Seq(
-      "-Wconf:cat=deprecation:warning",
-      "-Wconf:msg=legacy-binding:silent",
-      "-Wconf:msg=nowarn:silent"
-    ),
-    Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error",
-    scalacOptions ++= Seq(
-      s"-Xmacro-settings:is-ci=${insideCI.value}"
-    ),
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (false, "2.13.18") => Seq(
-        "-opt:l:inline",
-        "-opt-inline-from:izumi.**"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "2.13.18") => Seq(
-        "-Xsource:3",
-        "-Xmigration",
-        "-Wconf:cat=scala3-migration:silent",
-        "-Wconf:cat=other-migration:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    Test / packageDoc / publishArtifact := false,
-    sbtPlugin := true,
-    sbtPluginPublishLegacyMavenStyle := false,
+    setting_151,
+    setting_0,
+    setting_1,
+    setting_2,
+    setting_3,
+    setting_4,
+    setting_5,
+    setting_6,
+    setting_7,
+    setting_8,
+    setting_9,
+    setting_10,
+    setting_11,
+    setting_12,
+    setting_13,
+    setting_14,
+    setting_163,
+    setting_164,
     crossScalaVersions := Seq("3.8.4"),
     scalaVersion := crossScalaVersions.value.head,
-    scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
-      case (_, "3.8.4") => Seq(
-        "-source:3.8",
-        "-Xkind-projector:underscores",
-        "-Ximport-suggestion-timeout:0",
-        "-Yretain-trees",
-        "-no-indent",
-        "-explain",
-        "-explain-types",
-        "-explain-cyclic",
-        "-Xmax-inlines:64",
-        "-Wopt:all",
-        "-Wrecurse-with-default",
-        "-Wshadow:private-shadow",
-        "-Wwrong-arrow",
-        if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
-        "-Wenum-comment-discard",
-        "-Wimplausible-patterns",
-        "-Wnonunit-statement",
-        "-WunstableInlineAccessors",
-        "-Wunused:all",
-        "-Wvalue-discard",
-        "-Wconf:any:verbose",
-        "-Wconf:name=UnusedNonUnitValue:silent",
-        "-Wconf:name=ValueDiscarding:silent",
-        "-Wconf:msg=eta-expanded even though:silent",
-        "-Wconf:msg=Ignoring .this. qualifier:silent",
-        "-Wconf:msg=.this. qualifier will be deprecated:silent",
-        "-Wconf:msg=scala.compiletime.uninitialized:silent",
-        "-Wconf:msg=`using` clause:silent",
-        "-Wconf:msg=The syntax ..function:silent",
-        "-Wconf:msg=method contains is not declared infix:silent",
-        "-Wconf:msg=method in is not declared infix:silent",
-        "-release:17",
-        "-Wconf:cat=deprecation:warning",
-        "-Wconf:msg=legacy-binding:silent",
-        "-Wconf:msg=nowarn:silent"
-      )
-      case (_, _) => Seq.empty
-    } },
-    scalacOptions -= "-Wconf:any:warning",
+    setting_77,
+    setting_8,
     pluginCrossBuild / sbtVersion := "2.0.9",
     withBuildInfo("izumi.sbt.deps", "Izumi"),
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_147
   )
   .enablePlugins(SitePreviewPlugin)
   .disablePlugins(ScoverageSbtPlugin)
 
 lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .enablePlugins(SitePreviewPlugin)
   .aggregate(
@@ -9101,10 +2649,10 @@ lazy val `fundamentals` = (project in file(".agg/fundamentals-fundamentals"))
 
 lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-jvm"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `fundamentals-basicsJVM`,
@@ -9129,10 +2677,10 @@ lazy val `fundamentals-jvm` = (project in file(".agg/fundamentals-fundamentals-j
 
 lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `fundamentals-basicsJS`,
@@ -9157,10 +2705,10 @@ lazy val `fundamentals-js` = (project in file(".agg/fundamentals-fundamentals-js
 
 lazy val `fundamentals-native` = (project in file(".agg/fundamentals-fundamentals-native"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `fundamentals-basicsNative`,
@@ -9185,10 +2733,10 @@ lazy val `fundamentals-native` = (project in file(".agg/fundamentals-fundamental
 
 lazy val `distage` = (project in file(".agg/distage-distage"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .enablePlugins(SitePreviewPlugin)
   .aggregate(
@@ -9239,10 +2787,10 @@ lazy val `distage` = (project in file(".agg/distage-distage"))
 
 lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `distage-test-protocolJVM`,
@@ -9266,10 +2814,10 @@ lazy val `distage-jvm` = (project in file(".agg/distage-distage-jvm"))
 
 lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `distage-test-protocolJS`,
@@ -9289,10 +2837,10 @@ lazy val `distage-js` = (project in file(".agg/distage-distage-js"))
 
 lazy val `distage-native` = (project in file(".agg/distage-distage-native"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `distage-test-protocolNative`,
@@ -9312,10 +2860,10 @@ lazy val `distage-native` = (project in file(".agg/distage-distage-native"))
 
 lazy val `logstage` = (project in file(".agg/logstage-logstage"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .enablePlugins(SitePreviewPlugin)
   .aggregate(
@@ -9331,10 +2879,10 @@ lazy val `logstage` = (project in file(".agg/logstage-logstage"))
 
 lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `logstage-coreJVM`,
@@ -9345,10 +2893,10 @@ lazy val `logstage-jvm` = (project in file(".agg/logstage-logstage-jvm"))
 
 lazy val `logstage-js` = (project in file(".agg/logstage-logstage-js"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `logstage-coreJS`,
@@ -9357,10 +2905,10 @@ lazy val `logstage-js` = (project in file(".agg/logstage-logstage-js"))
 
 lazy val `logstage-native` = (project in file(".agg/logstage-logstage-native"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `logstage-coreNative`,
@@ -9369,10 +2917,10 @@ lazy val `logstage-native` = (project in file(".agg/logstage-logstage-native"))
 
 lazy val `docs` = (project in file(".agg/doc-docs"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .enablePlugins(SitePreviewPlugin)
   .aggregate(
@@ -9381,10 +2929,10 @@ lazy val `docs` = (project in file(".agg/doc-docs"))
 
 lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `microsite`
@@ -9392,10 +2940,10 @@ lazy val `docs-jvm` = (project in file(".agg/doc-docs-jvm"))
 
 lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .enablePlugins(SitePreviewPlugin)
   .aggregate(
@@ -9407,10 +2955,10 @@ lazy val `sbt-plugins` = (project in file(".agg/sbt-plugins-sbt-plugins"))
 
 lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `sbt-distage-testkit-js`,
@@ -9421,10 +2969,10 @@ lazy val `sbt-plugins-jvm` = (project in file(".agg/sbt-plugins-sbt-plugins-jvm"
 
 lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `fundamentals-jvm`,
@@ -9434,10 +2982,10 @@ lazy val `izumi-jvm` = (project in file(".agg/.agg-jvm"))
 
 lazy val `izumi-js` = (project in file(".agg/.agg-js"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `fundamentals-js`,
@@ -9447,10 +2995,10 @@ lazy val `izumi-js` = (project in file(".agg/.agg-js"))
 
 lazy val `izumi-native` = (project in file(".agg/.agg-native"))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    SettingKey[Boolean]("ide-skip-project") := true
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_147
   )
   .aggregate(
     `fundamentals-native`,
@@ -9460,81 +3008,27 @@ lazy val `izumi-native` = (project in file(".agg/.agg-native"))
 
 lazy val `izumi` = (project in file("."))
   .settings(
-    crossScalaVersions := Nil,
-    libraryDependencies := Nil,
-    publish / skip := true,
-    Global / onChangedBuildSource := ReloadOnSourceChanges,
-    Global / excludeLintKeys += SettingKey[Boolean]("ide-skip-project"),
-    Global / excludeLintKeys += SettingKey[Boolean]("coverage-enabled"),
-    Global / excludeLintKeys += publishMavenStyle,
-    ThisBuild / publishMavenStyle := true,
-    ThisBuild / scalacOptions ++= Seq(
-      "-encoding",
-      "UTF-8",
-      "-feature",
-      "-unchecked",
-      "-deprecation"
-    ),
-    ThisBuild / javacOptions ++= Seq(
-      "-encoding",
-      "UTF-8",
-      "--release",
-      "17",
-      "-deprecation",
-      "-parameters",
-      "-Xlint:all",
-      "-XDignore.symbol.file"
-    ),
-    ThisBuild / scalacOptions ++= Seq(
-      s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
-      s"-Xmacro-settings:git-repo-clean=${com.github.sbt.git.SbtGit.GitKeys.gitUncommittedChanges.value}",
-      s"-Xmacro-settings:git-branch=${com.github.sbt.git.SbtGit.GitKeys.gitCurrentBranch.value}",
-      s"-Xmacro-settings:git-described-version=${com.github.sbt.git.SbtGit.GitKeys.gitDescribedVersion.value.getOrElse("")}",
-      s"-Xmacro-settings:git-head-commit=${com.github.sbt.git.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
-    ),
-    ThisBuild / organization := "io.7mind.izumi",
-    ThisBuild / publishTo := {
-      // https://github.com/sbt/sbt/issues/8131
-      if (isSnapshot.value) {
-        Some(
-          "central-snapshots" at "https://central.sonatype.com/repository/maven-snapshots/"
-        )
-      } else {
-        localStaging.value
-      }
-    }
-    ,
-    ThisBuild / credentials ++= {
-      val credTarget = Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-new.properties"
-      if (credTarget.exists) {
-        Seq(Credentials(credTarget))
-      } else {
-        Seq.empty
-      }
-    },
-    ThisBuild / credentials ++= {
-      val credTarget = Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties"
-      if (credTarget.exists) {
-        Seq(Credentials(credTarget))
-      } else {
-        Seq.empty
-      }
-    },
-    ThisBuild / credentials ++= {
-      val credTarget = file(".") / ".secrets" / "credentials.sonatype-nexus.properties"
-      if (credTarget.exists) {
-        Seq(Credentials(credTarget))
-      } else {
-        Seq.empty
-      }
-    },
-    ThisBuild / homepage := Some(url("https://izumi.7mind.io")),
-    ThisBuild / licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php")),
-    ThisBuild / developers := List(
-              Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
-            ),
-    ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git")),
-    Global / concurrentRestrictions += Tags.limit(scala.scalanative.sbtplugin.ScalaNativePlugin.autoImport.NativeTags.Link, 1)
+    setting_167,
+    setting_168,
+    setting_45,
+    setting_169,
+    setting_170,
+    setting_171,
+    setting_172,
+    setting_173,
+    setting_174,
+    setting_175,
+    setting_176,
+    setting_177,
+    setting_178,
+    setting_179,
+    setting_180,
+    setting_181,
+    setting_182,
+    setting_183,
+    setting_184,
+    setting_185,
+    setting_186
   )
   .enablePlugins(SitePreviewPlugin, SbtgenVerificationPlugin)
   .aggregate(
@@ -9542,3 +3036,824 @@ lazy val `izumi` = (project in file("."))
     `distage`,
     `logstage`
   )
+
+lazy val setting_0 = organization := "io.7mind.izumi"
+
+lazy val setting_1 = scalacOptions ++= Seq(
+  s"-Xmacro-settings:product-name=${name.value}",
+  s"-Xmacro-settings:product-version=${version.value}",
+  s"-Xmacro-settings:product-group=${organization.value}",
+  s"-Xmacro-settings:scala-version=${scalaVersion.value}",
+  s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}"
+)
+
+lazy val setting_2 = Compile / unmanagedSourceDirectories ++= {
+  val version = scalaVersion.value
+  val crossVersions = crossScalaVersions.value
+  import Ordering.Implicits._
+  val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+  (Compile / unmanagedSourceDirectories).value.flatMap {
+    case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+    case _ => Seq.empty
+  }
+}
+
+lazy val setting_3 = Test / unmanagedSourceDirectories ++= {
+  val version = scalaVersion.value
+  val crossVersions = crossScalaVersions.value
+  import Ordering.Implicits._
+  val ltEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ <= CrossVersion.partialVersion(version)).flatten
+  (Test / unmanagedSourceDirectories).value.flatMap {
+    case dir if dir.getPath.endsWith("scala") => ltEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n+") }
+    case _ => Seq.empty
+  }
+}
+
+lazy val setting_4 = Compile / unmanagedSourceDirectories ++= {
+  val version = scalaVersion.value
+  val crossVersions = crossScalaVersions.value
+  import Ordering.Implicits._
+  val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+  (Compile / unmanagedSourceDirectories).value.flatMap {
+    case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+    case _ => Seq.empty
+  }
+}
+
+lazy val setting_5 = Test / unmanagedSourceDirectories ++= {
+  val version = scalaVersion.value
+  val crossVersions = crossScalaVersions.value
+  import Ordering.Implicits._
+  val gtEqVersions = crossVersions.map(CrossVersion.partialVersion).filter(_ >= CrossVersion.partialVersion(version)).flatten
+  (Test / unmanagedSourceDirectories).value.flatMap {
+    case dir if dir.getPath.endsWith("scala") => gtEqVersions.map { case (m, n) => file(dir.getPath + s"-$m.$n-") }
+    case _ => Seq.empty
+  }
+}
+
+lazy val setting_6 = closeClassLoaders := false
+
+lazy val setting_7 = scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+  case (_, "2.13.18") => Seq(
+    "-Wconf:any:error",
+    "-explaintypes",
+    "-P:kind-projector:underscore-placeholders",
+    if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+    "-Wconf:cat=optimizer:warning",
+    "-Wconf:cat=other-match-analysis:error",
+    "-Vimplicits",
+    "-Vtype-diffs",
+    "-Ybackend-parallelism",
+    math.min(16, math.max(1, sys.runtime.availableProcessors() - 1)).toString,
+    "-Wdead-code",
+    "-Wextra-implicit",
+    "-Wnumeric-widen",
+    "-Woctal-literal",
+    "-Wvalue-discard",
+    "-Wunused:_",
+    "-Wmacros:default",
+    "-Ycache-plugin-class-loader:always",
+    "-Ycache-macro-class-loader:last-modified",
+    "-Wunused:-synthetics",
+    "-Wconf:msg=parameter.*x\\$4.in.anonymous.function.is.never.used:silent",
+    "-Wconf:msg=constructor.modifiers.are.assumed.by.synthetic.*method:silent",
+    "-Wconf:msg=package.object.inheritance:silent",
+    "-Wconf:msg=not.a.valid.main.method:silent",
+    "-Wconf:msg=has.a.main.method.with.parameter.type.Array:silent",
+    "-Wconf:cat=lint-eta-sam:silent",
+    "-release:17"
+  )
+  case (_, "3.9.0") => Seq(
+    "-source:3.9",
+    "-Xkind-projector:underscores",
+    "-Ximport-suggestion-timeout:0",
+    "-Yretain-trees",
+    "-no-indent",
+    "-explain",
+    "-explain-types",
+    "-explain-cyclic",
+    "-Xmax-inlines:64",
+    "-Wopt:all",
+    "-Wrecurse-with-default",
+    "-Wshadow:private-shadow",
+    "-Wwrong-arrow",
+    if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+    "-Wenum-comment-discard",
+    "-Wimplausible-patterns",
+    "-Wnonunit-statement",
+    "-WunstableInlineAccessors",
+    "-Wunused:all",
+    "-Wvalue-discard",
+    "-Wconf:any:verbose",
+    "-Wconf:name=UnusedNonUnitValue:silent",
+    "-Wconf:name=ValueDiscarding:silent",
+    "-Wconf:msg=eta-expanded even though:silent",
+    "-Wconf:msg=Ignoring .this. qualifier:silent",
+    "-Wconf:msg=.this. qualifier will be deprecated:silent",
+    "-Wconf:msg=scala.compiletime.uninitialized:silent",
+    "-Wconf:msg=`using` clause:silent",
+    "-Wconf:msg=The syntax ..function:silent",
+    "-Wconf:msg=method contains is not declared infix:silent",
+    "-Wconf:msg=method in is not declared infix:silent",
+    "-release:17"
+  )
+  case (_, _) => Seq.empty
+} }
+
+lazy val setting_8 = scalacOptions -= "-Wconf:any:warning"
+
+lazy val setting_9 = scalacOptions ++= Seq(
+  "-Wconf:cat=deprecation:warning",
+  "-Wconf:msg=legacy-binding:silent",
+  "-Wconf:msg=nowarn:silent"
+)
+
+lazy val setting_10 = Compile / sbt.Keys.doc / scalacOptions -= "-Wconf:any:error"
+
+lazy val setting_11 = scalacOptions ++= Seq(
+  s"-Xmacro-settings:is-ci=${insideCI.value}"
+)
+
+lazy val setting_12 = scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+  case (false, "2.13.18") => Seq(
+    "-opt:l:inline",
+    "-opt-inline-from:izumi.**"
+  )
+  case (_, _) => Seq.empty
+} }
+
+lazy val setting_13 = scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+  case (_, "2.13.18") => Seq(
+    "-Xsource:3",
+    "-Xmigration",
+    "-Wconf:cat=scala3-migration:silent",
+    "-Wconf:cat=other-migration:silent"
+  )
+  case (_, _) => Seq.empty
+} }
+
+lazy val setting_14 = Test / packageDoc / publishArtifact := false
+
+lazy val setting_15 = crossScalaVersions := Seq(
+  "3.9.0",
+  "2.13.18"
+)
+
+lazy val setting_16 = scalaVersion := crossScalaVersions.value.head
+
+lazy val setting_17 = coverageEnabled := (ThisBuild / coverageEnabled).value && scalaVersion.value.startsWith("2.")
+
+lazy val setting_18 = libraryDependencies := ScoverageCompilerDependencies.forPlatform(libraryDependencies.value, scalaVersion.value, scalaBinaryVersion.value)
+
+lazy val setting_19 = Compile / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Compile / classDirectory).value) ++ (Compile / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty }
+
+lazy val setting_20 = Test / compile / scalacOptions ++= Def.uncached { val converter = fileConverter.value; if (coverageEnabled.value && scalaVersion.value.startsWith("2.")) Seq("-Ymacro-classpath:" + ScoverageCompilerDependencies.macroClasspath(Seq((Test / classDirectory).value) ++ (Test / dependencyClasspath).value.map(entry => converter.toPath(entry.data).toFile), update.value.matching(configurationFilter(scoverage.ScoverageSbtPlugin.ScoveragePluginConfig.name)), scalaBinaryVersion.value)) else Seq.empty }
+
+lazy val setting_21 = scalaJSLinkerConfig := { scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }
+
+lazy val setting_22 = libraryDependencySchemes += "org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always
+
+lazy val setting_23 = libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+  compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full)
+) else Seq.empty }
+
+lazy val setting_24 = Test / testOptions := Seq.empty
+
+lazy val setting_25 = Test / testFull := Def.uncached { (Test / run).toTask("").value; sbt.protocol.testing.TestResult.Passed }
+
+lazy val setting_26 = Test / test := (Test / testFull).value
+
+lazy val setting_27 = Test / mainClass := {
+  val options = (Test / scalacOptions).value
+  val pointOnly = options.contains("-Yrangepos:false")
+  Some(if (pointOnly) "izumi.fundamentals.assertions.AssertionFixturesWithoutRanges" else "izumi.fundamentals.assertions.AssertionFixtures")
+}
+
+lazy val setting_28 = Test / scalaJSUseMainModuleInitializer := true
+
+lazy val setting_29 = Test / scalaJSUseTestModuleInitializer := false
+
+lazy val setting_30 = libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+  compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided
+) else Seq.empty }
+
+lazy val setting_31 = Test / mainClass := Some("izumi.fundamentals.assertions.cats.CatsAssertionFixtures")
+
+lazy val setting_32 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-effect" % V.cats_effect
+)
+
+lazy val setting_33 = Test / mainClass := Some("izumi.fundamentals.assertions.bio.BIOAssertionFixtures")
+
+lazy val setting_34 = libraryDependencies ++= Seq(
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test
+)
+
+lazy val setting_35 = libraryDependencies ++= Seq(
+  "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+)
+
+lazy val setting_36 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Optional,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+  "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+  "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect")
+)
+
+lazy val setting_37 = libraryDependencies ++= {
+  val version = scalaVersion.value
+  if (version.startsWith("0.") || version.startsWith("3.")) {
+    Seq(
+      ("org.scala-lang" %% "scala3-compiler" % scalaVersion.value).platform(Platform.jvm) % Provided
+    )
+  } else Seq.empty
+}
+
+lazy val setting_38 = coverageExcludedPackages := Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]crypto[.]OpenSSLDigest.*").filter(_.nonEmpty).mkString(";")
+
+lazy val setting_39 = libraryDependencies ++= Seq(
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
+  "io.github.classgraph" % "classgraph" % V.classgraph % Provided
+)
+
+lazy val setting_40 = libraryDependencies ++= Seq(
+  "org.scala-js" %% "scala-js-macrotask-executor" % V.scalajs_macrotask_executor
+)
+
+lazy val setting_41 = libraryDependencies ++= Seq(
+  "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time
+)
+
+lazy val setting_42 = libraryDependencies ++= Seq(
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect
+)
+
+lazy val setting_43 = libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core" % V.circe
+)
+
+lazy val setting_44 = libraryDependencies ++= {
+  val version = scalaVersion.value
+  if (version.startsWith("0.") || version.startsWith("3.")) {
+    Seq(
+      "io.circe" %% "circe-generic" % V.circe
+    )
+  } else Seq.empty
+}
+
+lazy val setting_45 = publish / skip := true
+
+lazy val setting_46 = Test / distageBuildId := "izumi-repository"
+
+lazy val setting_47 = Test / testFrameworks := Seq(new TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))
+
+lazy val setting_48 = Test / distageTargetId := "fundamentals-platform-test-jvm"
+
+lazy val setting_49 = Test / distageTargetId := "fundamentals-platform-test-js"
+
+lazy val setting_50 = Test / distageTargetId := "fundamentals-platform-test-native"
+
+lazy val setting_51 = libraryDependencies ++= Seq(
+  "io.github.classgraph" % "classgraph" % V.classgraph % Provided
+)
+
+lazy val setting_52 = libraryDependencies ++= Seq(
+  "io.github.cquiroz" %% "scala-java-time-tzdb" % V.scala_java_time % Test
+)
+
+lazy val setting_53 = Test / distageTargetId := "fundamentals-collections-test-jvm"
+
+lazy val setting_54 = Test / distageTargetId := "fundamentals-collections-test-js"
+
+lazy val setting_55 = Test / distageTargetId := "fundamentals-collections-test-native"
+
+lazy val setting_56 = Test / distageTargetId := "fundamentals-language-test-jvm"
+
+lazy val setting_57 = Test / distageTargetId := "fundamentals-language-test-js"
+
+lazy val setting_58 = Test / distageTargetId := "fundamentals-language-test-native"
+
+lazy val setting_59 = libraryDependencySchemes += "io.circe" %% "circe-core" % VersionScheme.Always
+
+lazy val setting_60 = libraryDependencySchemes += "io.circe" %% "circe-core_sjs1" % VersionScheme.Always
+
+lazy val setting_61 = Test / distageTargetId := "fundamentals-json-circe-test-jvm"
+
+lazy val setting_62 = Test / unmanagedSourceDirectories += file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile
+
+lazy val setting_63 = Test / distageTargetId := "fundamentals-json-circe-test-js"
+
+lazy val setting_64 = Test / distageTargetId := "fundamentals-json-circe-test-native"
+
+lazy val setting_65 = Test / unmanagedSourceDirectories ++= { if (scalaVersion.value.startsWith("3.")) Seq(file("fundamentals/fundamentals-json-circe-test/src/test/scala-derivation").getAbsoluteFile) else Seq.empty }
+
+lazy val setting_66 = libraryDependencies ++= Seq(
+  "io.circe" %% "circe-literal" % V.circe % Test
+)
+
+lazy val setting_67 = libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+  compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+  "io.circe" %% "circe-generic" % V.circe % Test
+) else Seq.empty }
+
+lazy val setting_68 = libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+  "io.circe" %% "circe-derivation" % V.circe_derivation % Test
+) else Seq.empty }
+
+lazy val setting_69 = Test / distageTargetId := "fundamentals-bio-test-jvm"
+
+lazy val setting_70 = Test / distageTargetId := "fundamentals-bio-test-js"
+
+lazy val setting_71 = Test / distageTargetId := "fundamentals-bio-test-native"
+
+lazy val setting_72 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Test,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+  "org.typelevel" %% "cats-effect-laws" % V.cats_effect % Test,
+  "org.typelevel" %% "cats-effect-testkit" % V.cats_effect % Test,
+  "org.typelevel" %% "discipline-core" % V.discipline % Test,
+  "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect")
+)
+
+lazy val setting_73 = libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+  compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value % Provided,
+  ("org.typelevel" %% "scalac-compat-annotation" % V.scalac_compat_annotation).platform(Platform.jvm) % Provided
+) else Seq.empty }
+
+lazy val setting_74 = coverageExcludedPackages := Seq(coverageExcludedPackages.value, "izumi[.]fundamentals[.]platform[.]uuid[.]__SecureRandomPlatformSpecific[.$]sysrandom.*").filter(_.nonEmpty).mkString(";")
+
+lazy val setting_75 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Optional,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+  "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+  "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "zio-interop-tracer" % V.zio_interop_cats
+)
+
+lazy val setting_76 = libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+  compilerPlugin("org.typelevel" % "kind-projector" % V.kind_projector cross CrossVersion.full),
+  ("org.typelevel" %% "scalac-compat-annotation" % V.scalac_compat_annotation).platform(Platform.jvm) % Provided
+) else Seq.empty }
+
+lazy val setting_77 = scalacOptions ++= { (isSnapshot.value, scalaVersion.value) match {
+  case (_, "3.8.4") => Seq(
+    "-source:3.8",
+    "-Xkind-projector:underscores",
+    "-Ximport-suggestion-timeout:0",
+    "-Yretain-trees",
+    "-no-indent",
+    "-explain",
+    "-explain-types",
+    "-explain-cyclic",
+    "-Xmax-inlines:64",
+    "-Wopt:all",
+    "-Wrecurse-with-default",
+    "-Wshadow:private-shadow",
+    "-Wwrong-arrow",
+    if (insideCI.value) "-Wconf:any:error" else "-Wconf:any:warning",
+    "-Wenum-comment-discard",
+    "-Wimplausible-patterns",
+    "-Wnonunit-statement",
+    "-WunstableInlineAccessors",
+    "-Wunused:all",
+    "-Wvalue-discard",
+    "-Wconf:any:verbose",
+    "-Wconf:name=UnusedNonUnitValue:silent",
+    "-Wconf:name=ValueDiscarding:silent",
+    "-Wconf:msg=eta-expanded even though:silent",
+    "-Wconf:msg=Ignoring .this. qualifier:silent",
+    "-Wconf:msg=.this. qualifier will be deprecated:silent",
+    "-Wconf:msg=scala.compiletime.uninitialized:silent",
+    "-Wconf:msg=`using` clause:silent",
+    "-Wconf:msg=The syntax ..function:silent",
+    "-Wconf:msg=method contains is not declared infix:silent",
+    "-Wconf:msg=method in is not declared infix:silent",
+    "-release:17",
+    "-Wconf:cat=deprecation:warning",
+    "-Wconf:msg=legacy-binding:silent",
+    "-Wconf:msg=nowarn:silent"
+  )
+  case (_, _) => Seq.empty
+} }
+
+lazy val setting_78 = Test / mainClass := Some("izumi.distage.testkit.protocol.ProtocolFixtures")
+
+lazy val setting_79 = crossScalaVersions := Seq(
+  "3.8.4",
+  "2.13.18"
+)
+
+lazy val setting_80 = Compile / unmanagedSourceDirectories += file("distage/distage-test-protocol/.jvm/src/main/java").getAbsoluteFile
+
+lazy val setting_81 = libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core" % V.circe,
+  "io.circe" %% "circe-parser" % V.circe
+)
+
+lazy val setting_82 = Test / mainClass := Some("izumi.distage.testkit.runner.BaseRunnerFixtures")
+
+lazy val setting_83 = Compile / unmanagedSourceDirectories += file("distage/distage-test-runner/src/main/scala-target").getAbsoluteFile
+
+lazy val setting_84 = libraryDependencies ++= Seq(
+  "org.scala-sbt" % "test-interface" % V.sbt_test_interface
+)
+
+lazy val setting_85 = libraryDependencies ++= Seq(
+  "org.scala-js" % "scalajs-test-interface_2.13" % V.scalajs_test_interface
+)
+
+lazy val setting_86 = libraryDependencies ++= Seq(
+  "org.scala-native" %% "test-interface" % "0.5.12"
+)
+
+lazy val setting_87 = Test / distageTargetId := "distage-core-api-jvm"
+
+lazy val setting_88 = Test / distageTargetId := "distage-core-api-js"
+
+lazy val setting_89 = Test / distageTargetId := "distage-core-api-native"
+
+lazy val setting_90 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Optional,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+  "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+  "org.typelevel" %% "cats-core" % V.cats % Test,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+  "dev.zio" %% "zio-managed" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect")
+)
+
+lazy val setting_91 = libraryDependencies ++= Seq(
+  "net.bytebuddy" % "byte-buddy" % V.bytebuddy
+)
+
+lazy val setting_92 = Test / distageTargetId := "distage-core-jvm"
+
+lazy val setting_93 = Test / distageTargetId := "distage-core-js"
+
+lazy val setting_94 = Test / distageTargetId := "distage-core-native"
+
+lazy val setting_95 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Optional,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+  "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional,
+  "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "javax.inject" % "javax.inject" % "1" % Test
+)
+
+lazy val setting_96 = Test / distageTargetId := "distage-extension-config-jvm"
+
+lazy val setting_97 = Test / resourceGenerators += Def.task {
+              val _ = (LocalProject("distage-optional-dependency-test") / Compile / compile).value
+              val classpath = (LocalProject("distage-optional-dependency-test") / Compile / fullClasspath).value
+              val converter = fileConverter.value
+              val manifest = (Test / resourceManaged).value / "optional-dependency-classpath.txt"
+              IO.write(manifest, classpath.map(entry => converter.toPath(entry.data).toUri.toASCIIString).mkString(System.lineSeparator()))
+              Seq(manifest)
+            }.taskValue
+
+lazy val setting_98 = Test / distageTargetId := "distage-extension-config-js"
+
+lazy val setting_99 = Test / distageTargetId := "distage-extension-config-native"
+
+lazy val setting_100 = libraryDependencies ++= Seq(
+  "com.github.pureconfig" %% "pureconfig-core" % V.pureconfig
+)
+
+lazy val setting_101 = libraryDependencies ++= { if (scalaVersion.value.startsWith("2.")) Seq(
+  "com.softwaremill.magnolia1_2" %% "magnolia" % V.magnolia
+) else Seq.empty }
+
+lazy val setting_102 = libraryDependencies ++= { if (Seq(
+  "2.13.18"
+) contains scalaVersion.value) Seq(
+  "com.github.pureconfig" %% "pureconfig-magnolia" % V.pureconfig
+) else Seq.empty }
+
+lazy val setting_103 = libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core" % V.circe,
+  "io.circe" %% "circe-generic" % V.circe,
+  "io.circe" %% "circe-parser" % V.circe % Test,
+  "io.github.cquiroz" %% "scala-java-time" % V.scala_java_time % Test
+)
+
+lazy val setting_104 = Compile / dependencyClasspath := {
+              val classpath = (Compile / dependencyClasspath).value
+              val converter = fileConverter.value
+              val excluded = (Compile / update).value.configurations.flatMap(_.modules).filter { module =>
+                (module.module.organization == "org.typelevel" && module.module.name.startsWith("cats-")) ||
+                  (module.module.organization == "dev.zio" && module.module.name.startsWith("zio")) ||
+                  (module.module.organization == "io.monix" && module.module.name.startsWith("monix"))
+              }.flatMap(_.artifacts.map(_._2)).toSet
+              classpath.filterNot(entry => excluded.contains(converter.toPath(entry.data).toFile))
+            }
+
+lazy val setting_105 = Test / distageTargetId := "distage-extension-logstage-jvm"
+
+lazy val setting_106 = Test / distageTargetId := "distage-extension-logstage-js"
+
+lazy val setting_107 = Test / distageTargetId := "distage-extension-logstage-native"
+
+lazy val setting_108 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
+)
+
+lazy val setting_109 = Test / distageTargetId := "distage-extension-plugins-jvm"
+
+lazy val setting_110 = Test / distageTargetId := "distage-extension-plugins-js"
+
+lazy val setting_111 = Test / distageTargetId := "distage-extension-plugins-native"
+
+lazy val setting_112 = libraryDependencies ++= Seq(
+  "io.github.classgraph" % "classgraph" % V.classgraph
+)
+
+lazy val setting_113 = libraryDependencies ++= Seq(
+  "dev.zio" %% "zio-managed" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "javax.inject" % "javax.inject" % "1" % Test
+)
+
+lazy val setting_114 = Test / distageTargetId := "distage-framework-jvm"
+
+lazy val setting_115 = Test / distageTargetId := "distage-framework-js"
+
+lazy val setting_116 = Test / distageTargetId := "distage-framework-native"
+
+lazy val setting_117 = Test / nativeConfig := nativeConfig.value.withEmbedResources(true)
+
+lazy val setting_118 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Optional,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+  "org.typelevel" %% "cats-core" % V.cats % Test,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+  "io.circe" %% "circe-parser" % V.circe % Test
+)
+
+lazy val setting_119 = libraryDependencies ++= Seq(
+  "io.circe" %% "circe-parser" % V.circe
+)
+
+lazy val setting_120 = Test / distageTargetId := "distage-framework-docker-jvm"
+
+lazy val setting_121 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Test,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test,
+  "com.github.docker-java" % "docker-java-core" % V.docker_java,
+  "com.github.docker-java" % "docker-java-transport-zerodep" % V.docker_java,
+  "org.apache.commons" % "commons-compress" % V.commons_compress
+)
+
+lazy val setting_122 = Test / distageTargetId := "distage-testkit-core-test-jvm"
+
+lazy val setting_123 = Test / distageTargetId := "distage-testkit-core-test-js"
+
+lazy val setting_124 = Test / distageTargetId := "distage-testkit-core-test-native"
+
+lazy val setting_125 = Test / mainClass := Some("izumi.distage.testkit.runner.di.DistageProviderFixtures")
+
+lazy val setting_126 = libraryDependencies ++= Seq(
+  "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test
+)
+
+lazy val setting_127 = Test / distageTargetId := "distage-testkit-runner-test-jvm"
+
+lazy val setting_128 = Test / distageTargetId := "distage-testkit-runner-test-js"
+
+lazy val setting_129 = Test / distageTargetId := "distage-testkit-runner-test-native"
+
+lazy val setting_130 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Test,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Test
+)
+
+lazy val setting_131 = Test / distageTargetId := "distage-testkit-runner-sbt-module-filtering-test-jvm"
+
+lazy val setting_132 = Test / distageTargetId := "logstage-core-jvm"
+
+lazy val setting_133 = Test / distageTargetId := "logstage-core-js"
+
+lazy val setting_134 = Test / distageTargetId := "logstage-core-native"
+
+lazy val setting_135 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats % Optional,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Optional,
+  "dev.zio" %% "zio" % V.zio % Optional excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect % Optional
+)
+
+lazy val setting_136 = Test / distageTargetId := "logstage-rendering-circe-jvm"
+
+lazy val setting_137 = Test / distageTargetId := "logstage-rendering-circe-js"
+
+lazy val setting_138 = Test / distageTargetId := "logstage-rendering-circe-native"
+
+lazy val setting_139 = libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core" % V.circe,
+  "io.circe" %% "circe-parser" % V.circe % Test,
+  "io.circe" %% "circe-literal" % V.circe % Test,
+  "io.circe" %% "circe-generic" % V.circe % Test,
+  "org.typelevel" %% "cats-effect" % V.cats_effect % Test,
+  "dev.zio" %% "zio" % V.zio % Test excludeAll("dev.zio" %% "izumi-reflect")
+)
+
+lazy val setting_140 = Test / distageTargetId := "logstage-adapter-slf4j-jvm"
+
+lazy val setting_141 = Compile / compileOrder := CompileOrder.Mixed
+
+lazy val setting_142 = Test / compileOrder := CompileOrder.Mixed
+
+lazy val setting_143 = Test / classLoaderLayeringStrategy := ClassLoaderLayeringStrategy.Flat
+
+lazy val setting_144 = libraryDependencies ++= Seq(
+  "org.slf4j" % "slf4j-api" % V.slf4j
+)
+
+lazy val setting_145 = Test / distageTargetId := "logstage-sink-slf4j-jvm"
+
+lazy val setting_146 = libraryDependencies ++= Seq(
+  "org.slf4j" % "slf4j-api" % V.slf4j,
+  "org.slf4j" % "slf4j-simple" % V.slf4j % Test
+)
+
+lazy val setting_147 = SettingKey[Boolean]("ide-skip-project") := true
+
+lazy val setting_148 = scalacOptions -= "-Wconf:any:error"
+
+lazy val setting_149 = scalacOptions -= "-Xsource:3"
+
+lazy val setting_150 = Compile / sbt.Keys.doc / scalacOptions += "-Xsource:3"
+
+lazy val setting_151 = coverageEnabled := false
+
+lazy val setting_152 = DocKeys.prefix := {if (isSnapshot.value) {
+            (s => s"${DocKeys.snapshotSitePrefix}/$s")
+          } else {
+            identity
+          }}
+
+lazy val setting_153 = previewFixedPort := Some(9999)
+
+lazy val setting_154 = gitRemoteRepo := "git@github.com:7mind/izumi-microsite.git"
+
+lazy val setting_155 = mdocIn := baseDirectory.value / "src/main/tut"
+
+lazy val setting_156 = (Compile / paradox) / sourceDirectory := mdocOut.value
+
+lazy val setting_157 = mdocExtraArguments ++= Seq(
+  " --no-link-hygiene"
+)
+
+lazy val setting_158 = (Compile / paradox) / version := version.value
+
+lazy val setting_159 = SitePlugin.autoImport.makeSite / mappings := Def.uncached {
+            val conv = fileConverter.value
+            val siteMappings = (SitePlugin.autoImport.makeSite / mappings)
+              .dependsOn(mdoc.toTask(" "))
+              .value
+              .map { case (ref, path) => conv.toPath(ref).toFile -> path }
+            ScaladocAnchors
+              .resolve(siteMappings, (ScalaUnidoc / siteSubdirName).value, target.value / "scaladoc-anchors", streams.value.log)
+              .mappings
+              .map { case (file, path) => conv.toVirtualFile(file.toPath) -> path }
+          }
+
+lazy val setting_160 = ScalaUnidoc / siteSubdirName := DocKeys.prefix.value("api")
+
+lazy val setting_161 = Paradox / siteSubdirName := DocKeys.prefix.value("")
+
+lazy val setting_162 = libraryDependencies ++= Seq(
+  "org.typelevel" %% "cats-core" % V.cats,
+  "org.typelevel" %% "cats-effect" % V.cats_effect,
+  "dev.zio" %% "zio" % V.zio excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "zio-interop-cats" % V.zio_interop_cats excludeAll("dev.zio" %% "izumi-reflect"),
+  "dev.zio" %% "izumi-reflect" % V.izumi_reflect,
+  "org.tpolecat" %% "doobie-core" % V.doobie,
+  "org.tpolecat" %% "doobie-postgres" % V.doobie,
+  "io.circe" %% "circe-generic" % V.circe,
+  "dev.zio" %% "zio-managed" % V.zio excludeAll("dev.zio" %% "izumi-reflect")
+)
+
+lazy val setting_163 = sbtPlugin := true
+
+lazy val setting_164 = sbtPluginPublishLegacyMavenStyle := false
+
+lazy val setting_165 = crossScalaVersions := Seq(
+  "3.8.4"
+)
+
+lazy val setting_166 = pluginCrossBuild / sbtVersion := "2.0.9"
+
+lazy val setting_167 = crossScalaVersions := Nil
+
+lazy val setting_168 = libraryDependencies := Nil
+
+lazy val setting_169 = Global / onChangedBuildSource := ReloadOnSourceChanges
+
+lazy val setting_170 = Global / excludeLintKeys += SettingKey[Boolean]("ide-skip-project")
+
+lazy val setting_171 = Global / excludeLintKeys += SettingKey[Boolean]("coverage-enabled")
+
+lazy val setting_172 = Global / excludeLintKeys += publishMavenStyle
+
+lazy val setting_173 = ThisBuild / publishMavenStyle := true
+
+lazy val setting_174 = ThisBuild / scalacOptions ++= Seq(
+  "-encoding",
+  "UTF-8",
+  "-feature",
+  "-unchecked",
+  "-deprecation"
+)
+
+lazy val setting_175 = ThisBuild / javacOptions ++= Seq(
+  "-encoding",
+  "UTF-8",
+  "--release",
+  "17",
+  "-deprecation",
+  "-parameters",
+  "-Xlint:all",
+  "-XDignore.symbol.file"
+)
+
+lazy val setting_176 = ThisBuild / scalacOptions ++= Seq(
+  s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
+  s"-Xmacro-settings:git-repo-clean=${com.github.sbt.git.SbtGit.GitKeys.gitUncommittedChanges.value}",
+  s"-Xmacro-settings:git-branch=${com.github.sbt.git.SbtGit.GitKeys.gitCurrentBranch.value}",
+  s"-Xmacro-settings:git-described-version=${com.github.sbt.git.SbtGit.GitKeys.gitDescribedVersion.value.getOrElse("")}",
+  s"-Xmacro-settings:git-head-commit=${com.github.sbt.git.SbtGit.GitKeys.gitHeadCommit.value.getOrElse("")}"
+)
+
+lazy val setting_177 = ThisBuild / organization := "io.7mind.izumi"
+
+lazy val setting_178 = ThisBuild / publishTo := {
+  // https://github.com/sbt/sbt/issues/8131
+  if (isSnapshot.value) {
+    Some(
+      "central-snapshots" at "https://central.sonatype.com/repository/maven-snapshots/"
+    )
+  } else {
+    localStaging.value
+  }
+}
+
+
+lazy val setting_179 = ThisBuild / credentials ++= {
+  val credTarget = Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-new.properties"
+  if (credTarget.exists) {
+    Seq(Credentials(credTarget))
+  } else {
+    Seq.empty
+  }
+}
+
+lazy val setting_180 = ThisBuild / credentials ++= {
+  val credTarget = Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties"
+  if (credTarget.exists) {
+    Seq(Credentials(credTarget))
+  } else {
+    Seq.empty
+  }
+}
+
+lazy val setting_181 = ThisBuild / credentials ++= {
+  val credTarget = file(".") / ".secrets" / "credentials.sonatype-nexus.properties"
+  if (credTarget.exists) {
+    Seq(Credentials(credTarget))
+  } else {
+    Seq.empty
+  }
+}
+
+lazy val setting_182 = ThisBuild / homepage := Some(url("https://izumi.7mind.io"))
+
+lazy val setting_183 = ThisBuild / licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
+
+lazy val setting_184 = ThisBuild / developers := List(
+          Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
+        )
+
+lazy val setting_185 = ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
+
+lazy val setting_186 = Global / concurrentRestrictions += Tags.limit(scala.scalanative.sbtplugin.ScalaNativePlugin.autoImport.NativeTags.Link, 1)

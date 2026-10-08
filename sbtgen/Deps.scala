@@ -5,7 +5,7 @@ object Izumi {
 
   def main(args: Array[String]): Unit = {
     val nativeLinkSettings = if (args.contains("--native")) Projects.root.nativeLinkSettings else Seq.empty
-    Entrypoint.main(izumi.copy(rootSettings = izumi.rootSettings ++ nativeLinkSettings), settings, Seq("-o", ".") ++ args.toSeq)
+    Entrypoint.main(izumi.copy(rootSettings = izumi.rootSettings ++ nativeLinkSettings), settings, Seq("--compactify", "-o", ".") ++ args.toSeq)
   }
 
   object V {
