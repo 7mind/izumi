@@ -4,6 +4,7 @@ import izumi.fundamentals.graphs.ToposortError.{InconsistentInput, UnexpectedLoo
 import ToposortLoopBreaker.ResolvedLoop
 import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.struct.AdjacencyList
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector
 
 trait ToposortLoopBreaker[T] {
   def onLoop(done: Seq[T], loopMembers: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]]
@@ -23,7 +24,7 @@ object ToposortLoopBreaker {
     def find(done: Seq[T], hasPreds: Map[T, Set[T]]): Option[T]
 
     override final def onLoop(done: Seq[T], hasPreds: Map[T, Set[T]]): Either[ToposortError[T], ResolvedLoop[T]] = {
-      val loopMembers = hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds)).toMap
+      val loopMembers = hasPreds.view.filterKeys(LoopDetector.isInvolvedIntoCycle(hasPreds)).toMap
       if (loopMembers.nonEmpty) {
         find(done, loopMembers) match {
           case Some(breakLoopAt) =>
@@ -36,28 +37,6 @@ object ToposortLoopBreaker {
         Left(InconsistentInput(AdjacencyList(hasPreds)))
       }
     }
-
-    private def isInvolvedIntoCycle(toPreds: Map[T, Set[T]])(key: T): Boolean = {
-      test(toPreds, Set.empty, key, key)
-    }
-
-    private def test(toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
-      val deps = toPreds.getOrElse(toTest, Set.empty)
-
-      if (deps.contains(needle)) {
-        true
-      } else {
-        deps.exists {
-          d =>
-            if (stack.contains(d)) {
-              false
-            } else {
-              test(toPreds, stack + d, d, needle)
-            }
-        }
-      }
-    }
-
   }
 
 }

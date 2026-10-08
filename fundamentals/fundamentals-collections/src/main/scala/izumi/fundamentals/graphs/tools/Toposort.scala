@@ -3,6 +3,7 @@ package izumi.fundamentals.graphs.tools
 import izumi.fundamentals.graphs.ToposortError
 import izumi.fundamentals.graphs.ToposortError.InconsistentInput
 import izumi.fundamentals.graphs.struct.AdjacencyList
+import izumi.fundamentals.graphs.tools.cycles.LoopDetector
 
 import scala.annotation.tailrec
 
@@ -21,7 +22,7 @@ object Toposort {
         Right(done)
       } else { // circular dependency
         val maybeNext = for {
-          loopMembers <- Right(hasPreds.view.filterKeys(isInvolvedIntoCycle(hasPreds)).toMap)
+          loopMembers <- Right(hasPreds.view.filterKeys(LoopDetector.isInvolvedIntoCycle(hasPreds)).toMap)
           _ <- if (loopMembers.isEmpty) Left(InconsistentInput(AdjacencyList(hasPreds))) else Right(())
           resolved <- break.onLoop(done, loopMembers)
           next = hasPreds.view.filterKeys(k => !resolved.breakAt.contains(k)).mapValues(_ -- resolved.breakAt).toMap
@@ -42,27 +43,6 @@ object Toposort {
       val found = noPreds.keySet
       val next = hasPreds.view.mapValues(_ -- found).toMap
       cycleBreaking(next, done ++ found, break)
-    }
-  }
-
-  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
-    test(toPreds, Set.empty, key, key)
-  }
-
-  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
-    val deps = toPreds.getOrElse(toTest, Set.empty)
-
-    if (deps.contains(needle)) {
-      true
-    } else {
-      deps.exists {
-        d =>
-          if (stack.contains(d)) {
-            false
-          } else {
-            test(toPreds, stack + d, d, needle)
-          }
-      }
     }
   }
 }
