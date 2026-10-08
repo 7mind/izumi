@@ -86,32 +86,25 @@ class VersionTest extends AnyWordSpec {
 
   "Version model conversions" should {
     "convert Semver to Canonical" in {
-      val semver = Version.Semver(1, 2, 3, Some("alpha"), Some("build"))
-      val canonical = semver.canonical
-      assert(canonical == Version.Canonical(NEList(1, 2, 3), List("alpha", "build")))
+      assert(Version.Semver(1, 2, 3, Some("alpha"), Some("build")).canonical == Version.Canonical(NEList(1, 2, 3), List("alpha", "build")))
     }
 
     "convert simple Canonical to Semver" in {
-      val canonical = Version.Canonical(NEList(1, 2, 3), List.empty)
-      assert(canonical.toSemver.contains(Version.Semver(1, 2, 3, None, None)))
+      assert(Version.Canonical(NEList(1, 2, 3), List.empty).toSemver.contains(Version.Semver(1, 2, 3, None, None)))
     }
 
     "convert Canonical with one qualifier to Semver" in {
-      val canonical = Version.Canonical(NEList(1, 2, 3), List("alpha"))
-      assert(canonical.toSemver.contains(Version.Semver(1, 2, 3, Some("alpha"), None)))
+      assert(Version.Canonical(NEList(1, 2, 3), List("alpha")).toSemver.contains(Version.Semver(1, 2, 3, Some("alpha"), None)))
     }
 
     "not convert Canonical with wrong component count to Semver" in {
-      val canonical1 = Version.Canonical(NEList(1, 2), List.empty)
-      assert(canonical1.toSemver.isEmpty)
+      assert(Version.Canonical(NEList(1, 2), List.empty).toSemver.isEmpty)
 
-      val canonical2 = Version.Canonical(NEList(1, 2, 3, 4), List.empty)
-      assert(canonical2.toSemver.isEmpty)
+      assert(Version.Canonical(NEList(1, 2, 3, 4), List.empty).toSemver.isEmpty)
     }
 
     "not convert Canonical with too many qualifiers to Semver" in {
-      val canonical = Version.Canonical(NEList(1, 2, 3), List("alpha", "beta", "gamma"))
-      assert(canonical.toSemver.isEmpty)
+      assert(Version.Canonical(NEList(1, 2, 3), List("alpha", "beta", "gamma")).toSemver.isEmpty)
     }
   }
 
