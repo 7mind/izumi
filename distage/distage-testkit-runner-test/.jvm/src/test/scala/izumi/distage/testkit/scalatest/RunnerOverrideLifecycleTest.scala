@@ -1,7 +1,7 @@
 package izumi.distage.testkit.scalatest
 
 import distage.{Identity, ModuleDef}
-import izumi.distage.testkit.model.{DistageTest, FullMeta, ScopeId, SuiteMeta, TestStatus}
+import izumi.distage.testkit.model.{DistageTest, ScopeId}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.di.TestRunnerRuntime
 import izumi.distage.testkit.runner.spec.AnyWordSpec
@@ -47,15 +47,9 @@ object RunnerOverrideLifecycleTest {
     val gate = new CountDownLatch(1)
     val graphFailure = new IllegalStateException("Controlled runner override release failure")
     val outerFailure = new IllegalStateException("Controlled owned outer runtime release failure")
-    val reporter = new TestReporter {
+    val reporter = new TestReporter.Noop {
       override def beginScope(id: ScopeId): Unit = begun.incrementAndGet().discard()
       override def endScope(id: ScopeId): Unit = ended.incrementAndGet().discard()
-      override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-      override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-      override def beginSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-      override def endSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-      override def testSetupStatus(scopeId: ScopeId, depth: Int, meta: FullMeta, status: TestStatus.Setup): Unit = ()
-      override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, status: TestStatus): Unit = ()
     }
     val module = new ModuleDef {
       make[TestReporter].fromResource(Lifecycle.makeSimple[TestReporter] {

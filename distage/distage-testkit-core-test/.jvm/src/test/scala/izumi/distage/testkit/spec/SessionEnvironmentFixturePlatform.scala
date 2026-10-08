@@ -6,19 +6,12 @@ import izumi.distage.plugins.load.{LoadedPlugins, PluginLoaderClassgraphImpl, Pl
 import izumi.distage.testkit.spec.sessionplugins.SessionScannedPlugin
 import izumi.fundamentals.platform.language.Quirks.Discarder
 
-import java.util.concurrent.{CyclicBarrier, Executors, TimeUnit}
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration.*
-import scala.util.control.NonFatal
+import java.util.concurrent.{CyclicBarrier, TimeUnit}
+import scala.concurrent.{ExecutionContext, Future}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.util.Try
 
-private[spec] object SessionEnvironmentFixturePlatform {
-  private final val Threads = 4
-  private final val Timeout = 30.seconds
-
-  def runnerCompletionChecks(): Vector[(String, Boolean)] = RunnerCompletionFixtures.checks()
-
+private[spec] object SessionEnvironmentFixturePlatform extends ConcurrentSessionEnvironmentFixture {
   def scannedOwners(): Vector[(String, Boolean)] = {
     val config = PluginConfig(Seq("izumi.distage.testkit.spec.sessionplugins"), Nil, cachePackages = true, debug = false, Nil, Nil)
     val firstOwner = new SessionPluginLoader(new PluginPackageCache.Impl, cache => PluginLoaderDefaultImpl.withPackageCache(cache))
@@ -154,27 +147,4 @@ private[spec] object SessionEnvironmentFixturePlatform {
     }
   }
 
-  def runFuture(check: ExecutionContext => Future[Unit], completionContext: ExecutionContext): Future[Unit] = {
-    val executor = Executors.newFixedThreadPool(Threads)
-    val context = ExecutionContext.fromExecutorService(executor)
-    val result = try check(context) catch { case NonFatal(cause) => Future.failed(cause) }
-    result.transform { outcome =>
-      executor.shutdown()
-      require(executor.awaitTermination(Timeout.toMillis, TimeUnit.MILLISECONDS), "Environment fixture executor did not terminate")
-      println("SESSION_ENVIRONMENT_FIXTURE_EXECUTOR_TERMINATED")
-      outcome
-    }(completionContext)
-  }
-
-  def concurrent(check: ExecutionContext => Future[Unit]): Unit = {
-    val executor = Executors.newFixedThreadPool(Threads)
-    val context = ExecutionContext.fromExecutorService(executor)
-    try {
-      Await.result(check(context), Timeout)
-    } finally {
-      executor.shutdown()
-      require(executor.awaitTermination(Timeout.toMillis, TimeUnit.MILLISECONDS), "Environment fixture executor did not terminate")
-    }
-    println("SESSION_ENVIRONMENT_FIXTURE_EXECUTOR_TERMINATED")
-  }
 }

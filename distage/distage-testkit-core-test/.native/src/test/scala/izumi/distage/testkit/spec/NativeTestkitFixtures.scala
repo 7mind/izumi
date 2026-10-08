@@ -143,7 +143,7 @@ final class NativeEngineRecord {
   val entered = new AtomicInteger(0)
 }
 
-final class NativeEngineReporter extends TestReporter {
+final class NativeEngineReporter extends TestReporter.Noop {
   val successes = ConcurrentHashMap.newKeySet[TestId]()
   val started = new AtomicInteger(0)
   val ended = new AtomicInteger(0)
@@ -151,10 +151,6 @@ final class NativeEngineReporter extends TestReporter {
 
   override def beginScope(@unused id: ScopeId): Unit = started.incrementAndGet().discard()
   override def endScope(@unused id: ScopeId): Unit = ended.incrementAndGet().discard()
-  override def beginLevel(@unused scope: ScopeId, @unused depth: Int, @unused suites: List[SuiteMeta]): Unit = ()
-  override def endLevel(@unused scope: ScopeId, @unused depth: Int, @unused suites: List[SuiteMeta]): Unit = ()
-  override def beginSuite(@unused scopeId: ScopeId, @unused depth: Int, @unused suiteMeta: SuiteMeta): Unit = ()
-  override def endSuite(@unused scopeId: ScopeId, @unused depth: Int, @unused suiteMeta: SuiteMeta): Unit = ()
   override def testSetupStatus(@unused scopeId: ScopeId, @unused depth: Int, meta: FullMeta, testStatus: TestStatus.Setup): Unit = {
     failures.incrementAndGet().discard()
     println("NATIVE_TESTKIT_SETUP_FAILURE " + meta + " " + testStatus)

@@ -18,15 +18,12 @@ import scala.util.{Success, Try}
 
 private[di] object SpecRuntimeFactoryFixtures {
   private final class Resource
-  private final class Statistics {
+  private final class Statistics extends ResourceStatistics {
     val ignoredAcquired = new AtomicInteger(0)
     val outerAcquired = new AtomicInteger(0)
     val outerReleased = new AtomicInteger(0)
     val graphAcquired = new AtomicInteger(0)
     val graphReleased = new AtomicInteger(0)
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
-    val bodies = new AtomicInteger(0)
     val entered = Promise[Unit]()
     val releasing = Promise[Unit]()
     val release = Promise[Unit]()

@@ -28,7 +28,7 @@ private[di] object SpecBootstrapFixtures {
   private final case class Marker(owner: String)
   private final class Resource(val marker: Marker)
 
-  private final class Statistics(owner: String) {
+  private final class Statistics(owner: String) extends ResourceStatistics {
     val marker: Marker = Marker(owner)
     val configurations = new AtomicInteger(0)
     val loaders = new AtomicInteger(0)
@@ -36,9 +36,6 @@ private[di] object SpecBootstrapFixtures {
     val providers = new AtomicInteger(0)
     val bootstrapModules = new AtomicInteger(0)
     val appModules = new AtomicInteger(0)
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
-    val bodies = new AtomicInteger(0)
     val matches = new AtomicInteger(0)
     var observed = Vector.empty[Resource]
     def body(resource: Resource, configured: Marker): Unit = synchronized {

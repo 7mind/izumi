@@ -20,17 +20,14 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.concurrent.duration.*
 
 private[di] object RuntimePreparationCancellationFixtures {
-  private final class State(val invalid: Boolean) {
+  private final class State(val invalid: Boolean) extends ResourceStatistics {
     val stop = Promise[() => Future[Unit]]()
     val entered = Promise[Unit]()
     val interrupted = Promise[Unit]()
     val planGate = Promise[Unit]()
     val releasing = Promise[Unit]()
     val release = Promise[Unit]()
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
     val outerReleased = new AtomicInteger(0)
-    val bodies = new AtomicInteger(0)
   }
 
   private sealed trait Shutdown

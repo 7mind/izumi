@@ -1,6 +1,6 @@
 package izumi.distage.testkit.scalatest
 
-import izumi.distage.testkit.model.{DistageTest, EnvResult, FullMeta, ScopeId, SuiteMeta, TestStatus}
+import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.TestkitRunnerModule
 import izumi.distage.testkit.runner.di.{RuntimeExecution, TestRuntime}
@@ -177,14 +177,5 @@ private[scalatest] object LegacyRuntimeFinalizationTest {
     def completeOuterSuite(mbFailure: Option[Throwable]): Unit = { val _ = completed.trySuccess(mbFailure) }
   }
 
-  final class EmptyReporter extends TestReporter {
-    override def beginScope(id: ScopeId): Unit = ()
-    override def endScope(id: ScopeId): Unit = ()
-    override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def beginSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-    override def endSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-    override def testSetupStatus(scopeId: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus.Setup): Unit = ()
-    override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus): Unit = ()
-  }
+  final class EmptyReporter extends TestReporter.Noop
 }

@@ -1,7 +1,7 @@
 package izumi.distage.testkit.distagesuite.interruption
 
 import distage.{DefaultModule, Functoid, Identity, TagK}
-import izumi.distage.testkit.model.{DistageTest, FullMeta, ScopeId, SuiteId, SuiteMeta, TestConfig, TestId, TestMeta, TestStatus}
+import izumi.distage.testkit.model.{DistageTest, SuiteId, SuiteMeta, TestConfig, TestId, TestMeta}
 import izumi.distage.testkit.runner.api.TestReporter
 import izumi.distage.testkit.runner.spec.SpecIdentity
 import izumi.distage.testkit.spec.{SessionTestEnvironment, TestEnvironmentFactory}
@@ -149,16 +149,7 @@ abstract class InterruptionTest extends SpecIdentity {
 
   }
 
-  private def emptySuiteReporter(): TestReporter = new TestReporter {
-    override def beginScope(id: ScopeId): Unit = ()
-    override def endScope(id: ScopeId): Unit = ()
-    override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def beginSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-    override def endSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-    override def testSetupStatus(scopeId: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus.Setup): Unit = ()
-    override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus): Unit = ()
-  }
+  private def emptySuiteReporter(): TestReporter = new TestReporter.Noop {}
 
 
 }

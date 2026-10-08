@@ -104,16 +104,11 @@ private[spec] object PluginMemoizationFixtures {
 
   private final case class Request(variant: String, first: PluginConfig, second: PluginConfig, shared: Boolean, mapped: Boolean)
 
-  private final class RecordingReporter extends TestReporter {
+  private final class RecordingReporter extends TestReporter.Noop {
     val successes = new AtomicInteger(0)
     val failures = new AtomicInteger(0)
     @volatile var ended = false
-    override def beginScope(id: ScopeId): Unit = ()
     override def endScope(id: ScopeId): Unit = { ended = true }
-    override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def beginSuite(scope: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-    override def endSuite(scope: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
     override def testSetupStatus(scope: ScopeId, depth: Int, meta: FullMeta, status: TestStatus.Setup): Unit = failures.incrementAndGet().discard()
     override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, status: TestStatus): Unit = status match {
       case _: TestStatus.Succeed => successes.incrementAndGet().discard()

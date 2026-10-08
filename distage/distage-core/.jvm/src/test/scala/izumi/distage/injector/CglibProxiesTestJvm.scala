@@ -27,9 +27,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         makeTrait[Circular1]
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -44,9 +42,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[Circular1].from[Circular1Impl]
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -69,9 +65,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -85,9 +79,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[SelfReference]
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       val instance = context.get[SelfReference]
 
@@ -104,9 +96,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       val instance = context.get[SelfReference]
 
@@ -122,9 +112,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[Int].from(1)
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -146,9 +134,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[IntHolder]
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -170,8 +156,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[Dependency]
       })
 
-      val injector = mkInjector()
-      val context = injector.produce(definition).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Dependency] != null)
       assert(context.get[GenericCircular[Dependency]] != null)
@@ -188,8 +173,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[ErasedDependency[Dependency]]
       })
 
-      val injector = mkInjector()
-      val context = injector.produce(definition).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       val erasedCircular = context.get[ErasedCircular[Dependency]]
       val erasedDependency = context.get[ErasedDependency[Dependency]]
@@ -211,9 +195,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[Dependency[IdParamCircular]].named("special")
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[IdTypeCircular] != null)
       assert(context.get[IdParamCircular] != null)
@@ -230,8 +212,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[RefinedCircular]
       })
 
-      val injector = mkInjector()
-      val context = injector.produce(definition).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Dependency { def dep: RefinedCircular }] != null)
       assert(context.get[RefinedCircular] != null)
@@ -255,8 +236,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         Activation.empty,
       )
 
-      val injector = mkInjector()
-      val context = injector.produce(definition).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       val root = context.get[Root]
       val holder = context.get[ComponentHolder]
@@ -310,8 +290,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         )
       )
 
-      val plan = injector.planUnsafe(definition)
-      injector.produce(plan).unsafeGet()
+      injector.produce(definition).unsafeGet()
     }
   }
 
@@ -373,9 +352,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produceCustomF[Suspend2[Throwable, _]](plan).unsafeGet().unsafeRun()
+      val context = mkInjector().produceCustomF[Suspend2[Throwable, _]](definition).unsafeGet().unsafeRun()
 
       val instance = context.get[SelfReference]
 
@@ -399,11 +376,8 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         Activation.empty,
       )
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-
-      val context = injector
-        .produceCustomF[Suspend2[Nothing, _]](plan).use {
+      val context = mkInjector()
+        .produceCustomF[Suspend2[Nothing, _]](definition).use {
           Suspend2(_)
         }.unsafeRun()
 
@@ -428,17 +402,9 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[ErasedDependency[Dependency]]
       })
 
-      val injector = mkNoCyclesInjector()
-      val error = intercept[ProvisioningException](injector.produce(definition).unsafeGet())
+      val error = intercept[ProvisioningException](mkNoCyclesInjector().produce(definition).unsafeGet())
 
-      assert(
-        error.getMessage.contains(
-          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedCircular[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
-        ) ||
-        error.getMessage.contains(
-          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedDependency[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
-        )
-      )
+      assertCycleDependencies(error)
     }
 
     "print dependencies of the cycle-breaking key in the error message when proxy support is disabled, but is required to break cycle" in {
@@ -449,19 +415,22 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         make[ErasedDependency[Dependency]]
       })
 
-      val injector = mkNoProxiesInjector()
-      val error = intercept[ProvisioningException](injector.produce(definition).unsafeGet())
+      val error = intercept[ProvisioningException](mkNoProxiesInjector().produce(definition).unsafeGet())
 
-      assert(
-        error.getMessage.contains(
-          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedCircular[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
-        ) ||
-        error.getMessage.contains(
-          "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedDependency[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
-        )
-      )
+      assertCycleDependencies(error)
     }
 
+  }
+
+  private def assertCycleDependencies(error: ProvisioningException): Unit = {
+    assert(
+      error.getMessage.contains(
+        "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedCircular[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+      ) ||
+      error.getMessage.contains(
+        "- {type.izumi.distage.fixtures.CircularCases.CircularCase5.ErasedDependency[izumi.distage.fixtures.CircularCases.CircularCase5.Dependency]}"
+      )
+    )
   }
 
 }

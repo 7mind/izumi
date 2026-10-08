@@ -147,17 +147,13 @@ private[spec] object PreparedExecutionFixtures {
   final class Resource
   final class Missing
 
-  private final class RecordingReporter(acquired: AtomicInteger, released: AtomicInteger) extends TestReporter {
+  private final class RecordingReporter(acquired: AtomicInteger, released: AtomicInteger) extends TestReporter.Noop {
     var begins = 0
     var ends = 0
     var completedAfterRelease = true
     var statuses = Vector.empty[TestStatus.Done]
     override def beginScope(id: ScopeId): Unit = { begins += 1 }
     override def endScope(id: ScopeId): Unit = { ends += 1; completedAfterRelease = acquired.get() == released.get() }
-    override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def beginSuite(scope: ScopeId, depth: Int, suite: SuiteMeta): Unit = ()
-    override def endSuite(scope: ScopeId, depth: Int, suite: SuiteMeta): Unit = ()
     override def testSetupStatus(scope: ScopeId, depth: Int, meta: FullMeta, status: TestStatus.Setup): Unit = status match {
       case done: TestStatus.Done => statuses :+= done
       case _ => ()

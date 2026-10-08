@@ -85,48 +85,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with ZIOTest with ScalatestG
       val injector = Injector()
       val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
 
-      def assertAcquired(ctx: Locator): Task[(Res, Res)] = {
-        ZIO.attempt {
-          val i1 = ctx.get[Res]("instance")
-          val i2 = ctx.get[Res]("provider")
-          assert(i1 ne i2)
-          assert((i1.allocated -> i2.allocated) == (true -> true))
-          i1 -> i2
-        }
-      }
-
-      def assertReleased(i1: Res, i2: Res): Task[Assertion] = {
-        ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
-      }
-
-      def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
-
-      val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
-
-      // works normally
-      unsafeRun {
-        ctxResource
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to cats.Resource
-      unsafeRun {
-        import izumi.functional.bio.catz.BIOToMonadCancel
-        ctxResource.toCats
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to scoped zio.ZIO
-      unsafeRun {
-        ZIO
-          .scoped {
-            ctxResource.toZIO
-              .flatMap(assertAcquired)
-          }
-          .flatMap((assertReleased _).tupled)
-      }
+      assertLifecycleConversions(injector, plan)
     }
 
   }
@@ -188,48 +147,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with ZIOTest with ScalatestG
       val injector = Injector()
       val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
 
-      def assertAcquired(ctx: Locator): Task[(Res, Res)] = {
-        ZIO.attempt {
-          val i1 = ctx.get[Res]("instance")
-          val i2 = ctx.get[Res]("provider")
-          assert(i1 ne i2)
-          assert((i1.allocated -> i2.allocated) == (true -> true))
-          i1 -> i2
-        }
-      }
-
-      def assertReleased(i1: Res, i2: Res): Task[Assertion] = {
-        ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
-      }
-
-      def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
-
-      val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
-
-      // works normally
-      unsafeRun {
-        ctxResource
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to cats.Resource
-      unsafeRun {
-        import izumi.functional.bio.catz.BIOToMonadCancel
-        ctxResource.toCats
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to scoped zio.ZIO
-      unsafeRun {
-        ZIO
-          .scoped {
-            ctxResource.toZIO
-              .flatMap(assertAcquired)
-          }
-          .flatMap((assertReleased _).tupled)
-      }
+      assertLifecycleConversions(injector, plan)
     }
 
     "Conversions from ZLayer should fail to typecheck if the result type is unrelated to the binding type" in {
@@ -336,6 +254,51 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with ZIOTest with ScalatestG
       )
     }
 
+  }
+
+  private def assertLifecycleConversions(injector: Injector[Identity], plan: Plan): Unit = {
+    def assertAcquired(ctx: Locator): Task[(Res, Res)] = {
+      ZIO.attempt {
+        val i1 = ctx.get[Res]("instance")
+        val i2 = ctx.get[Res]("provider")
+        assert(i1 ne i2)
+        assert((i1.allocated -> i2.allocated) == (true -> true))
+        i1 -> i2
+      }
+    }
+
+    def assertReleased(i1: Res, i2: Res): Task[Assertion] = {
+      ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
+    }
+
+    def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
+
+    val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
+
+    // works normally
+    unsafeRun {
+      ctxResource
+        .use(assertAcquired)
+        .flatMap((assertReleased _).tupled)
+    }
+
+    // works when Lifecycle is converted to cats.Resource
+    unsafeRun {
+      import izumi.functional.bio.catz.BIOToMonadCancel
+      ctxResource.toCats
+        .use(assertAcquired)
+        .flatMap((assertReleased _).tupled)
+    }
+
+    // works when Lifecycle is converted to scoped zio.ZIO
+    unsafeRun {
+      ZIO
+        .scoped {
+          ctxResource.toZIO
+            .flatMap(assertAcquired)
+        }
+        .flatMap((assertReleased _).tupled)
+    }
   }
 
 }

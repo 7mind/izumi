@@ -101,10 +101,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
         make[Number].fromValue(5)
         make[String].fromValue("abc")
       })
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       val factory1 = context.get[FactoryTrait1]
       val factory2 = context.get[{
@@ -166,10 +163,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
         make[Int].fromValue(1)
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[ATraitWithALazyField].lazyField == 1)
     }

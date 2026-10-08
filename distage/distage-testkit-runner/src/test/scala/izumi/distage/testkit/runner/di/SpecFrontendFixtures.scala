@@ -127,7 +127,7 @@ private[di] object SpecFrontendFixtures {
 
   private final class Resource
 
-  private final class Statistics {
+  private final class Statistics extends ResourceStatistics {
     val configurations = new AtomicInteger(0)
     val environments = new AtomicInteger(0)
     val loaders = new AtomicInteger(0)
@@ -137,11 +137,8 @@ private[di] object SpecFrontendFixtures {
     val catsBuilt = new AtomicInteger(0)
     val zioBuilt = new AtomicInteger(0)
     def effectsBuilt: Int = built.get() + catsBuilt.get() + zioBuilt.get()
-    val bodies = new AtomicInteger(0)
     val assertions = new AtomicInteger(0)
     val skipped = new AtomicInteger(0)
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
     var hookOrder = Vector.empty[String]
     val zioDefaults: DefaultModule[zio.Task] = implicitly[DefaultModule[zio.Task]]
     val zioLogging: distage.Module = LogIO2Module[zio.IO]()

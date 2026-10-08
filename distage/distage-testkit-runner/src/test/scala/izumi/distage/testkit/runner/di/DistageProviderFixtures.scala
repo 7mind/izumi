@@ -278,14 +278,11 @@ object DistageProviderFixtures {
     Future.successful(())
   }
 
-  private final class Fixture(options: Request, context: ExecutionContext) {
+  private final class Fixture(options: Request, context: ExecutionContext) extends ResourceStatistics {
     private val registeredProvider = new AtomicReference[DistageExecutionProvider]
     def provider: DistageExecutionProvider = Option(registeredProvider.get()).getOrElse(throw new IllegalStateException("Fixture provider has not been registered"))
     val preparations = new AtomicInteger(0)
     val configs = new AtomicInteger(0)
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
-    val bodies = new AtomicInteger(0)
     val shared = new AtomicInteger(0)
     val resource = new AtomicReference[Resource]
     val releaseEntered = Promise[Unit]()

@@ -13,15 +13,11 @@ import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
 import zio.ZIO
 
-import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.{ExecutionContext, Future}
 
 private[di] object SpecInterruptionFixtures {
   private final class Resource
-  private final class Statistics {
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
-    val bodies = new AtomicInteger(0)
+  private final class Statistics extends ResourceStatistics {
     val failures = Vector(
       new InterruptedException("first independent body interruption"),
       new InterruptedException("second independent body interruption"),

@@ -41,9 +41,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].from(bindImplicits(makeX))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("X1"))
     }
@@ -60,9 +58,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].from(bindImplicits(makeX[Int]))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("X1"))
     }
@@ -85,9 +81,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("1X2"))
     }
@@ -102,9 +96,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].from(bindImplicits(makeX2))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("Xmore-description1"))
     }
@@ -126,9 +118,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("Xstr12"))
     }
@@ -144,9 +134,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         }
       }
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1, implicitly)))
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(PlannerInput.everything(Definition[List](1, implicitly))).unsafeGet()
 
       assert(context.get[List[String]] == List("Hello 1!"))
     }
@@ -157,9 +145,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[F[Any]].from(bindImplicits(Pointed[F].point(1)))
       }
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(PlannerInput.everything(Definition[List](1, implicitly)))
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(PlannerInput.everything(Definition[List](1, implicitly))).unsafeGet()
 
       assert(context.get[List[Any]] == List(1))
     }
@@ -180,9 +166,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("1desc2"))
     }
@@ -204,9 +188,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("1desc2"))
     }
@@ -224,9 +206,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].from(bindImplicits(makeX[Int]))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       val x = context.get[X]
       assert(x.s == description.description)
@@ -247,9 +227,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].from(bindImplicits(makeX))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("21desc"))
     }
@@ -264,9 +242,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].from(bindAllImplicits(makeX))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Description].description == "desc")
       assert(context.get[X] == X("desc"))
@@ -292,9 +268,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition[Identity])
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition[Identity]).unsafeGet()
 
       assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[QuasiApplicative[Identity]].tag))
       assert(functoid.get.ret == SafeType.get[Int])
@@ -320,9 +294,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         }
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition[Identity])
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition[Identity]).unsafeGet()
 
       assert(functoid.get.diKeys.map(_.tpe.tag) == List(Tag[QuasiApplicative[Identity]].tag))
       assert(functoid.get.ret == SafeType.get[Int])
@@ -339,9 +311,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].fromEffect[Identity, X](bindImplicits(makeX[Identity]))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Description] == Description("desc"))
       assert(context.get[X] == X("desc1"))
@@ -358,9 +328,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].fromResource[XResource]
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Description] == Description("desc"))
       assert(context.get[X] == X("desc"))
@@ -376,9 +344,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         make[X].fromResource(bindImplicits(makeX))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Description] == Description("desc"))
       assert(context.get[X] == X("desc"))
@@ -393,9 +359,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         many[X].add(bindImplicits(makeX))
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Set[X]] == Set(X("desc1")))
     }
@@ -425,9 +389,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           })
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[Set[X]]("set") == Set(X("1-desc-Set(X(desc1))")))
       assert(context.get[Set[X]]("set2") == Set(X("2-desc-Set(X(desc1))")))
@@ -470,9 +432,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           })
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("desc2"))
       assert(context.get[X]("n") == X("desc2"))
@@ -498,9 +458,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           })
       })
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-      val context = injector.produce(plan).unsafeGet()
+      val context = mkInjector().produce(definition).unsafeGet()
 
       assert(context.get[X] == X("pest2"))
       assert(context.get[X]("using") == X("pest2"))

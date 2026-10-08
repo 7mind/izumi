@@ -85,11 +85,8 @@ private[di] object SpecConfigurationFixtures {
 
   private def protocolChoice(choice: Axis.AxisChoice): AxisChoice = AxisChoice(AxisId(Mode.name), AxisValue(choice.value))
 
-  private final class Statistics {
+  private final class Statistics extends ResourceStatistics {
     val loads = new AtomicInteger(0)
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
-    val bodies = new AtomicInteger(0)
     val matches = new AtomicInteger(0)
     val first: AppConfig = ProviderFixturePlatform.activationConfig(protocolChoice(Mode.First))
     val second: AppConfig = ProviderFixturePlatform.activationConfig(protocolChoice(Mode.Second))

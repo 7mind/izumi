@@ -1,13 +1,13 @@
 package izumi.distage.testkit.runner.di
 
-import izumi.distage.testkit.model.{FullMeta, IndividualTestResult, ScopeId, SuiteMeta, TestStatus as EngineStatus}
+import izumi.distage.testkit.model.{FullMeta, IndividualTestResult, ScopeId, TestStatus as EngineStatus}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.{ProviderEvent, ProviderOutcome, RunExecutionContext, RunnerFailure}
 import izumi.distage.testkit.runner.api.{TestFinalizationReporter, TestReporter}
 
 import scala.util.control.NonFatal
 
-private[distage] final class DistageProviderReporter(val tests: Vector[TestDescriptor]) extends TestReporter with TestFinalizationReporter {
+private[distage] final class DistageProviderReporter(val tests: Vector[TestDescriptor]) extends TestReporter.Noop with TestFinalizationReporter {
   private var context = Option.empty[RunExecutionContext]
   private var results = Map.empty[TestId, TestResult]
   private var attempted = Set.empty[TestId]
@@ -48,12 +48,6 @@ private[distage] final class DistageProviderReporter(val tests: Vector[TestDescr
     outcome(failures, cancelled = false)
   }
 
-  override def beginScope(id: ScopeId): Unit = ()
-  override def endScope(id: ScopeId): Unit = ()
-  override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-  override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-  override def beginSuite(scope: ScopeId, depth: Int, suite: SuiteMeta): Unit = ()
-  override def endSuite(scope: ScopeId, depth: Int, suite: SuiteMeta): Unit = ()
   override def testSetupStatus(scope: ScopeId, depth: Int, meta: FullMeta, status: EngineStatus.Setup): Unit = report(meta, status)
   override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, status: EngineStatus): Unit = report(meta, status)
 

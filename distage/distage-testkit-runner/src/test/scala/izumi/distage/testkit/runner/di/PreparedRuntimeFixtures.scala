@@ -1,6 +1,5 @@
 package izumi.distage.testkit.runner.di
 
-import izumi.distage.testkit.model.{FullMeta, ScopeId, SuiteMeta, TestStatus}
 import izumi.distage.testkit.runner.api.{TestFinalizationReporter, TestReporter}
 import izumi.distage.testkit.runner.impl.services.TestConfigLoader
 import izumi.functional.bio.impl.MiniBIOAsync
@@ -57,14 +56,5 @@ private[di] object PreparedRuntimeFixtures {
     }
   }
 
-  private[di] final class EmptyReporter extends TestReporter {
-    override def beginScope(id: ScopeId): Unit = ()
-    override def endScope(id: ScopeId): Unit = ()
-    override def beginLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def endLevel(scope: ScopeId, depth: Int, suites: List[SuiteMeta]): Unit = ()
-    override def beginSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-    override def endSuite(scopeId: ScopeId, depth: Int, suiteMeta: SuiteMeta): Unit = ()
-    override def testSetupStatus(scopeId: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus.Setup): Unit = ()
-    override def testStatus(scope: ScopeId, depth: Int, meta: FullMeta, testStatus: TestStatus): Unit = ()
-  }
+  private[di] final class EmptyReporter extends TestReporter.Noop
 }

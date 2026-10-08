@@ -23,10 +23,7 @@ private[di] object SpecCancellationFixtures {
   private final val CancellationTimeout = 10.seconds
   private final val CompletionObservation = 250.millis
   private final class Resource
-  private final class Statistics(val failRelease: Boolean) {
-    val acquired = new AtomicInteger(0)
-    val released = new AtomicInteger(0)
-    val bodies = new AtomicInteger(0)
+  private final class Statistics(val failRelease: Boolean) extends ResourceStatistics {
     val entered = Promise[Unit]()
     val interrupted = Promise[Unit]()
     val bodyGate = Promise[Unit]()
