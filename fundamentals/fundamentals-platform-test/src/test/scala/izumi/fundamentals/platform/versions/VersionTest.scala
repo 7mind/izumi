@@ -20,7 +20,11 @@ class VersionTest extends AnyWordSpec {
     checkParsing(Version.parseSemver)(
       ParseCase("parse basic semantic versions", "1.2.3", Some(Version.Semver(1, 2, 3, None, None))),
       ParseCase("parse semantic versions with pre-release", "1.0.0-alpha", Some(Version.Semver(1, 0, 0, Some("alpha"), None))),
-      ParseCase("parse semantic versions with pre-release and build metadata", "1.0.0-alpha.1+20130313144700", Some(Version.Semver(1, 0, 0, Some("alpha.1"), Some("20130313144700")))),
+      ParseCase(
+        "parse semantic versions with pre-release and build metadata",
+        "1.0.0-alpha.1+20130313144700",
+        Some(Version.Semver(1, 0, 0, Some("alpha.1"), Some("20130313144700"))),
+      ),
       ParseCase("parse semantic versions with build metadata only", "1.0.0+20130313144700", Some(Version.Semver(1, 0, 0, None, Some("20130313144700")))),
       ParseCase("parse complex pre-release identifiers", "1.0.0-rc.1.2.3", Some(Version.Semver(1, 0, 0, Some("rc.1.2.3"), None))),
     )
