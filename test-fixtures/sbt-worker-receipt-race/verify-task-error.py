@@ -92,7 +92,22 @@ def main():
                     row=report_rows[0]
                     valid=valid and row['summary']['tests']=='1' and row['summary']['errors']=='0' and row['summary']['failures']=='0' and len(row['cases'])==1 and row['cases'][0]['classname']=='fixture.ThrowSuite'
             else:
-                valid=valid and not report_rows and 'GENERIC_TASK_THROW_START' not in raw and 'GENERIC_TASK_THROW_END' not in raw and 'GENERIC_TASK_THROW_EVENTS' not in raw and 'GENERIC_TASK_THROW_COMPLETE' not in raw and 'GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS' in raw
+                markers=[line for line in raw.splitlines() if line.startswith('GENERIC_TASK_THROW_') and not line.startswith('GENERIC_TASK_THROW_PARENT pid=')]
+                valid=valid and 'GENERIC_TASK_THROW_COMPLETE' not in raw and 'GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS' in raw
+                if markers:
+                    valid=valid and markers==[
+                        'GENERIC_TASK_THROW_START fixture.ThrowSuite',
+                        'GENERIC_TASK_THROW_EVENTS result=Some(Error) count=1',
+                        'GENERIC_TASK_THROW_END fixture.ThrowSuite result=Error',
+                    ] and len(report_rows)==1
+                    if len(report_rows)==1:
+                        row=report_rows[0]
+                        valid=valid and [row['summary'][key] for key in ['name','tests','errors','failures','skipped']]==['fixture.ThrowSuite','1','1','0','0']
+                        valid=valid and len(row['cases'])==1 and row['cases'][0]['classname']=='fixture.ThrowSuite' and len(row['errors'])==1
+                        if len(row['errors'])==1:
+                            valid=valid and 'java.lang.LinkageError: GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS' in row['errors'][0]['message']
+                else:
+                    valid=valid and not report_rows
             for row in inputs: assert sha(row['path'])==row['sha256']
             assert sha(__file__)==sha(evidence/'driver.py')
             record=dict(sbt=sdk,mode=mode,actualExit=actual,expectedExit=expected,valid=valid,sent=sent,reports=report_rows,listenerMarkers=[line for line in raw.splitlines() if line.startswith('GENERIC_TASK_THROW_')])
@@ -101,7 +116,7 @@ def main():
             if not valid: break
         if not outcomes[-1]['valid']: break
     valid=len(outcomes)==EXPECTED_CONTROL_COUNT and all(row['valid'] for row in outcomes)
-    terminal=dict(exit=0 if valid else 1,outcomes=outcomes,scope='Expected-defect control. Public generic test-interface and TestsListener only; no distage dependencies/plugin/private SDK changes. Driver0 reproduces missing SBT2 completion on task Throwable, not product acceptance.')
+    terminal=dict(exit=0 if valid else 1,outcomes=outcomes,scope='Expected-defect control. Public generic test-interface and TestsListener only; no distage dependencies/plugin/private SDK changes. Requires missing SBT2 doComplete on task Throwable; accepts absent reporting or a complete suite-error report with the original cause. Product acceptance is checked separately.')
     (evidence/'completion.json').write_text(json.dumps(terminal,indent=2)+'\n')
     print(json.dumps(dict(exit=terminal['exit'],completionSha256=sha(evidence/'completion.json'))),flush=True)
     raise SystemExit(terminal['exit'])
