@@ -1,6 +1,6 @@
 object V {
   // izumi
-  val izumi_reflect = "3.0.8"
+  val izumi_reflect = "3.0.11"
 
   // foundation
   val kind_projector = "0.13.4"
@@ -9,39 +9,39 @@ object V {
   val scalatestplus_scalacheck = "3.3.0.0-alpha.2"
 
   val cats = "2.13.0"
-  val cats_effect = "3.6.3"
+  val cats_effect = "3.6.4"
 
   val discipline = "1.7.0"
   val discipline_scalatest = "2.3.0"
 
-  val zio = "2.1.24"
-  val zio_interop_cats = "23.1.0.5"
+  val zio = "2.1.26"
+  val zio_interop_cats = "23.1.0.14"
 
   val monix = "3.4.0"
   val monix_bio = "1.2.0"
 
-  val circe = "0.14.14"
+  val circe = "0.14.17"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.10"
-  val magnolia = "1.1.10"
+  val magnolia = "1.1.14"
   val jawn = "1.6.0"
 
   val portable_scala_reflect = "1.1.3"
 
   // good to drop - scala
-  val scala_java_time = "2.6.0"
+  val scala_java_time = "2.7.0"
 
   // js-only dependencies
   val scalajs_macrotask_executor = "1.1.1"
 
   // java-only dependencies below
-  val classgraph = "4.8.181"
-  val slf4j = "2.0.17"
+  val classgraph = "4.8.197"
+  val slf4j = "2.0.20"
   val typesafe_config = "1.4.0"
 
   // good to drop - java
-  val bytebuddy = "1.17.7"
-  val docker_java = "3.6.0"
+  val bytebuddy = "1.17.8"
+  val docker_java = "3.7.1"
   val commons_compress = "1.28.0"
 
   // microsite-only
@@ -49,5 +49,5 @@ object V {
   val paradox_material_theme = "0.7.0"
 
   // test-only
-  val scalamock = "7.5.2"
+  val scalamock = "7.5.5"
 }
