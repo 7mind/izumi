@@ -33,12 +33,10 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "handle one-arg trait" in {
     import TraitCase1.*
 
-    val definition = new ModuleDef {
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[Dependency1]
       makeTrait[TestTrait]
-    }
-
-    val context = mkNoCyclesInjector().produce(PlannerInput.everything(definition)).unsafeGet()
+    }))
     val instantiated = context.get[TestTrait]
     assert(instantiated.isInstanceOf[TestTrait])
     assert(instantiated.dep != null)
@@ -47,12 +45,10 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "handle named one-arg trait" in {
     import TraitCase1.*
 
-    val definition = new ModuleDef {
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[Dependency1]
       make[TestTrait].named("named-trait").fromTrait[TestTrait]
-    }
-
-    val context = mkNoCyclesInjector().produce(PlannerInput.everything(definition)).unsafeGet()
+    }))
     val instantiated = context.get[TestTrait]("named-trait")
     assert(instantiated.isInstanceOf[TestTrait])
     assert(instantiated.dep != null)
@@ -61,16 +57,14 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "handle mixed sub-trait with protected autowires" in {
     import TraitCase2.*
 
-    val definition = new ModuleDef {
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[Trait3]
       makeTrait[Trait2]
       makeTrait[Trait1]
       make[Dependency3]
       make[Dependency2]
       make[Dependency1]
-    }
-
-    val context = mkNoCyclesInjector().produce(PlannerInput.everything(definition)).unsafeGet()
+    }))
     val instantiated1 = context.get[Trait1]
     assert(instantiated1.isInstanceOf[Trait1])
 
@@ -86,14 +80,12 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "handle sub-type trait" in {
     import TraitCase2.*
 
-    val definition = new ModuleDef {
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[Trait2].fromTrait[Trait3]
       make[Dependency3]
       make[Dependency2]
       make[Dependency1]
-    }
-
-    val context = mkNoCyclesInjector().produce(PlannerInput.everything(definition)).unsafeGet()
+    }))
     val instantiated3 = context.get[Trait2]
     assert(instantiated3.isInstanceOf[Trait2])
     assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
@@ -102,12 +94,10 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "support trait fields and default values for trait fields" in {
     import TraitCase3.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[ATraitWithAField]
       make[Int].fromValue(1)
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
     assert(context.get[ATraitWithAField].method == 1)
     assert(context.get[ATraitWithAField].field == 1)
     assert(context.get[ATraitWithAField].methodDefault == 2)
@@ -131,14 +121,12 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "support named bindings in cglib traits" in {
     import TraitCase4.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Dep].named("A").from[DepA]
       make[Dep].named("B").from[DepB]
       makeTrait[Trait]
       makeTrait[Trait1]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
     val instantiated = context.get[Trait]
     val instantiated1 = context.get[Trait1]
 
@@ -152,12 +140,10 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "override protected defs in cglib traits" in {
     import TraitCase5.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[TestTrait]
       make[Dep]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
     val instantiated = context.get[TestTrait]
 
     assert(instantiated.rd == Dep().toString)
@@ -166,24 +152,20 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can instantiate traits with refinements" in {
     import TraitCase5.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[TestTraitAny { def dep: Dep }]
       make[Dep]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
     val instantiated = context.get[TestTraitAny { def dep: Dep }]
 
     assert(instantiated.dep eq context.get[Dep])
   }
 
   "can instantiate structural types" in {
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[{ def a: Int }]
       make[Int].from(5)
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     val instantiated = context.get[{ def a: Int }]
     assert(instantiated.a == context.get[Int])
@@ -192,13 +174,11 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can instantiate intersection types" in {
     import TypesCase3.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
       makeTrait[Trait2 & (Trait2 & (Trait2 & Trait1))]
-    })
-
-    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
+    }))
 
     val instantiated = context.get[Trait2 & Trait1]
 
@@ -209,13 +189,11 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can instantiate intersection types with implicit overrides" in {
     import TypesCase6.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
       makeTrait[Trait1 & Trait2]
-    })
-
-    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
+    }))
 
     val instantiated = context.get[Trait2 & Trait1]
 
@@ -226,13 +204,11 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can handle AnyVals" in {
     import TraitCase6.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[AnyValDep]
       makeTrait[TestTrait]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[TestTrait].anyValDep ne null)
     // AnyVal reboxing happened
@@ -243,13 +219,11 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "can handle abstract classes" in {
     import TraitCase7.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Dependency1]
       make[Dependency2]
       make[X].fromTrait[XImpl]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     val dependency1 = context.get[Dependency1]
     val dependency2 = context.get[Dependency2]

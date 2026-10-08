@@ -37,9 +37,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         .localDependency[Arg]("x")
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
-
-    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test")))
 
     val local = context.get[Subcontext[Identity, Int]]("test")
     assert(context.find[GlobalServiceDependency].nonEmpty)
@@ -69,9 +67,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         }
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
-
-    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test")))
 
     val local = context.get[Subcontext[Identity, Int]]("test")
 
@@ -86,9 +82,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       }).localDependency[Arg]
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]])
-
-    val context = mkNoCyclesInjector().produce(definition).unsafeGet()
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]]))
 
     val local = context.get[Subcontext[Identity, Int]]
 

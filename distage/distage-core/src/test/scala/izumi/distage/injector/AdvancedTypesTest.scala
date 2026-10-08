@@ -17,14 +17,12 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "support generics" in {
     import TypesCase1.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[List[Dep]].named("As").from(List(DepA()))
       make[List[Dep]].named("Bs").from(List(DepB()))
       make[List[DepA]].from(List(DepA(), DepA(), DepA()))
       make[TestClass[DepA]]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[List[Dep]]("As").forall(_.isInstanceOf[DepA]))
     assert(context.get[List[DepA]].forall(_.isInstanceOf[DepA]))
@@ -35,12 +33,10 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "support classes with typealiases" in {
     import TypesCase1.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[DepA]
       make[TestClass2[TypeAliasDepA]]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[TestClass2[TypeAliasDepA]].inner.isInstanceOf[TypeAliasDepA])
   }
@@ -48,12 +44,10 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "support traits with typealiases" in {
     import TypesCase1.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[DepA]
       makeTrait[TestTrait]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[TestTrait].dep.isInstanceOf[TypeAliasDepA])
   }
@@ -61,12 +55,10 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "type annotations in di keys do not result in different keys" in {
     import TraitCase2.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Dependency1 @Id("special")]
       makeTrait[Trait1]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     val instantiated = context.get[Dependency1]
     val instantiated1 = context.get[Dependency1 @Id("special")]
@@ -77,13 +69,11 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "handle `with` types" in {
     import TypesCase3.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait2 & Trait1].fromTrait[Trait6]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     val instantiated = context.get[Trait2 & Trait1]
 
@@ -93,15 +83,13 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "light type tags can handle refinement & structural types" in {
     import TypesCase3.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Dep]
       make[Dep2]
       make[Trait1 { def dep: Dep2 }].fromTrait[Trait31[Dep2]]
       make[Trait1 { def dep: Dep }].fromTrait[Trait31[Dep]]
       make[{ def dep: Dep }].fromTrait[Trait6]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     val instantiated1 = context.get[Trait1 { def dep: Dep2 }]
     val instantiated2 = context.get[{ def dep: Dep }]
@@ -141,9 +129,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
       make[T { def dep: Dep }].fromTrait[G]
     }
 
-    val definition = PlannerInput.everything(new Definition[Trait1, Trait1])
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new Definition[Trait1, Trait1]))
 
     val instantiated = context.get[Trait1 { def dep: Dep }]
 
@@ -160,9 +146,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
       make[T & Trait1].fromTrait[G]
     }
 
-    val definition = PlannerInput.everything(new Definition[Trait3[Dep], Trait31[Dep], Trait5[Dep]])
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new Definition[Trait3[Dep], Trait31[Dep], Trait5[Dep]]))
 
     val instantiated = context.get[Trait3[Dep] & Trait1]
     val instantiated2 = context.get[Trait3[Dep] & Trait4]
@@ -184,9 +168,7 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
       make[Trait3[T] & K].fromTrait[Trait5[T]]
     }
 
-    val definition = PlannerInput.everything(new Definition[Dep, Trait4])
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new Definition[Dep, Trait4]))
     val instantiated = context.get[Trait3[Dep] & Trait4]
 
     assert(instantiated.dep == context.get[Dep])
@@ -195,12 +177,10 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "support newtypes" in {
     import TypesCase5.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[WidgetId].from(WidgetId(1))
       make[Dep]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     val instantiated1 = context.get[Dep]
     val instantiated2 = context.get[WidgetId]
@@ -210,21 +190,17 @@ class AdvancedTypesTest extends AnyWordSpec with MkInjector with ScalatestGuards
   "empty refinements are supported in class strategy" in {
     import TypesCase4.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Dep {}]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[Dep {}] != null)
   }
 
   "support constant types in class strategy" in {
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[5]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[5] == 5)
   }

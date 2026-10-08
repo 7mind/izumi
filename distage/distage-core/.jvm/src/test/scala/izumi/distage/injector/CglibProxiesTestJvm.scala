@@ -22,12 +22,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support circular dependencies" in {
       import CircularCase1.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Circular2]
         makeTrait[Circular1]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -37,12 +35,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support circular dependencies with final class implementations" in {
       import CircularCase1.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Circular2].from[Circular2Impl]
         make[Circular1].from[Circular1Impl]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -52,7 +48,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support circular dependencies in providers" in {
       import CircularCase1.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Circular2].from {
           (c: Circular1) => new Circular2(c)
         }
@@ -63,9 +59,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
             }
             a
         }
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -75,11 +69,9 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "Supports self-referencing circulars" in {
       import CircularCase3.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[SelfReference]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       val instance = context.get[SelfReference]
 
@@ -89,14 +81,12 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "Support self-referencing provider" in {
       import CircularCase3.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[SelfReference].from {
           (self: SelfReference) =>
             new SelfReference(self)
         }
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       val instance = context.get[SelfReference]
 
@@ -106,13 +96,11 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support proxy circular dependencies involving a primitive type" in {
       import CircularCase8.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Circular2]
         make[Circular1]
         make[Int].from(1)
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -128,13 +116,11 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support circular dependencies that use another object in their constructor that isn't involved in a cycle" in {
       import CircularCase9.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Circular2]
         make[Circular1]
         make[IntHolder]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Circular1] != null)
       assert(context.get[Circular2] != null)
@@ -151,12 +137,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support fully generic circular dependencies" in {
       import CircularCase5.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[GenericCircular[Dependency]]
         make[Dependency]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Dependency] != null)
       assert(context.get[GenericCircular[Dependency]] != null)
@@ -168,12 +152,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support generic circular dependencies when generics are erased by type-erasure" in {
       import CircularCase5._
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[ErasedCircular[Dependency]]
         make[ErasedDependency[Dependency]]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       val erasedCircular = context.get[ErasedCircular[Dependency]]
       val erasedDependency = context.get[ErasedDependency[Dependency]]
@@ -188,14 +170,12 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support named circular dependencies" in {
       import CircularCase4.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[IdTypeCircular]
         make[IdParamCircular]
         make[Dependency[IdTypeCircular]].named("special")
         make[Dependency[IdParamCircular]].named("special")
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[IdTypeCircular] != null)
       assert(context.get[IdParamCircular] != null)
@@ -207,12 +187,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support type refinements in circular dependencies" in {
       import CircularCase6.*
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Dependency { def dep: RefinedCircular }].from[RealDependency]
         make[RefinedCircular]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Dependency { def dep: RefinedCircular }] != null)
       assert(context.get[RefinedCircular] != null)
@@ -224,7 +202,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "support simple by-name forward ref when there are non-by-name references" in {
       import CircularCase10.*
 
-      val definition = PlannerInput(
+      val context = produceLocator(mkInjector())(PlannerInput(
         new ModuleDef {
           make[Component1]
           make[Component2]
@@ -234,9 +212,7 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         },
         Roots(DIKey.get[Root]),
         Activation.empty,
-      )
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      ))
 
       val root = context.get[Root]
       val holder = context.get[ComponentHolder]
@@ -301,12 +277,10 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         import InnerClassStablePathsCase.*
         import StableObjectInheritingTrait.*
 
-        val definition = PlannerInput.everything(new ModuleDef {
+        val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
           make[Circular1]
           make[Circular2]
-        })
-
-        val context = mkInjector().produce(definition).unsafeGet()
+        }))
 
         assert(context.get[Circular1] != null)
         assert(context.get[Circular1].circular2 != context.get[Circular2])
@@ -320,13 +294,11 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
         import InnerClassUnstablePathsCase.*
         val testProviderModule = new TestModule
 
-        val definition = PlannerInput.everything(new ModuleDef {
+        val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
           //        make[testProviderModule.type].from[testProviderModule.type](testProviderModule: testProviderModule.type)
           make[testProviderModule.Circular1]
           make[testProviderModule.Circular2]
-        })
-
-        val context = mkInjector().produce(definition).unsafeGet()
+        }))
 
         assert(
           context.get[testProviderModule.TestFactory].mk(testProviderModule.TestDependency()) ==

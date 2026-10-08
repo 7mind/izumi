@@ -88,7 +88,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
     "support factories" in {
       import scala.reflect.Selectable.reflectiveSelectable
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         makeFactory[FactoryTrait1]
         makeFactory[{
             type U = Object
@@ -100,8 +100,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
         make[Int].fromValue(1)
         make[Number].fromValue(5)
         make[String].fromValue("abc")
-      })
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       val factory1 = context.get[FactoryTrait1]
       val factory2 = context.get[{
@@ -158,12 +157,10 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     "support overriding lazy vals in auto-traits" in {
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         makeTrait[ATraitWithALazyField]
         make[Int].fromValue(1)
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[ATraitWithALazyField].lazyField == 1)
     }

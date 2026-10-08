@@ -35,13 +35,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
   "Scala 3 implicit bindings" should {
 
     "support bindings with function implicit parameters" in {
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("X"))
         make[X].from(bindImplicits(makeX))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("X1"))
     }
@@ -52,19 +50,17 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
 
       def makeX[T](value: T)(implicit desc: Description[X]): X = X(desc.description + value)
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description[X]].fromValue(Description("X"))
         make[X].from(bindImplicits(makeX[Int]))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("X1"))
     }
 
     "support binding inside code block" in {
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("X"))
         make[X].from {
@@ -79,9 +75,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
               }
           }
         }
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("1X2"))
     }
@@ -89,20 +83,18 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     "support binding with more than one implicit parameter" in {
       def makeX2(x: Int)(using desc: Description, moreDesc: String): X = X(desc.description + moreDesc + x)
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[String].fromValue("more-description")
         make[Description].fromValue(Description("X"))
         make[X].from(bindImplicits(makeX2))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("Xmore-description1"))
     }
 
     "support binding inside block with more than one implicit parameter" in {
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[String].fromValue("str")
         make[Description].fromValue(Description("X"))
@@ -116,9 +108,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
               }
           }
         }
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("Xstr12"))
     }
@@ -151,7 +141,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     }
 
     "should not override implicit inside the block" in {
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[X].from {
           bindImplicits {
@@ -164,15 +154,13 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
               }
           }
         }
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("1desc2"))
     }
 
     "should not override given inside the block" in {
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("from-di"))
         make[X].from {
@@ -186,9 +174,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
               }
           }
         }
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("1desc2"))
     }
@@ -201,12 +187,10 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
 
       implicit val description: Description[X] = Description[X]("description")
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[X].from(bindImplicits(makeX[Int]))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       val x = context.get[X]
       assert(x.s == description.description)
@@ -222,12 +206,10 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       implicit val desc: Description = Description("desc")
       implicit val double: Short = 2
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[X].from(bindImplicits(makeX))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("21desc"))
     }
@@ -237,12 +219,10 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
 
       implicit val description: Description = Description("description")
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Description].fromValue(Description("desc"))
         make[X].from(bindAllImplicits(makeX))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Description].description == "desc")
       assert(context.get[X] == X("desc"))
@@ -305,13 +285,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       def makeX[F[_]: QuasiApplicative](value: Int)(implicit desc: Description): F[X] =
         QuasiApplicative.apply[F].pure(X(desc.description + value.toString))
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("desc"))
         make[X].fromEffect[Identity, X](bindImplicits(makeX[Identity]))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Description] == Description("desc"))
       assert(context.get[X] == X("desc1"))
@@ -323,12 +301,10 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
         override def release(resource: X): Unit = ()
       }
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Description].fromValue(Description("desc"))
         make[X].fromResource[XResource]
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Description] == Description("desc"))
       assert(context.get[X] == X("desc"))
@@ -338,13 +314,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       def makeX(x: Int)(implicit desc: Description): Lifecycle[Identity, X] =
         Lifecycle.make(X(desc.description): Identity[X])(_ => ())
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("desc"))
         make[X].fromResource(bindImplicits(makeX))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Description] == Description("desc"))
       assert(context.get[X] == X("desc"))
@@ -353,13 +327,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     "support implicits in sets" in {
       def makeX(x: Int)(implicit desc: Description): X = X(s"${desc.description}$x")
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("desc"))
         many[X].add(bindImplicits(makeX))
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Set[X]] == Set(X("desc1")))
     }
@@ -367,7 +339,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
     "support implicits in addSet" in {
       def makeX(x: Int)(implicit desc: Description): X = X(s"${desc.description}$x")
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[Description].fromValue(Description("desc"))
         many[X].add(bindImplicits(makeX))
@@ -387,9 +359,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
             (x: Int) =>
               Set(X(s"${x + x}-${implicitly[Description].description}-${implicitly[Set[X]]}"))
           })
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[Set[X]]("set") == Set(X("1-desc-Set(X(desc1))")))
       assert(context.get[Set[X]]("set2") == Set(X("2-desc-Set(X(desc1))")))
@@ -421,7 +391,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       def makeX(x: Int @Id("2"))(implicit description: Description): X = X(s"${description.description}$x")
       def makeXN(@Id("2") x: Int)(implicit description: Description): X = X(s"${description.description}$x")
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].named("2").fromValue(2)
         make[Description].fromValue(Description("desc"))
         make[X].from(bindImplicits(makeX))
@@ -430,9 +400,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           .named("x2").from(bindImplicits {
             (x: Int @Id("2")) => X(((x + x) * 2).toString + implicitly[Description].description)
           })
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("desc2"))
       assert(context.get[X]("n") == X("desc2"))
@@ -445,7 +413,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
       def makeXN(x: Int)(implicit @Id("p") description: Description): X = X(s"${description.description}$x")
       def makeXNU(x: Int)(using @Id("p") description: Description): X = X(s"${summon[Description].description}$x")
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(2)
         make[Description].named("p").fromValue(Description("pest"))
         make[X].from(bindImplicits(makeX))
@@ -456,9 +424,7 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
           .named("block").from(bindImplicits {
             (x: Int) => X(((x + x) * 2).toString + implicitly[Description @Id("p")].description)
           })
-      })
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      }))
 
       assert(context.get[X] == X("pest2"))
       assert(context.get[X]("using") == X("pest2"))

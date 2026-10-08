@@ -9,17 +9,14 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support proxies in sets (non-immediate case) https://github.com/7mind/izumi/issues/482" in {
     import CircularCase11.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[T1].from[Circular1Impl]
       make[T2].from[Circular2Impl]
 
       many[Service]
         .ref[T1]
         .ref[T2]
-    })
-
-    val injector = mkInjector()
-    val context = injector.produce(definition).unsafeGet()
+    }))
 
     // in fact we won't even try to add the proxy into the set, it'll be done later
     val set = context.get[Set[Service]]
@@ -32,17 +29,14 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support proxies in sets (immediate case) https://github.com/7mind/izumi/issues/482" in {
     import CircularCase12.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[T1].from[Circular1Impl]
       make[T2].from[Circular2Impl]
 
       many[Service]
         .ref[T1]
         .ref[T2]
-    })
-
-    val injector = mkInjector()
-    val context = injector.produce(definition).unsafeGet()
+    }))
 
     val set = context.get[Set[Service]]
 
@@ -56,17 +50,14 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support proxies in sets (completely immediate case) https://github.com/7mind/izumi/issues/482" in {
     import CircularCase13.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[T1].from[Circular1Impl]
       make[T2].from[Circular2Impl]
 
       many[Service]
         .ref[T1]
         .ref[T2]
-    })
-
-    val injector = mkInjector()
-    val context = injector.produce(definition).unsafeGet()
+    }))
 
     val set = context.get[Set[Service]]
 

@@ -61,14 +61,12 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
   "Set element references are the same as their referees" in {
     import SetCase2.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Service1]
 
       many[Service]
         .ref[Service1]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
     val svc = context.get[Service1]
     val set = context.get[Set[Service]]
     assert(set.head eq svc)

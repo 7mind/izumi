@@ -26,7 +26,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
   "Effect bindings" should {
 
     "work in a basic case in Identity monad" in {
-      val definition = PlannerInput(
+      val context = produceLocator(mkInjector())(PlannerInput(
         new ModuleDef {
           make[Int].named("2").from(2)
           make[Int].fromEffect[Identity, Int] {
@@ -35,9 +35,7 @@ class ResourceEffectBindingsTest extends AnyWordSpec with MkInjector  {
         },
         Roots(DIKey.get[Int]),
         Activation.empty,
-      )
-
-      val context = mkInjector().produce(definition).unsafeGet()
+      ))
 
       assert(context.get[Int] == 12)
     }

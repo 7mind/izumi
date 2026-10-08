@@ -162,12 +162,6 @@ class PlanVerifierTest extends AnyWordSpec with MkInjector {
     val result = PlanVerifier().verify[Identity](definition, Roots.target[Fork1], Injector.providedKeys(), Set.empty)
     assert(result.verificationFailed)
     assert(result.issues.size == 1)
-//    val issues = result.issues.toList.flatMap(_.toList)
-//    assert(issues.size == 1)
-//
-//    val imports = issues.collect {case m: MissingImport => m}
-//    assert(imports.size == 1)
-//    assert(imports.head.key == )
     assert(result.issues.fromNESet == Set(MissingImport(DIKey[Fork2], DIKey[Fork1], Set(implBOrigin), Set.empty, Set.empty)))
   }
 
