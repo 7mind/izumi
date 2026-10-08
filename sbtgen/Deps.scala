@@ -18,14 +18,11 @@ object Izumi {
     val discipline = Version.VExpr("V.discipline")
     val zio = Version.VExpr("V.zio")
     val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
-    val monix = Version.VExpr("V.monix")
-    val monix_bio = Version.VExpr("V.monix_bio")
     val circe = Version.VExpr("V.circe")
     val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
     val pureconfig = Version.VExpr("V.pureconfig")
     val magnolia = Version.VExpr("V.magnolia")
-    val jawn = Version.VExpr("V.jawn")
     val doobie = Version.VExpr("V.doobie")
     val classgraph = Version.VExpr("V.classgraph")
     val sbt_test_interface = Version.VExpr("V.sbt_test_interface")
@@ -101,16 +98,11 @@ object Izumi {
 
     final val zio_interop_tracer = Library("dev.zio", "zio-interop-tracer", V.zio_interop_cats, LibraryType.Auto)
 
-  //    final val monix = Library("io.monix", "monix", V.monix, LibraryType.Auto)
-  //    final val monix_bio = Library("io.monix", "monix-bio", V.monix_bio, LibraryType.Auto)
-  //    final val monix_all = Seq(monix, monix_bio)
     // FIXME Disable monix due to lack of CE3 support as of now, see:
     //   https://github.com/monix/monix/issues/1502
     //   https://github.com/monix/monix/pull/1533
-    final val monix_all = Seq.empty[Library]
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant)
-  //    final val jawn = Library("org.typelevel", "jawn-parser", V.jawn, LibraryType.AutoJvm)
 
     final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val sbt_test_interface = Library("org.scala-sbt", "test-interface", V.sbt_test_interface, LibraryType.Invariant) in Scope.Compile.jvm
@@ -597,13 +589,11 @@ object Izumi {
         name = Projects.fundamentals.basics,
         libs = Seq.empty,
         depends = Seq.empty,
-        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.functional,
         libs = Seq.empty,
         depends = Seq(Projects.fundamentals.basics),
-        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.collections,
@@ -612,7 +602,6 @@ object Izumi {
           Projects.fundamentals.basics,
           Projects.fundamentals.functional,
         ),
-        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.assertions,
@@ -648,7 +637,6 @@ object Izumi {
         name = Projects.fundamentals.orphans,
         libs = allMonadsOptional ++ Seq(zio_interop_cats in Scope.Optional.all),
         depends = Seq(Projects.fundamentals.basics),
-        settings = Seq.empty,
         platforms = Targets.cross,
       ),
       Artifact(
@@ -660,7 +648,6 @@ object Izumi {
         depends = Seq(
           Projects.fundamentals.basics,
         ),
-        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.platform,
@@ -703,7 +690,6 @@ object Izumi {
           circe_generic in Scope.Compile.all.scalaVersion(ScalaVersionScope.AllScala3),
         ),
         depends = Seq(Projects.fundamentals.platform),
-        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.fundamentals.testSupport,
@@ -806,9 +792,9 @@ object Izumi {
 
   final val allCatsOptional = cats_all.map(_ in Scope.Optional.all)
   final val allZioOptional = (zio_all ++ Seq(izumi_reflect)).map(_ in Scope.Optional.all)
-  final val allMonads = cats_all ++ zio_all ++ Seq(zio_interop_cats) ++ Seq(izumi_reflect) ++ monix_all
-  final val allMonadsOptional = allCatsOptional ++ allZioOptional ++ monix_all.map(_ in Scope.Optional.all)
-  final val allMonadsTest = (cats_all ++ monix_all ++ zio_all ++ Seq(izumi_reflect)).map(_ in Scope.Test.all)
+  final val allMonads = cats_all ++ zio_all ++ Seq(zio_interop_cats) ++ Seq(izumi_reflect)
+  final val allMonadsOptional = allCatsOptional ++ allZioOptional
+  final val allMonadsTest = (cats_all ++ zio_all ++ Seq(izumi_reflect)).map(_ in Scope.Test.all)
 
   final lazy val distage = Aggregate(
     name = Projects.distage.id,
@@ -992,7 +978,6 @@ object Izumi {
         libs = Seq.empty,
         depends = Seq(Projects.distage.framework).map(_ in Scope.Compile.all),
         platforms = Targets.cross,
-        settings = Seq.empty,
       ),
       Artifact(
         name = Projects.distage.testkitCoreTest,
