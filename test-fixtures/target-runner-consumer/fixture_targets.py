@@ -29,4 +29,3 @@ def prepare_lanes(args: Namespace, prepare_lane: Callable[[Namespace, str, str, 
             inputs.extend(dict(path=str(path), sha256=sha(path)) for path in build.rglob('*') if path.is_file())
             commands.append(command)
     return commands, inputs, out
-
