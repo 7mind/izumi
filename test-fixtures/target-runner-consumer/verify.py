@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 from collections import Counter
 import json
 from pathlib import Path
@@ -13,7 +12,7 @@ import xml.etree.ElementTree as ET
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_lanes, sha
+from fixture_harness import sha, consumer_parser, checked_lanes
 
 def verify(command, out):
     compiler, platform = command['scala'], command['platform']
@@ -125,10 +124,7 @@ def prepare(args, compiler, platform, paths):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--production-host-version')
     parser.add_argument('--logical-suite-alias', action='store_true')
     parser.add_argument('--host-threads', choices=['1', '2'], required=True)
@@ -147,10 +143,7 @@ def main():
             inputs.extend(prepared_inputs)
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands), indent=2) + '\n')
 
-    results = run_lanes(commands, out, 1200)
-    changed = [row['path'] for row in inputs if sha(Path(row['path'])) != row['sha256']]
-    (out / 'completion.json').write_text(json.dumps(dict(lanes=results, inputsChanged=changed), indent=2) + '\n')
-    assert not changed and all(row['actualExit'] == 0 for row in results), results
+    checked_lanes(commands, out, inputs, 1200, 0)
     lanes = [verify(command, out) for command in commands]
     assert len({stream['run'] for lane in lanes for stream in lane['streams']}) == 3 * len(lanes)
     report = dict(hostThreads=int(args.host_threads), commands=3 * len(lanes), physicalBodies=45 * len(lanes),

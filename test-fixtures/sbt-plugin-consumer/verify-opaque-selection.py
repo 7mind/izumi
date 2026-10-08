@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 from collections import Counter
 import json
 from pathlib import Path
@@ -8,7 +7,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, run_process, sha
+from fixture_harness import load_module, run_process, sha, consumer_parser
 
 CONTROLS = r'''
 val prepareSelection = inputKey[Unit]("Prepare one public selection contract")
@@ -93,10 +92,7 @@ captureSelection := Def.uncached {
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--plugin-version', required=True)
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()

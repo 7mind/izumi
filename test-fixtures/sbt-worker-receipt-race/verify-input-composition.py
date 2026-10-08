@@ -1,11 +1,10 @@
 from pathlib import Path
-import argparse
 import importlib.util
 import json
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser
 
 TIMEOUT_SECONDS = 240
 BUILD = r'''
@@ -84,10 +83,7 @@ object EarlyInputs {
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--plugin-version', required=True)
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()

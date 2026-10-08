@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import hashlib
 import json
 import os
@@ -13,7 +12,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module as module
+from fixture_harness import write_sbt_project, load_module as module, consumer_parser
 
 FOREIGN_GATE = r'''
         private final val GateTimeoutSeconds = 30L
@@ -80,10 +79,7 @@ def verify(capture, row, runs, resources):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     root = args.repo_root.resolve()

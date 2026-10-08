@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 from collections import Counter
 import json
 from pathlib import Path
@@ -11,7 +10,7 @@ from verify import prepare, sha
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_lanes
+from fixture_harness import consumer_parser, checked_lanes, execution_stream
 
 CONTEXT_SETTINGS = '''
   Test / target := baseDirectory.value / "target/test",
@@ -134,17 +133,11 @@ def audit(command, out):
         streams = []
         actual_ids = Counter()
         for file in (capture / 'frames').glob('*.jsonl'):
-            frames = [json.loads(line) for line in file.read_text().splitlines()]
-            assert all(frame['schemaVersion'] == 4 for frame in frames)
-            messages = [frame['message'] for frame in frames]
-            assert messages[-1]['kind'] == 'completed'
-            outcome = messages[-1]['outcome']
+            events, outcome = execution_stream(file.read_text())
             assert not outcome['cancelled'] and not outcome['failures']
             assert all(item['status'] == 'succeeded' for item in outcome['results'])
             targets = {item['id']['target'] for item in outcome['results']}
             assert len(targets) == 1, (label, 'cross-configuration sharing')
-            events = [message for message in messages if message['kind'] == 'event']
-            assert [int(event['sequence']) for event in events] == list(range(len(events)))
             identity = lambda values: Counter(json.dumps(value, sort_keys=True) for value in values)
             starts = [message['event']['test'] for message in events if message['event']['kind'] == 'testStarted']
             finishes = [message['event']['result']['id'] for message in events if message['event']['kind'] == 'testCompleted']
@@ -166,10 +159,7 @@ def audit(command, out):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--production-host-version', required=True)
     parser.add_argument('--scala-version', nargs='+', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
@@ -187,10 +177,7 @@ def main():
             commands.append(command)
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands), indent=2) + '\n')
 
-    results = run_lanes(commands, out, 1800)
-    changed = [row['path'] for row in inputs if sha(Path(row['path'])) != row['sha256']]
-    (out / 'completion.json').write_text(json.dumps(dict(lanes=results, inputsChanged=changed), indent=2) + '\n')
-    assert not changed and all(row['actualExit'] == 0 for row in results), results
+    checked_lanes(commands, out, inputs, 1800, 0)
     lanes = [audit(command, out) for command in commands]
     streams = [stream for lane in lanes for case in lane['cases'] for stream in case['streams']]
     assert len({stream['run'] for stream in streams}) == len(streams)

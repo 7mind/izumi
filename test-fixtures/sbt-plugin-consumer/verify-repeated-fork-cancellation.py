@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from xml.etree import ElementTree as ET
-import argparse, hashlib, json, os, subprocess, tempfile, time, traceback
+import hashlib, json, os, subprocess, tempfile, time, traceback
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module as module
+from fixture_harness import write_sbt_project, load_module as module, consumer_parser
 
-parser=argparse.ArgumentParser()
-parser.add_argument('--repo-root',type=Path,required=True)
-parser.add_argument('--evidence-dir',type=Path,required=True)
-parser.add_argument('--artifact-version',required=True)
+parser = consumer_parser()
 parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
 args=parser.parse_args()
 ROOT=args.repo_root.resolve()

@@ -3,12 +3,11 @@ from pathlib import Path
 import argparse
 import json
 import re
-import shutil
 from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_process, sha
+from fixture_harness import run_process, sha, freeze_sources
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / 'test-fixtures/host-sharing-consumer'
@@ -107,12 +106,7 @@ def main():
     evidence = arguments.evidence_dir.resolve()
     evidence.mkdir(parents=True, exist_ok=False)
     sources = [Path(__file__).resolve(), FIXTURE / 'build.sbt', *sorted((FIXTURE / 'src').rglob('*.scala'))]
-    inputs = []
-    for path in sources:
-        frozen = evidence / 'sources' / path.relative_to(ROOT)
-        frozen.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(path, frozen)
-        inputs.append(dict(path=str(path), frozen=str(frozen), sha256=sha(path)))
+    inputs = freeze_sources(sources, ROOT, evidence / 'sources')
     (evidence / 'inputs.json').write_text(json.dumps(dict(sources=inputs), indent=2) + '\n')
     outcomes = []
     resources = set()

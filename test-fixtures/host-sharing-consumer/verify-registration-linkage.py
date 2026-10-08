@@ -3,11 +3,10 @@ from pathlib import Path
 from xml.etree import ElementTree
 import argparse
 import json
-import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process, sha
+from fixture_harness import freeze_driver, run_process, sha, freeze_sources
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 300
@@ -100,10 +99,7 @@ def main():
         elif source.name == 'FixtureSuites.scala':
             value = value.replace('    val file = directory.resolve(suite + "-" + index + ".body")', '    val pid = Files.write(directory.resolve(suite + "-" + index + ".pid"), ProcessHandle.current().pid().toString.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)\n    require(Files.isRegularFile(pid), "Physical body PID missing")\n    val file = directory.resolve(suite + "-" + index + ".body")')
         destination.write_text(value)
-        frozen = output / 'originals' / source.relative_to(fixture)
-        frozen.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, frozen)
-        inputs.append(dict(path=str(source), frozen=str(frozen), sha256=sha(source)))
+        inputs.extend(freeze_sources([source], fixture, output / 'originals'))
     (build / 'src/test/scala/izumi/fixtures/host/RegistrationLinkageSuite.scala').write_text(SOURCE)
     project = build / 'project'
     project.mkdir()

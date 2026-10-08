@@ -5,7 +5,7 @@ import json, re, sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, run_lanes
+from fixture_harness import load_module, run_lanes, execution_stream
 
 FIXTURE=Path(__file__).resolve().parent
 TEMPLATE=FIXTURE/'di-failures'
@@ -47,12 +47,11 @@ def audit(manifest,out):
       label=case['name'];segment=log.split('SDK_POLICY_BEGIN '+label+'\n')[1].split('SDK_POLICY_END '+label+'\n')[0];capture=build/'captures'/label
       expected=Counter((suite,'equal display name should '+{1:'first',2:'second',3:'third'}[index]) for suite,indices in case['suites'].items() for index in indices)
       streams=list((capture/'frames').glob('*.jsonl'));assert len(streams)==1
-      frames=[json.loads(line) for line in streams[0].read_text().splitlines()];assert all(row['schemaVersion']==4 for row in frames)
-      messages=[row['message'] for row in frames];assert messages[-1]['kind']=='completed';outcome=messages[-1]['outcome'];assert not outcome['cancelled'] and outcome['run'] not in runs;runs.add(outcome['run'])
+      events, outcome = execution_stream(streams[0].read_text())
+      assert not outcome['cancelled'] and outcome['run'] not in runs;runs.add(outcome['run'])
       results=outcome['results'];identity=lambda value:(value['id']['suite'],' '.join(value['id']['path']))
       assert Counter(map(identity,results))==expected,(label,'selected terminal identities',len(results))
       assert not any(row['phase']=='transport' for row in outcome['failures']),(label,'unrelated invariant failure')
-      events=[row for row in messages if row['kind']=='event'];assert [int(row['sequence']) for row in events]==list(range(len(events)))
       assert Counter(json.dumps(row['event']['result'],sort_keys=True) for row in events if row['event']['kind']=='testCompleted')==Counter(json.dumps(row,sort_keys=True) for row in results)
       assert events[-1]['event']['outcome']==outcome
       bodies=re.findall(r'SDK_DI_BODY suite=(\S+) test=(\d+) effect=(\S+) owner=(\S+) revision=(\S+) snapshot=(\S+) repo=(\S+)',segment)

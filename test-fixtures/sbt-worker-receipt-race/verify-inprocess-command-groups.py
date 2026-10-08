@@ -1,13 +1,12 @@
 from pathlib import Path
 from xml.etree import ElementTree
-import argparse
 import importlib.util
 import json
 import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser
 
 TIMEOUT_SECONDS = 240
 TESTS_PER_SUITE = 3
@@ -89,10 +88,7 @@ def source_from_fork_fixture():
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     parser.add_argument('--report-format', choices=['standard', 'legacy'], required=True)
     args = parser.parse_args()

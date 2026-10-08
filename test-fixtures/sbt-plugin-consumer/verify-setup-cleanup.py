@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import json
 from pathlib import Path
 import traceback
@@ -7,7 +6,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -171,10 +170,7 @@ def verify(directory, row):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     root = args.repo_root.resolve(); out = args.evidence_dir.resolve(); out.mkdir()

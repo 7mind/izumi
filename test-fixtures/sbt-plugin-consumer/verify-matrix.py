@@ -4,12 +4,11 @@ import hashlib
 import json
 from pathlib import Path
 import re
-import shutil
 
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_process
+from fixture_harness import run_process, freeze_sources
 
 LANE_TIMEOUT_SECONDS = 900
 SHUTDOWN_GRACE_SECONDS = 10
@@ -344,12 +343,7 @@ def main():
     evidence = arguments.evidence_dir.resolve()
     evidence.mkdir(parents=True, exist_ok=False)
     sources = [Path(__file__).resolve(), fixture / "build.sbt", *sorted((fixture / "src").rglob("*.scala"))]
-    rows = []
-    for source in sources:
-        copy = evidence / "sources" / source.relative_to(root)
-        copy.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, copy)
-        rows.append(dict(path=str(source), frozen=str(copy), sha256=hashlib.sha256(source.read_bytes()).hexdigest()))
+    rows = freeze_sources(sources, root, evidence / "sources")
     (evidence / "inputs.json").write_text(json.dumps(dict(sources=rows), indent=2) + "\n")
     outcomes = []
     for sbt_version in arguments.sbt_version:

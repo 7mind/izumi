@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import argparse, hashlib, json, os, socket, subprocess, time, threading, traceback, urllib.parse, tempfile
+import hashlib, json, os, socket, subprocess, time, threading, traceback, urllib.parse, tempfile
 from pathlib import Path
 from typing import TextIO
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module, terminate_process
+from fixture_harness import write_sbt_project, load_module, terminate_process, consumer_parser
 
 WAIT_SECONDS=180
 RELEASE_WAIT_SECONDS=30
@@ -123,10 +123,7 @@ def verify(capture,row,runs,resources):
     else:assert not outcome['failures'] and all(n.find('error') is None and n.find('failure') is None for n in nodes)
     return dict(**row,bodies=len(bodies),results=15,xmlCases=len(nodes),resource=acquired[0],run=outcome['run'],hostPid=parent,bodyPids=sorted(pids))
 def main():
-    parser=argparse.ArgumentParser()
-    parser.add_argument('--repo-root',type=Path,required=True)
-    parser.add_argument('--evidence-dir',type=Path,required=True)
-    parser.add_argument('--artifact-version',required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
     parser.add_argument('--execution-mode',choices=['both','inprocess','fork'],default='both')
     args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()

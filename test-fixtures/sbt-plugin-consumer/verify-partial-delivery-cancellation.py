@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import argparse, hashlib, json, os, subprocess, tempfile, time, traceback
+import hashlib, json, os, subprocess, tempfile, time, traceback
 from pathlib import Path
 
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module
+from fixture_harness import write_sbt_project, load_module, consumer_parser
 
 LISTENER = r'''
 Test / parallelExecution := false
@@ -61,10 +61,7 @@ def verify_callbacks(capture):
 
 
 def main():
-    parser=argparse.ArgumentParser()
-    parser.add_argument('--repo-root',type=Path,required=True)
-    parser.add_argument('--evidence-dir',type=Path,required=True)
-    parser.add_argument('--artifact-version',required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
     parser.add_argument('--execution-mode',choices=['both','inprocess','fork'],required=True)
     args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()

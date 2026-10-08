@@ -3,11 +3,10 @@ from pathlib import Path
 import argparse
 import json
 import re
-import shutil
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process, sha
+from fixture_harness import freeze_driver, run_process, sha, freeze_sources
 
 ROOT=Path(__file__).resolve().parents[2]
 LANE_TIMEOUT_SECONDS=600
@@ -77,12 +76,7 @@ def main():
     (evidence/'driver.json').write_text(json.dumps(dict(original=str(Path(__file__).resolve()),frozen=str(driver),sha256=sha(driver)),indent=2)+'\n')
     fixture=ROOT/'test-fixtures/host-sharing-consumer'
     sources=[fixture/'build.sbt',*sorted((fixture/'src').rglob('*.scala'))]
-    rows=[]
-    for source in sources:
-        frozen=evidence/'sources'/source.relative_to(fixture)
-        frozen.parent.mkdir(parents=True,exist_ok=True)
-        shutil.copy2(source,frozen)
-        rows.append(dict(path=str(source),frozen=str(frozen),sha256=sha(source)))
+    rows = freeze_sources(sources, fixture, evidence / 'sources')
     (evidence/'inputs.json').write_text(json.dumps(dict(sources=rows),indent=2)+'\n')
     outcomes=[]
     resource_ids=set()

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import json
 import os
 from pathlib import Path
@@ -9,7 +8,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, sha, wait_process
+from fixture_harness import load_module, sha, wait_process, consumer_parser
 
 CONTROLS = r'''
 val fixtureRuntimeProperty = settingKey[String]("Untracked plugin input")
@@ -41,10 +40,7 @@ verifyRuntimeInputs := {
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     root = args.repo_root.resolve()

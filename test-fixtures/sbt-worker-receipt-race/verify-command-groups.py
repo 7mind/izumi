@@ -1,6 +1,5 @@
 from pathlib import Path
 from xml.etree import ElementTree
-import argparse
 import json
 import os
 import subprocess
@@ -8,7 +7,7 @@ import time
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, sha, wait_process
+from fixture_harness import write_sbt_project, freeze_driver, sha, wait_process, consumer_parser
 
 TIMEOUT_SECONDS = 240
 SOURCE = r'''package fixture
@@ -186,10 +185,7 @@ def held_worker(audit):
         return None
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version', choices=['3.9.0','2.13.18'], required=True)
     parser.add_argument('--expected-overlap-report', choices=['rejected','complete'], required=True)
     args = parser.parse_args()

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-import argparse
 import json
 from pathlib import Path
 from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser, execution_stream
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -145,14 +144,9 @@ def verify(case, row, resources, runs, parents):
     assert len(paths) == 1
     payload = paths[0].read_text()
     assert payload.endswith('\n')
-    envelopes = [json.loads(line) for line in payload.splitlines()]
-    assert all(frame['schemaVersion'] == 4 for frame in envelopes)
-    frames = [frame['message'] for frame in envelopes]
-    assert frames[-1]['kind'] == 'completed'
-    outcome = frames[-1]['outcome']; run = outcome['run']
+    events, outcome = execution_stream(payload)
+    run = outcome['run']
     assert run not in runs and paths[0].stem == run; runs.add(run)
-    events = [frame for frame in frames if frame['kind'] == 'event']
-    assert [int(frame['sequence']) for frame in events] == list(range(len(events)))
     assert all(frame['event']['run'] == run for frame in events)
     assert events[-1]['event']['kind'] == 'finished' and events[-1]['event']['outcome'] == outcome
     terminal = [frame['event']['result'] for frame in events if frame['event']['kind'] == 'testCompleted']
@@ -195,10 +189,7 @@ def verify(case, row, resources, runs, parents):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     root = args.repo_root.resolve(); out = args.evidence_dir.resolve(); out.mkdir()

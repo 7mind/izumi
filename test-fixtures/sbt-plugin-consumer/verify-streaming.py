@@ -1,5 +1,4 @@
 from pathlib import Path
-import argparse
 import json
 import subprocess
 import time
@@ -7,7 +6,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, wait_process
+from fixture_harness import write_sbt_project, wait_process, consumer_parser
 
 BODY_TIMEOUT_SECONDS = 30
 COMMAND_TIMEOUT_SECONDS = 180
@@ -69,10 +68,7 @@ def identity(test):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     parser.add_argument('--fork', choices=['true', 'false'], required=True)
     args = parser.parse_args()

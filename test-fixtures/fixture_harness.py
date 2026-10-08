@@ -1,6 +1,7 @@
 """Shared process and evidence operations for published consumer fixtures."""
 
 from concurrent.futures import ThreadPoolExecutor
+import argparse
 import hashlib
 import importlib.util
 import json
@@ -11,6 +12,8 @@ from typing import TextIO, TypedDict
 import signal
 import shutil
 import subprocess
+
+EXECUTION_EVENT_SCHEMA = 4
 
 
 class LaneCommand(TypedDict):
@@ -24,6 +27,23 @@ class LaneResult(TypedDict):
     scala: str
     platform: str
     actualExit: int
+
+
+class InputDigest(TypedDict):
+    path: str
+    sha256: str
+
+
+class FrozenInput(InputDigest):
+    frozen: str
+
+
+def consumer_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--repo-root', type=Path, required=True)
+    parser.add_argument('--evidence-dir', type=Path, required=True)
+    parser.add_argument('--artifact-version', required=True)
+    return parser
 
 
 def sha(path: Path | str) -> str:
@@ -41,6 +61,16 @@ def load_module(name: str, path: Path) -> ModuleType:
 def freeze_driver(driver: Path | str, destination: Path) -> None:
     shutil.copy2(driver, destination)
     shutil.copy2(__file__, destination.parent / 'fixture_harness.py')
+
+
+def freeze_sources(sources: list[Path], base: Path, destination: Path) -> list[FrozenInput]:
+    rows = []
+    for source in sources:
+        frozen = destination / source.relative_to(base)
+        frozen.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, frozen)
+        rows.append(dict(path=str(source), frozen=str(frozen), sha256=sha(source)))
+    return rows
 
 
 def write_sbt_project(build: Path, definition: str, sbt_version: str, plugins: str | None) -> None:
@@ -85,3 +115,20 @@ def run_lanes(commands: list[LaneCommand], out: Path, timeout_seconds: float) ->
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         return list(pool.map(run, commands))
+
+
+def checked_lanes(commands: list[LaneCommand], out: Path, inputs: list[InputDigest], timeout_seconds: float, expected_exit: int) -> None:
+    results = run_lanes(commands, out, timeout_seconds)
+    changed = [row['path'] for row in inputs if sha(Path(row['path'])) != row['sha256']]
+    (out / 'completion.json').write_text(json.dumps(dict(lanes=results, inputsChanged=changed), indent=2) + '\n')
+    assert not changed and all(row['actualExit'] == expected_exit for row in results), results
+
+
+def execution_stream(payload: str):
+    envelopes = [json.loads(line) for line in payload.splitlines()]
+    assert all(frame['schemaVersion'] == EXECUTION_EVENT_SCHEMA for frame in envelopes)
+    messages = [frame['message'] for frame in envelopes]
+    assert messages[-1]['kind'] == 'completed'
+    events = [message for message in messages if message['kind'] == 'event']
+    assert [int(event['sequence']) for event in events] == list(range(len(events)))
+    return events, messages[-1]['outcome']

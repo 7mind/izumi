@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 from collections import Counter
 import json
 from pathlib import Path
@@ -11,7 +10,7 @@ from verify import prepare, sha
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import run_lanes
+from fixture_harness import consumer_parser, checked_lanes
 
 def configure(command, scenario):
     build = Path(command['cwd'])
@@ -123,10 +122,7 @@ def verify(command, out, scenario):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--repo-root', type=Path, required=True)
-    parser.add_argument('--evidence-dir', type=Path, required=True)
-    parser.add_argument('--artifact-version', required=True)
+    parser = consumer_parser()
     parser.add_argument('--production-host-version', required=True)
     parser.add_argument('--host-threads', choices=['1', '2'], required=True)
     parser.add_argument('--scala-version', nargs='+', choices=['3.9.0', '2.13.18'], required=True)
@@ -148,11 +144,7 @@ def main():
             inputs.extend(dict(path=str(path), sha256=sha(path)) for path in build.rglob('*') if path.is_file())
             commands.append(command)
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands, scenario=args.scenario), indent=2) + '\n')
-    results = run_lanes(commands, out, 1200)
-    changed = [row['path'] for row in inputs if sha(Path(row['path'])) != row['sha256']]
-    (out / 'completion.json').write_text(json.dumps(dict(lanes=results, inputsChanged=changed), indent=2) + '\n')
-    expected_exit = 1 if args.scenario == 'body' else 0
-    assert not changed and all(row['actualExit'] == expected_exit for row in results), results
+    checked_lanes(commands, out, inputs, 1200, 1 if args.scenario == 'body' else 0)
     lanes = [verify(command, out, args.scenario) for command in commands]
     assert len({stream['run'] for lane in lanes for stream in lane['streams']}) == sum(len(lane['streams']) for lane in lanes)
     report = dict(scenario=args.scenario, hostThreads=int(args.host_threads), lanes=lanes, physicalBodies=sum(lane['physicalBodies'] for lane in lanes))
