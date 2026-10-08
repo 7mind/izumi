@@ -116,13 +116,7 @@ sealed trait MiniBIOAsync[+E, +A] {
           case Exit.Success(value) =>
             stack match {
               case flatMap :: stackRest =>
-                val nextIO =
-                  try { flatMap(value) }
-                  catch {
-                    case t: Throwable =>
-                      Fail.terminate(t)
-                  }
-                runner(nextIO, stackRest, interruptible)
+                runner(protectCallback(flatMap(value)), stackRest, interruptible)
 
               case Nil =>
                 Left(exit)
@@ -193,21 +187,21 @@ sealed trait MiniBIOAsync[+E, +A] {
             }
             if (interruptible) asyncInterrupt.set(interruptAction)
 
+            def claimResume(): Boolean = {
+              val claimed = resumed.compareAndSet(false, true)
+              if (claimed) asyncInterrupt.clear(interruptAction)
+              claimed
+            }
+
             try {
               val callback = (exit: Exit[Any, Any]) => {
-                if (resumed.compareAndSet(false, true)) {
-                  asyncInterrupt.clear(interruptAction)
-                  continue(exit, ec)
-                }
+                if (claimResume()) continue(exit, ec)
                 ()
               }
               register(ec, callback)
             } catch {
               case t: Throwable =>
-                if (resumed.compareAndSet(false, true)) {
-                  asyncInterrupt.clear(interruptAction)
-                  continue(Exit.Termination.forThrowable(t), ec)
-                }
+                if (claimResume()) continue(Exit.Termination.forThrowable(t), ec)
             }
 
             resultPromise.future
@@ -402,12 +396,6 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
 
     override def catchAll[E, A, E2](r: MiniBIOAsync[E, A])(f: E => MiniBIOAsync[E2, A]): MiniBIOAsync[E2, A] = redeem(r)(f, pure)
 
-    override def bracketCase[E, A, B](
-      acquire: MiniBIOAsync[E, A]
-    )(release: (A, Exit[E, B]) => MiniBIOAsync[Nothing, Unit]
-    )(use: A => MiniBIOAsync[E, B]
-    ): MiniBIOAsync[E, B] = bracketExcept(_ => acquire)(release)(use)
-
     override def bracketExcept[E, A, B](
       acquire: RestoreInterruption2[MiniBIOAsync] => MiniBIOAsync[E, A]
     )(release: (A, Exit[E, B]) => MiniBIOAsync[Nothing, Unit]
@@ -436,7 +424,6 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
       map(x)(_.reverse)
     }
 
-    override def uninterruptible[E, A](f: MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = Mask(_ => f)
     override def uninterruptibleExcept[E, A](f: RestoreInterruption2[MiniBIOAsync] => MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = Mask(f)
 
     // BlockingIO2
