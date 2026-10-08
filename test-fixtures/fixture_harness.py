@@ -43,6 +43,15 @@ def freeze_driver(driver: Path | str, destination: Path) -> None:
     shutil.copy2(__file__, destination.parent / 'fixture_harness.py')
 
 
+def write_sbt_project(build: Path, definition: str, sbt_version: str, plugins: str | None) -> None:
+    project = build / 'project'
+    project.mkdir(parents=True, exist_ok=True)
+    (build / 'build.sbt').write_text(definition)
+    (project / 'build.properties').write_text('sbt.version=' + sbt_version + '\n')
+    if plugins is not None:
+        (project / 'plugins.sbt').write_text(plugins)
+
+
 def terminate_process(process: subprocess.Popen, grace_seconds: float) -> None:
     os.killpg(process.pid, signal.SIGTERM)
     try:

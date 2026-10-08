@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, json, re, shutil
+import argparse, json, re
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 180
@@ -75,10 +75,9 @@ def main():
     for sdk in ['2.0.9']:
         for mode in ['normal','throw']:
             lane=evidence/('sbt'+sdk+'-'+mode); build=lane/'build'
-            (build/'project').mkdir(parents=True); (build/'src/test/scala').mkdir(parents=True)
+            (build/'src/test/scala').mkdir(parents=True)
             audit=lane/'audit'; audit.mkdir()
-            (build/'build.sbt').write_text(BUILD)
-            (build/'project/build.properties').write_text('sbt.version='+sdk+'\n')
+            write_sbt_project(build, BUILD, sdk, None)
             (build/'src/test/scala/ThrowFramework.scala').write_text(SOURCE)
             commands=['show Test / dependencyClasspath','show Test / fullClasspath','testOnly *ThrowSuite']
             if sdk=='2.0.9': commands.insert(0,'set Global / localCacheDirectory := file("'+str(lane/'local-cache')+'")')

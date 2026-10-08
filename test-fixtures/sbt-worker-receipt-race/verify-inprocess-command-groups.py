@@ -7,7 +7,7 @@ import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
 
 TIMEOUT_SECONDS = 240
 TESTS_PER_SUITE = 3
@@ -102,13 +102,10 @@ def main():
     source, fork_driver = source_from_fork_fixture()
     shutil.copy2(fork_driver, out / fork_driver.name)
     build = out / 'build'
-    (build / 'project').mkdir(parents=True)
     scala_source = build / 'src/test/scala/GroupFramework.scala'
     scala_source.parent.mkdir(parents=True)
     scala_source.write_text(source)
-    (build / 'build.sbt').write_text(BUILD)
-    (build / 'project/build.properties').write_text('sbt.version=2.0.9\n')
-    (build / 'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.artifact_version + '")\n')
+    write_sbt_project(build, BUILD, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.artifact_version + '")\n')
     inputs = [dict(path=str(path), sha256=sha(path)) for path in sorted(build.rglob('*')) if path.is_file()]
     inputs += [dict(path=str(path), sha256=sha(path)) for path in [Path(__file__), fork_driver]]
     commands = ['set Global / localCacheDirectory := file("' + str(out / 'local-cache') + '")']

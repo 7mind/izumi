@@ -3,13 +3,12 @@ from xml.etree import ElementTree
 import argparse
 import json
 import os
-import shutil
 import subprocess
 import time
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, sha, wait_process
+from fixture_harness import write_sbt_project, freeze_driver, sha, wait_process
 
 TIMEOUT_SECONDS = 240
 SOURCE = r'''package fixture
@@ -196,11 +195,9 @@ def main():
     args = parser.parse_args()
     out = args.evidence_dir.resolve(); out.mkdir()
     freeze_driver(__file__,out/'driver.py')
-    build = out/'build'; (build/'project').mkdir(parents=True)
+    build = out/'build'
     source = build/'src/test/scala/GroupFramework.scala'; source.parent.mkdir(parents=True)
-    source.write_text(SOURCE); (build/'build.sbt').write_text(BUILD)
-    (build/'project/build.properties').write_text('sbt.version=2.0.9\n')
-    (build/'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "'+args.artifact_version+'")\n')
+    source.write_text(SOURCE); write_sbt_project(build, BUILD, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "'+args.artifact_version+'")\n')
     inputs = [dict(path=str(p),sha256=sha(p)) for p in sorted(build.rglob('*')) if p.is_file()]
     commands = ['set Global / localCacheDirectory := file("'+str(out/'local-cache')+'")']
     exit_modes = ['halt','exit']

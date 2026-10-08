@@ -4,11 +4,10 @@ import argparse
 import hashlib
 import json
 import os
-import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process
+from fixture_harness import write_sbt_project, freeze_driver, run_process
 
 TIMEOUT_SECONDS = 600
 SUITES = ['SuiteA','SuiteB','SuiteC','SuiteD','SuiteE']
@@ -122,10 +121,8 @@ def main():
     sources = sorted((repo/'test-fixtures/host-sharing-consumer/src/test/scala').rglob('*.scala'))
     outcomes = []
     for scala in args.scala_version:
-        lane = out/('scala'+scala); build = lane/'build'; (build/'project').mkdir(parents=True)
-        (build/'project/build.properties').write_text('sbt.version=2.0.9\n')
-        (build/'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "'+args.artifact_version+'")\n')
-        (build/'build.sbt').write_text(BUILD)
+        lane = out/('scala'+scala); build = lane/'build'
+        write_sbt_project(build, BUILD, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "'+args.artifact_version+'")\n')
         for module in ['moduleA','moduleB']:
             for source in sources:
                 target = build/module/source.relative_to(repo/'test-fixtures/host-sharing-consumer')

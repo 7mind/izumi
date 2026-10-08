@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-import argparse, hashlib, json, os, signal, subprocess, tempfile, time, traceback
+import argparse, hashlib, json, os, subprocess, tempfile, time, traceback
 from pathlib import Path
 from xml.etree import ElementTree
 
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module as module
+from fixture_harness import write_sbt_project, load_module as module
 
 FOREIGN = r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
@@ -82,16 +82,14 @@ def main():
     api_path=root/'test-fixtures/sbt-plugin-consumer/verify-client-cancellation.py'
     fixture_path=root/'test-fixtures/sbt-plugin-consumer/verify-task-cancellation.py'
     api=module('client_api',api_path);fixture=module('fixture',fixture_path)
-    build=out/'build';(build/'project').mkdir(parents=True)
+    build=out/'build'
     source=build/'src/test/scala';source.mkdir(parents=True)
     (source/'Suites.scala').write_text(fixture.SOURCE.replace('@AUDIT@',json.dumps(str(build/'audit')))+'\n'+'\n'.join(f'final class {s} extends CancellationSuite' for s in fixture.SUITES)+'\n')
     (source/'Plugin.scala').write_text(fixture.PLUGIN)
     (source/'Foreign.scala').write_text(FOREIGN)
     settings=fixture.SETTINGS[:fixture.SETTINGS.index('val proxyFramework')]+fixture.SETTINGS[fixture.SETTINGS.index('lazy val prepareCancellation'):]
     settings=settings.replace('@SCALA@',json.dumps(args.scala_version)).replace('@VERSION@',json.dumps(args.artifact_version)).replace('@CAPTURES@',json.dumps(str(out/'cases')))
-    (build/'build.sbt').write_text(settings+LISTENER)
-    (build/'project/build.properties').write_text('sbt.version=2.0.9\n')
-    (build/'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % '+json.dumps(args.artifact_version)+')\n')
+    write_sbt_project(build, settings+LISTENER, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % '+json.dumps(args.artifact_version)+')\n')
     paths=[p for p in sorted(build.rglob('*')) if p.is_file()]+[Path(__file__).resolve(),api_path,fixture_path]
     inputs=[dict(path=str(p),sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in paths]
     argv=['direnv','exec',str(root),'sh','-c','exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"','mixed-cancel','--detach-stdio','startServer','shell']
@@ -146,13 +144,8 @@ def main():
             except BaseException as cleanup:failures.append('Cleanup: '+repr(cleanup))
     finally:
         if audit.is_dir() and not (audit/'allow-release').exists():(audit/'allow-release').write_text('release')
-        if client is not None:(out/'rpc.json').write_text(json.dumps(client.frames,indent=2)+'\n');client.close()
-        if process.poll() is None:
-            os.killpg(process.pid,signal.SIGTERM)
-            try:process.wait(timeout=10)
-            except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
+        api.close_server(client, process, out, log, server)
         actual=process.returncode
-        log.close();server.cleanup()
     changed=[r['path'] for r in inputs if hashlib.sha256(Path(r['path']).read_bytes()).hexdigest()!=r['sha256']]
     result=dict(exit=int(bool(failures) or bool(changed)),actualExit=actual,scala=args.scala_version,checks=checks,failures=failures,inputsChanged=changed)
     (out/'completion.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(dict(exit=result['exit'],checks=len(checks))),flush=True)

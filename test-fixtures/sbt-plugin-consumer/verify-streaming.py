@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import wait_process
+from fixture_harness import write_sbt_project, wait_process
 
 BODY_TIMEOUT_SECONDS = 30
 COMMAND_TIMEOUT_SECONDS = 180
@@ -81,13 +81,10 @@ def main():
     build = out / 'build'
     audit = out / 'audit'
     target = build / 'target/test'
-    (build / 'project').mkdir(parents=True)
     (build / 'src/test/scala').mkdir(parents=True)
     (build / 'src/test/scala/StreamingSuite.scala').write_text(SOURCE)
     definition = BUILD.replace('@SCALA@', json.dumps(args.scala_version)).replace('@VERSION@', json.dumps(args.artifact_version)).replace('@TARGET@', json.dumps(str(target))).replace('@FORK@', args.fork).replace('@AUDIT_OPTION@', json.dumps('-Dfixture.audit-root=' + str(audit))).replace('@HOST_RECEIPT@', json.dumps(str(audit / 'host.pid')))
-    (build / 'build.sbt').write_text(definition)
-    (build / 'project/build.properties').write_text('sbt.version=2.0.9\n')
-    (build / 'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.artifact_version + '")\n')
+    write_sbt_project(build, definition, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.artifact_version + '")\n')
     audit.mkdir()
     argv = ['direnv', 'exec', str(args.repo_root.resolve()), 'sh', '-c', 'exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"', 'streaming', '-Dfixture.audit-root=' + str(audit), 'recordStreamingHost', 'show Test / javaOptions', 'testOnly fixture.StreamingSuite']
     (out / 'command.json').write_text(json.dumps(dict(argv=argv, cwd=str(build)), indent=2) + '\n')

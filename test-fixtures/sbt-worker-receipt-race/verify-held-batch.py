@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, json, re, shutil, subprocess, time
+import argparse, json, re, subprocess, time
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, sha, wait_process
+from fixture_harness import write_sbt_project, freeze_driver, sha, wait_process
 
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=180
@@ -119,8 +119,8 @@ def main():
     out=a.evidence_dir.resolve();out.mkdir(exist_ok=False);freeze_driver(__file__,out/'driver.py');outcomes=[]
     for sdk in ['2.0.9']:
         for mode in ['normal','held']:
-            lane=out/('sbt'+sdk+'-'+mode);build=lane/'build';(build/'project').mkdir(parents=True);(build/'src/test/scala').mkdir(parents=True);audit=lane/'audit';audit.mkdir()
-            (build/'build.sbt').write_text(BUILD.replace('SELECTED','testSelected'));(build/'project/build.properties').write_text('sbt.version='+sdk+'\n');(build/'src/test/scala/BatchFramework.scala').write_text(SOURCE)
+            lane=out/('sbt'+sdk+'-'+mode);build=lane/'build';(build/'src/test/scala').mkdir(parents=True);audit=lane/'audit';audit.mkdir()
+            write_sbt_project(build, BUILD.replace('SELECTED','testSelected'), sdk, None);(build/'src/test/scala/BatchFramework.scala').write_text(SOURCE)
             commands=['testOnly fixture.SuiteA fixture.SuiteB']
             if sdk=='2.0.9':commands.insert(0,'set Global / localCacheDirectory := file("'+str(lane/'local-cache')+'")')
             shell='task_sdk="$1"; shift; exec sbt --server --sbt-version "$task_sdk" -java-home "$JDK21" -batch -J-Xmx6G "$@"'

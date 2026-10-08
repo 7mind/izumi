@@ -2,11 +2,10 @@ from pathlib import Path
 import argparse
 import importlib.util
 import json
-import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
 
 TIMEOUT_SECONDS = 240
 BUILD = r'''
@@ -101,14 +100,11 @@ def main():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     build = out / 'build'
-    (build / 'project').mkdir(parents=True)
     source = build / 'src/test/scala/GroupFramework.scala'
     source.parent.mkdir(parents=True)
     source.write_text(module.SOURCE)
-    (build / 'build.sbt').write_text(BUILD)
+    write_sbt_project(build, BUILD, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.plugin_version + '")\n')
     (build / 'project/EarlyInputs.scala').write_text(EARLY_INPUTS)
-    (build / 'project/build.properties').write_text('sbt.version=2.0.9\n')
-    (build / 'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.plugin_version + '")\n')
     inputs = [dict(path=str(path), sha256=sha(path)) for path in sorted(build.rglob('*')) if path.is_file()]
     inputs += [dict(path=str(path), sha256=sha(path)) for path in [Path(__file__), framework_driver]]
     commands = ['set Global / localCacheDirectory := file("' + str(out / 'local-cache') + '")']

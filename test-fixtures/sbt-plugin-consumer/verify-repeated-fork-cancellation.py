@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from pathlib import Path
 from xml.etree import ElementTree as ET
-import argparse, hashlib, json, os, signal, subprocess, tempfile, time, traceback
+import argparse, hashlib, json, os, subprocess, tempfile, time, traceback
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module as module
+from fixture_harness import write_sbt_project, load_module as module
 
 parser=argparse.ArgumentParser()
 parser.add_argument('--repo-root',type=Path,required=True)
@@ -18,7 +18,7 @@ OUT.mkdir()
 
 api=module('client_api',ROOT/'test-fixtures/sbt-plugin-consumer/verify-client-cancellation.py')
 fixture=module('fixture',ROOT/'test-fixtures/sbt-plugin-consumer/verify-task-cancellation.py')
-build=OUT/'build';(build/'project').mkdir(parents=True)
+build=OUT/'build'
 source=build/'src/test/scala';source.mkdir(parents=True)
 shared=fixture.SOURCE.replace('@AUDIT@',json.dumps(str(build/'audit')))
 assert shared.count('directory.resolve(name)')==1
@@ -58,9 +58,7 @@ Test / testOptions += {
   }))
 }
 '''
-(build/'build.sbt').write_text(settings)
-(build/'project/build.properties').write_text('sbt.version=2.0.9\n')
-(build/'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % '+json.dumps(args.artifact_version)+')\n')
+write_sbt_project(build, settings, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % '+json.dumps(args.artifact_version)+')\n')
 argv=['direnv','exec',str(ROOT),'sh','-c','exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"','repeated-fork-cancel','--detach-stdio','startServer','shell']
 inputs=[dict(path=str(p),sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in ([p for p in sorted(build.rglob('*')) if p.is_file()]+[Path(__file__).resolve(),ROOT/'test-fixtures/sbt-plugin-consumer/verify-client-cancellation.py',ROOT/'test-fixtures/sbt-plugin-consumer/verify-task-cancellation.py'])]
 (OUT/'command.json').write_text(json.dumps(dict(argv=argv,cwd=str(build),head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),inputs=inputs),indent=2)+'\n')
@@ -130,12 +128,7 @@ except BaseException as cause:
         except BaseException as cleanup:failures.append('Cleanup: '+repr(cleanup))
 finally:
     if audit.is_dir() and not (audit/'allow-release').exists():(audit/'allow-release').write_text('release')
-    if client is not None:(OUT/'rpc.json').write_text(json.dumps(client.frames,indent=2)+'\n');client.close()
-    if process.poll() is None:
-        os.killpg(process.pid,signal.SIGTERM)
-        try:process.wait(timeout=10)
-        except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
-    log.close();server.cleanup()
+    api.close_server(client, process, OUT, log, server)
 changed=[r['path'] for r in inputs if not Path(r['path']).is_file() or hashlib.sha256(Path(r['path']).read_bytes()).hexdigest()!=r['sha256']]
 result=dict(exit=int(bool(failures) or bool(changed)),actualExit=actual,scala=args.scala_version,checks=checks,failures=failures,inputsChanged=changed)
 (OUT/'completion.json').write_text(json.dumps(result,indent=2)+'\n')

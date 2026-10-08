@@ -3,11 +3,10 @@ from pathlib import Path
 import argparse
 import json
 import re
-import shutil
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
 
 ROOT=Path(__file__).resolve().parents[2]
 EVENT_COUNT=15
@@ -85,13 +84,11 @@ def main():
     for mode in ['normal','halt']:
         lane=evidence/mode
         build=lane/'build'
-        (build/'project').mkdir(parents=True)
         (build/'src/test/scala').mkdir(parents=True)
         audit=lane/'audit'
         audit.mkdir()
         (build/'src/test/scala/SuccessFramework.scala').write_text(SOURCE)
-        (build/'build.sbt').write_text(BUILD)
-        (build/'project/build.properties').write_text('sbt.version=2.0.9\n')
+        write_sbt_project(build, BUILD, '2.0.9', None)
         commands=['set Global / localCacheDirectory := file("'+str(lane/'local-cache')+'")','show Test / dependencyClasspath','testFull','show Test / fullClasspath']
         shell='task_sdk="$1"; shift; exec sbt --server --sbt-version "$task_sdk" -java-home "$JDK21" -batch -J-Xmx6G "$@"'
         argv=['direnv','exec',str(ROOT),'sh','-c',shell,'exit-zero-minimal','2.0.9','-Dfixture.mode='+mode,'-Dfixture.audit-root='+str(audit),*commands]

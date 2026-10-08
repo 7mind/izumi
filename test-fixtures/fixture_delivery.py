@@ -47,7 +47,7 @@ def run_delivery(driver, root, args, control, framework, settings, check, report
     from pathlib import Path
     import json
     import shutil
-    from fixture_harness import freeze_driver, freeze_driver, run_process, sha
+    from fixture_harness import write_sbt_project, freeze_driver, freeze_driver, run_process, sha
 
     out = args.evidence_dir.resolve()
     out.mkdir()
@@ -59,7 +59,6 @@ def run_delivery(driver, root, args, control, framework, settings, check, report
     for scala in args.scala_version:
         lane = out / ('scala' + scala)
         build = lane / 'build'
-        (build / 'project').mkdir(parents=True)
         for source in sorted((fixture / 'src').rglob('*.scala')):
             target = build / source.relative_to(fixture)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -68,9 +67,7 @@ def run_delivery(driver, root, args, control, framework, settings, check, report
         definition = (fixture / 'build.sbt').read_text()
         start = definition.index('Test / testFrameworks :=')
         end = definition.index('Test / javaOptions +=', start)
-        (build / 'build.sbt').write_text(definition[:start] + definition[end:] + settings)
-        (build / 'project/build.properties').write_text('sbt.version=2.0.9\n')
-        (build / 'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.artifact_version + '")\n')
+        write_sbt_project(build, definition[:start] + definition[end:] + settings, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "' + args.artifact_version + '")\n')
         commands = ['set Global / localCacheDirectory := file("' + str(lane / 'local-cache') + '")']
         cases = []
         for fork in [False, True]:

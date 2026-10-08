@@ -2,13 +2,12 @@
 import argparse
 import json
 from pathlib import Path
-import shutil
 import traceback
 from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -180,15 +179,13 @@ def main():
     args = parser.parse_args()
     root = args.repo_root.resolve(); out = args.evidence_dir.resolve(); out.mkdir()
     freeze_driver(__file__, out / 'driver.py')
-    build = out / 'build'; (build / 'project').mkdir(parents=True)
+    build = out / 'build'
     for project, template in [('stock', STOCK), ('adapted', OWNED)]:
         source = build / project / 'src/test/scala'; source.mkdir(parents=True)
         body = BODY.replace('@AUDIT@', json.dumps(str(build / project / 'audit')))
         (source / 'Suite.scala').write_text(template.replace('@BODY@', body))
     definition = BUILD.replace('@SCALA@', json.dumps(args.scala_version)).replace('@VERSION@', json.dumps(args.artifact_version)).replace('@CAPTURES@', json.dumps(str(out / 'cases')))
-    (build / 'build.sbt').write_text(definition)
-    (build / 'project/build.properties').write_text('sbt.version=2.0.9\n')
-    (build / 'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % ' + json.dumps(args.artifact_version) + ')\n')
+    write_sbt_project(build, definition, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % ' + json.dumps(args.artifact_version) + ')\n')
     rows = []; commands = []
     for project in ['stock', 'adapted']:
         commands.append('project ' + project)

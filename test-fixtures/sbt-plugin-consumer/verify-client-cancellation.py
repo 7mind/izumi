@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-import argparse, hashlib, json, os, signal, socket, subprocess, time, threading, traceback, urllib.parse, tempfile
+import argparse, hashlib, json, os, socket, subprocess, time, threading, traceback, urllib.parse, tempfile
 from pathlib import Path
+from typing import TextIO
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module
+from fixture_harness import write_sbt_project, load_module, terminate_process
 
 WAIT_SECONDS=180
 RELEASE_WAIT_SECONDS=30
 RELEASE_HOLD_SECONDS=.25
 CANCEL_CURRENT_CHANNEL="__CancelAll"
+SERVER_SHUTDOWN_GRACE_SECONDS=10
 class Client:
     def __init__(self,address):
         uri=urllib.parse.urlparse(address['uri'])
@@ -69,6 +71,17 @@ class Client:
     def close(self):
         self.running=False
         self.socket.shutdown(socket.SHUT_RDWR);self.socket.close();self.reader.join(10)
+
+
+def close_server(client: Client | None, process: subprocess.Popen, evidence: Path, log: TextIO, server: tempfile.TemporaryDirectory) -> None:
+    if client is not None:
+        (evidence/'rpc.json').write_text(json.dumps(client.frames,indent=2)+'\n')
+        client.close()
+    if process.poll() is None:
+        terminate_process(process, SERVER_SHUTDOWN_GRACE_SECONDS)
+    log.close()
+    server.cleanup()
+
 def wait(condition,process,label,seconds):
     deadline=time.monotonic()+seconds
     while not condition() and time.monotonic()<deadline:
@@ -120,14 +133,12 @@ def main():
     # Reuse the identical suite/resource fixture without its task-interruption proxy.
     path=root/'test-fixtures/sbt-plugin-consumer/verify-task-cancellation.py'
     fixture = load_module('task_fixture', path)
-    build=out/'build';(build/'project').mkdir(parents=True)
+    build=out/'build'
     source=build/'src/test/scala';source.mkdir(parents=True)
     (source/'Suites.scala').write_text(fixture.SOURCE.replace('@AUDIT@',json.dumps(str(build/'audit')))+'\n'+'\n'.join(f'final class {s} extends CancellationSuite' for s in fixture.SUITES)+'\n')
     (source/'Plugin.scala').write_text(fixture.PLUGIN)
     settings=fixture.SETTINGS[:fixture.SETTINGS.index('val proxyFramework')] + fixture.SETTINGS[fixture.SETTINGS.index('lazy val prepareCancellation'):]
-    (build/'build.sbt').write_text(settings.replace('@SCALA@',json.dumps(args.scala_version)).replace('@VERSION@',json.dumps(args.artifact_version)).replace('@CAPTURES@',json.dumps(str(out/'cases'))))
-    (build/'project/build.properties').write_text('sbt.version=2.0.9\n')
-    (build/'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % '+json.dumps(args.artifact_version)+')\n')
+    write_sbt_project(build, settings.replace('@SCALA@',json.dumps(args.scala_version)).replace('@VERSION@',json.dumps(args.artifact_version)).replace('@CAPTURES@',json.dumps(str(out/'cases'))), '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % '+json.dumps(args.artifact_version)+')\n')
     argv=['direnv','exec',str(root),'sh','-c','exec sbt --server --sbt-version 2.0.9 -java-home "$JDK21" -batch -J-Xmx6G "$@"','client-cancellation','--detach-stdio','startServer','shell']
     inputs=[dict(path=str(p),sha256=hashlib.sha256(p.read_bytes()).hexdigest()) for p in sorted(build.rglob('*')) if p.is_file()]
     (out/'command.json').write_text(json.dumps(dict(argv=argv,cwd=str(build),inputs=inputs),indent=2)+'\n')
@@ -193,14 +204,7 @@ def main():
             with (out/('threads-'+str(pid)+'.txt')).open('w') as dumpfile:
                 subprocess.run(dump,cwd=root,stdout=dumpfile,stderr=subprocess.STDOUT,timeout=30)
     finally:
-        if client is not None:
-            (out/'rpc.json').write_text(json.dumps(client.frames,indent=2)+'\n');client.close()
-        if process.poll() is None:
-            os.killpg(process.pid,signal.SIGTERM)
-            try:process.wait(timeout=10)
-            except subprocess.TimeoutExpired:os.killpg(process.pid,signal.SIGKILL);process.wait()
-        log.close()
-        server_directory.cleanup()
+        close_server(client, process, out, log, server_directory)
     result=dict(exit=int(bool(failures)),actualExit=actual,scala=args.scala_version,cases=cases,checks=checks,failures=failures)
     (out/'completion.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(dict(exit=result['exit'],completedCases=len(cases))),flush=True)
     raise SystemExit(result['exit'])

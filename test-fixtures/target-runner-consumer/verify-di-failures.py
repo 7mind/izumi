@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from collections import Counter
-import json, re, shutil, sys
+import json, re, sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))

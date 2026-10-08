@@ -7,7 +7,7 @@ import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import freeze_driver, load_module, run_process, sha
+from fixture_harness import write_sbt_project, freeze_driver, load_module, run_process, sha
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 600
@@ -79,11 +79,9 @@ def main():
     shutil.copy2(Path(__file__).with_name('verify-command-groups.py'),out/'verify-command-groups.py')
     outcomes = []
     for scala in args.scala_version:
-        lane = out/('scala'+scala); build = lane/'build'; (build/'project').mkdir(parents=True)
+        lane = out/('scala'+scala); build = lane/'build'
         source = build/'src/test/scala/GroupFramework.scala'; source.parent.mkdir(parents=True)
-        source.write_text(SOURCE); (build/'build.sbt').write_text(BUILD)
-        (build/'project/build.properties').write_text('sbt.version=2.0.9\n')
-        (build/'project/plugins.sbt').write_text('addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "'+args.artifact_version+'")\n')
+        source.write_text(SOURCE); write_sbt_project(build, BUILD, '2.0.9', 'addSbtPlugin("io.7mind.izumi" % "sbt-distage-testkit" % "'+args.artifact_version+'")\n')
         inputs = [dict(path=str(p),sha256=sha(p)) for p in sorted(build.rglob('*')) if p.is_file()]
         commands = ['set Global / localCacheDirectory := file("'+str(lane/'local-cache')+'")']; cases = []
         for fork in [False,True]:
