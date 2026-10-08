@@ -4,7 +4,7 @@ import distage.{Activation, DIKey, LocatorPrivacy}
 import izumi.distage.bootstrap.{BootstrapLocator, BootstrapRootsMode, Cycles}
 import izumi.distage.model.exceptions.runtime.MissingInstanceException
 import izumi.distage.planning.solver.PlanSolver
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class BootstrapTest extends AnyWordSpec {
 

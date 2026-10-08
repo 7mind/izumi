@@ -4,7 +4,7 @@ import distage.{Injector, TagK}
 import izumi.distage.model.definition.{ModuleBase, ModuleDef}
 import izumi.distage.testkit.DebugProperties
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
-import izumi.distage.testkit.runner.api.TestReporter
+import izumi.distage.testkit.runner.api.{TestFinalizationReporter, TestReporter}
 import izumi.distage.testkit.runner.impl.services.*
 import izumi.distage.testkit.runner.impl.services.TimedActionF.TimedActionFImpl
 import izumi.distage.testkit.runner.impl.{DistageTestRunner, RunnerToF, TestPlanner, TestTreeBuilder}
@@ -23,6 +23,7 @@ class TestkitRunnerModule[F[_]: TagK: QuasiIO: QuasiAsync](
   addImplicit[QuasiIO[F]]
   addImplicit[QuasiAsync[F]]
   make[TestReporter].fromValue(reporter)
+  make[TestFinalizationReporter].from[TestFinalizationReporter.Rethrowing]
 
   make[Throwable => Boolean].fromValue(isTestCancellation)
   make[Boolean].named("izumi.distage.testkit.skip.docker.failures").from {
@@ -40,6 +41,7 @@ class TestkitRunnerModule[F[_]: TagK: QuasiIO: QuasiAsync](
   make[TestTreeBuilder].from[TestTreeBuilder.TestTreeBuilderImpl]
 
   make[TimedActionF[F]].from[TimedActionFImpl[F]]
+  make[TestResourceLifecycle[F]]
   make[ParTraverseExt[F]].from[ParTraverseExt.ParTraverseExtImpl[F]]
 
   make[RunnerToF[F]].from[RunnerToF.PlatformDefaultImpl[F]]
@@ -56,7 +58,7 @@ object TestkitRunnerModule {
     * block the running thread. Test parallelism in Identity is achieved via thread pools, which is probably OK for tests.
     *
     * @param isTestCancellation Predicate for determining whether a thrown exception signifies a canceled, not failed, test.
-    *                           e.g. For ScalaTest it's `_.isInstanceOf[org.scalatest.exceptions.TestCanceledException]`
+    *                           e.g. `_.isInstanceOf[izumi.distage.testkit.runner.TestCancelled]`
     *
     * @note a `DistageTest[G]` will be run using `QuasiIORunner[G]` assembled from bindings in [[DistageTest.environment]]
     *       (Most likely the QuasIORunner binding will be found in [[izumi.distage.testkit.model.TestEnvironment.defaultModule]],

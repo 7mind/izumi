@@ -3,7 +3,7 @@ package com.github.pshirshov.test
 import com.github.pshirshov.test.plugins.{DependingPlugin, EmptyTestPlugin, ObjectTestPlugin, StaticTestPlugin, StaticTestPlugin2}
 import distage.plugins.PluginLoader
 import izumi.distage.plugins.PluginConfig
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class PluginLoaderTest extends AnyWordSpec {
   "Load plugins list at runtime time" in {

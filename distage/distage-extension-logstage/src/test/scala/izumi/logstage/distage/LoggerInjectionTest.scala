@@ -4,7 +4,7 @@ import izumi.distage.model.PlannerInput
 import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.api.{IzLogger, TestSink}
 import distage.{Injector, ModuleDef}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class ExampleService(log: IzLogger) {
   def compute: Int = {

@@ -4,7 +4,7 @@ import izumi.logstage.api.routing.ConfigurableLogRouter
 import izumi.logstage.api.zioUtil.runZIO
 import izumi.logstage.api.{IzLogger, Log, TestSink}
 import logstage.{LogIO2, LogQueue}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class AdaptiveLogRouterTest extends AnyWordSpec {
 

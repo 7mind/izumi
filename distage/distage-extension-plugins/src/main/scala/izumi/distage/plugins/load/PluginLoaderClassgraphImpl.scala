@@ -9,6 +9,23 @@ import scala.jdk.CollectionConverters.*
 import scala.util.chaining.scalaUtilChainingOps
 
 open class PluginLoaderClassgraphImpl extends PluginLoader {
+  private val packageCacheOwner = new ThreadLocal[Option[PluginPackageCache]] {
+    override protected def initialValue(): Option[PluginPackageCache] = None
+  }
+
+  override private[distage] final def loadOwned(config: PluginConfig, owner: PluginPackageCache): LoadedPlugins = {
+    // Keep the owner available when a custom load override reconstructs its request.
+    val previous = packageCacheOwner.get()
+    packageCacheOwner.set(Some(owner))
+    try load(config)
+    finally previous match {
+      case None => packageCacheOwner.remove()
+      case _ => packageCacheOwner.set(previous)
+    }
+  }
+
+  protected def packageCache: PluginPackageCache = packageCacheOwner.get().getOrElse(PluginLoaderClassgraphImpl.legacyPackageCache)
+
   /** Will not scan if no packages are specified (add `"_root_"` package if you want to scan everything) */
   override def load(config: PluginConfig): LoadedPlugins = {
     val loadedPlugins = if (config.packagesEnabled.isEmpty && config.packagesDisabled.isEmpty) {
@@ -35,12 +52,11 @@ open class PluginLoaderClassgraphImpl extends PluginLoader {
     if (!config.cachePackages) {
       loadPkgs(enabledPackages)
     } else {
-      val h1 = scala.util.hashing.MurmurHash3.seqHash(whitelistedClasses)
-      val h2 = scala.util.hashing.MurmurHash3.seqHash(disabledPackages)
       enabledPackages.flatMap {
         pkg =>
-          val key = s"$pkg;$h1;$h2"
-          PluginLoaderClassgraphImpl.cache.getOrCompute(key, loadPkgs(Seq(pkg)))
+          val configured = packageCache
+          val cache = if (configured eq PluginLoaderClassgraphImpl.legacyPackageCache) config.packageCacheOwner.getOrElse(configured) else configured
+          cache.getOrCompute(pkg, whitelistedClasses, disabledPackages)(loadPkgs(Seq(pkg)))
       }
     }
   }
@@ -48,6 +64,13 @@ open class PluginLoaderClassgraphImpl extends PluginLoader {
 
 object PluginLoaderClassgraphImpl {
   private lazy val cache = new SyncCache[String, Seq[PluginBase]]()
+  private[load] lazy val legacyPackageCache: PluginPackageCache = new PluginPackageCache {
+    override def getOrCompute(packageName: String, whitelistClasses: Seq[String], excludedPackages: Seq[String])(load: => Seq[PluginBase]): Seq[PluginBase] = {
+      val h1 = scala.util.hashing.MurmurHash3.seqHash(whitelistClasses)
+      val h2 = scala.util.hashing.MurmurHash3.seqHash(excludedPackages)
+      cache.getOrCompute(s"$packageName;$h1;$h2", load)
+    }
+  }
 
   def doLoad[T](base: String, whitelistClasses: Seq[String], enabledPackages: Seq[String], disabledPackages: Seq[String], debug: Boolean): Seq[T] = {
     val scanResult = new ClassGraph()

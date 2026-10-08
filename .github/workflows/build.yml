@@ -119,6 +119,25 @@ jobs:
           path: 'target/out/**/test-reports/TEST-*.xml'
           reporter: java-junit
 
+  build-native:
+    runs-on: ubuntu-latest
+    needs: [ 'checksecret' ]
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ '17', '21', '25' ]
+        scala: [ '2.13', '3' ]
+    steps:
+      - uses: 7mind/github-env@minimal
+      - name: Build and Test
+        run: nix develop --command mdl --github-actions -u platform:native-nojvm -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :test
+      - uses: dorny/test-reporter@v1
+        if: (needs.checksecret.outputs.HAVE_SECRETS == 'true') && (success() || failure())
+        with:
+          name: Test reports (JDK ${{ matrix.java }}, Scala ${{ matrix.scala }}, Native)
+          path: 'target/out/**/test-reports/TEST-*.xml'
+          reporter: java-junit
+
   test-site:
     runs-on: ubuntu-latest
     strategy:
@@ -136,7 +155,7 @@ jobs:
       matrix:
         java: [ '21' ]
         scala: [ '3']
-    needs: [ 'build-jvm', 'build-js', 'test-site', 'checksecret' ]
+    needs: [ 'build-jvm', 'build-js', 'build-native', 'test-site', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     steps:
       - uses: 7mind/github-env@minimal
@@ -158,7 +177,7 @@ jobs:
 
   publish-artifacts:
     runs-on: ubuntu-latest
-    needs: [ 'build-jvm', 'build-js', 'checksecret' ]
+    needs: [ 'build-jvm', 'build-js', 'build-native', 'checksecret' ]
     if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
     strategy:
       fail-fast: false
@@ -185,12 +204,12 @@ jobs:
           echo "$SONATYPE_CREDENTIALS_FILE" > "$SONATYPE_SECRET"
           openssl aes-256-cbc -K ${OPENSSL_KEY} -iv ${OPENSSL_IV} -in secrets.tar.enc -out secrets.tar -d
           tar xvf secrets.tar
-          nix develop --command mdl --github-actions -u platform:js -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :publish-scala
+          nix develop --command mdl --github-actions -u platform:js-native -u java_version:${{ matrix.java }} -u scala_version:${{ matrix.scala }} :gen :publish-scala
 
   all-good:
     if: always()
     runs-on: ubuntu-latest
-    needs: [ 'build-jvm', 'build-js', 'test-site' ]
+    needs: [ 'build-jvm', 'build-js', 'build-native', 'test-site' ]
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1

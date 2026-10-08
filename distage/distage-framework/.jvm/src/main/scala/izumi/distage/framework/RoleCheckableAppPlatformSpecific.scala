@@ -8,6 +8,8 @@ import scala.annotation.unused
 
 private[framework] trait RoleCheckableAppPlatformSpecific {
 
+  private[framework] final def planCheckClassLoader: Option[ClassLoader] = Option(getClass.getClassLoader)
+
   private[framework] final def specificResourceConfigLoaderImpl(classLoader: ClassLoader, resourceName: String, @unused clue: String): AppConfig = {
     val cfg = ConfigFactory.parseResources(classLoader, resourceName).resolve()
     if (cfg.origin().resource() eq null) {

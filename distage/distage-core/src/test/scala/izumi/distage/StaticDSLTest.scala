@@ -2,7 +2,7 @@ package izumi.distage
 
 import distage.{ModuleBase, ModuleDef}
 import izumi.distage.fixtures.BasicCases.*
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class StaticDSLTest extends AnyWordSpec {
 

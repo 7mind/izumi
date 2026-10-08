@@ -7,6 +7,8 @@ import scala.annotation.unused
 
 private[framework] trait RoleCheckableAppPlatformSpecific {
 
+  private[framework] final def planCheckClassLoader: Option[ClassLoader] = None
+
   private[framework] final def specificResourceConfigLoaderImpl(@unused classLoader: ClassLoader, @unused resourceName: String, @unused clue: String): AppConfig = {
     AppConfig(JsonObject.empty, Nil, Nil)
   }

@@ -6,7 +6,19 @@ trait PluginLoader {
   /** Will not scan if no packages are specified (add `"_root_"` package if you want to scan everything) */
   def load(config: PluginConfig): LoadedPlugins
 
-  final def map(f: LoadedPlugins => LoadedPlugins): PluginLoader = c => f(load(c))
+  private[distage] def loadOwned(config: PluginConfig, owner: PluginPackageCache): LoadedPlugins = {
+    val _ = owner
+    load(config)
+  }
+
+  private[distage] final def withPackageCacheOwner(owner: PluginPackageCache): PluginLoader = new PluginLoader {
+    override def load(config: PluginConfig): LoadedPlugins = PluginLoader.this.loadOwned(config, owner)
+  }
+
+  final def map(f: LoadedPlugins => LoadedPlugins): PluginLoader = new PluginLoader {
+    override def load(config: PluginConfig): LoadedPlugins = f(PluginLoader.this.load(config))
+    override private[distage] def loadOwned(config: PluginConfig, owner: PluginPackageCache): LoadedPlugins = f(PluginLoader.this.loadOwned(config, owner))
+  }
 }
 
 object PluginLoader {

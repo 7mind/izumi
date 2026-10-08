@@ -177,13 +177,13 @@ Configs in `src/main/resources`, or in the test resources of a `test->test` depe
 
 ### Using with `distage-teskit`
 
-Use @scaladoc[SpecWiring](izumi.distage.testkit.scalatest.SpecWiring) to spawn a test-suite that also triggers compile-time checks.
+Use @scaladoc[SpecWiring](izumi.distage.testkit.runner.spec.SpecWiring) to spawn a test-suite that also triggers compile-time checks.
 
 `SpecWiring` will check the passed application when compiled, then perform the check again at runtime when ran as a test.
 
 ```scala mdoc:reset:to-string
 import izumi.distage.framework.PlanCheckConfig
-import izumi.distage.testkit.scalatest.SpecWiring
+import izumi.distage.testkit.runner.spec.SpecWiring
 import com.example.myapp.MainLauncher
 
 object WiringCheck extends SpecWiring(
@@ -266,6 +266,39 @@ the actual checking and can be invoked at runtime or in macro. It can also be in
 
 `distage-extension-config` library allows parsing case classes and sealed traits from `typesafe-config` configuration
 files.
+
+On Scala.js and Scala Native, it uses Circe decoders and JSON configuration objects.
+Automatic derivation uses `circe-generic` on Scala 2 and Scala 3, and respects custom decoders.
+These platforms support unquoted dot-separated paths; quoted HOCON paths and derived configuration schemas are unavailable.
+
+Native role launchers read UTF-8 JSON from `-c` files and bundled references named
+`<role>.json`, `<role>-reference.json`, `<role>-reference-dev.json`, and the same
+names for `application` and `common`. Active role inputs override shared/global
+inputs; within each group, explicit files override references. This preserves
+the JVM merger's ordering. Reference filtering uses the launcher's existing options.
+Enable Scala Native's `nativeConfig ~= (_.withEmbedResources(true))` to include
+bundled JSON. Missing optional references are empty; explicit missing files and
+malformed or non-object JSON cause configuration errors. Automatic system
+property/`CONFIG_FORCE_` overlays and the schema-producing `configwriter` task
+are unavailable with this JSON backend. The latter fails explicitly if invoked.
+
+Native launchers run synchronously. With the default Native shutdown strategy,
+an explicit shutdown request from another thread waits for application, runtime
+and bootstrap resources to finalize. A
+request from the launcher thread signals shutdown and returns so that this thread
+can release its scopes. `Runtime.exit` requested from another thread while the
+launcher awaits shutdown also waits for those finalizers. Scala Native 0.5.12's
+concurrent shutdown registry requires the Native strategy to signal cleanup
+completion after all scopes release and before removing its hook. Custom shutdown
+strategies retain their own dispatch and completion policy. Graceful
+SIGINT/SIGTERM completion is not established:
+a standalone 0.5.12 control receiving SIGTERM while its main thread waits on a
+latch or joins another thread fails with `IllegalMonitorStateException` in
+`Thread.join`. The reproduction and unfiled upstream report are recorded in the
+Native implementation status ledger.
+The Native platform module provides its available filesystem, OS, DNS, hashing
+and Scala helpers. JVM classpath introspection, the JVM UUID helper and the
+NIO-channel-based `IzSockets` helper are unavailable there.
 
 To use it, add the `distage-extension-config` library:
 
@@ -432,6 +465,10 @@ Injector()
 ```
 
 ### Compile-time scanning
+
+On Scala.js and Scala Native, the default loader accepts explicit plugins, merges and overrides, but rejects
+runtime package scanning with an exception. Use `PluginConfig.const(...)` for explicit plugins, or compile-time
+scanning for plugins defined in a dependency module. Compile-time scanning runs Classgraph on the JVM compiler host.
 
 Plugin scan can be performed at compile-time, this is mainly useful for deployment on platforms with reduced runtime
 reflection capabilities compared to the JVM, such as Graal Native Image, Scala.js and Scala Native.

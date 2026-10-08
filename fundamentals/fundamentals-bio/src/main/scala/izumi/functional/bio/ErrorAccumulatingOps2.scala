@@ -84,13 +84,7 @@ trait ErrorAccumulatingOps2[F[+_, +_]] { F: Error2[F] =>
     col: ColR[F[E, A]]
   )(implicit buildR: Factory[A, ColR[A]]
   ): F[NEList[E], ColR[A]] = {
-    accumulateErrorsImpl(col)(
-      effect = identity,
-      onLeft = (e: E) => Seq(e),
-      init = Queue.empty[A],
-      onRight = (ac: Queue[A], a: A) => ac :+ a,
-      end = (ac: Queue[A]) => ac.to(buildR),
-    )
+    traverseAccumErrorsNEList(col)(identity)
   }
 
   /** `flatTraverse` with error accumulation */

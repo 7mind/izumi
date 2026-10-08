@@ -8,6 +8,7 @@
 .agg
 .vscode
 package-lock.json
+node_modules/
 .fleet
 worktrees
 
@@ -121,3 +122,8 @@ project/plugins/project/
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 .codegraph/
+test-fixtures/**/__pycache__/
+!sbt-plugins/sbt-distage-testkit/src/main/java/izumi/distage/sbt/target/
+!sbt-plugins/sbt-distage-testkit/src/test/java/izumi/distage/sbt/target/
+
+.codex-worktrees/

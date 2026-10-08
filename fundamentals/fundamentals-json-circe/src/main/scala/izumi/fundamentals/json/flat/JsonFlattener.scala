@@ -35,15 +35,8 @@ class JsonFlattener {
       Seq(makePath(prefix, "null") -> "null"),
       b => Seq(makePath(prefix, "bool") -> b.toString),
       n => {
-        n.toBigInt
-          .map {
-            bi =>
-              Seq(makePath(prefix, "long") -> bi.toString)
-          }
-          .getOrElse {
-            Seq(makePath(prefix, "float") -> n.toBigDecimal.map(_.toString()).getOrElse(n.toDouble.toString))
-          }
-
+        val (kind, value) = n.toBigInt.fold("float" -> n.toBigDecimal.map(_.toString()).getOrElse(n.toDouble.toString))(bi => "long" -> bi.toString)
+        Seq(makePath(prefix, kind) -> value)
       },
       s => Seq(makePath(prefix, "str") -> s),
       a => {
@@ -51,24 +44,20 @@ class JsonFlattener {
           case (element, idx) =>
             flatten(element, prefix :+ PathElement.Index(idx))
         }
-        if (out.nonEmpty) {
-          out
-        } else {
-          Seq(makePath(prefix, "agg") -> "arr")
-        }
+        aggregate(prefix, "arr", out)
       },
       o => {
         val out = o.toIterable.flatMap {
           case (name, value) =>
             flatten(value, prefix :+ PathElement.ObjectName(name))
         }.toSeq
-        if (out.nonEmpty) {
-          out
-        } else {
-          Seq(makePath(prefix, "agg") -> "obj")
-        }
+        aggregate(prefix, "obj", out)
       },
     )
+  }
+
+  private def aggregate(prefix: Seq[PathElement], kind: String, entries: Seq[(String, String)]): Seq[(String, String)] = {
+    if (entries.nonEmpty) entries else Seq(makePath(prefix, "agg") -> kind)
   }
 
   private def makePath(p: Seq[PathElement], tpe: String): String = {
@@ -90,10 +79,7 @@ class JsonFlattener {
         }
     }.biSequence
 
-    for {
-      p <- maybePaths
-      out <- inflateParsed(p)
-    } yield out
+    maybePaths.flatMap(inflateParsed)
   }
 
   @nowarn("msg=return statement uses an exception")
@@ -131,23 +117,12 @@ class JsonFlattener {
             idx = idx + 1
           }
 
-          last match {
-            case Left(value) =>
-              Left(value)
-            case Right(_) =>
-              if (inEscape) {
-                Left(List(UnpackFailure.UnterminatedEscapeSequence(path)))
-              } else {
-                if (start < p.length) {
-                  addChunk(p, buf, start, p.length) match {
-                    case Left(value) =>
-                      Left(value)
-                    case Right(_) =>
-                      Right((buf.toVector, rtpe))
-                  }
-                } else {
-                  Right((buf.toVector, rtpe))
-                }
+          last.flatMap {
+            _ =>
+              if (inEscape) Left(List(UnpackFailure.UnterminatedEscapeSequence(path)))
+              else {
+                val complete = if (start < p.length) addChunk(p, buf, start, p.length) else Right(())
+                complete.map(_ => (buf.toVector, rtpe))
               }
           }
         }
@@ -179,35 +154,18 @@ class JsonFlattener {
         parse(value._2, value._3)
 
       case Some(value) =>
-        for {
-          elements <- value.map(v => parse(v._2, v._3)).biSequence
-        } yield {
-          Json.fromValues(elements)
-        }
+        value.map(v => parse(v._2, v._3)).biSequence.map(Json.fromValues)
       case None =>
         val grouped2 = pairs.groupBy(_._1.head)
 
         if (grouped2.nonEmpty && grouped2.keys.forall(_.isInstanceOf[Index])) {
-          for {
-            elements <- grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biSequence
-          } yield {
-            Json.fromValues(elements)
-          }
+          grouped2.toSeq.sortBy(_._1.asInstanceOf[Index].idx).map(_._2).map(inflateParsedNext).biSequence.map(Json.fromValues)
         } else if (grouped2.keys.forall(_.isInstanceOf[ObjectName])) {
-          for {
-            elements <-
-              grouped2
-                .map {
-                  case (k, v) =>
-                    for {
-                      field <- inflateParsedNext(v)
-                    } yield {
-                      escape.unescape(k.asInstanceOf[ObjectName].name) -> field
-                    }
-                }.toSeq.biSequence
-          } yield {
-            Json.fromFields(elements)
-          }
+          grouped2
+            .map {
+              case (k, v) =>
+                inflateParsedNext(v).map(field => escape.unescape(k.asInstanceOf[ObjectName].name) -> field)
+            }.toSeq.biSequence.map(Json.fromFields)
         } else {
           Left(List(UnpackFailure.StructuralFailure(pairs)))
         }

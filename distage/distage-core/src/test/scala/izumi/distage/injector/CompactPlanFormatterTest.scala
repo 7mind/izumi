@@ -6,7 +6,7 @@ import izumi.distage.fixtures.HigherKindCases.HigherKindsCase1.OptionT
 import izumi.distage.injector.CompactPlanFormatterTest.*
 import izumi.distage.model.PlannerInput
 import izumi.functional.Renderable.*
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 object CompactPlanFormatterTest {
   trait T1[A, B]
@@ -24,8 +24,7 @@ object CompactPlanFormatterTest {
 
 class CompactPlanFormatterTest extends AnyWordSpec with MkInjector {
   "PlanFormatterTest should produce short class names if it's unique in plan" in {
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(PlannerInput.everything(new ModuleDef {
+    val plan = mkInjector().planUnsafe(PlannerInput.everything(new ModuleDef {
       make[JustTrait].from[Impl1]
       make[OptionT[scala.Either[Nothing, _], Unit]].from(OptionT[Either[Nothing, _], Unit](Right(None)))
       make[K1[T1]].from(new K1[T1] {})

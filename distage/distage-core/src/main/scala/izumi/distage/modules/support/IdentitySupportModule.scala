@@ -11,7 +11,7 @@ object IdentitySupportModule extends IdentitySupportModule
 /**
   * `Identity` effect type (aka no effect type / imperative Scala) support for `distage` resources, effects, roles & tests
   *
-  * Adds [[izumi.functional.quasi.QuasiIO]] instances to support running without an effect type in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  * Adds [[izumi.functional.quasi.QuasiIO]] instances to support running without an effect type in `Injector`, `distage-framework` & `distage-testkit-runner`
   */
 trait IdentitySupportModule extends ModuleDef {
   addImplicit[TagK[Identity]]

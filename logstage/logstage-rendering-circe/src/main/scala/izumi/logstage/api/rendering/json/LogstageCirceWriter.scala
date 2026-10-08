@@ -1,59 +1,24 @@
 package izumi.logstage.api.rendering.json
 
 import io.circe.Json
-import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.api.rendering.json.LogstageCirceWriter.Token
-import izumi.logstage.api.rendering.{LogstageCodec, LogstageWriter}
+import izumi.logstage.api.rendering.{LogstageCodec, LogstageTokenRendering, LogstageWriter}
 
 class LogstageCirceWriter extends LogstageWriter {
   private val stack = scala.collection.mutable.Stack[Token]()
 
-  def translate(): Json = {
-    val boundaries = scala.collection.mutable.Stack[Token]()
-
-    while (stack.nonEmpty) {
-      stack.pop() match {
-        case Token.Open(m) =>
-          val elements = scala.collection.mutable.ArrayBuffer[Json]()
-          while (boundaries.head != Token.Close) {
-            boundaries.pop() match {
-              case Token.Value(v) =>
-                elements += v
-              case t =>
-                throw new RuntimeException(s"Unexpected token: $t; stack=$stack, bstack=$boundaries")
-            }
-          }
-          boundaries.pop().discard()
-          if (m) {
-            val pairs = elements.sliding(2, 2).map {
-              e =>
-                (e.head.fold("null", _.toString, _.toString, identity, _.toString(), _.toString()), e.last)
-            }
-            boundaries.push(Token.Value(Json.fromFields(pairs.toSeq)))
-          } else {
-            boundaries.push(Token.Value(Json.fromValues(elements)))
-          }
-        case Token.Close =>
-          boundaries.push(Token.Close)
-        case v: Token.Value =>
-          boundaries.push(v)
-      }
-    }
-
-    boundaries.flatMap {
-      case _: Token.Struct =>
-        Seq.empty
-      case Token.Value(value) =>
-        Seq(value)
-    }.toList match {
-      case one :: Nil =>
-        one
-      case Nil =>
-        Json.Null
-      case shouldNotHappen =>
-        Json.fromValues(shouldNotHappen)
-    }
-  }
+  def translate(): Json = LogstageTokenRendering.translate[Token, Json](stack, Token.Close)(
+    { case Token.Open(map) => map },
+    { case Token.Value(value) => value },
+    Token.Value.apply,
+    elements => Json.fromFields(elements.sliding(2, 2).map {
+      pair =>
+        (pair.head.fold("null", _.toString, _.toString, identity, _.toString(), _.toString()), pair.last)
+    }.toSeq),
+    Json.fromValues,
+    Json.Null,
+    Json.fromValues,
+  )
 
   override def openList(): Unit = stack.push(Token.Open(false))
 

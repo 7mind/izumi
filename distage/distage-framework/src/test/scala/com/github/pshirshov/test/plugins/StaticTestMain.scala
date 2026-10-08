@@ -21,7 +21,7 @@ object StaticTestMain extends RoleAppMain.Launcher1[cats.effect.IO] {
   }
 
   override protected def pluginConfig: PluginConfig = {
-    (if (IzPlatform.isScalaJS) {
+    (if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
      } else {
        PluginConfig.cached("com.github.pshirshov.test.plugins")
@@ -44,7 +44,7 @@ object StaticTestMainBadEffect extends RoleAppMain.LauncherIdentity {
   }
 
   override protected def pluginConfig: PluginConfig = {
-    (if (IzPlatform.isScalaJS) {
+    (if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
      } else {
        PluginConfig.cached("com.github.pshirshov.test.plugins")
@@ -64,7 +64,7 @@ class StaticTestMainLogIO2[F[+_, +_]: TagKK: DefaultModule2] extends RoleAppMain
   }
 
   override protected def pluginConfig: PluginConfig = {
-    (if (IzPlatform.isScalaJS) {
+    (if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
        PluginConfig.compileTime("com.github.pshirshov.test.plugins")
      } else {
        PluginConfig.cached("com.github.pshirshov.test.plugins")

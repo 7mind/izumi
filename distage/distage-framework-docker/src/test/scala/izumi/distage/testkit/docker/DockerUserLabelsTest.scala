@@ -6,7 +6,7 @@ import izumi.distage.docker.healthcheck.ContainerHealthCheck
 import izumi.distage.docker.model.Docker.DockerPort
 import izumi.distage.testkit.docker.DockerUserLabelsTest.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.Spec2
+import izumi.distage.testkit.runner.spec.Spec2
 import izumi.functional.bio.F
 import zio.{IO, Task}
 

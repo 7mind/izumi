@@ -13,13 +13,12 @@ import izumi.distage.model.exceptions.dsl.{InvalidFunctoidModifier, ParameterNot
 import izumi.distage.model.planning.PlanIssue
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.SourceFilePosition
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.matchers.should
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.unused
 
-class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
+class DSLTest extends AnyWordSpec with MkInjector {
 
   import TestTagOps.*
 
@@ -720,7 +719,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
     }
 
     "print a sensible error message at compile-time when user tries to derive a constructor for a type parameter" in {
-      val res1 = intercept[TestFailedException](
+      val res1 = intercept[AssertionFailure](
         assertCompiles(
           """
           def definition[T <: Int: Tag] = new ModuleDef {
@@ -730,7 +729,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         )
       )
       assert(res1.getMessage contains "[T: ClassConstructor]")
-      val res2 = intercept[TestFailedException](
+      val res2 = intercept[AssertionFailure](
         assertCompiles(
           """
           def definition[F[_]: TagK] = new ModuleDef {
@@ -740,7 +739,7 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         )
       )
 
-      res2.getMessage should include regex "ClassConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use `makeFactory` or `make\\[X\\].fromFactory` to wire factories"
+      assert("ClassConstructor failure: izumi\\.distage\\.model\\.definition\\.Lifecycle\\.Basic\\[F,.*(scala\\.)?Int\\] is a Factory, use `makeFactory` or `make\\[X\\].fromFactory` to wire factories".r.findFirstIn(res2.getMessage).nonEmpty)
     }
 
     "define multiple bindings with different axis but the same implementation" in {
@@ -783,12 +782,12 @@ class DSLTest extends AnyWordSpec with MkInjector with should.Matchers {
         int()
       }
 
-      intercept[TestFailedException] {
+      intercept[AssertionFailure] {
         assert(definition.bindings.size == 4)
       }
       Injector().produceRun(definition) {
         (s: Set[Int]) =>
-          intercept[TestFailedException] {
+          intercept[AssertionFailure] {
             assert(s == Set(1, 2, 3))
           }
       }

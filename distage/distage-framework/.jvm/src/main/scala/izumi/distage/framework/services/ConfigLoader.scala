@@ -5,11 +5,8 @@ import izumi.distage.config.DistageConfigImpl
 import izumi.distage.config.model.*
 import izumi.distage.model.definition.Id
 import izumi.distage.model.exceptions.DIException
-import izumi.functional.bio.F
-import izumi.fundamentals.platform.exceptions.IzThrowable.*
 import izumi.fundamentals.platform.resources.IzResources
 import izumi.fundamentals.platform.resources.IzResources.{LoadablePathReference, UnloadablePathReference}
-import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
 import java.io.FileNotFoundException
@@ -63,51 +60,10 @@ object ConfigLoader {
     merger: ConfigMerger,
     configLocation: ConfigLocationProvider,
     configArgs: ConfigLoaderArgs,
-  ) extends ConfigLoader {
+  ) extends ConfigLoaderBase(logger, merger, configLocation, configArgs) {
     protected def resourceClassLoader: ClassLoader = getClass.getClassLoader
 
-    /** @throws ConfigLoaderException if configuration can't be loaded */
-    override def loadConfig(clue: String): AppConfig = {
-      val maybeLoadedRoleConfigs = configArgs.configs.map {
-        roleConfig =>
-          val references = configLocation.forRole(roleConfig.role).map(loadConfigSource(isExplicit = false, _))
-          val loaded = roleConfig.configSource match {
-            case RoleConfigSource.ConfigFile(file) =>
-              val explicit = Seq(loadConfigSource(isExplicit = true, ConfigSource.File(file)))
-              explicit ++ references
-            case RoleConfigSource.ConfigDefault =>
-              references
-          }
-          (roleConfig, loaded)
-      }
-
-      val loadedCommonExplicitConfigs = configArgs.global.map(ConfigSource.File(_)).map(loadConfigSource(isExplicit = true, _))
-      val loadedCommonReferenceConfigs = configLocation.commonReferenceConfigs.map(loadConfigSource(isExplicit = false, _))
-      val loaded = for {
-        loadedCommonConfigs <- F[Either].traverseAccumErrorsNEList(loadedCommonExplicitConfigs.toList ++ loadedCommonReferenceConfigs)(_.toEither)
-        loadedRoleConfigs <- F[Either].traverseAccumErrors(maybeLoadedRoleConfigs) {
-          case (roleConfig, loaded) =>
-            F[Either].traverseAccumErrorsNEList(loaded)(_.toEither) match {
-              case Left(failures) =>
-                Left(failures)
-              case Right(configLoadResults) =>
-                Right(LoadedRoleConfigs(roleConfig, configLoadResults))
-            }
-        }
-      } yield (loadedCommonConfigs, loadedRoleConfigs)
-
-      loaded match {
-        case Left(errs) =>
-          val failures = errs.map(f => s"Failed to load ${f.src} ${f.clue}: ${f.failure.stacktraceString}")
-          logger.error(s"Cannot load configuration: ${failures.toList.niceList() -> "failures"}")
-          throw new ConfigLoaderException(s"Cannot load configuration: failures=${failures.toList.niceList()}", errs.map(_.failure).toList)
-        case Right((shared, role)) =>
-          val merged = merger.addSystemProps(merger.merge(shared, role, clue))
-          AppConfig(merged, shared, role)
-      }
-    }
-
-    protected def loadConfigSource(isExplicit: Boolean, configSource: ConfigSource): ConfigLoadResult = {
+    override protected def loadConfigSource(isExplicit: Boolean, configSource: ConfigSource): ConfigLoadResult = {
       configSource match {
         case r: ConfigSource.Resource =>
           def tryLoadResource(): Try[DistageConfigImpl] = {

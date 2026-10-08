@@ -1,6 +1,6 @@
 package izumi.logstage.api
 
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LoggingModelTest extends AnyWordSpec {
 

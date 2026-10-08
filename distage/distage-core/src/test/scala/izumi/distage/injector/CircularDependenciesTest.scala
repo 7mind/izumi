@@ -8,7 +8,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.exceptions.macros.TraitInitializationFailedException
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class CircularDependenciesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
@@ -68,15 +68,9 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
   "Support by-name self-referencing circulars" in {
     import CircularCase3._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val instance = produceInstance[ByNameSelfReference](mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
       make[ByNameSelfReference]
-    })
-
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
-
-    val instance = context.get[ByNameSelfReference]
+    }))
 
     assert(instance eq instance.self)
   }
@@ -84,15 +78,9 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
   "Support self-referencing traits" in {
     import CircularCase3._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val instance = produceInstance[TraitSelfReference](mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[TraitSelfReference]
-    })
-
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
-
-    val instance = context.get[TraitSelfReference]
+    }))
 
     assert(instance eq instance.self)
   }
@@ -102,14 +90,10 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
 
     FactoryConstructor[FactorySelfReference]
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
       make[ByNameSelfReference]
       makeFactory[FactorySelfReference]
-    })
-
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     val instance = context.get[FactorySelfReference]
 
@@ -130,53 +114,14 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
     assert(counter == 0)
   }
 
-  // this test makes no sense because the order is not enforced anymore
-//  "Locator.instances returns instances in the order they were created in" in {
-//    import CircularCase2._
-//
-//    val definition = PlannerInput.everything(new ModuleDef {
-//      make[Circular3]
-//      make[Circular1]
-//      make[Circular2]
-//      make[Circular5]
-//      make[Circular4]
-//    })
-//
-//    val injector = mkInjector()
-//    val plan = injector.plan(definition)
-//    val context = injector.produce(plan).unsafeGet()
-//
-//    val planTypes: Seq[SafeType] = plan.steps
-//      .collect {
-//        case i: InstantiationOp => i
-//        case i: MakeProxy => i
-//        case i: InitProxy => i
-//      }
-//      .map(_.target.tpe)
-//    val internalArtifacts = Set(SafeType.get[ProxyDispatcher], SafeType.get[LocatorRef])
-//    val instanceTypes = context.instances
-//      .map(_.key.tpe)
-//      .filterNot(internalArtifacts.contains) // remove internal artifacts: proxy stuff, locator ref
-//
-//    assert(instanceTypes.size == planTypes.size) // proxy creates TWO keys instead of one
-//    assert(instanceTypes == planTypes)
-//
-//    // whitebox test: ensure that plan ops are in a non-lazy collection
-//    assert(plan.steps.isInstanceOf[Vector[_]])
-//  }
-
   "support by-name circular dependencies" in {
     import ByNameCycle._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
       make[Circular2]
       make[Circular1]
       make[Int].from(1)
-    })
-
-    val injector = mkNoProxiesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     assert(context.get[Circular1] != null)
     assert(context.get[Circular2] != null)

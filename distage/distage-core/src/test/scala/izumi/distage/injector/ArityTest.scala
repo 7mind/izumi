@@ -3,19 +3,17 @@ package izumi.distage.injector
 import distage.{Injector, ModuleDef}
 import izumi.distage.fixtures.BasicCases.BasicCase8
 import izumi.distage.model.PlannerInput
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class ArityTest extends AnyWordSpec with MkInjector {
 
   "Support classes with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(Injector.Standard())(PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       make[Bop[Int]]
-    })
-
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[Bop[Int]].beep == context.get[Beep[Int]])
   }
@@ -23,12 +21,10 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support traits with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(Injector.Standard())(PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       makeTrait[BopTrait[Int]]
-    })
-
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[BopTrait[Int]].beep0 == context.get[Beep[Int]])
     assert(context.get[BopTrait[Int]].beep29 == context.get[Beep[Int]])
@@ -37,12 +33,10 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support abstract classes with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(Injector.Standard())(PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       makeTrait[BopAbstractClass[Int]]
-    })
-
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[BopAbstractClass[Int]].beep == context.get[Beep[Int]])
     assert(context.get[BopAbstractClass[Int]].beep0 == context.get[Beep[Int]])
@@ -52,12 +46,10 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support factories with more than 22-argument constructors" in {
     import BasicCase8._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(Injector.Standard())(PlannerInput.everything(new ModuleDef {
       make[Beep[Int]]
       makeFactory[BopFactory[Int]]
-    })
-
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[BopFactory[Int]].x(5) == BeepDependency1(5)(context.get[Beep[Int]]))
     assert(context.get[BopFactory[Int]].x() == BeepDependency()(context.get[Beep[Int]]))
@@ -70,13 +62,11 @@ class ArityTest extends AnyWordSpec with MkInjector {
   "Support types with no parameters" in {
     import BasicCase8._
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(Injector.Standard())(PlannerInput.everything(new ModuleDef {
       make[NoArgClass]
       makeTrait[NoArgTrait]
       makeTrait[NoArgAbstractClass]
-    })
-
-    val context = Injector.Standard().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[NoArgClass] != null)
     assert(context.get[NoArgTrait] != null)

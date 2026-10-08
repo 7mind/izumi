@@ -3,7 +3,7 @@ package izumi.distage.injector
 import distage.{ModuleDef, PlannerInput, TraitConstructor, With}
 import izumi.distage.fixtures.Scala3TraitCases.*
 import izumi.distage.model.reflection.TypedRef
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.language.reflectiveCalls
 
@@ -88,7 +88,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
     "support factories" in {
       import scala.reflect.Selectable.reflectiveSelectable
 
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         makeFactory[FactoryTrait1]
         makeFactory[{
             type U = Object
@@ -100,11 +100,7 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
         make[Int].fromValue(1)
         make[Number].fromValue(5)
         make[String].fromValue("abc")
-      })
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-
-      val context = injector.produce(plan).unsafeGet()
+      }))
 
       val factory1 = context.get[FactoryTrait1]
       val factory2 = context.get[{
@@ -161,15 +157,10 @@ class Scala3AutoTraitsTest extends AnyWordSpec with MkInjector {
     }
 
     "support overriding lazy vals in auto-traits" in {
-      val definition = PlannerInput.everything(new ModuleDef {
+      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
         makeTrait[ATraitWithALazyField]
         make[Int].fromValue(1)
-      })
-
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(definition)
-
-      val context = injector.produce(plan).unsafeGet()
+      }))
 
       assert(context.get[ATraitWithALazyField].lazyField == 1)
     }

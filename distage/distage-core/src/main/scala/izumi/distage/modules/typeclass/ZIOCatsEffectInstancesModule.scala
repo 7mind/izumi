@@ -12,14 +12,18 @@ import zio.ZIO
 class ZIOCatsEffectInstancesModule[R: Tag] extends ModuleDef {
   include(CatsEffectInstancesModule.usingAsync[ZIO[R, Throwable, +_]])
 
+  make[ZIOCatsEffectInstancesModule.Instances]
+
   make[Async[ZIO[R, Throwable, +_]]].from {
-    zio.interop.catz.asyncInstance[R]
+    (_: ZIOCatsEffectInstancesModule.Instances).asyncInstance[R]
   }
   make[Parallel[ZIO[R, Throwable, +_]]].from {
-    zio.interop.catz.parallelInstance[R, Throwable]
+    (_: ZIOCatsEffectInstancesModule.Instances).parallelInstance[R, Throwable]
   }
 }
 
 object ZIOCatsEffectInstancesModule {
+  private[distage] final class Instances extends zio.interop.CatsEffectInstances
+
   def apply[R: Tag]: ZIOCatsEffectInstancesModule[R] = new ZIOCatsEffectInstancesModule[R]
 }

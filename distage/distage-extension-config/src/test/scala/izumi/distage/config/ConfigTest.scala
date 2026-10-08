@@ -8,7 +8,7 @@ import izumi.distage.config.test.configapp.SealedTrait2.{No, Yes}
 import izumi.distage.config.test.configapp.*
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.ModuleDef
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.collection.immutable.ListSet
 
@@ -22,23 +22,6 @@ final class ConfigTest extends AnyWordSpec {
   }
 
   "Config resolver" should {
-
-//    "be idempotent under Injector.finish" in {
-//      val injector = Injector(new ConfigPathExtractorModule)
-//      val plan = injector.plan(mkConfigModule("distage-config-test.conf")(TestConfigApp.definition))
-//
-//      val plan2 = injector.finish(plan.toSemi)
-//      val context = injector.produce(plan2).unsafeGet()
-//
-//      assert(context.get[HttpServer1].listenOn.port == 8081)
-//      assert(context.get[HttpServer2].listenOn.port == 8082)
-//
-//      assert(context.get[DataPuller1].target.port == 9001)
-//      assert(context.get[DataPuller2].target.port == 9002)
-//      assert(context.get[DataPuller3].target.port == 9003)
-//
-//      assert(context.get[Set[TestAppService]].size == 5)
-//    }
 
     "resolve config maps" in {
       val injector = Injector()

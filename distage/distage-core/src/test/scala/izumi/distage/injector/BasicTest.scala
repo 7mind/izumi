@@ -16,8 +16,8 @@ import izumi.distage.model.reflection.IdContract
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "maintain correct operation order" in {
@@ -57,14 +57,10 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "correctly handle empty typed sets" in {
     import SetCase1.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[TypedService[Int]].from[ServiceWithTypedSet]
       many[ExampleTypedCaseClass[Int]]
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     val s = context.get[TypedService[Int]]
     val ss = context.get[Set[ExampleTypedCaseClass[Int]]]
@@ -75,7 +71,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "provide LocatorRef during initialization" in {
     import BasicCase1.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[TestClass0]
       make[TestClass2].from {
         (ref: LocatorRef, test: TestClass0) =>
@@ -84,11 +80,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
           assert(ref.unsafeUnstableMutableLocator().get[TestClass0] eq test)
           TestClass2(test)
       }
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     val t = context.get[TestClass2]
     val r = context.get[LocatorRef]
@@ -96,7 +88,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   }
 
   "fails on wrong @Id annotation at compile-time" in {
-    val res = intercept[TestFailedException] {
+    val res = intercept[AssertionFailure] {
       assertCompiles("""
         import BadAnnotationsCase._
 
@@ -122,12 +114,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "regression test: issue #762 example (Predef.String vs. java.lang.String)" in {
     import BasicCaseIssue762.*
 
-    val definition = PlannerInput.everything(MyClassModule ++ ConfigModule)
-
-    val injector = mkInjector()
-
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = produceLocator(mkInjector())(PlannerInput.everything(MyClassModule ++ ConfigModule))
 
     assert(context.get[MyClass].a eq context.get[String]("a"))
     assert(context.get[MyClass].b eq context.get[String]("b"))
@@ -135,7 +122,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support multiple bindings" in {
     import BasicCase1.*
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       many[JustTrait].named("named.empty.set")
 
       many[JustTrait]
@@ -149,11 +136,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       many[JustTrait]
         .named("named.set")
         .add[Impl3]
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     assert(context.get[Set[JustTrait]].size == 2)
     assert(context.get[Set[JustTrait]]("named.empty.set").isEmpty)
@@ -182,7 +165,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
 
   "support named bindings" in {
     import BasicCase2.*
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[TestClass]
         .named("named.test.class")
       make[TestDependency0].from[TestImpl0Bad]
@@ -198,11 +181,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[TestDependency0]
         .from[TestImpl0Bad]
         .namedByImpl
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     assert(context.get[TestClass]("named.test.class").correctWired())
   }
@@ -234,15 +213,10 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   // BasicProvisionerTest
   "instantiate simple class" in {
     import BasicCase1.*
-    val definition = PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[TestCaseClass2](mkInjector())(PlannerInput.everything(new ModuleDef {
       make[TestCaseClass2]
       make[TestInstanceBinding].from(new TestInstanceBinding)
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
-    val instantiated = context.get[TestCaseClass2]
+    }))
 
     assert(instantiated.a.z.nonEmpty)
   }
@@ -250,7 +224,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "handle set bindings" in {
     import SetCase1.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Service2]
       make[Service0]
       make[Service1]
@@ -278,12 +252,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         .add[SetImpl1]
         .add[SetImpl2]
         .add[SetImpl3]
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     assert(context.get[Service0].set.size == 3)
     assert(context.get[Service1].set.size == 3)
@@ -291,48 +260,19 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
     assert(context.get[Service3].set.size == 3)
   }
 
-//  "support Plan.providerImport and Plan.resolveImport" in {
-//    import BasicCase1._
-//
-//    val definition = PlannerInput.everything(new ModuleDef {
-//      make[TestCaseClass2]
-//    })
-//
-//    val injector = mkInjector()
-//
-//    val plan1 = injector.plan(definition)
-//    val plan2 = injector.finish(plan1.toSemi.providerImport {
-//      verse: String @Id("verse") =>
-//        TestInstanceBinding(verse)
-//    })
-//    val plan3 = plan2.resolveImport[String](id = "verse") {
-//      """ God only knows what I might do, god only knows what I might do, I don't fuck with god, I'm my own through
-//        | Take two of these feel like Goku""".stripMargin
-//    }
-//
-//    val context = injector.produce(plan3).unsafeGet()
-//
-//    assert(context.get[TestCaseClass2].a.z == context.get[String]("verse"))
-//  }
-
   "preserve type annotations" in {
     import BasicCase4.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[Dependency].named("special")
       make[TestClass]
-    })
-
-    val injector = mkInjector()
-
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     assert(context.get[TestClass] != null)
   }
 
   "handle set inclusions" in {
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Set[Int]].named("x").from(Set(1, 2, 3))
       make[Set[Int]].named("y").from(Set(4, 5, 6))
       many[Int].refSet[Set[Int]]("x")
@@ -342,16 +282,14 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       make[Set[Some[Int]]].from(Set(Some(7)))
       many[Option[Int]].refSet[Set[None.type]]
       many[Option[Int]].refSet[Set[Some[Int]]]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[Set[Int]] == Set(1, 2, 3, 4, 5, 6))
     assert(context.get[Set[Option[Int]]] == Set(None, Some(7)))
   }
 
   "handle multiple set element binds" in {
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Int].from(7)
 
       many[Int].add(0)
@@ -365,20 +303,16 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
         (i: Int) =>
           Set(i, i + 1, i + 2)
       }
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
     assert(context.get[Set[Int]].toList.sorted == List(0, 1, 2, 3, 5, 6, 7, 8, 9))
   }
 
   "support empty sets" in {
     import BasicCase5.*
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       many[TestDependency]
       make[TestImpl1]
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[TestImpl1].justASet == Set.empty)
   }
@@ -420,7 +354,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support mutations" in {
     import Mutations01.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[SomethingUseful].fromValue(SomethingUseful("x"))
       make[Mutable].fromValue(Mutable(1, None))
       modify[Mutable].by {
@@ -429,9 +363,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
             m.copy(b = Some(u))
         }
       }
-    })
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    }))
 
     assert(context.get[Mutable] == Mutable(1, Some(SomethingUseful("x"))))
   }
@@ -439,7 +371,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support mutations with axis tags when axis is configured" in {
     import Mutations01.*
 
-    val definition = PlannerInput.everything(
+    val context = produceLocator(mkInjector())(PlannerInput.everything(
       new ModuleDef {
         make[SomethingUseful].fromValue(SomethingUseful("x"))
 
@@ -468,9 +400,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
           .modify((m: Mutable) => m.copy(a = m.a + 10))
       },
       Activation(Repo -> Repo.Prod),
-    )
-
-    val context = mkInjector().produce(definition).unsafeGet()
+    ))
 
     assert(context.get[Mutable]("x") == Mutable(11, Some(SomethingUseful("x"))))
   }
@@ -681,7 +611,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support named bindings with option" in {
     import BasicCase10.*
     import SetCase4.*
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[TestClass]
       make[TestGreeter].named(Some("named.greeter"))
       make[TestGreeter].named(None) // should bind without id
@@ -697,11 +627,7 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       many[Service]
         .named(None)
         .add[Service1]
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    }))
 
     assert(context.get[TestClass].correctWired())
     assert(context.get[Set[Service]]("named.set.test").size == 2)

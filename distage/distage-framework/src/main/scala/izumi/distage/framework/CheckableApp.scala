@@ -19,7 +19,6 @@ import izumi.distage.plugins.load.LoadedPlugins
 import izumi.distage.roles.launcher.RoleProvider
 import izumi.distage.roles.model.meta.{RoleBinding, RolesInfo}
 import izumi.fundamentals.collections.nonempty.NESet
-import izumi.fundamentals.platform.IzPlatform
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks
@@ -90,7 +89,7 @@ abstract class RoleCheckableApp[F[_]](override implicit val tagK: TagK[F]) exten
     selectedRoles: RoleSelection,
     chosenConfigFile: Option[String],
   ): PlanCheckInput[F] = {
-    val maybeClassLoader = if (IzPlatform.isScalaJS) None else Option(this.getClass.getClassLoader)
+    val maybeClassLoader = planCheckClassLoader
     val baseModuleOverrides = roleAppBootModulePlanCheckOverrides(selectedRoles, chosenConfigFile.flatMap(configFile => maybeClassLoader.map(_ -> configFile)))
     val baseModuleWithOverrides = this.roleAppBootModule.overriddenBy(baseModuleOverrides)
 

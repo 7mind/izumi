@@ -17,7 +17,9 @@ object RunnerToF extends RunnerToFPlatformSpecific {
         val (future, interrupt) = runner.runFutureInterruptible(f())
         F.guarantee {
           FA.fromFuture(future)
-        }(`finally` = FA.fromFuture(interrupt.apply()))
+        }(`finally` = F.guarantee(F.suspendF(FA.fromFuture(interrupt.apply())))(`finally` =
+          F.definitelyRecoverUnsafeIgnoreTrace(F.map(FA.fromFuture(future))(_ => ()))(_ => F.unit)
+        ))
       }
     }
   }

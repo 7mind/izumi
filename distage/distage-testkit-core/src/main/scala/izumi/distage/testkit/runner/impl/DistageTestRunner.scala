@@ -12,7 +12,22 @@ import izumi.fundamentals.platform.uuid.IzUUID
 import izumi.logstage.api.IzLogger
 import logstage.Log
 
+import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.duration.FiniteDuration
+
+object DistageTestRunner {
+  final class PreparedRun[F[_]] private[DistageTestRunner] (
+    val planned: Timed[PlannedTests[AnyF]],
+    owner: DistageTestRunner[F],
+  ) {
+    private val started = new AtomicBoolean(false)
+
+    private[DistageTestRunner] def claim(runner: DistageTestRunner[F]): Unit = {
+      require(owner eq runner, "Prepared execution belongs to another runner")
+      require(started.compareAndSet(false, true), "Prepared execution has already started")
+    }
+  }
+}
 
 class DistageTestRunner[F[_]](
   reporter: TestReporter,
@@ -20,6 +35,7 @@ class DistageTestRunner[F[_]](
   planner: TestPlanner,
   statusConverter: TestStatusConverter,
   timed: TimedActionF[F],
+  resources: TestResourceLifecycle[F],
   runnerToF: RunnerToF[F],
   // Only test planning and running parallel envs use runner effect's parallelism capabilities.
   // Parallel suites & tests use parallelism capabilities of their own effect type.
@@ -29,6 +45,17 @@ class DistageTestRunner[F[_]](
   F: QuasiIO[F],
 ) {
 
+  def plan(tests: Seq[DistageTest[AnyF]]): F[DistageTestRunner.PreparedRun[F]] = F.suspendF {
+    timed.timed(planner.planGroupTests[F](tests, parTraverseExt)(using F)).map(new DistageTestRunner.PreparedRun[F](_, this))
+  }
+
+  def runPrepared(prepared: DistageTestRunner.PreparedRun[F]): F[List[EnvResult]] = F.suspendF {
+    prepared.claim(this)
+    val id = ScopeId(IzUUID.generateTimeUUID())
+    reporter.beginScope(id)
+    executePrepared(id, prepared.planned)
+  }
+
   def run(tests: Seq[DistageTest[AnyF]]): F[List[EnvResult]] = {
     // We assume that under normal circumstances the code below should never throw.
     // All the exceptions should be converted to values by this time.
@@ -37,32 +64,33 @@ class DistageTestRunner[F[_]](
       val id = ScopeId(IzUUID.generateTimeUUID())
       reporter.beginScope(id)
 
-      timed
-        .timed(planner.planGroupTests[F](tests, parTraverseExt)(using F))
-        .flatMap {
-          envs =>
-            F.suspendF {
-              reportFailedPlanning(id, envs.out.bad, envs.timing)
-              reportFailedInvividualPlans(id, envs)
-
-              val toRun = envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
-              logEnvironmentsInfo(toRun, envs.timing.duration)
-
-              parTraverseExt
-                .groupedParTraverse(toRun)(_._1.envExec.parallelEnvs) {
-                  case (env, testsTree) =>
-                    proceedEnv(id, env, testsTree)
-                }.flatMap {
-                  result =>
-                    F.maybeSuspend {
-                      reporter.endScope(id)
-
-                      result
-                    }
-                }
-            }
-        }
+      plan(tests).flatMap {
+        prepared =>
+          prepared.claim(this)
+          executePrepared(id, prepared.planned)
+      }
     }
+  }
+
+  private def executePrepared(id: ScopeId, envs: Timed[PlannedTests[AnyF]]): F[List[EnvResult]] = F.suspendF {
+    reportFailedPlanning(id, envs.out.bad, envs.timing)
+    reportFailedInvividualPlans(id, envs)
+
+    val toRun = envs.out.good.flatMap(_.envs.toSeq).groupBy(_._1).flatMap(_._2)
+    logEnvironmentsInfo(toRun, envs.timing.duration)
+
+    parTraverseExt
+      .groupedParTraverse(toRun)(_._1.envExec.parallelEnvs) {
+        case (env, testsTree) =>
+          proceedEnv(id, env, testsTree)
+      }.flatMap {
+        result =>
+          F.maybeSuspend {
+            reporter.endScope(id)
+
+            result
+          }
+      }
   }
 
   private def reportFailedPlanning(id: ScopeId, bad: Seq[(Seq[DistageTest[AnyF]], PlanningFailure)], timing: Timing): Unit = {
@@ -97,7 +125,7 @@ class DistageTestRunner[F[_]](
 
     val allEnvTests = testsTree.allTests.map(_.test)
 
-    timed.timedLifecycle(runtimeInjector.produceDetailedCustomF[F](runtimePlan)).use {
+    timed.timedLifecycle(resources.produce(runtimeInjector, runtimePlan)).use {
       maybeRtLocator =>
         maybeRtLocator.foldEither(
           left = (runtimeInstantiationFailure, runtimeInstantiationTiming) =>

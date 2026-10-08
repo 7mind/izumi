@@ -9,7 +9,7 @@ import izumi.distage.model.definition.{Activation, Axis, BootstrapModuleDef, Mod
 import izumi.distage.model.exceptions.planning.InjectorFailed
 import izumi.distage.model.plan.Roots
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class AxisTest extends AnyWordSpec with MkInjector {
 
@@ -21,14 +21,12 @@ class AxisTest extends AnyWordSpec with MkInjector {
       make[JustTrait].tagged(Repo.Prod).from[Impl1]
     }
 
-    val injector1 = mkInjector()
-    val context1 = injector1.produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]), Activation(Repo -> Repo.Prod))).unsafeGet()
+    val context1 = mkInjector().produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]), Activation(Repo -> Repo.Prod))).unsafeGet()
 
     assert(context1.get[JustTrait].isInstanceOf[Impl1])
     assert(!context1.get[JustTrait].isInstanceOf[Impl0])
 
-    val injector2 = mkInjector()
-    val context2 = injector2.produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]), Activation(Repo -> Repo.Dummy))).unsafeGet()
+    val context2 = mkInjector().produce(PlannerInput(definition, Roots(DIKey.get[JustTrait]), Activation(Repo -> Repo.Dummy))).unsafeGet()
 
     assert(context2.get[JustTrait].isInstanceOf[Impl0])
     assert(!context2.get[JustTrait].isInstanceOf[Impl1])

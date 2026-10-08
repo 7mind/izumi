@@ -1,62 +1,23 @@
 package izumi.logstage.api.rendering
 
-import izumi.fundamentals.platform.language.Quirks.Discarder
 import scala.annotation.unused
 import izumi.logstage.api.rendering.LogstageReprWriter.Token
 
 class LogstageReprWriter(@unused colored: Boolean) extends ExtendedLogstageWriter[String] {
   private val stack = scala.collection.mutable.Stack[Token]()
 
-  def translate(): String = {
-    val boundaries = scala.collection.mutable.Stack[Token]()
-
-    while (stack.nonEmpty) {
-      stack.pop() match {
-        case Token.Open(m) =>
-          val elements = scala.collection.mutable.ArrayBuffer[String]()
-
-          while (boundaries.head != Token.Close) {
-            boundaries.pop() match {
-              case Token.Value(v) =>
-                elements += v
-              case t =>
-                throw new RuntimeException(s"Unexpected token: $t; stack=$stack, bstack=$boundaries")
-            }
-          }
-
-          boundaries.pop().discard()
-
-          if (m) {
-            val pairs = elements.sliding(2, 2).map {
-              e =>
-                s"${e.head}: ${e.last}"
-            }
-            boundaries.push(Token.Value(pairs.mkString("{", "; ", "}")))
-          } else {
-            boundaries.push(Token.Value(elements.mkString("; ")))
-          }
-
-        case Token.Close =>
-          boundaries.push(Token.Close)
-        case v: Token.Value =>
-          boundaries.push(v)
-      }
-    }
-
-    boundaries.flatMap {
-      case _: Token.Struct =>
-        Seq.empty
-      case Token.Value(value) =>
-        Seq(value)
-    }.toList match {
-      case one :: Nil =>
-        one
-      case Nil =>
-        "<???>"
-      case shouldNotHappen =>
-        shouldNotHappen.mkString(", ")
-    }
-  }
+  def translate(): String = LogstageTokenRendering.translate[Token, String](stack, Token.Close)(
+    { case Token.Open(map) => map },
+    { case Token.Value(value) => value },
+    Token.Value.apply,
+    elements => elements.sliding(2, 2).map {
+      pair =>
+        s"${pair.head}: ${pair.last}"
+    }.mkString("{", "; ", "}"),
+    _.mkString("; "),
+    "<???>",
+    _.mkString(", "),
+  )
 
   override def openList(): Unit = stack.push(Token.Open(false))
 

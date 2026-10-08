@@ -1,7 +1,7 @@
 package izumi.distage.testkit.docker
 
 import izumi.distage.docker.impl.ContainerResource
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 final class HooksDigestTest extends AnyWordSpec {
   "ContainerResource.hooksDigest" should {

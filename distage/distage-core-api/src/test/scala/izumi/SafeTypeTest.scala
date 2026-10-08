@@ -2,7 +2,7 @@ package izumi
 
 import izumi.distage.model.reflection.*
 import izumi.reflect.{Tag, TagK}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.reflect.ClassTag
 

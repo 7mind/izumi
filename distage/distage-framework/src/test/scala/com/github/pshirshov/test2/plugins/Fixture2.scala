@@ -13,7 +13,7 @@ object Fixture2 {
 
   object TestRoleAppMain extends RoleAppMain.LauncherIdentity {
     override protected def pluginConfig: PluginConfig = {
-      if (IzPlatform.isScalaJS) {
+      if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
         PluginConfig.const(new TestPlugin)
       } else {
         PluginConfig.cached("com.github.pshirshov.test2.plugins")

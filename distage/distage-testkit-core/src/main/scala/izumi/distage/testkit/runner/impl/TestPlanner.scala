@@ -11,18 +11,17 @@ import izumi.distage.model.plan.{ExecutableOp, Plan}
 import izumi.distage.modules.DefaultModule
 import izumi.distage.modules.support.IdentitySupportModule
 import izumi.distage.roles.launcher.LoggerConfigLoader.LogConfigLoaderImpl
-import izumi.distage.roles.launcher.{ActivationParser, CLILoggerOptions, RoleAppActivationParser, RouterFactory}
+import izumi.distage.roles.launcher.{CLILoggerOptions, RouterFactory}
 import izumi.distage.testkit.model.TestConfig.Parallelism
 import izumi.distage.testkit.model.TestEnvironment.EnvExecutionParams
-import izumi.distage.testkit.model.{DistageTest, TestActivationStrategy, TestEnvironment, TestTree}
+import izumi.distage.testkit.model.{DistageTest, TestEnvironment, TestTree}
 import izumi.distage.testkit.runner.impl.TestPlanner.*
-import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestConfigLoader, TestkitLogging}
-import izumi.distage.testkit.spec.DistageTestEnv
+import izumi.distage.testkit.runner.impl.services.{ParTraverseExt, TestActivationResolver, TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.spec.TestEnvironmentFactory
 import izumi.functional.IzEither.*
 import izumi.functional.quasi.QuasiIO.syntax.*
 import izumi.functional.quasi.{QuasiIO, QuasiIORunner}
 import izumi.fundamentals.collections.nonempty.NEList
-import izumi.fundamentals.platform.cli.model.RoleAppArgs
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.types.HigherKindedAny.AnyF
 import izumi.logstage.api.IzLogger
@@ -87,6 +86,8 @@ class TestPlanner(
   testRunnerLocator: LocatorRef,
   logBuffer: LogQueue,
 ) {
+  private val activationResolver = new TestActivationResolver
+
   /**
     * Group tests by their memoization environment.
     * [[TestEnvironment.EnvExecutionParams]] - contains parts of environment that may radically affect planning.
@@ -132,6 +133,8 @@ class TestPlanner(
     )
 
     val configLoadLogger = IzLogger(envExec.logLevel).withCustomContext("phase" -> "testRunner")
+    // Retain provider identity across equivalent environments; construction stays inside prepareGroupPlans' Try.
+    lazy val runtimeModule: Module = new TestRuntimeModule[TestF](envExec)
 
     for {
       memoizationEnvs <- parTraverseExt.configuredParTraverse(Parallelism.Unlimited)(testsByEnv) {
@@ -146,7 +149,7 @@ class TestPlanner(
             val logConfig = logConfigLoader.loadLoggingConfig(config)
             val router = new RouterFactory.RouterFactoryConsoleSinkImpl().createRouter(logConfig, logBuffer)
 
-            prepareGroupPlans[TestF](envExec, config, env, tests.asInstanceOf[Seq[DistageTest[TestF]]], router, runtimeGcRoots)(using effectType, defaultModule).left.map(
+            prepareGroupPlans[TestF](envExec, config, env, tests.asInstanceOf[Seq[DistageTest[TestF]]], router, runtimeGcRoots, runtimeModule)(using effectType, defaultModule).left.map(
               failure => (tests, failure)
             )
           }
@@ -185,7 +188,7 @@ class TestPlanner(
     // FIXME: HACK: _bootstrap_ keys that may vary between envs but shouldn't cause them to differ (because they should only impact bootstrap)
     BootstrapLocator.selfReflectionKeys ++
     // test runtime adds more informative bootstrap keys:
-    DistageTestEnv.testkitBootstrapReflectiveKeys ++
+    TestEnvironmentFactory.testkitBootstrapReflectiveKeys ++
     hackyKeys
   }
 
@@ -196,45 +199,22 @@ class TestPlanner(
     tests: Seq[DistageTest[TestF]],
     router: LogRouter,
     runtimeGcRoots: Set[DIKey],
+    runtimeModule: => Module,
   ): Either[PlanningFailure, PackedEnv[TestF]] = {
     Try {
       val lateLogger = IzLogger(router)
 
-      val fullActivation = makeTestActivation(config, env, lateLogger)
+      val fullActivation = activationResolver.resolve(config, env, lateLogger)
 
       // here we scan our classpath to enumerate of our components (we have "bootstrap" components - injector plugins, and app components)
       val moduleProvider =
         env.bootstrapFactory.makeModuleProvider[TestF](envExec.planningOptions, config, router, env.roles, env.activationInfo, fullActivation)
 
-      prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider, runtimeGcRoots).left.map(errors => PlanningFailure.DIErrors(errors))
+      prepareTestEnv(envExec, env, tests, lateLogger, fullActivation, moduleProvider, runtimeGcRoots, runtimeModule).left.map(errors => PlanningFailure.DIErrors(errors))
     }.toEither.left.map(e => PlanningFailure.Exception(e)).flatMap(identity)
   }
 
-  private def makeTestActivation(config: AppConfig, env: TestEnvironment, lateLogger: IzLogger): Activation = {
-    env.activationStrategy match {
-      case TestActivationStrategy.IgnoreConfig =>
-        env.activation
-      case TestActivationStrategy.LoadConfig(ignoreUnknown, warnUnset) =>
-        val roleAppActivationParser = new RoleAppActivationParser.Impl(
-          logger = lateLogger,
-          ignoreUnknownActivations = ignoreUnknown,
-        )
-        val activationParser = new ActivationParser.Impl(
-          roleAppActivationParser,
-          RoleAppArgs.empty,
-          env.activationInfo,
-          env.activation,
-          Activation.empty,
-          lateLogger,
-          warnUnset,
-        )
-        val configActivation = activationParser.parseActivation(config)
-
-        configActivation ++ env.activation
-    }
-  }
-
-  private def prepareTestEnv[F[_]: TagK: DefaultModule](
+  private def prepareTestEnv[F[_]: DefaultModule](
     envExecutionParams: EnvExecutionParams,
     env: TestEnvironment,
     tests: Seq[DistageTest[F]],
@@ -242,6 +222,7 @@ class TestPlanner(
     fullActivation: Activation,
     moduleProvider: ModuleProvider,
     runtimeGcRoots: Set[DIKey],
+    runtimeModule: Module,
   ): Either[NEList[DIError], PackedEnv[F]] = {
     val bsModule = moduleProvider.bootstrapModules().merge overriddenBy env.bsModule
     val appModule = {
@@ -276,7 +257,7 @@ class TestPlanner(
       // runtime plan with `runtimeGcRoots`
       runtimePlan <- envInjector.plan(
         PlannerInput(
-          appModule ++ new TestRuntimeModule[F](envExecutionParams),
+          appModule ++ runtimeModule,
           runtimeGcRoots,
           fullActivation,
         )

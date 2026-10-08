@@ -46,6 +46,13 @@ class TestStatusConverter(
     fail(t, t.failure, t.trace)
   }
 
+  def interruptExecution(t: IndividualTestResult.ExecutionFailure): TestStatus.Done = {
+    failExecution(t) match {
+      case failure: TestStatus.Failed => TestStatus.Interrupted(failure)
+      case result => result
+    }
+  }
+
   def failInstantiation(t: IndividualTestResult.InstantiationFailure): TestStatus.Done = {
     val throwable = t.failure.toThrowable
     fail(t, throwable, Exit.Trace.ThrowableTrace(throwable))

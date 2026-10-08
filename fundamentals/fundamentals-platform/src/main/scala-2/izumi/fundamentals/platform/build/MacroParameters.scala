@@ -16,7 +16,6 @@ import scala.language.experimental.macros
   *   s"-Xmacro-settings:sbt-version=${sbtVersion.value}",
   *   s"-Xmacro-settings:scala-versions=${crossScalaVersions.value.mkString(":")}",
   *
-  *   s"-Xmacro-settings:scalatest-version=${V.scalatest}",
   *
   *   s"-Xmacro-settings:git-repo-clean=${gitUncommittedChanges.value}",
   *   s"-Xmacro-settings:git-branch=${gitCurrentBranch.value}",

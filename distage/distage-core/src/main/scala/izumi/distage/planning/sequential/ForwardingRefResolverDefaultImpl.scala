@@ -126,7 +126,7 @@ class ForwardingRefResolverDefaultImpl(
         val reduced = predcessors -- resolved.keySet
         next(reduced)
       } else if (predcessors.nonEmpty) {
-        val loopMembers = predcessors.view.filterKeys(isInvolvedIntoCycle(predcessors)).toMap
+        val loopMembers = predcessors.view.filterKeys(LoopDetector.isInvolvedIntoCycle(predcessors)).toMap
 
         if (loopMembers.isEmpty) {
           Left(NEList(BUG_UnableToFindLoop(predcessors)))
@@ -177,26 +177,4 @@ class ForwardingRefResolverDefaultImpl(
       DG.fromPred(p, GraphMeta(context.updatedPlan.toMap))
     }
   }
-
-  private def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
-    test(toPreds, Set.empty, key, key)
-  }
-
-  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
-    val deps = toPreds.getOrElse(toTest, Set.empty)
-
-    if (deps.contains(needle)) {
-      true
-    } else {
-      deps.exists {
-        d =>
-          if (stack.contains(d)) {
-            false
-          } else {
-            test(toPreds, stack + d, d, needle)
-          }
-      }
-    }
-  }
-
 }

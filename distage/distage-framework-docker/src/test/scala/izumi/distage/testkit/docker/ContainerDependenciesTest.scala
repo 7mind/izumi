@@ -8,7 +8,7 @@ import izumi.distage.docker.model.Docker.ContainerId
 import izumi.distage.docker.modules.DockerSupportModule
 import izumi.fundamentals.platform.functional.Identity
 import logstage.IzLogger
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.util.Try
 

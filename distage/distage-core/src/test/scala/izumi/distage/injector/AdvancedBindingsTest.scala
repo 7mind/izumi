@@ -6,7 +6,7 @@ import izumi.distage.fixtures.SetCases.{SetCase2, SetCase4}
 import izumi.distage.model.PlannerInput
 import izumi.distage.model.exceptions.runtime.TODOBindingException
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.util.Try
 
@@ -48,9 +48,7 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
         .add[Service2]
     })
 
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definitionParent)
-    val context = injector.produce(plan).unsafeGet()
+    val context = mkInjector().produce(definitionParent).unsafeGet()
 
     val subInjector = Injector.inherit[Identity](context)
     val planSub = subInjector.planUnsafe(definitionSub)
@@ -63,17 +61,12 @@ class AdvancedBindingsTest extends AnyWordSpec with MkInjector {
   "Set element references are the same as their referees" in {
     import SetCase2.*
 
-    val definition = PlannerInput.everything(new ModuleDef {
+    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
       make[Service1]
 
       many[Service]
         .ref[Service1]
-    })
-
-    val injector = mkInjector()
-    val plan = injector.planUnsafe(definition)
-
-    val context = injector.produce(plan).unsafeGet()
+    }))
     val svc = context.get[Service1]
     val set = context.get[Set[Service]]
     assert(set.head eq svc)

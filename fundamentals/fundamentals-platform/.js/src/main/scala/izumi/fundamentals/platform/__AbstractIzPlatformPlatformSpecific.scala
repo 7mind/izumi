@@ -8,6 +8,7 @@ import scala.scalajs.js.Dictionary
 
 trait __AbstractIzPlatformPlatformSpecific {
   final val isScalaJS = true
+  final val isScalaNative = false
 
   def getenvOption(s: String): Option[String] = nodeEnv.flatMap(_.get(s))
 

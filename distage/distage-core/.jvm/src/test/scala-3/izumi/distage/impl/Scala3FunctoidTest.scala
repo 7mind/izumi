@@ -3,7 +3,7 @@ package izumi.distage.impl
 import izumi.distage.model.definition.Id
 import izumi.distage.model.providers.Functoid
 import izumi.distage.model.reflection.{DIKey, TypedRef}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 // TODO: This test won't work on SJS until this issue is fixed: https://github.com/lampepfl/dotty/issues/16801
 class Scala3FunctoidTest extends AnyWordSpec {

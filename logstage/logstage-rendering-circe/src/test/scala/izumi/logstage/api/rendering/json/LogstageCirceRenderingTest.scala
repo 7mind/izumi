@@ -8,7 +8,7 @@ import izumi.logstage.api.rendering.LogstageCodec
 import izumi.logstage.api.strict.IzStrictLogger
 import izumi.logstage.api.{IzLogger, TestSink}
 import izumi.logstage.sink.{ConsoleSink, ExampleService}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LogstageCirceRenderingTest extends AnyWordSpec {
   import LogstageCirceRenderingTest._

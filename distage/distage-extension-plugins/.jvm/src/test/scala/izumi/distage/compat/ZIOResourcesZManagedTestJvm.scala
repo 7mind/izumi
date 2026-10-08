@@ -9,9 +9,9 @@ import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 
 import scala.annotation.unused
-import org.scalatest.{Assertion, GivenWhenThen}
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.*
 import zio.managed.ZManaged
 
@@ -26,7 +26,7 @@ object ZIOResourcesZManagedTestJvm {
     def run: Task[Unit] = ZIO.attempt(())
   }
 }
-final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen with ScalatestGuards {
+final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with ScalatestGuards {
 
   protected def unsafeRun[E, A](eff: => ZIO[Any, E, A]): A = Unsafe.unsafe(implicit unsafe => zio.Runtime.default.unsafe.run(eff).getOrThrowFiberFailure())
 
@@ -138,7 +138,7 @@ final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen w
          }
       """)
       }
-      val res = intercept[TestFailedException](
+      val res = intercept[AssertionFailure](
         assertCompiles(
           """
          new ModuleDef {
@@ -156,118 +156,71 @@ final class ZIOResourcesZManagedTestJvm extends AnyWordSpec with GivenWhenThen w
   "interruption" should {
 
     "Lifecycle.fromZManaged(ZManaged.fork) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {
-      When("axiom: ZManaged.fork is interruptible")
-      unsafeRun(
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- ZManaged
-            .fromZIO(latch.succeed(()) *> ZIO.never)
-            .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZManaged interrupted")))
-            .fork
-            .use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-        } yield ()
-      )
+      println("axiom: ZManaged.fork is interruptible")
+      unsafeRun {
+        Promise.make[Nothing, Unit].flatMap { latch =>
+          managedFiber(latch, "ZManaged interrupted").use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
+        }
+      }
 
-      When("ZManaged.fork converted to Lifecycle is still interruptible")
-      unsafeRun(
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .fromZManaged {
-              ZManaged
-                .fromZIO(latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("Lifecycle interrupted")))
-                .fork
-            }.use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-        } yield ()
-      )
+      println("ZManaged.fork converted to Lifecycle is still interruptible")
+      assertInterruptible(latch => Lifecycle.fromZManaged(managedFiber(latch, "Lifecycle interrupted")))
 
-      When("ZManaged.fork converted to Lifecycle interrupts itself")
-      unsafeRun(
+      println("ZManaged.fork converted to Lifecycle interrupts itself")
+      unsafeRun {
         for {
           latch <- Promise.make[Nothing, Unit]
-          doneFiber <- Lifecycle
-            .fromZManaged {
-              ZManaged
-                .fromZIO(latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("Lifecycle interrupted")))
-                .fork
-            }.use(latch.await.as(_))
+          doneFiber <- Lifecycle.fromZManaged(managedFiber(latch, "Lifecycle interrupted")).use(latch.await.as(_))
           exit <- doneFiber.await.timeoutFail("fiber was not interrupted")(60.seconds)
           _ = assert(exit.isInterrupted)
         } yield ()
-      )
-
-      When("Even `ZManaged -> Resource -> Lifecycle` chain is still interruptible")
-      unsafeRun {
-        import zio.interop.catz.*
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .fromCats[ZIO[Any, Throwable, _], Fiber[Nothing, Unit]](
-              ZManaged
-                .fromZIO(latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Throwable, Unit]) => ZIO.succeed(Then("Resource interrupted")))
-                .fork.toResourceZIO.mapK(FunctionK.id[Task].widen[ZIO[Any, Throwable, _]])
-            ).use(latch.await *> (_: Fiber[Throwable, Unit]).interrupt.unit)
-        } yield ()
       }
 
-      When("Even `Scoped ZIO -> ZManaged -> Resource -> Lifecycle` chain is still interruptible")
-      unsafeRun {
+      println("Even `ZManaged -> Resource -> Lifecycle` chain is still interruptible")
+      assertInterruptible { latch =>
         import zio.interop.catz.*
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .fromCats[ZIO[Any, Throwable, _], Fiber[Nothing, Unit]](
-              ZManaged
-                .scoped {
-                  (latch.succeed(()) *> ZIO.never)
-                    .onExit((_: Exit[Throwable, Unit]) => ZIO.succeed(Then("Resource interrupted")))
-                    .forkScoped
-                }.toResourceZIO.mapK(FunctionK.id[Task].widen[ZIO[Any, Throwable, _]])
-            ).use(latch.await *> (_: Fiber[Throwable, Unit]).interrupt.unit)
-        } yield ()
-
+        Lifecycle.fromCats[Task, Fiber[Nothing, Unit]](
+          managedFiber(latch, "Resource interrupted").toResourceZIO.mapK(FunctionK.id[Task].widen[ZIO[Any, Throwable, _]])
+        )
       }
+
+      println("Even `Scoped ZIO -> ZManaged -> Resource -> Lifecycle` chain is still interruptible")
+      assertInterruptible { latch =>
+        import zio.interop.catz.*
+        Lifecycle.fromCats[Task, Fiber[Nothing, Unit]](
+          ZManaged.scoped {
+            (latch.succeed(()) *> ZIO.never)
+              .onExit((_: Exit[Throwable, Unit]) => ZIO.succeed(println("Resource interrupted")))
+              .forkScoped
+          }.toResourceZIO.mapK(FunctionK.id[Task].widen[ZIO[Any, Throwable, _]])
+        )
+      }
+
     }
 
     "In fa.flatMap(fb), fa and fb retain interruptibility" in {
-      Then("Lifecycle.fromZIO(_).flatMap is interruptible")
-      unsafeRun(
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .fromZManaged[Any, Throwable, Fiber[Nothing, Unit]](
-              ZManaged
-                .fromZIO(latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZManaged interrupted")))
-                .fork
-            )
-            .flatMap(a => Lifecycle.unit[Task].map(_ => a))
-            .use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-        } yield ()
-      )
+      println("Lifecycle.fromZIO(_).flatMap is interruptible")
+      assertInterruptible { latch =>
+        Lifecycle.fromZManaged[Any, Throwable, Fiber[Nothing, Unit]](managedFiber(latch, "ZManaged interrupted"))
+          .flatMap(a => Lifecycle.unit[Task].map(_ => a))
+      }
 
-      Then("_.flatMap(_ => Lifecycle.fromZIO(_)) is interruptible")
-      unsafeRun(
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .unit[Task].flatMap {
-              _ =>
-                Lifecycle
-                  .fromZManaged[Any, Throwable, Fiber[Nothing, Unit]](
-                    ZManaged
-                      .fromZIO(latch.succeed(()) *> ZIO.never)
-                      .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZManaged interrupted")))
-                      .fork
-                  )
-            }.use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-        } yield ()
-      )
+      println("_.flatMap(_ => Lifecycle.fromZIO(_)) is interruptible")
+      assertInterruptible { latch =>
+        Lifecycle.unit[Task].flatMap(_ => Lifecycle.fromZManaged[Any, Throwable, Fiber[Nothing, Unit]](managedFiber(latch, "ZManaged interrupted")))
+      }
+
     }
 
+  }
+
+  private def managedFiber(latch: Promise[Nothing, Unit], message: String): ZManaged[Any, Nothing, Fiber[Nothing, Unit]] =
+    ZManaged.fromZIO(latch.succeed(()) *> ZIO.never)
+      .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(println(message)))
+      .fork
+
+  private def assertInterruptible(allocate: Promise[Nothing, Unit] => Lifecycle[Task, Fiber[Nothing, Unit]]): Unit = unsafeRun {
+    Promise.make[Nothing, Unit].flatMap(latch => allocate(latch).use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit))
   }
 
 }

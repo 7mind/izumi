@@ -1,0 +1,123 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import argparse, json, re
+from xml.etree import ElementTree
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
+from fixture_framework import framework_source
+
+ROOT = Path(__file__).resolve().parents[2]
+TIMEOUT_SECONDS = 180
+GRACE_SECONDS = 10
+EXPECTED_CONTROL_COUNT = 2
+SOURCE = framework_source(
+    prefix=r'''package fixture
+import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths, StandardOpenOption}
+abstract class ThrowSpec
+final class ThrowSuite extends ThrowSpec
+''',
+    framework='ThrowFramework', fingerprint='fingerprint', superclass='classOf[ThrowSpec].getName', label='"generic-task-throw-control"',
+    members='', arguments='arguments.clone()', remote='remoteArguments.clone()', definitions='definitions',
+    execute=r'''        handler.handle(new Event {
+          override def fullyQualifiedName(): String = definition.fullyQualifiedName()
+          override def fingerprint(): Fingerprint = definition.fingerprint()
+          override def selector(): Selector = new TestSelector("buffered success")
+          override def status(): Status = Status.Success
+          override def throwable(): OptionalThrowable = new OptionalThrowable
+          override def duration(): Long = 0L
+        })
+        val receipt = definition.fullyQualifiedName() + "\tSuccess\t" + ProcessHandle.current().pid()
+        val _ = Files.write(Paths.get(sys.props("fixture.audit-root")).resolve("buffered.success"), receipt.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        if (sys.props("fixture.mode") == "throw") throw new LinkageError("GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS")
+''',
+    done='""', tags='Array.empty', empty_tasks='Array.empty',
+)
+BUILD = '''scalaVersion := "3.9.0"
+libraryDependencies += "org.scala-sbt" % "test-interface" % "1.0" % Test
+scalacOptions ++= Seq("-release:17", "-Ybackend-parallelism", "1")
+Test / fork := true
+Test / testFrameworks := Seq(new TestFramework("fixture.ThrowFramework"))
+Test / javaOptions ++= Seq("-Dfixture.mode=" + sys.props("fixture.mode"), "-Dfixture.audit-root=" + sys.props("fixture.audit-root"))
+Test / testListeners += new TestsListener {
+  override def doInit(): Unit = println("GENERIC_TASK_THROW_PARENT pid=" + ProcessHandle.current().pid())
+  override def startGroup(name: String): Unit = println("GENERIC_TASK_THROW_START " + name)
+  override def testEvent(event: TestEvent): Unit = println("GENERIC_TASK_THROW_EVENTS result=" + event.result + " count=" + event.detail.size)
+  override def endGroup(name: String, cause: Throwable): Unit = println("GENERIC_TASK_THROW_END_THROWABLE " + name)
+  override def endGroup(name: String, result: TestResult): Unit = println("GENERIC_TASK_THROW_END " + name + " result=" + result)
+  override def doComplete(result: TestResult): Unit = println("GENERIC_TASK_THROW_COMPLETE result=" + result)
+}
+'''
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--evidence-dir',type=Path,required=True)
+    args=parser.parse_args()
+    evidence=args.evidence_dir.resolve(); evidence.mkdir(parents=True,exist_ok=False)
+    freeze_driver(__file__,evidence/'driver.py')
+    outcomes=[]
+    for sdk in ['2.0.9']:
+        for mode in ['normal','throw']:
+            lane=evidence/('sbt'+sdk+'-'+mode); build=lane/'build'
+            (build/'src/test/scala').mkdir(parents=True)
+            audit=lane/'audit'; audit.mkdir()
+            write_sbt_project(build, BUILD, sdk, None)
+            (build/'src/test/scala/ThrowFramework.scala').write_text(SOURCE)
+            commands=['show Test / dependencyClasspath','show Test / fullClasspath','testOnly *ThrowSuite']
+            if sdk=='2.0.9': commands.insert(0,'set Global / localCacheDirectory := file("'+str(lane/'local-cache')+'")')
+            shell='task_sdk="$1"; shift; exec sbt --server --sbt-version "$task_sdk" -java-home "$JDK21" -batch -J-Xmx6G "$@"'
+            argv=['direnv','exec',str(ROOT),'sh','-c',shell,'sdk-task-error-generic',sdk,'-Dfixture.mode='+mode,'-Dfixture.audit-root='+str(audit),*commands]
+            inputs=[dict(path=str(p),sha256=sha(p)) for p in sorted(build.rglob('*')) if p.is_file()]
+            (lane/'commands.json').write_text(json.dumps(dict(cwd=str(build),argv=argv,inputs=inputs),indent=2)+'\n')
+            print('TASK_ERROR_GENERIC_LANE '+sdk+' '+mode,flush=True)
+            with (lane/'run.log').open('x') as log:
+                actual = run_process(argv, build, log, TIMEOUT_SECONDS, GRACE_SECONDS)
+                log.write('\nEXIT '+str(actual)+'\n')
+            raw=(lane/'run.log').read_text()
+            report_rows=[]
+            for p in (build/'target').glob('**/test-reports/*.xml'):
+                xml=ElementTree.parse(p)
+                report_rows.append(dict(path=str(p),summary=xml.getroot().attrib,cases=[n.attrib for n in xml.findall('.//testcase')],errors=[n.attrib for n in xml.findall('.//error')]))
+            sent=(audit/'buffered.success').read_text().split('\t') if (audit/'buffered.success').is_file() else []
+            expected=0 if mode=='normal' else 1
+            valid=actual==expected and len(sent)==3 and sent[:2]==['fixture.ThrowSuite','Success'] and raw.count('GENERIC_TASK_THROW_PARENT pid=')==1
+            parents=re.findall(r'^GENERIC_TASK_THROW_PARENT pid=(\d+)$',raw,re.M)
+            valid=valid and len(parents)==1 and len(sent)==3 and sent[2].isdigit() and sent[2]!=parents[0]
+            if mode=='normal':
+                status='Passed'
+                valid=valid and raw.count('GENERIC_TASK_THROW_COMPLETE result='+status)==1 and len(report_rows)==1
+                if report_rows:
+                    row=report_rows[0]
+                    valid=valid and row['summary']['tests']=='1' and row['summary']['errors']=='0' and row['summary']['failures']=='0' and len(row['cases'])==1 and row['cases'][0]['classname']=='fixture.ThrowSuite'
+            else:
+                markers=[line for line in raw.splitlines() if line.startswith('GENERIC_TASK_THROW_') and not line.startswith('GENERIC_TASK_THROW_PARENT pid=')]
+                valid=valid and 'GENERIC_TASK_THROW_COMPLETE' not in raw and 'GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS' in raw
+                if markers:
+                    valid=valid and markers==[
+                        'GENERIC_TASK_THROW_START fixture.ThrowSuite',
+                        'GENERIC_TASK_THROW_EVENTS result=Some(Error) count=1',
+                        'GENERIC_TASK_THROW_END fixture.ThrowSuite result=Error',
+                    ] and len(report_rows)==1
+                    if len(report_rows)==1:
+                        row=report_rows[0]
+                        valid=valid and [row['summary'][key] for key in ['name','tests','errors','failures','skipped']]==['fixture.ThrowSuite','1','1','0','0']
+                        valid=valid and len(row['cases'])==1 and row['cases'][0]['classname']=='fixture.ThrowSuite' and len(row['errors'])==1
+                        if len(row['errors'])==1:
+                            valid=valid and 'java.lang.LinkageError: GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS' in row['errors'][0]['message']
+                else:
+                    valid=valid and not report_rows
+            for row in inputs: assert sha(row['path'])==row['sha256']
+            assert sha(__file__)==sha(evidence/'driver.py')
+            record=dict(sbt=sdk,mode=mode,actualExit=actual,expectedExit=expected,valid=valid,sent=sent,reports=report_rows,listenerMarkers=[line for line in raw.splitlines() if line.startswith('GENERIC_TASK_THROW_')])
+            (lane/'completion.json').write_text(json.dumps(record,indent=2)+'\n'); outcomes.append(record)
+            print(json.dumps({k:v for k,v in record.items() if k not in ['reports','listenerMarkers']}),flush=True)
+            if not valid: break
+        if not outcomes[-1]['valid']: break
+    valid=len(outcomes)==EXPECTED_CONTROL_COUNT and all(row['valid'] for row in outcomes)
+    terminal=dict(exit=0 if valid else 1,outcomes=outcomes,scope='Expected-defect control. Public generic test-interface and TestsListener only; no distage dependencies/plugin/private SDK changes. Requires missing SBT2 doComplete on task Throwable; accepts absent reporting or a complete suite-error report with the original cause. Product acceptance is checked separately.')
+    (evidence/'completion.json').write_text(json.dumps(terminal,indent=2)+'\n')
+    print(json.dumps(dict(exit=terminal['exit'],completionSha256=sha(evidence/'completion.json'))),flush=True)
+    raise SystemExit(terminal['exit'])
+if __name__=='__main__': main()

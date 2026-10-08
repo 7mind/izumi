@@ -8,6 +8,8 @@ import scala.annotation.unused
 private[roles] object RoleAppMainPlatformSpecific {
   type MainEffect[+A] = A
 
+  def runMain[F[_]](run: (Option[AppShutdownStrategy[F]] => Unit) => Unit): MainEffect[Unit] = run(_ => ())
+
   def failedMain(@unused t: Throwable): Unit = ()
 
   def defaultEarlyFailureHandler: AppFailureHandler = AppFailureHandler.TerminatingHandler

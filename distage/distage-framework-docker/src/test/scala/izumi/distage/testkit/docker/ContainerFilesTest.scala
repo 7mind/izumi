@@ -8,7 +8,8 @@ import izumi.distage.docker.model.Docker.{ContainerConfig, ContainerFile, Docker
 import izumi.distage.docker.model.DockerFailureException
 import izumi.distage.testkit.docker.ContainerFilesTest.*
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.scalatest.{AssertZIO, Spec2}
+import izumi.distage.testkit.runner.spec.Spec2
+import izumi.fundamentals.assertions.bio.BIOAssertionSuspension.*
 import izumi.fundamentals.platform.files.IzFiles
 import zio.{IO, Scope, Task, ZIO}
 
@@ -111,7 +112,7 @@ object ContainerFilesTest {
   }
 }
 
-final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
+final class ContainerFilesTest extends Spec2[IO] {
 
   override protected def config: TestConfig = super.config.copy(
     moduleOverrides = new ModuleDef {
@@ -153,7 +154,7 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
             reusedResult <- containers.configured(_.copy(files = Seq(ContainerFile(files.missing, reusedFile)))).use(_ => ZIO.unit).either
             _ <- ZIO.foreachDiscard(List(freshResult, reusedResult)) {
               result =>
-                assertIO(result.swap.exists {
+                assert2[IO](result.swap.exists {
                   case failure: DockerFailureException => failure.getMessage.contains(files.missing.toString)
                   case _ => false
                 })
@@ -175,7 +176,7 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
               case (file, reason) =>
                 resource.copy(config = resource.config.copy(files = Seq(file))).use(_ => ZIO.unit).either.flatMap {
                   result =>
-                    assertIO(result.swap.exists {
+                    assert2[IO](result.swap.exists {
                       case failure: DockerFailureException =>
                         failure.getCause.isInstanceOf[IllegalArgumentException] &&
                         failure.getCause.getMessage.endsWith(reason) &&
@@ -206,8 +207,8 @@ final class ContainerFilesTest extends Spec2[IO] with AssertZIO {
                 }
             }
             (first, sameFiles, otherFiles, noFiles) = ids
-            _ <- assertIO(first == sameFiles)
-            _ <- assertIO(Set(first, otherFiles, noFiles).size == 3)
+            _ <- assert2[IO](first == sameFiles)
+            _ <- assert2[IO](Set(first, otherFiles, noFiles).size == 3)
           } yield ()
         }
     }

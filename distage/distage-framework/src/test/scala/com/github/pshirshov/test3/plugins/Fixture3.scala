@@ -34,14 +34,14 @@ object Fixture3 {
 
   object TestRoleAppMainFailing extends RoleAppMain.LauncherIdentity {
     override protected def pluginConfig: PluginConfig = {
-      if (IzPlatform.isScalaJS) {
+      if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
         PluginConfig.const(new TestPlugin)
       } else {
         PluginConfig.cachedThisPkg
       }
     }
     override protected def bootstrapPluginConfig: PluginConfig = {
-      (if (IzPlatform.isScalaJS) {
+      (if (IzPlatform.isScalaJS || IzPlatform.isScalaNative) {
          PluginConfig.const(BootstrapFixture3.BootstrapPlugin)
        } else {
          PluginConfig.cached("com.github.pshirshov.test3.bootstrap")

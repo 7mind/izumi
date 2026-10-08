@@ -4,7 +4,7 @@ import cats.syntax.all.*
 import izumi.distage.fixtures.BasicCases.*
 import izumi.distage.model.definition.Bindings.{binding, bindingTrait}
 import izumi.distage.model.definition.*
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 final class ModuleBaseInstancesTest extends AnyWordSpec {
   "cats instances for ContextDefinition" should {

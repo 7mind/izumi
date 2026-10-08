@@ -2,6 +2,7 @@ package izumi.distage.plugins.load
 
 import izumi.distage.plugins.PluginConfig
 import izumi.distage.plugins.load.PluginLoaderDefaultImpl.RuntimePluginScanningNotSupportedOnScalajs
+import izumi.fundamentals.platform.language.Quirks.*
 import izumi.fundamentals.platform.strings.IzString.toRichIterable
 
 class PluginLoaderDefaultImpl extends PluginLoader {
@@ -15,6 +16,11 @@ class PluginLoaderDefaultImpl extends PluginLoader {
 
 object PluginLoaderDefaultImpl {
   def apply(): PluginLoaderDefaultImpl = new PluginLoaderDefaultImpl()
+
+  def withPackageCache(cache: PluginPackageCache): PluginLoaderDefaultImpl = {
+    cache.discard()
+    new PluginLoaderDefaultImpl()
+  }
 
   final class RuntimePluginScanningNotSupportedOnScalajs(val packagesEnabled: Seq[String])
     extends RuntimeException(

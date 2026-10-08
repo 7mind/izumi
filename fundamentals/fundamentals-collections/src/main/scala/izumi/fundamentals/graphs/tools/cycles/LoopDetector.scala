@@ -5,7 +5,6 @@ import izumi.fundamentals.graphs.tools.cycles.LoopDetector.Cycles
 
 import scala.collection.mutable
 
-// TODO: this class is not required for distage
 trait LoopDetector {
   def findCyclesForNode[T](node: T, graph: AdjacencyList[T]): Option[Cycles[T]]
   def findLoopMember[T](graph: AdjacencyList[T]): Option[T]
@@ -16,6 +15,27 @@ trait LoopDetector {
 }
 
 object LoopDetector {
+  private[izumi] def isInvolvedIntoCycle[T](toPreds: Map[T, Set[T]])(key: T): Boolean = {
+    test(toPreds, Set.empty, key, key)
+  }
+
+  private def test[T](toPreds: Map[T, Set[T]], stack: Set[T], toTest: T, needle: T): Boolean = {
+    val deps = toPreds.getOrElse(toTest, Set.empty)
+
+    if (deps.contains(needle)) {
+      true
+    } else {
+      deps.exists {
+        d =>
+          if (stack.contains(d)) {
+            false
+          } else {
+            test(toPreds, stack + d, d, needle)
+          }
+      }
+    }
+  }
+
   final case class Loop[T](loop: Seq[T]) extends AnyVal
 
   final case class Cycles[T](node: T, loops: Seq[Loop[T]])

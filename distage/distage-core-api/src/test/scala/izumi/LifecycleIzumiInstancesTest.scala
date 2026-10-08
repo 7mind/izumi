@@ -3,7 +3,7 @@ package izumi
 import izumi.distage.model.definition.Lifecycle2
 import izumi.functional.bio.{Applicative2, Functor2, Monad2}
 import izumi.functional.quasi.QuasiPrimitives
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LifecycleIzumiInstancesTest extends AnyWordSpec {
   "Summon Monad2 instances for Lifecycle" in {

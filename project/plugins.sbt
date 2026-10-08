@@ -6,10 +6,15 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % PV.scala_js_version)
 
 // https://github.com/portable-scala/sbt-crossproject
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.4.0")
+addSbtPlugin("org.portable-scala" % "sbt-scala-native-crossproject" % "1.4.0")
+
+addSbtPlugin("org.scala-native"   % "sbt-scala-native"              % "0.5.12")
 
 ////////////////////////////////////////////////////////////////////////////////
 
 addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.122")
+
+addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "1.4.0")
 
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % PV.sbt_pgp)
 

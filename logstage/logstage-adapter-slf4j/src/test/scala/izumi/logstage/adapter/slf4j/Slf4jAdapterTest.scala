@@ -2,7 +2,7 @@ package izumi.logstage.adapter.slf4j
 
 import izumi.logstage.api.routing.{ConfigurableLogRouter, StaticLogRouter}
 import izumi.logstage.api.{IzLogger, TestSink}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import org.slf4j.LoggerFactory
 import org.slf4j.impl.StaticLoggerBinder
 

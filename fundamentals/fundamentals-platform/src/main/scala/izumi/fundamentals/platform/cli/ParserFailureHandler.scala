@@ -1,5 +1,6 @@
 package izumi.fundamentals.platform.cli
 
+import izumi.fundamentals.platform.__ProcessExit
 import izumi.fundamentals.platform.cli.CLIParser.ParserError
 import izumi.fundamentals.platform.cli.CLIParser.ParserError.*
 import izumi.fundamentals.platform.cli.model.RoleAppArgs
@@ -14,7 +15,7 @@ object ParserFailureHandler {
   object TerminatingHandler extends ParserFailureHandler {
     override def onParserError(e: ParserError): Nothing = {
       System.err.println(makeMessage(e))
-      System.exit(1)
+      __ProcessExit(1)
       throw new IllegalStateException("System.exit() didn't work")
     }
   }

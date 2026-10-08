@@ -8,31 +8,18 @@ final class String_Syntax(private val s: String) extends AnyVal {
     s.getBytes(StandardCharsets.UTF_8)
   }
 
-  @inline final def asBoolean(): Option[Boolean] = {
-    try Some(s.toBoolean)
-    catch {
-      case e if NonFatal(e) => None
-    }
-  }
+  @inline final def asBoolean(): Option[Boolean] = parse(Some(s.toBoolean), None)
 
-  @inline final def asBoolean(defValue: Boolean): Boolean = {
-    try s.toBoolean
-    catch {
-      case e if NonFatal(e) => defValue
-    }
-  }
+  @inline final def asBoolean(defValue: Boolean): Boolean = parse(s.toBoolean, defValue)
 
-  @inline final def asInt(): Option[Int] = {
-    try Some(s.toInt)
-    catch {
-      case e if NonFatal(e) => None
-    }
-  }
+  @inline final def asInt(): Option[Int] = parse(Some(s.toInt), None)
 
-  @inline final def asInt(defValue: Int): Int = {
-    try s.toInt
+  @inline final def asInt(defValue: Int): Int = parse(s.toInt, defValue)
+
+  private def parse[A](value: => A, fallback: => A): A = {
+    try value
     catch {
-      case e if NonFatal(e) => defValue
+      case e if NonFatal(e) => fallback
     }
   }
 
@@ -65,24 +52,21 @@ final class String_Syntax(private val s: String) extends AnyVal {
   }
 
   @inline final def leftEllipsed(limit: Int, ellipsis: String): String = {
-    val elen = ellipsis.length
-    if (s.length > limit && s.length > elen) {
-      s"$ellipsis${s.takeRight(limit - elen)}"
-    } else if (s.length > limit && s.length <= elen) {
-      s"${s.takeRight(limit)}"
-    } else {
-      s
-    }
+    ellipsed(limit, ellipsis)(s.takeRight, ellipsis + _)
   }
 
   @inline final def rightEllipsed(limit: Int, ellipsis: String): String = {
+    ellipsed(limit, ellipsis)(s.take, _ + ellipsis)
+  }
+
+  private def ellipsed(limit: Int, ellipsis: String)(take: Int => String, append: String => String): String = {
     val elen = ellipsis.length
-    if (s.length > limit && s.length > elen) {
-      s"${s.take(limit - elen)}$ellipsis"
-    } else if (s.length > limit && s.length <= elen) {
-      s"${s.take(limit)}"
-    } else {
+    if (s.length <= limit) {
       s
+    } else if (s.length > elen) {
+      append(take(limit - elen))
+    } else {
+      take(limit)
     }
   }
 
@@ -91,22 +75,13 @@ final class String_Syntax(private val s: String) extends AnyVal {
       s
     } else {
       val half = maxLength / 2
-      val (left, right) = ellipsis match {
-        case Some(_) =>
-          if (half * 2 < maxLength) {
-            (half, half)
-          } else {
-            (half - 1, half)
-          }
-        case None =>
-          if (half * 2 < maxLength) {
-            (half + 1, half)
-          } else {
-            (half, half)
-          }
+      val left = half + (if (half * 2 < maxLength) 1 else 0)
+      val prefix = ellipsis match {
+        case Some(_) => left - 1
+        case None => left
       }
 
-      s.take(left) + ellipsis.getOrElse("") + s.takeRight(right)
+      s.take(prefix) + ellipsis.getOrElse("") + s.takeRight(half)
     }
   }
 
@@ -142,16 +117,12 @@ final class String_Syntax(private val s: String) extends AnyVal {
     }
   }
 
-  def splitFirst(separator: Char): (String, String) = {
-    s.indexOf(separator.toInt) match {
-      case -1 => ("", s)
-      case idx =>
-        (s.substring(0, idx), s.substring(idx + 1, s.length))
-    }
-  }
+  def splitFirst(separator: Char): (String, String) = splitAtIndex(s.indexOf(separator.toInt))
 
-  def splitLast(separator: Char): (String, String) = {
-    s.lastIndexOf(separator.toInt) match {
+  def splitLast(separator: Char): (String, String) = splitAtIndex(s.lastIndexOf(separator.toInt))
+
+  private def splitAtIndex(index: Int): (String, String) = {
+    index match {
       case -1 => ("", s)
       case idx =>
         (s.substring(0, idx), s.substring(idx + 1, s.length))

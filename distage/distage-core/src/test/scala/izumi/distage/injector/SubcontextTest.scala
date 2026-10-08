@@ -8,8 +8,8 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.plan.Roots
 import izumi.functional.quasi.QuasiIO
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class SubcontextTest extends AnyWordSpec with MkInjector {
 
@@ -37,11 +37,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         .localDependency[Arg]("x")
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
-
-    val injector = mkNoCyclesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test")))
 
     val local = context.get[Subcontext[Identity, Int]]("test")
     assert(context.find[GlobalServiceDependency].nonEmpty)
@@ -71,11 +67,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
         }
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test"))
-
-    val injector = mkNoCyclesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
+    val context = produceLocator(mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]].named("test")))
 
     val local = context.get[Subcontext[Identity, Int]]("test")
 
@@ -90,13 +82,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       }).localDependency[Arg]
     }
 
-    val definition = PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]])
-
-    val injector = mkNoCyclesInjector()
-    val plan = injector.planUnsafe(definition)
-    val context = injector.produce(plan).unsafeGet()
-
-    val local = context.get[Subcontext[Identity, Int]]
+    val local = produceInstance[Subcontext[Identity, Int]](mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]]))
 
     assert(local.provide[Arg](Arg(10)).produceRun(identity) == 20)
   }
@@ -175,8 +161,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       }).localDependency[Int]("arg")
     }
 
-    val injector = mkNoCyclesInjector()
-    val subcontext = injector.produceGet[Subcontext[Identity, Int]](module).unsafeGet()
+    val subcontext = mkNoCyclesInjector().produceGet[Subcontext[Identity, Int]](module).unsafeGet()
 
     val resPlus1 = subcontext.provide[Int]("arg")(1).produceRun(identity)
     val resMinus1 = subcontext.provide[Int]("arg")(-1).produceRun(identity)
@@ -203,14 +188,13 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       subcontext.provide[Arg](Arg(1)).produce().use(effect => effect)
     }
 
-    val injector = mkNoCyclesInjector()
-    val subcontext = injector.produceGet[Subcontext[Suspend2[Throwable, _], Suspend2[Throwable, Int]]](module).unsafeGet()
+    val subcontext = mkNoCyclesInjector().produceGet[Subcontext[Suspend2[Throwable, _], Suspend2[Throwable, Int]]](module).unsafeGet()
 
     val res = good(subcontext)
 
     assert(res.run() == Right(230))
 
-    val err = intercept[TestFailedException](assertCompiles("""
+    val err = intercept[AssertionFailure](assertCompiles("""
     def bad[F[_]](subcontext: Subcontext[F, F[Int]]): F[Int] = {
       subcontext.provide[Arg](Arg(1)).produce().use(effect => effect)
     }

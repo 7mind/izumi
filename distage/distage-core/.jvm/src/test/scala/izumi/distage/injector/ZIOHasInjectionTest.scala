@@ -10,7 +10,7 @@ import izumi.distage.model.definition.ModuleDef
 import izumi.distage.model.reflection.TypedRef
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.assertions.ScalatestGuards
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.*
 
 import scala.annotation.nowarn

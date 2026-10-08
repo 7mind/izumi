@@ -18,7 +18,7 @@ import izumi.reflect.{Tag, TagK, TagKK}
   * Automatically provides default runtime environments & typeclasses instances for effect types.
   * All the defaults are overrideable via [[izumi.distage.model.definition.ModuleDef]]
   *
-  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-scalatest`
+  *  - Adds [[izumi.functional.quasi.QuasiIO]] instances to support using effects in `Injector`, `distage-framework` & `distage-testkit-runner`
   *  - Adds `cats-effect` typeclass instances for effect types that have `cats-effect` instances
   *  - Adds [[izumi.functional.bio]] typeclass instances for bifunctor effect types
   *
@@ -81,30 +81,6 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
   implicit final def forZIO[ZIO[_, _, _]: `zio.ZIO`, R: Tag]: DefaultModule2[ZIO[R, _, _]] = {
     DefaultModule(ZIOSupportModule[R])
   }
-
-//  /**
-//    * This instance uses 'no more orphans' trick to provide an Optional instance
-//    * only IFF you have monix-bio as a dependency without REQUIRING a monix-bio dependency.
-//    *
-//    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-//    *
-//    * @see [[izumi.distage.modules.support.MonixBIOSupportModule]]
-//    */
-//  implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
-//    DefaultModule(MonixBIOSupportModule)
-//  }
-//
-//  /**
-//    * This instance uses 'no more orphans' trick to provide an Optional instance
-//    * only IFF you have monix as a dependency without REQUIRING a monix dependency.
-//    *
-//    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-//    *
-//    * @see [[izumi.distage.modules.support.MonixSupportModule]]
-//    */
-//  implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
-//    DefaultModule(MonixSupportModule)
-//  }
 
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance

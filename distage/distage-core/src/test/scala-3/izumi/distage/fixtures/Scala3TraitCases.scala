@@ -7,8 +7,6 @@ import scala.annotation.nowarn
 @nowarn("msg=unused")
 object Scala3TraitCases {
 
-  class AClass(a: String)
-
   trait ATrait {
     def toWireT: Int
     def xxx: Int = 1

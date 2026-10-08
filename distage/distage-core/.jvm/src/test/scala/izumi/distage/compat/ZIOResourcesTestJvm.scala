@@ -8,9 +8,9 @@ import izumi.functional.bio.IO2
 import izumi.fundamentals.platform.assertions.ScalatestGuards
 
 import scala.annotation.unused
-import org.scalatest.{Assertion, GivenWhenThen}
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 import zio.*
 
 object ZIOResourcesTestJvm {
@@ -24,7 +24,7 @@ object ZIOResourcesTestJvm {
     def run: Task[Unit] = ZIO.attempt(())
   }
 }
-final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOTest with ScalatestGuards {
+final class ZIOResourcesTestJvm extends AnyWordSpec with ZIOTest with ScalatestGuards {
 
   "ZIO Scoped" should {
 
@@ -54,14 +54,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
     }
 
     "fromResource API should be compatible with provider and instance bindings of type Scoped ZIO" in {
-      val resResource: ZIO[Scope, Throwable, Res1] =
-        ZIO.acquireRelease(
-          acquire = ZIO.attempt {
-            val res = new Res1
-            res.allocated = true
-            res
-          }
-        )(release = res => ZIO.succeed(res.allocated = false))
+      val resResource: ZIO[Scope, Throwable, Res1] = allocatedResource
 
       val definition: ModuleDef = new ModuleDef {
         make[Res]
@@ -73,60 +66,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         }
       }
 
-      definition.bindings.foreach {
-        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
-          assert(implDef.implType == SafeType.get[Res1])
-          assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
-          assert(!fn.diKeys.exists(_.toString.contains("cats.effect")))
-        case _ =>
-          fail()
-      }
-
-      val injector = Injector()
-      val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
-
-      def assertAcquired(ctx: Locator): Task[(Res, Res)] = {
-        ZIO.attempt {
-          val i1 = ctx.get[Res]("instance")
-          val i2 = ctx.get[Res]("provider")
-          assert(i1 ne i2)
-          assert((i1.allocated -> i2.allocated) == (true -> true))
-          i1 -> i2
-        }
-      }
-
-      def assertReleased(i1: Res, i2: Res): Task[Assertion] = {
-        ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
-      }
-
-      def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
-
-      val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
-
-      // works normally
-      unsafeRun {
-        ctxResource
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to cats.Resource
-      unsafeRun {
-        import izumi.functional.bio.catz.BIOToMonadCancel
-        ctxResource.toCats
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to scoped zio.ZIO
-      unsafeRun {
-        ZIO
-          .scoped {
-            ctxResource.toZIO
-              .flatMap(assertAcquired)
-          }
-          .flatMap((assertReleased _).tupled)
-      }
+      assertLifecycleBindings(definition)
     }
 
   }
@@ -159,13 +99,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
     }
 
     "fromResource API should be compatible with provider and instance bindings of type ZLayer" in {
-      val resResource: ZLayer[Any, Throwable, Res1] = ZLayer.scoped(
-        ZIO.acquireRelease(
-          acquire = ZIO.attempt {
-            val res = new Res1; res.allocated = true; res
-          }
-        )(release = res => ZIO.succeed(res.allocated = false))
-      )
+      val resResource: ZLayer[Any, Throwable, Res1] = ZLayer.scoped(allocatedResource)
 
       val definition: ModuleDef = new ModuleDef {
         make[Res].named("instance").fromResource(resResource)
@@ -176,60 +110,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
         }
       }
 
-      definition.bindings.foreach {
-        case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
-          assert(implDef.implType == SafeType.get[Res1])
-          assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
-          assert(!fn.diKeys.exists(_.toString.contains("cats.effect")))
-        case _ =>
-          fail()
-      }
-
-      val injector = Injector()
-      val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
-
-      def assertAcquired(ctx: Locator): Task[(Res, Res)] = {
-        ZIO.attempt {
-          val i1 = ctx.get[Res]("instance")
-          val i2 = ctx.get[Res]("provider")
-          assert(i1 ne i2)
-          assert((i1.allocated -> i2.allocated) == (true -> true))
-          i1 -> i2
-        }
-      }
-
-      def assertReleased(i1: Res, i2: Res): Task[Assertion] = {
-        ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
-      }
-
-      def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
-
-      val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
-
-      // works normally
-      unsafeRun {
-        ctxResource
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to cats.Resource
-      unsafeRun {
-        import izumi.functional.bio.catz.BIOToMonadCancel
-        ctxResource.toCats
-          .use(assertAcquired)
-          .flatMap((assertReleased _).tupled)
-      }
-
-      // works when Lifecycle is converted to scoped zio.ZIO
-      unsafeRun {
-        ZIO
-          .scoped {
-            ctxResource.toZIO
-              .flatMap(assertAcquired)
-          }
-          .flatMap((assertReleased _).tupled)
-      }
+      assertLifecycleBindings(definition)
     }
 
     "Conversions from ZLayer should fail to typecheck if the result type is unrelated to the binding type" in {
@@ -241,7 +122,7 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
          }
         """)
       }
-      val res = intercept[TestFailedException](
+      val res = intercept[AssertionFailure](
         assertCompiles(
           """
          new ModuleDef {
@@ -259,83 +140,114 @@ final class ZIOResourcesTestJvm extends AnyWordSpec with GivenWhenThen with ZIOT
   "interruption" should {
 
     "Lifecycle.fromZIO(ZIO.forkScoped) is interruptible (https://github.com/7mind/izumi/issues/1138)" in {
-      When("axiom: ZIO.forkScoped is interruptible")
+      println("axiom: ZIO.forkScoped is interruptible")
       unsafeRun {
         for {
           latch <- Promise.make[Nothing, Unit]
-          _ <- ZIO.scoped(
-            (latch.succeed(()) *> ZIO.never)
-              .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
-              .forkScoped
-              .flatMap(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-          )
+          _ <- ZIO.scoped(scopedFiber(latch).flatMap(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit))
         } yield ()
       }
 
-      When("ZIO.forkScoped converted to Lifecycle is still interruptible")
-      unsafeRun(
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .fromZIO {
-              (latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
-                .forkScoped
-            }.use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-        } yield ()
-      )
+      println("ZIO.forkScoped converted to Lifecycle is still interruptible")
+      assertInterruptible(latch => Lifecycle.fromZIO(scopedFiber(latch)))
 
-      When("ZManaged.fork converted to Lifecycle interrupts itself")
-      unsafeRun(
+      println("ZManaged.fork converted to Lifecycle interrupts itself")
+      unsafeRun {
         for {
           latch <- Promise.make[Nothing, Unit]
-          doneFiber <- Lifecycle
-            .fromZIO {
-              (latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
-                .forkScoped
-            }.use(latch.await.as(_))
+          doneFiber <- Lifecycle.fromZIO(scopedFiber(latch)).use(latch.await.as(_))
           exit <- doneFiber.await.timeoutFail("fiber was not interrupted")(60.seconds)
           _ = assert(exit.isInterrupted)
         } yield ()
-      )
+      }
 
     }
 
     "In fa.flatMap(fb), fa and fb retain interruptibility" in {
-      Then("Lifecycle.fromZIO(_).flatMap is interruptible")
-      unsafeRun(
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .fromZIO[Any](
-              (latch.succeed(()) *> ZIO.never)
-                .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
-                .forkScoped
-            )
-            .flatMap(a => Lifecycle.unit[Task].map(_ => a))
-            .use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-        } yield ()
-      )
+      println("Lifecycle.fromZIO(_).flatMap is interruptible")
+      assertInterruptible(latch => Lifecycle.fromZIO[Any](scopedFiber(latch)).flatMap(a => Lifecycle.unit[Task].map(_ => a)))
 
-      Then("_.flatMap(_ => Lifecycle.fromZIO(_)) is interruptible")
-      unsafeRun(
-        for {
-          latch <- Promise.make[Nothing, Unit]
-          _ <- Lifecycle
-            .unit[Task].flatMap {
-              _ =>
-                Lifecycle
-                  .fromZIO[Any](
-                    (latch.succeed(()) *> ZIO.never)
-                      .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(Then("ZIO interrupted")))
-                      .forkScoped
-                  )
-            }.use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit)
-        } yield ()
-      )
+      println("_.flatMap(_ => Lifecycle.fromZIO(_)) is interruptible")
+      assertInterruptible(latch => Lifecycle.unit[Task].flatMap(_ => Lifecycle.fromZIO[Any](scopedFiber(latch))))
+
     }
 
+  }
+
+  private def allocatedResource: ZIO[Scope, Throwable, Res1] = ZIO.acquireRelease(ZIO.attempt {
+    val res = new Res1
+    res.allocated = true
+    res
+  })(res => ZIO.succeed(res.allocated = false))
+
+  private def scopedFiber(latch: Promise[Nothing, Unit]): ZIO[Scope, Nothing, Fiber[Nothing, Unit]] =
+    (latch.succeed(()) *> ZIO.never)
+      .onExit((_: Exit[Nothing, Unit]) => ZIO.succeed(println("ZIO interrupted")))
+      .forkScoped
+
+  private def assertInterruptible(allocate: Promise[Nothing, Unit] => Lifecycle[Task, Fiber[Nothing, Unit]]): Unit = unsafeRun {
+    Promise.make[Nothing, Unit].flatMap(latch => allocate(latch).use(latch.await *> (_: Fiber[Nothing, Unit]).interrupt.unit))
+  }
+
+  private def assertLifecycleBindings(definition: ModuleDef): Unit = {
+    definition.bindings.foreach {
+      case SingletonBinding(_, implDef @ ImplDef.ResourceImpl(_, _, ImplDef.ProviderImpl(providerImplType, fn)), _, _, _) =>
+        assert(implDef.implType == SafeType.get[Res1])
+        assert(providerImplType == SafeType.get[Lifecycle.FromZIO[Any, Throwable, Res1]])
+        assert(!fn.diKeys.exists(_.toString.contains("cats.effect")))
+      case _ =>
+        fail()
+    }
+
+    val injector = Injector()
+    val plan = injector.planUnsafe(PlannerInput.everything(definition, Activation.empty))
+
+    assertLifecycleConversions(injector, plan)
+  }
+
+  private def assertLifecycleConversions(injector: Injector[Identity], plan: Plan): Unit = {
+    def assertAcquired(ctx: Locator): Task[(Res, Res)] = {
+      ZIO.attempt {
+        val i1 = ctx.get[Res]("instance")
+        val i2 = ctx.get[Res]("provider")
+        assert(i1 ne i2)
+        assert((i1.allocated -> i2.allocated) == (true -> true))
+        i1 -> i2
+      }
+    }
+
+    def assertReleased(i1: Res, i2: Res): Task[Assertion] = {
+      ZIO.attempt(assert((i1.allocated -> i2.allocated) == (false -> false)))
+    }
+
+    def produceBIO[F[+_, +_]: TagKK: IO2]: Lifecycle[F[Throwable, _], Locator] = injector.produceCustomF[F[Throwable, _]](plan)
+
+    val ctxResource: Lifecycle[Task, Locator] = produceBIO[IO]
+
+    // works normally
+    unsafeRun {
+      ctxResource
+        .use(assertAcquired)
+        .flatMap((assertReleased _).tupled)
+    }
+
+    // works when Lifecycle is converted to cats.Resource
+    unsafeRun {
+      import izumi.functional.bio.catz.BIOToMonadCancel
+      ctxResource.toCats
+        .use(assertAcquired)
+        .flatMap((assertReleased _).tupled)
+    }
+
+    // works when Lifecycle is converted to scoped zio.ZIO
+    unsafeRun {
+      ZIO
+        .scoped {
+          ctxResource.toZIO
+            .flatMap(assertAcquired)
+        }
+        .flatMap((assertReleased _).tupled)
+    }
   }
 
 }

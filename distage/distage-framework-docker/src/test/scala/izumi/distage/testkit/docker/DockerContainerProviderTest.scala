@@ -4,7 +4,7 @@ import distage.SafeType
 import izumi.distage.docker.bundled.PostgresDocker
 import izumi.distage.docker.impl.ContainerResource
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 final class DockerContainerProviderTest extends AnyWordSpec {
   "Return type is correct" in {

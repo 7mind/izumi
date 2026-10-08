@@ -7,8 +7,8 @@ import izumi.logstage.api.strict.IzStrictLogger
 import izumi.logstage.api.zioUtil.runZIO
 import logstage.LogIO2
 import logstage.strict.LogIO2Strict
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class LoggerLogValuesTest extends AnyWordSpec {
   "Logger.logValues" should {
@@ -21,16 +21,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
 
       logger.logValues(Log.Level.Info)(value1, testMethod(1) -> "add", 1 -> "constant")
 
-      val Seq(logEntry) = testSink.fetch()
-
-      val expectedArgs = Seq(
-        LogArg(Seq("value1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("add"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("constant"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      )
-      assert(logEntry.message.args == expectedArgs)
-
-      assert(LogFormat.Default.formatMessage(logEntry, RenderingOptions.simple).message == "value_1=1, add=2, constant=1")
+      assertValues(testSink, integerArguments, "value_1=1, add=2, constant=1")
     }
 
     "log raw values" in {
@@ -41,11 +32,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
 
       logger.raw.logValues(Log.Level.Info)(value1, testMethod(1) -> "add", 1 -> "constant")
 
-      val Seq(logEntry) = testSink.fetch()
-
-      assert(logEntry.message.args == Nil)
-
-      assert(LogFormat.Default.formatMessage(logEntry, RenderingOptions.simple).message == "1, (2,add), (1,constant)")
+      assertValues(testSink, Nil, "1, (2,add), (1,constant)")
     }
 
     "log strict values" in {
@@ -54,7 +41,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
 
       val value1 = WithCustomCodec(1)
 
-      val strictCodecErr = intercept[TestFailedException](
+      val strictCodecErr = intercept[AssertionFailure](
         assertCompiles(
           """logger.logValues(Log.Level.Info)(value1, WithCustomCodec(testMethod(1)) -> "add", WithCustomCodec(1) -> "constant")"""
         )
@@ -62,27 +49,14 @@ class LoggerLogValuesTest extends AnyWordSpec {
       assert(strictCodecErr.getMessage().contains("Implicit search failed"))
 
       val customIntCodec: LogstageCodec[WithCustomCodec] = {
-        implicit val customIntCodec: LogstageCodec[WithCustomCodec] = new LogstageCodec[WithCustomCodec] {
-          override def write(writer: LogstageWriter, value: WithCustomCodec): Unit = {
-            writer.write(List.fill(value.int)("a").mkString)
-          }
-        }
+        implicit val customIntCodec: LogstageCodec[WithCustomCodec] = newCustomCodec()
 
         logger.logValues(Log.Level.Info)(value1, WithCustomCodec(testMethod(1)) -> "add", WithCustomCodec(1) -> "constant")
 
         customIntCodec
       }
 
-      val Seq(logEntry) = testSink.fetch()
-
-      val expectedArgs = Seq(
-        LogArg(Seq("value1"), WithCustomCodec(1), hiddenName = false, Some(customIntCodec)),
-        LogArg(Seq("add"), WithCustomCodec(2), hiddenName = false, Some(customIntCodec)),
-        LogArg(Seq("constant"), WithCustomCodec(1), hiddenName = false, Some(customIntCodec)),
-      )
-      assert(logEntry.message.args == expectedArgs)
-
-      assert(LogFormat.Default.formatMessage(logEntry, RenderingOptions.simple).message == "value_1=a, add=aa, constant=a")
+      assertValues(testSink, customArguments(customIntCodec), "value_1=a, add=aa, constant=a")
     }
 
     "logIO log values" in {
@@ -95,16 +69,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
         logger.logValues(Log.Level.Info)(value1, testMethod(1) -> "add", 1 -> "constant")
       }
 
-      val Seq(logEntry) = testSink.fetch()
-
-      val expectedArgs = Seq(
-        LogArg(Seq("value1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("add"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("constant"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      )
-      assert(logEntry.message.args == expectedArgs)
-
-      assert(LogFormat.Default.formatMessage(logEntry, RenderingOptions.simple).message == "value_1=1, add=2, constant=1")
+      assertValues(testSink, integerArguments, "value_1=1, add=2, constant=1")
     }
 
     "logIO log raw values" in {
@@ -117,11 +82,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
         logger.raw.logValues(Log.Level.Info)(value1, testMethod(1) -> "add", 1 -> "constant")
       }
 
-      val Seq(logEntry) = testSink.fetch()
-
-      assert(logEntry.message.args == Nil)
-
-      assert(LogFormat.Default.formatMessage(logEntry, RenderingOptions.simple).message == "1, (2,add), (1,constant)")
+      assertValues(testSink, Nil, "1, (2,add), (1,constant)")
     }
 
     "logIO log strict values" in {
@@ -130,7 +91,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
 
       val value1 = WithCustomCodec(1)
 
-      val strictCodecErr = intercept[TestFailedException](
+      val strictCodecErr = intercept[AssertionFailure](
         assertCompiles(
           """logger.logValues(Log.Level.Info)(value1, WithCustomCodec(testMethod(1)) -> "add", WithCustomCodec(1) -> "constant")"""
         )
@@ -138,11 +99,7 @@ class LoggerLogValuesTest extends AnyWordSpec {
       assert(strictCodecErr.getMessage().contains("Implicit search failed"))
 
       val customIntCodec: LogstageCodec[WithCustomCodec] = {
-        implicit val customIntCodec: LogstageCodec[WithCustomCodec] = new LogstageCodec[WithCustomCodec] {
-          override def write(writer: LogstageWriter, value: WithCustomCodec): Unit = {
-            writer.write(List.fill(value.int)("a").mkString)
-          }
-        }
+        implicit val customIntCodec: LogstageCodec[WithCustomCodec] = newCustomCodec()
 
         runZIO {
           logger
@@ -151,21 +108,36 @@ class LoggerLogValuesTest extends AnyWordSpec {
         }
       }
 
-      val Seq(logEntry) = testSink.fetch()
-
-      val expectedArgs = Seq(
-        LogArg(Seq("value1"), WithCustomCodec(1), hiddenName = false, Some(customIntCodec)),
-        LogArg(Seq("add"), WithCustomCodec(2), hiddenName = false, Some(customIntCodec)),
-        LogArg(Seq("constant"), WithCustomCodec(1), hiddenName = false, Some(customIntCodec)),
-      )
-      assert(logEntry.message.args == expectedArgs)
-
-      assert(LogFormat.Default.formatMessage(logEntry, RenderingOptions.simple).message == "value_1=a, add=aa, constant=a")
+      assertValues(testSink, customArguments(customIntCodec), "value_1=a, add=aa, constant=a")
     }
 
   }
 
   case class WithCustomCodec(val int: Int)
+
+  private def assertValues(sink: TestSink, expectedArgs: Seq[LogArg], expectedMessage: String): Unit = {
+    val Seq(logEntry) = sink.fetch()
+    assert(logEntry.message.args == expectedArgs)
+    assert(LogFormat.Default.formatMessage(logEntry, RenderingOptions.simple).message == expectedMessage)
+  }
+
+  private def integerArguments: Seq[LogArg] = Seq(
+    LogArg(Seq("value1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+    LogArg(Seq("add"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+    LogArg(Seq("constant"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+  )
+
+  private def customArguments(customIntCodec: LogstageCodec[WithCustomCodec]): Seq[LogArg] = Seq(
+    LogArg(Seq("value1"), WithCustomCodec(1), hiddenName = false, Some(customIntCodec)),
+    LogArg(Seq("add"), WithCustomCodec(2), hiddenName = false, Some(customIntCodec)),
+    LogArg(Seq("constant"), WithCustomCodec(1), hiddenName = false, Some(customIntCodec)),
+  )
+
+  private def newCustomCodec(): LogstageCodec[WithCustomCodec] = new LogstageCodec[WithCustomCodec] {
+    override def write(writer: LogstageWriter, value: WithCustomCodec): Unit = {
+      writer.write(List.fill(value.int)("a").mkString)
+    }
+  }
 
   private def testMethod(x: Int): Int = x + x
 }

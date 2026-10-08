@@ -6,7 +6,7 @@ import izumi.fundamentals.platform.language.Quirks.*
 import izumi.logstage.ImplicitsTest.Suspend2
 import izumi.logstage.api.IzLogger
 import logstage.{LogIO, LogIO2}
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class ImplicitsTest extends AnyWordSpec {
 

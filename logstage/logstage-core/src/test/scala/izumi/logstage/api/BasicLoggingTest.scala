@@ -5,8 +5,8 @@ import izumi.fundamentals.platform.language.{CodePosition, IzScala, SourceFilePo
 import izumi.logstage.api.Log.*
 import izumi.logstage.api.rendering.{LogstageCodec, RenderingOptions, StringRenderingPolicy}
 import izumi.logstage.api.strict.IzStrictLogger
-import org.scalatest.exceptions.TestFailedException
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.fundamentals.assertions.AssertionFailure
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 import scala.annotation.nowarn
 import scala.util.Random
@@ -22,24 +22,15 @@ class BasicLoggingTest extends AnyWordSpec {
         s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"
       )
 
-      val expectation = if (IzScala.scalaRelease.major == 3) {
-        // on scala3 we get access to exact raw tree w/o optimizations
-        List(
-          LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("EXPRESSION:2.+(2)"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("EXPRESSION:2.+(2)"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        )
-      } else {
-        List(
-          LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        )
-      }
+      // on scala3 we get access to exact raw tree w/o optimizations
+      val expressionName = if (IzScala.scalaRelease.major == 3) "EXPRESSION:2.+(2)" else "UNNAMED:4"
+      val expectation = List(
+        LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq(expressionName), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq(expressionName), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      )
 
       val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
 
@@ -110,7 +101,7 @@ class BasicLoggingTest extends AnyWordSpec {
 
       (logger, x, y).discard()
 
-      val err = intercept[TestFailedException] {
+      val err = intercept[AssertionFailure] {
         assertCompiles(""" logger.info(s"got $x + $y") """)
       }: @nowarn("msg=possible missing interpolator")
       assert(err.getMessage().contains("Implicit search failed"))
@@ -129,12 +120,12 @@ class BasicLoggingTest extends AnyWordSpec {
 
       (rawStrictLogger, strictLogger, x, y).discard()
 
-      val err1 = intercept[TestFailedException] {
+      val err1 = intercept[AssertionFailure] {
         assertCompiles(""" strictLogger.withCustomContext("x" -> x, "y" -> y) """)
       }
       assert(err1.getMessage().contains("StrictEncoded"))
 
-      val err2 = intercept[TestFailedException] {
+      val err2 = intercept[AssertionFailure] {
         assertCompiles(""" rawStrictLogger.withCustomContext("x" -> x, "y" -> y) """)
       }
       assert(err2.getMessage().contains("StrictEncoded"))

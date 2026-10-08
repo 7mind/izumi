@@ -1,6 +1,10 @@
 object PV {
   val scala_js_version = "1.22.0"
 
+  // Bootstrap dependencies for compiling the production test plugins; keep aligned with V.
+  val circe = "0.14.14"
+  val bytebuddy = "1.17.7"
+
   val sbt_mdoc = "2.9.2"
   val jsoup = "1.23.2"
   val sbt_paradox = "0.11.0"

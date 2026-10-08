@@ -1,10 +1,11 @@
 package izumi.distage.gc
 
 import distage.Injector
+import izumi.distage.injector.InjectorFixture
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.fundamentals.platform.functional.Identity
 
-trait MkGcInjector {
+trait MkGcInjector extends InjectorFixture {
   def mkInjector(): Injector[Identity] = {
     val debug = false
     val more = if (debug) {

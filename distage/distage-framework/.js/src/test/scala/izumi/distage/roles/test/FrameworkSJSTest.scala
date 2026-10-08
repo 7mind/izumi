@@ -6,7 +6,7 @@ import izumi.distage.roles.RoleAppMain.ArgV
 import izumi.distage.roles.model.definition.RoleModuleDef
 import izumi.distage.roles.test.fixtures.TestTask00
 import izumi.fundamentals.platform.cli.model.RoleArgs
-import org.scalatest.wordspec.AsyncWordSpec
+import izumi.distage.testkit.runner.spec.AsyncWordSpec
 import zio.Executor
 
 import scala.concurrent.ExecutionContext

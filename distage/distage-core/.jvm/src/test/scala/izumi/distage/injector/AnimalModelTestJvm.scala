@@ -5,7 +5,7 @@ import izumi.distage.model.PlannerInput
 import izumi.distage.model.definition.Activation
 import izumi.distage.planning.extensions.GraphDumpBootstrapModule
 import izumi.fundamentals.platform.functional.Identity
-import org.scalatest.wordspec.AnyWordSpec
+import izumi.distage.testkit.runner.spec.AnyWordSpec
 
 class AnimalModelTestJvm extends AnyWordSpec with MkInjector {
   "animal model" must {
