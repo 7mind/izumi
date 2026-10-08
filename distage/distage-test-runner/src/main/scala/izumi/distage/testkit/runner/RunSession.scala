@@ -41,7 +41,7 @@ final class RunSession(
   private var executionStarted = false
   private var activeExecution = Option.empty[Promise[RunOutcome]]
   private var ownedPlans = Vector.empty[Future[OwnedPlan]]
-  private var closing = Option.empty[Promise[Unit]]
+  private val closing = new OnceFuture[Unit](this)
 
   private final class OwnedPlan(val plan: ExecutionPlan) {
     lazy val close: Future[Unit] = try plan.close() catch { case NonFatal(cause) => Future.failed(cause) }
@@ -49,16 +49,7 @@ final class RunSession(
 
   def close(): Future[Unit] = {
     implicit val ec: ExecutionContext = executionContext
-    val (completion, admitted) = synchronized {
-      closing match {
-        case Some(previous) => (previous.future, None)
-        case None =>
-          val requested = Promise[Unit]()
-          closing = Some(requested)
-          (requested.future, Some((requested, ownedPlans, activeExecution.map(_.future))))
-      }
-    }
-    admitted.foreach { case (requested, owners, execution) =>
+    closing((ownedPlans, activeExecution.map(_.future))) { case (owners, execution) =>
       planningCancellation.request()
       if (synchronized(executionStarted)) cancel()
       val settled = owners.map(_.transformWith {
@@ -66,15 +57,14 @@ final class RunSession(
         case Failed(_) => Future.successful(Success(()))
       })
       val executions = execution.toVector.map(_.transform(_ => Success(Success(()))))
-      val _ = requested.completeWith(Future.sequence(settled ++ executions).flatMap { results =>
+      Future.sequence(settled ++ executions).flatMap { results =>
         results.collect { case Failed(cause) => cause }.toList match {
           case Nil => Future.unit
           case cause :: Nil => Future.failed(cause)
           case primary :: others => Future.failed(new SessionFinalizationException(primary, others))
         }
-      })
+      }
     }
-    completion
   }
 
   def cancel(): Unit = {
@@ -163,7 +153,7 @@ final class RunSession(
     var admissions = Vector.empty[Promise[OwnedPlan]]
     val rejection = synchronized {
       if (resolved.owner ne this) Some(RunnerFailure.message(FailurePhase.Planning, "Resolved selection belongs to another session"))
-      else if (closing.nonEmpty) Some(RunnerFailure.message(FailurePhase.Planning, "Session is closing"))
+      else if (closing.isStarted) Some(RunnerFailure.message(FailurePhase.Planning, "Session is closing"))
       else if (planningStarted) Some(RunnerFailure.message(FailurePhase.Planning, "Session planning has already started"))
       else {
         planningStarted = true
@@ -220,7 +210,7 @@ final class RunSession(
         assembled.flatMap {
           case Left(failure) => rejectedPlan(failure)
           case Right(value) =>
-            if (synchronized(closing.nonEmpty)) rejectedPlan(RunnerFailure.message(FailurePhase.Planning, "Session closed during planning"))
+            if (closing.isStarted) rejectedPlan(RunnerFailure.message(FailurePhase.Planning, "Session closed during planning"))
             else Future.successful(Right(value))
         }
     }
@@ -244,7 +234,7 @@ final class RunSession(
     val admitted = Promise[RunOutcome]()
     val rejection = synchronized {
       if (planned.owner ne this) Some(RunnerFailure.message(FailurePhase.Setup, "Execution plan belongs to another session"))
-      else if (closing.nonEmpty) Some(RunnerFailure.message(FailurePhase.Setup, "Session is closing"))
+      else if (closing.isStarted) Some(RunnerFailure.message(FailurePhase.Setup, "Session is closing"))
       else if (executionStarted) Some(RunnerFailure.message(FailurePhase.Setup, "Session execution has already started"))
       else { executionStarted = true; activeExecution = Some(admitted); None }
     }

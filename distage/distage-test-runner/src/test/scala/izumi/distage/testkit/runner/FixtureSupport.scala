@@ -19,6 +19,13 @@ private[runner] object FixtureSupport {
     })
   }
 
+  def succeed(tests: Vector[TestDescriptor], context: RunExecutionContext): Vector[TestResult] = tests.map { test =>
+    context.emit(ProviderEvent.TestStarted(test.id))
+    val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
+    context.emit(ProviderEvent.TestCompleted(result))
+    result
+  }
+
   final class RecordingSink extends EventSink {
     private var recorded = Vector.empty[ProtocolMessage.Event]
     override def accept(event: ProtocolMessage.Event): Unit = synchronized { recorded :+= event }

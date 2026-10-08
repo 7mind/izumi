@@ -130,31 +130,18 @@ final class DistageExecutionProvider(
         override val tests: Vector[TestDescriptor] = reporter.tests
         override val inspection: PlanInspection = DistagePlanInspection(prepared.planned.out, tests)
         private var execution = Option.empty[Promise[ProviderOutcome]]
-        private var closing = Option.empty[Promise[Unit]]
+        private val closing = new OnceFuture[Unit](this)
 
-        override def close(): Future[Unit] = {
-          val (completion, admitted) = synchronized {
-            closing match {
-              case Some(previous) => (previous.future, None)
-              case None =>
-                val requested = Promise[Unit]()
-                closing = Some(requested)
-                (requested.future, Some((requested, execution)))
-            }
+        override def close(): Future[Unit] = closing(execution) { active =>
+          active match {
+            case Some(executing) => executing.future.transform(_ => Success(()))
+            case None => prepared.close()
           }
-          admitted.foreach { case (requested, active) =>
-            val released = active match {
-              case Some(executing) => executing.future.transform(_ => Success(()))
-              case None => prepared.close()
-            }
-            val _ = requested.completeWith(released)
-          }
-          completion
         }
 
         override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
           val completion = synchronized {
-            require(closing.isEmpty, "Distage execution plan is closed")
+            require(!closing.isStarted, "Distage execution plan is closed")
             require(execution.isEmpty, "Distage execution plan has already started")
             val admitted = Promise[ProviderOutcome]()
             execution = Some(admitted)

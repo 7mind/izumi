@@ -26,7 +26,7 @@ final class TestApplication(
     }
   })
   private var queued = Future.unit
-  private var closing = Option.empty[Promise[Unit]]
+  private val closing = new OnceFuture[Unit](this)
   private var resolution = Option.empty[(RunRequest, Either[Failure, ResolvedRun])]
   private var planning = Option.empty[(RunRequest, Either[Failure, PlannedRun])]
   private var executionStarted = false
@@ -36,22 +36,10 @@ final class TestApplication(
 
   private[runner] def cancel(): Unit = session.cancel()
 
-  def close(): Future[Unit] = {
-    val (completion, admitted) = synchronized {
-      closing match {
-        case Some(previous) => (previous.future, None)
-        case None =>
-          val requested = Promise[Unit]()
-          closing = Some(requested)
-          (requested.future, Some((requested, queued)))
-      }
-    }
-    admitted.foreach { case (requested, previous) =>
-      cancel()
-      session.cancelPlanning()
-      val _ = requested.completeWith(previous.transformWith(_ => session.close()))
-    }
-    completion
+  def close(): Future[Unit] = closing(queued) { previous =>
+    cancel()
+    session.cancelPlanning()
+    previous.transformWith(_ => session.close())
   }
 
   def accept(message: ProtocolMessage): Future[Unit] = message match {
@@ -99,7 +87,7 @@ final class TestApplication(
 
   private def enqueue(operation: => Future[Unit]): Future[Unit] = {
     val (previous, next) = synchronized {
-      require(closing.isEmpty, "Application is closing")
+      require(!closing.isStarted, "Application is closing")
       val previous = queued
       val next = Promise[Unit]()
       // Publish the tail before an inline execution context can reenter through output delivery.

@@ -99,12 +99,7 @@ object ApplicationFixtures {
         prepared = Some(new FixtureSupport.Plan(selected) {
           override def execute(context: RunExecutionContext): Future[ProviderOutcome] = {
             executions.incrementAndGet()
-            val results = tests.map { test =>
-              context.emit(ProviderEvent.TestStarted(test.id))
-              val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
-              context.emit(ProviderEvent.TestCompleted(result))
-              result
-            }
+            val results = FixtureSupport.succeed(tests, context)
             Future.successful(ProviderOutcome(results, Vector.empty, cancelled = false))
           }
         })
@@ -189,12 +184,7 @@ object ApplicationFixtures {
           override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
             acquired.incrementAndGet()
             val registration = execution.cancellation.onRequest(() => { val _ = cancelled.trySuccess(()); Future.unit })
-            val results = tests.map { test =>
-              execution.emit(ProviderEvent.TestStarted(test.id))
-              val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
-              execution.emit(ProviderEvent.TestCompleted(result))
-              result
-            }
+            val results = FixtureSupport.succeed(tests, execution)
             entered.success(())
             release.future.flatMap(_ => registration.close()).map { _ =>
               released.incrementAndGet()

@@ -109,12 +109,7 @@ object BaseRunnerFixtures {
       val releaseGate = Promise[Unit]()
       val finalizingProvider = FixtureSupport.provider { (plannedTests, context) =>
         acquired.incrementAndGet()
-        val results = plannedTests.map { test =>
-          context.emit(ProviderEvent.TestStarted(test.id))
-          val result = TestResult(test.id, TestStatus.Succeeded, None, 0L)
-          context.emit(ProviderEvent.TestCompleted(result))
-          result
-        }
+        val results = FixtureSupport.succeed(plannedTests, context)
         completedBody.success(())
         releaseGate.future.map { _ =>
           released.incrementAndGet()

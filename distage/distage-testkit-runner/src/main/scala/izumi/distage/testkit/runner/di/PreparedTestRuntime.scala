@@ -1,6 +1,6 @@
 package izumi.distage.testkit.runner.di
 
-import izumi.distage.testkit.runner.Cancellation
+import izumi.distage.testkit.runner.{Cancellation, OnceFuture}
 import izumi.distage.testkit.model.{DistageTest, EnvResult}
 import izumi.distage.testkit.runner.impl.DistageTestRunner
 import izumi.distage.testkit.runner.impl.TestPlanner.PlannedTests
@@ -81,7 +81,7 @@ private[di] object PreparedTestRuntime {
     }(completionContext).map { prepared =>
       new PreparedTestRuntime {
         override val planned: Timed[PlannedTests[AnyF]] = prepared.planned
-        private var closing = Option.empty[Promise[Unit]]
+        private val closing = new OnceFuture[Unit](this)
 
         override def execute(): RuntimeExecution[List[EnvResult]] = {
           require(decision.trySuccess(Execute), "Prepared runner already has an execution or close decision")
@@ -106,21 +106,9 @@ private[di] object PreparedTestRuntime {
 
         override def stop(): Future[Unit] = operation.stop()
 
-        override def close(): Future[Unit] = {
-          val (completion, admitted) = synchronized {
-            closing match {
-              case Some(previous) => (previous.future, None)
-              case None =>
-                val requested = Promise[Unit]()
-                closing = Some(requested)
-                (requested.future, Some(requested))
-            }
-          }
-          admitted.foreach { requested =>
-            if (!decision.trySuccess(Close)) { val _ = operation.stop() }
-            val _ = requested.completeWith(operation.completion.map(_ => ())(completionContext))
-          }
-          completion
+        override def close(): Future[Unit] = closing(()) { _ =>
+          if (!decision.trySuccess(Close)) { val _ = operation.stop() }
+          operation.completion.map(_ => ())(completionContext)
         }
       }
     }(completionContext)
