@@ -47,12 +47,12 @@ def run_delivery(driver, root, args, control, framework, settings, check, report
     from pathlib import Path
     import json
     import shutil
-    from fixture_harness import write_sbt_project, freeze_driver, freeze_driver, run_process, sha
+    from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
 
     out = args.evidence_dir.resolve()
     out.mkdir()
     freeze_driver(driver, out / 'driver.py')
-    freeze_driver(__file__, out / 'fixture_delivery.py')
+    shutil.copy2(__file__, out / 'fixture_delivery.py')
     fixture = root / 'test-fixtures/host-sharing-consumer'
     outcomes = []
     label = control.run_label
