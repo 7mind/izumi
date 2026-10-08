@@ -1,9 +1,9 @@
 package izumi.distage.sbt
 
 import izumi.distage.sbt.target.TaskCompleteness
-import izumi.distage.testkit.protocol.{Failure, FailurePhase, ForkProcessId, ForkRunReport, ForkRunReports, ForkSuiteOwner, ProjectedFailure, TestStatus}
-import sbt.{MessageOnlyException, TestDefinition, TestReportListener, TestResult}
-import sbt.testing.{Event, Fingerprint, OptionalThrowable, Selector, Status, SuiteSelector, TestSelector}
+import izumi.distage.testkit.protocol.{Failure, FailurePhase, ForkProcessId, ForkRunReport, ForkRunReports, ForkSuiteOwner, ProjectedFailure}
+import sbt.{MessageOnlyException, TestDefinition, TestReportListener}
+import sbt.testing.{Event}
 
 import java.util.concurrent.TimeUnit
 import scala.jdk.CollectionConverters._
@@ -46,7 +46,7 @@ private[sbt] final class HostForkReports(reports: ForkRunReports, terminals: Tas
       }
       val records = terminals.completed().asScala.toVector.filter(value => selected.contains(HostSuiteName(value.suite().value())))
       require(records.forall(value => value.returnedNormally() && processes.contains(ForkProcessId(value.pid()))), "Fork cancellation has an invalid suite terminal")
-      val target = records.groupMap(value => HostForkSuite(ForkProcessId(value.pid()), HostSuiteName(value.suite().value())))(terminalCounts)
+      val target = records.groupMap(value => HostForkSuite(ForkProcessId(value.pid()), HostSuiteName(value.suite().value())))(HostSuiteCounts.from)
       val projected = projections.groupMap(_.suite)(_.group.identity.counts)
       require(target.keySet == projected.keySet && projected.forall { case (suite, counts) =>
         counts.groupMapReduce(identity)(_ => 1)(_ + _) == target(suite).groupMapReduce(identity)(_ => 1)(_ + _)
@@ -58,35 +58,13 @@ private[sbt] final class HostForkReports(reports: ForkRunReports, terminals: Tas
     }
   }
 
-  private def terminalCounts(record: TaskCompleteness.Completion): HostSuiteCounts = {
-    val counts = record.counts()
-    val result = if (counts.error() > 0) TestResult.Error else if (counts.failure() > 0) TestResult.Failed else TestResult.Passed
-    HostSuiteCounts(result, counts.success(), counts.failure(), counts.error(), counts.skipped(), counts.ignored(), counts.canceled(), counts.pending())
-  }
-
   private def project(report: ForkRunReport, owner: ForkSuiteOwner, definition: TestDefinition): Vector[Event] = {
     val results = report.outcome.results.filter(result => owner.id.contains(result.id.suite)).map { result =>
-      val status = result.status match {
-        case TestStatus.Succeeded => Status.Success
-        case TestStatus.Failed => Status.Failure
-        case TestStatus.Cancelled => Status.Canceled
-        case TestStatus.Skipped => Status.Skipped
-      }
-      event(definition, new TestSelector(result.id.path.mkString(" ")), status, result.failure, TimeUnit.NANOSECONDS.toMillis(result.durationNanos))
+      HostProtocolEvent.result(definition.name, definition.fingerprint, result)
     }
     val failures = if (report.outcome.cancelled && report.outcome.failures.isEmpty) {
       Vector(Failure(FailurePhase.Transport, "TestApplicationError", "Host test run was cancelled", Vector.empty, Vector.empty, None, Vector.empty, Vector.empty))
     } else report.outcome.failures
-    results ++ failures.map(failure => event(definition, new SuiteSelector, Status.Error, Some(failure), 0L))
-  }
-
-  private def event(definition: TestDefinition, selectorValue: Selector, statusValue: Status, failure: Option[Failure], durationValue: Long): Event = new Event {
-    private val cause = failure.fold(new OptionalThrowable)(value => new OptionalThrowable(ProjectedFailure.root(value)))
-    override def fullyQualifiedName(): String = definition.name
-    override def fingerprint(): Fingerprint = definition.fingerprint
-    override def selector(): Selector = selectorValue
-    override def status(): Status = statusValue
-    override def throwable(): OptionalThrowable = cause
-    override def duration(): Long = durationValue
+    results ++ failures.map(failure => HostProtocolEvent.error(definition.name, definition.fingerprint, ProjectedFailure.root(failure)))
   }
 }

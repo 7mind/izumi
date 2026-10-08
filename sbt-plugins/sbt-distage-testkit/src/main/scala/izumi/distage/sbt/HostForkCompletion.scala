@@ -50,17 +50,7 @@ private[sbt] final class HostForkCompletion(directory: Path) {
       val decision = path(prefix, "decision")
       if (!Files.isRegularFile(decision)) publish(decision, if (commit) "commit" else "abort")
     }
-    var failure = Option.empty[Throwable]
-    admitted.foreach { prefix =>
-      try awaitExit(prefix)
-      catch {
-        case cause: Throwable => failure match {
-          case Some(previous) => previous.addSuppressed(cause)
-          case None => failure = Some(cause)
-        }
-      }
-    }
-    failure.foreach(cause => throw cause)
+    HostFailures.collect(admitted)(awaitExit).foreach(throw _)
   }
 
   def awaitShutdown(admissions: Vector[HostForkAdmission]): Unit = {

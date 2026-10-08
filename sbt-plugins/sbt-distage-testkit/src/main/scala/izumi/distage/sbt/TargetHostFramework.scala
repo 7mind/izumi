@@ -2,13 +2,12 @@ package izumi.distage.sbt
 
 import izumi.distage.testkit.protocol.*
 
-import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, NestedTestSelector, OptionalThrowable, Runner, Selector, Status, SuiteSelector, Task, TaskDef, TestSelector}
+import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, NestedTestSelector, Runner, Task, TaskDef}
 
 import java.net.{InetAddress, ServerSocket, Socket}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, StandardOpenOption}
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
@@ -178,7 +177,7 @@ private[sbt] final class TargetHostEvents(definitions: Vector[TaskDef], control:
                 require(!results.exists(_.id == result.id), "Duplicate target test completion")
                 owners.update(result.id.suite, definition.fullyQualifiedName())
                 results += result
-                val projected = new TargetHostTestEvent(definition, result)
+                val projected = HostProtocolEvent.result(definition.fullyQualifiedName(), definition.fingerprint(), result)
                 val name = definition.fullyQualifiedName()
                 events.update(name, events.getOrElse(name, Vector.empty) :+ projected)
               case RunEvent.Finished(_, value) => finished = Some(value)
@@ -210,32 +209,9 @@ private[sbt] final class TargetHostSuiteTask(definition: TaskDef, group: TargetH
   override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
     val outcome = group.execute(loggers)
     outcome.events.getOrElse(definition.fullyQualifiedName(), Vector.empty).foreach(handler.handle)
-    outcome.failures.foreach(cause => handler.handle(new TargetHostErrorEvent(definition, cause)))
+    outcome.failures.foreach(cause => handler.handle(HostProtocolEvent.error(definition.fullyQualifiedName(), definition.fingerprint(), cause)))
     Array.empty
   }
-}
-
-private[sbt] final class TargetHostTestEvent(definition: TaskDef, result: TestResult) extends Event {
-  override def fullyQualifiedName(): String = definition.fullyQualifiedName()
-  override def fingerprint(): Fingerprint = definition.fingerprint()
-  override def selector(): Selector = new TestSelector(result.id.path.mkString(" "))
-  override def status(): Status = result.status match {
-    case TestStatus.Succeeded => Status.Success
-    case TestStatus.Failed => Status.Failure
-    case TestStatus.Cancelled => Status.Canceled
-    case TestStatus.Skipped => Status.Skipped
-  }
-  override def throwable(): OptionalThrowable = result.failure.fold(new OptionalThrowable)(cause => new OptionalThrowable(ProjectedFailure.root(cause)))
-  override def duration(): Long = TimeUnit.NANOSECONDS.toMillis(result.durationNanos)
-}
-
-private[sbt] final class TargetHostErrorEvent(definition: TaskDef, cause: Throwable) extends Event {
-  override def fullyQualifiedName(): String = definition.fullyQualifiedName()
-  override def fingerprint(): Fingerprint = definition.fingerprint()
-  override def selector(): Selector = new SuiteSelector
-  override def status(): Status = Status.Error
-  override def throwable(): OptionalThrowable = new OptionalThrowable(cause)
-  override def duration(): Long = 0L
 }
 
 private[sbt] final class TargetHostControl {

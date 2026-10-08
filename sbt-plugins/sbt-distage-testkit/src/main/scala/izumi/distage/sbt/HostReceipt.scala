@@ -81,6 +81,11 @@ private[sbt] object HostSuiteCounts {
   def from(value: SuiteResult): HostSuiteCounts = HostSuiteCounts(
     value.result, value.passedCount, value.failureCount, value.errorCount, value.skippedCount, value.ignoredCount, value.canceledCount, value.pendingCount,
   )
+  def from(record: TaskCompleteness.Completion): HostSuiteCounts = {
+    val counts = record.counts()
+    val result = if (counts.error() > 0 || !record.returnedNormally()) TestResult.Error else if (counts.failure() > 0) TestResult.Failed else TestResult.Passed
+    HostSuiteCounts(result, counts.success(), counts.failure(), counts.error(), counts.skipped(), counts.ignored(), counts.canceled(), counts.pending())
+  }
   def overall(first: TestResult, second: TestResult): TestResult = {
     if (first == TestResult.Error || second == TestResult.Error) TestResult.Error
     else if (first == TestResult.Failed || second == TestResult.Failed) TestResult.Failed
@@ -260,11 +265,7 @@ private[sbt] final class HostReceipt(taskGroups: TaskGroups.Store) {
     val records = new TaskCompleteness.FileCompletionStore(directory).completed().asScala.toVector
     val bySuite = records.groupBy(value => HostSuiteName(value.suite().value()))
     val actual = bySuite.map { case (name, completed) =>
-      val counts = completed.foldLeft(HostSuiteCounts.empty) { (sum, record) =>
-        val value = record.counts()
-        val result = if (value.error() > 0 || !record.returnedNormally()) TestResult.Error else if (value.failure() > 0) TestResult.Failed else TestResult.Passed
-        sum + HostSuiteCounts(result, value.success(), value.failure(), value.error(), value.skipped(), value.ignored(), value.canceled(), value.pending())
-      }
+      val counts = completed.foldLeft(HostSuiteCounts.empty)((sum, record) => sum + HostSuiteCounts.from(record))
       name -> counts
     }
     if (bySuite.keySet != expected || bySuite.exists { case (name, completed) => completed.size != ends.getOrElse(name, 0) || completed.exists(value => !value.returnedNormally()) } || actual != received) {
@@ -386,13 +387,7 @@ private[sbt] final class HostReceiptOwner(createStore: () => FileForkReceiptStor
         try generation.completion.finish(commit = false)
         catch { case cause: Throwable => original.get.addSuppressed(cause) }
       }
-      try abort(generation)
-      catch {
-        case cause: Throwable => original match {
-          case Some(previous) => previous.addSuppressed(cause)
-          case None => throw cause
-        }
-      }
+      HostFailures.cleanup(original)(abort(generation))
     }
   }
 

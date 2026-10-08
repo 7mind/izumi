@@ -43,21 +43,8 @@ private[sbt] final class HostCommandCompletion(inherited: ExecuteProgress2, owne
     }
     catch { case cause: Throwable => original = Some(cause); throw cause }
     finally {
-      var cleanupFailure = Option.empty[Throwable]
-      owners.foreach { owner =>
-        try owner.finishCommand()
-        catch {
-          case cause: Throwable => cleanupFailure match {
-            case Some(previous) => previous.addSuppressed(cause)
-            case None => cleanupFailure = Some(cause)
-          }
-        }
-      }
-      cleanupFailure.foreach { cause =>
-        original match {
-          case Some(previous) => previous.addSuppressed(cause)
-          case None => throw cause
-        }
+      HostFailures.cleanup(original) {
+        HostFailures.collect(owners)(_.finishCommand()).foreach(throw _)
       }
     }
   }
