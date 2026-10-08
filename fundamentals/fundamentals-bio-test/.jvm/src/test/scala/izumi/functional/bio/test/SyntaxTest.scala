@@ -171,7 +171,6 @@ class SyntaxTest extends AnyWordSpec {
     }
 
     x[zio.IO](zio.ZIO.succeed(()), zio.ZIO.succeed(()))
-//    x[bio.IO](bio.UIO.evalTotal(()), bio.UIO.evalTotal(()))
   }
 
   "IO2.apply is callable" in {
@@ -182,7 +181,6 @@ class SyntaxTest extends AnyWordSpec {
     }
 
     assert(new X[zio.IO].hello != null)
-//    assert(new X[bio.IO].hello != null)
   }
 
   ".widen/widenError is callable" in {
@@ -236,10 +234,6 @@ class SyntaxTest extends AnyWordSpec {
     z[zio.IO]
     zz[zio.IO]
 
-//    x[bio.IO]
-//    y[bio.IO]
-//    z[bio.IO]
-//    zz[bio.IO]
   }
 
   "Bracket2.bracketOnFailure & guaranteeOnFailure are callable" in {
@@ -267,10 +261,6 @@ class SyntaxTest extends AnyWordSpec {
     z[zio.IO]
     zz[zio.IO]
 
-//    x[bio.IO]
-//    y[bio.IO]
-//    z[bio.IO]
-//    zz[bio.IO]
   }
 
   "BIO.when/unless/ifThenElse have nice inference" in {
@@ -385,10 +375,6 @@ class SyntaxTest extends AnyWordSpec {
     }
 
     lazy val monixTest = (
-//      x[bio.IO],
-//      y[bio.IO],
-//      z[bio.IO],
-//      attachScheduler2[bio.IO],
     )
 
     lazy val eitherTest = (
@@ -425,7 +411,6 @@ class SyntaxTest extends AnyWordSpec {
 
       val _ =
         y[zio.IO]
-//        y[monix.bio.IO],
     }
   }
 
@@ -469,7 +454,6 @@ class SyntaxTest extends AnyWordSpec {
       a.retryWhile(_ => false)
       a.retryWhileF(_ => F.pure(true))
       aOpt.fromOptionOr(None)
-//      aOpt.fromOptionF(F.pure(None))
       aOpt.fromOption("ooops")
     }
 

@@ -1,5 +1,9 @@
 # Native distage test library and runner
 
+The feasibility spikes were retired after the production runner and its regression fixtures replaced them.
+Links to spike artifacts below refer to the historical tree at `385fb7366f208ac2537718a3444b6916617c179c`;
+current executable verification lives in `test-fixtures/` and the library test source sets.
+
 Research and proposed implementation plan, 2026-10-01. Repository inspected at
 `5be95fb6309c4b0cb9dbea37ed84c0db0a8ff870`. “Native distage runner” means a
 distage-owned runner; Scala Native is a separate required execution backend.
@@ -98,14 +102,14 @@ missing.
 
 | Spike | Observed result | Remaining acceptance |
 | --- | --- | --- |
-| [0a: JVM SBT](spikes/20261001/sbt/REPORT.md) | Public host substitution and fork bootstrap work on SBT 1.13.0/2.0.9; selection/body/XML counts agree; DI omission and partial-cache failures reproduced; safe public policies exercised | Real engine integration, streaming/concurrent events, failing bodies and launch-failure memoization, cancellation, default parallel task execution, an in-process run of the target bootstrap without host substitution, classloader lifetime, multi-project/configuration behavior |
-| [0b: portability](spikes/20261001/portability/REPORT.md) | Native acceptance passed in a second round: the real `TestPlanner` and `DistageTestRunner` link and run on Native 0.5.12 with Scala 3.9.0, for a DI and configuration test and for a parallel run with one memoized resource acquisition. It runs with stand-ins for the unpublished ZIO interop artifacts, or with a local publish of [zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763), and with fixture-local Native platform files. A third round passes the same programs on 3.7.4, 2.13.18, and 2.12.21, and the existing ScalaTest suites of two modules pass on Native in the repository build generated with a Native platform. On the JVM, 3.9.0 still hits exact-version gating and the intermittent backend race | For step 1a: a released zio-interop-cats with Native artifacts, `.native` source sets replacing the fixture-local files, and, on Native, the existing shared tests (those that run on JS) of every module that builds for JS. Also ZIO and Cats Effect test effects under the engine and logging sinks on Native, and HOCON if that configuration format is added there (see Open decisions) |
-| [0c: target transport](spikes/20261001/transport/REPORT.md) | Passed in a second round: a host-side projection over the platform test adapters gives every selected suite its own task, result, JUnit file, and history on SBT 1.13.0 and 2.0.9 for JS and Native at Scala 3.3.7 (SBT 2 smoke at 3.9.0). SBT 1 history needs the 0a conservative policy. Each group acquires once, and a failing or dying target task is launched once and reported for every suite | Streaming instead of buffering; per-suite completion records; cancellation; thread limits below group size; runtime reuse after a target dies; Scala 2, the real engine; browser JS, deferred (see Open decisions) |
+| [0a: JVM SBT](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/sbt/REPORT.md) | Public host substitution and fork bootstrap work on SBT 1.13.0/2.0.9; selection/body/XML counts agree; DI omission and partial-cache failures reproduced; safe public policies exercised | Real engine integration, streaming/concurrent events, failing bodies and launch-failure memoization, cancellation, default parallel task execution, an in-process run of the target bootstrap without host substitution, classloader lifetime, multi-project/configuration behavior |
+| [0b: portability](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/portability/REPORT.md) | Native acceptance passed in a second round: the real `TestPlanner` and `DistageTestRunner` link and run on Native 0.5.12 with Scala 3.9.0, for a DI and configuration test and for a parallel run with one memoized resource acquisition. It runs with stand-ins for the unpublished ZIO interop artifacts, or with a local publish of [zio/interop-cats#763](https://github.com/zio/interop-cats/pull/763), and with fixture-local Native platform files. A third round passes the same programs on 3.7.4, 2.13.18, and 2.12.21, and the existing ScalaTest suites of two modules pass on Native in the repository build generated with a Native platform. On the JVM, 3.9.0 still hits exact-version gating and the intermittent backend race | For step 1a: a released zio-interop-cats with Native artifacts, `.native` source sets replacing the fixture-local files, and, on Native, the existing shared tests (those that run on JS) of every module that builds for JS. Also ZIO and Cats Effect test effects under the engine and logging sinks on Native, and HOCON if that configuration format is added there (see Open decisions) |
+| [0c: target transport](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/transport/REPORT.md) | Passed in a second round: a host-side projection over the platform test adapters gives every selected suite its own task, result, JUnit file, and history on SBT 1.13.0 and 2.0.9 for JS and Native at Scala 3.3.7 (SBT 2 smoke at 3.9.0). SBT 1 history needs the 0a conservative policy. Each group acquires once, and a failing or dying target task is launched once and reported for every suite | Streaming instead of buffering; per-suite completion records; cancellation; thread limits below group size; runtime reuse after a target dies; Scala 2, the real engine; browser JS, deferred (see Open decisions) |
 
 All three reports distinguish executed outcomes from source observations and
 record exact commands. Their drivers, fixtures, and reports are versioned; the
 captured `logs/` and `evidence/` outputs are ignored local files (see the
-[spikes README](spikes/20261001/README.md)), so the repository supports
+[spikes README](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/README.md)), so the repository supports
 re-running each check rather than re-reading its original output. They do not
 reproduce the legacy issue or implement the production runner.
 
@@ -383,7 +387,7 @@ suites. Memoization remains bounded by the process/execution group, not the enti
 aggregated multi-project SBT build. Honor explicit fork groups instead of silently
 merging them.
 
-The [executed JVM SBT spike](spikes/20261001/sbt/REPORT.md) establishes a concrete
+The [executed JVM SBT spike](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/sbt/REPORT.md) establishes a concrete
 non-forked seam on SBT 1.13.0 and 2.0.9: substitute only distage's entry in
 `loadedTestFrameworks`, capture each group's selected definitions in `Runner.tasks`,
 and launch the application once on the first suite task's `execute`. Buffer its
@@ -603,7 +607,7 @@ fixes the plugin's structure:
   `JSEnv` run with a communication channel, or a separately linked Native
   application.
 
-The [executed transport spike](spikes/20261001/transport/REPORT.md) proves whole
+The [executed transport spike](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/transport/REPORT.md) proves whole
 selected-group execution on actual Node/Scala.js and native executables, including
 asynchronous JS completion, task serialization, and acquisition/release once per
 group. Its first round measured stock accounting. An undiscovered synthetic
@@ -681,7 +685,7 @@ logging, distage core, framework configuration/resources, and plugin loading.
 configuration loading, the role launcher's logger and activation parsing, module
 providers, and plugin configuration.
 
-The [portability spike](spikes/20261001/portability/REPORT.md) now links and runs
+The [portability spike](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/portability/REPORT.md) now links and runs
 that closure on Scala Native 0.5.12 with Scala 3.9.0. A 19-project fixture
 compiles the repository's sources and runs the real `TestPlanner` and
 `DistageTestRunner`. In stand-in mode, one shared source,
@@ -743,7 +747,7 @@ on the JVM as well. Its `Async` has a parameter annotation from
 ([typelevel/cats-effect#4693](https://github.com/typelevel/cats-effect/issues/4693)).
 
 The repository's own build generates Native projects once
-[a Native platform](spikes/20261001/portability/native-targets.patch) joins the
+[a Native platform](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/portability/native-targets.patch) joins the
 cross targets in `sbtgen/Deps.scala`, with Scala Native pinned to 0.5.12; sbtgen
 0.0.122 otherwise defaults to 0.5.10. Tests in the 21 generated Native projects
 need one more setting. The test libraries depend on older Scala Native
@@ -792,7 +796,7 @@ authors. Its announcement states that artifacts built with Scala 3.9 cannot be
 consumed by Scala 3.3 projects. No 3.9.0 compiler setting emits older TASTy:
 `-scala-output-version` existed only in Scala 3.1.2 and 3.1.3 and was removed in
 3.2.0, and the 3.9.0 compiler settings have no replacement. The
-[producer/consumer probe](spikes/20261001/portability/REPORT.md) confirms this
+[producer/consumer probe](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/portability/REPORT.md) confirms this
 directly. It compiles ordinary classes, inline code, and a quoted macro with
 3.9.0, `-release:17`, and `-source:3.3`. A separate 3.3.0 consumer fails before
 macro expansion, expecting TASTy 28.3 and finding 28.9, while a separate 3.9.0
@@ -967,9 +971,9 @@ validated. JUnit XML alone cannot provide the live IDE experience.
 
 | Step | Deliverable | Observable acceptance |
 | --- | --- | --- |
-| 0a | Executed JVM application/plugin spike ([report](spikes/20261001/sbt/REPORT.md)) | Standard `test*` commands launch the application; multiple explicit suites, incremental reruns, changed arguments, sequential scheduling, forks, mixed frameworks, and JUnit output preserve suite identities and counts. The spike records its discovery mechanism, its non-forked and forked seams, its incremental-invalidation inputs, and its measured stock SBT 2 recording and conservative SBT 1 quick policy for non-forked and forked groups; a custom success store is a separate proposed optimization |
-| 0b | Native closure and Scala publishing compatibility spike ([report](spikes/20261001/portability/REPORT.md)) | `TestPlanner` and `DistageTestRunner` link and run a DI-backed test on Native with configuration loading and a static, non-scanning plugin configuration, or each concrete Native blocker (module, missing API, or dependency) is recorded; the spike lists every module it linked, including the configuration backend chosen for Native. The proposed dependency closure compiles with the permitted 3.9 compiler and is consumed from a separate build, or each concrete blocker is recorded; the older-consumer compatibility condition is tested separately and its TASTy failure recorded; blockers are recorded before estimating the port |
-| 0c | Executed JS/Native transport spike ([report](spikes/20261001/transport/REPORT.md)) | With a stub application, SBT 1 and 2 `test` and `testOnly` on JS and on Native preserve per-suite identities and counts through the chosen transport; every selected suite gets its own listener group and JUnit file; SBT 1 `testQuick` and SBT 2 incremental `test` record per-suite history, checked independently with verified distinct suite digests, successful/failing suites, changed arguments and partial requests; a shared stub resource is acquired and released exactly once per sharing group |
+| 0a | Executed JVM application/plugin spike ([report](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/sbt/REPORT.md)) | Standard `test*` commands launch the application; multiple explicit suites, incremental reruns, changed arguments, sequential scheduling, forks, mixed frameworks, and JUnit output preserve suite identities and counts. The spike records its discovery mechanism, its non-forked and forked seams, its incremental-invalidation inputs, and its measured stock SBT 2 recording and conservative SBT 1 quick policy for non-forked and forked groups; a custom success store is a separate proposed optimization |
+| 0b | Native closure and Scala publishing compatibility spike ([report](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/portability/REPORT.md)) | `TestPlanner` and `DistageTestRunner` link and run a DI-backed test on Native with configuration loading and a static, non-scanning plugin configuration, or each concrete Native blocker (module, missing API, or dependency) is recorded; the spike lists every module it linked, including the configuration backend chosen for Native. The proposed dependency closure compiles with the permitted 3.9 compiler and is consumed from a separate build, or each concrete blocker is recorded; the older-consumer compatibility condition is tested separately and its TASTy failure recorded; blockers are recorded before estimating the port |
+| 0c | Executed JS/Native transport spike ([report](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/transport/REPORT.md)) | With a stub application, SBT 1 and 2 `test` and `testOnly` on JS and on Native preserve per-suite identities and counts through the chosen transport; every selected suite gets its own listener group and JUnit file; SBT 1 `testQuick` and SBT 2 incremental `test` record per-suite history, checked independently with verified distinct suite digests, successful/failing suites, changed arguments and partial requests; a shared stub resource is acquired and released exactly once per sharing group |
 | 1a | Native build of the existing libraries | `sbtgen/Deps.scala` adds Native to its cross targets, with Scala Native pinned to 0.5.12. Every module that builds for JS also builds and publishes for Native on 2.13 and the repository's Scala 3 compiler, except the legacy `distage-testkit-scalatest`. `.native` source sets replace the spike's fixture-local files and build-time patches. Cats Effect is 3.7.x, with `scalac-compat-annotation` on Scala 2 compile classpaths while [typelevel/cats-effect#4693](https://github.com/typelevel/cats-effect/issues/4693) is open, and a released zio-interop-cats supplies Native artifacts. Every shared test suite that runs on JS also passes on Native through ScalaTest's Native artifacts, or moves to a platform-specific source set with its reason recorded. A facility whose dependency has no Native artifact, such as the Scala 2 circe-derivation macros, gets a Native implementation or is documented as unavailable there. `distage-testkit-core` runs the 0b engine checks as Native tests. CI builds and tests every Native lane from clean outputs, publishing includes the Native artifacts, and existing JVM and JS lanes still pass |
 | 1b | Build matrix for the assertion modules | The assertion modules build on Scala Native and compile with the repository's Scala 3 compiler (3.9.0 after step 2a); separate consumer builds compile against locally published artifacts on every Scala 3 consumer lane; existing JVM, JS, and Native lanes still pass |
 | 1c | Plain assertion macro, spans, diagnostics | Behavioral fixtures compile and execute on 2.13 and Scala 3, across JVM/JS/Native. Fixtures compiled on 2.13 with and without range positions render exact spans or the explicit representation for missing ranges. The assertion artifacts' dependency graphs contain no `org.scalatest` or `org.scalactic` module and no izumi module above fundamentals |

@@ -1,5 +1,9 @@
 # Implementation brief: native distage test library and runner
 
+The feasibility spikes were retired after the production runner and its regression fixtures replaced them.
+Links to spike artifacts below refer to the historical tree at `385fb7366f208ac2537718a3444b6916617c179c`;
+current executable verification lives in `test-fixtures/` and the library test source sets.
+
 For the agent implementing [the plan](20261001-distage-native-testkit-plan.md).
 The plan is the specification; this brief adds execution order, environment
 facts, and working rules. The plan's owner decisions take precedence over this
@@ -44,10 +48,10 @@ Read before changing code:
 - The plan. Owner decisions are fixed; open decisions proceed with their stated
   defaults.
 - The spike reports, with measured mechanisms and exact commands:
-  [JVM SBT](spikes/20261001/sbt/REPORT.md),
-  [portability](spikes/20261001/portability/REPORT.md),
-  [JS/Native transport](spikes/20261001/transport/REPORT.md), and the
-  [spikes README](spikes/20261001/README.md). Spike code is evidence and
+  [JVM SBT](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/sbt/REPORT.md),
+  [portability](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/portability/REPORT.md),
+  [JS/Native transport](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/transport/REPORT.md), and the
+  [spikes README](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/README.md). Spike code is evidence and
   reference, not production code; reimplement it in production modules.
 - `sbtgen/Deps.scala`, `project/Versions.scala`, `.mdl/defs/actions.md`,
   `.github/workflows/build.yml`, and `flake.nix`.
@@ -167,7 +171,7 @@ Facts from the spikes that the plan states only briefly or that are easy to miss
 ### 1a
 
 - Start from
-  [native-targets.patch](spikes/20261001/portability/native-targets.patch). It
+  [native-targets.patch](https://github.com/7mind/izumi/blob/385fb7366f208ac2537718a3444b6916617c179c/doc/md/spikes/20261001/portability/native-targets.patch). It
   adds a Native `PlatformEnv` to `Targets.cross` and pins Scala Native 0.5.12
   (sbtgen 0.0.122 defaults to 0.5.10). It also adds the `test-interface_native0.5`
   eviction rule: ScalaTest 3.3.0-alpha.2 and ScalaCheck were built against older
