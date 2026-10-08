@@ -9,7 +9,8 @@ from verify import prepare, sha
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, consumer_parser, checked_lanes, execution_stream
+from fixture_harness import load_module, checked_lanes, execution_stream
+from fixture_targets import target_parser, prepare_lanes
 
 policy = load_module('target_policy', Path(__file__).with_name('verify-policy.py'))
 
@@ -76,53 +77,44 @@ def audit(command, out):
     return dict(scala=command['scala'], platform=command['platform'], cases=records)
 
 
-def main():
-    parser = consumer_parser()
-    parser.add_argument('--production-host-version', required=True)
-    parser.add_argument('--scala-version', nargs='+', choices=['3.9.0', '2.13.18'], required=True)
-    args = parser.parse_args()
-    args.host_threads, args.logical_suite_alias = '2', True
-    root, out = args.repo_root.resolve(), args.evidence_dir.resolve()
-    out.mkdir()
-    fixture = root / 'test-fixtures/target-runner-consumer'
-    paths = [path for path in fixture.rglob('*') if path.is_file() and path.suffix in ['.scala', '.sbt', '.properties', '.py']]
-    inputs = [dict(path=str(path), sha256=sha(path)) for path in paths]
-    commands = []
-    for compiler in args.scala_version:
-        for platform in ['js', 'native']:
-            command, prepared = prepare(args, compiler, platform, paths)
-            build = Path(command['cwd'])
-            (build / 'project/ProductionInterruption.scala').unlink()
-            (build / 'shared/ForeignProperties.scala').write_text(FOREIGN)
-            definition = build / 'build.sbt'
-            text = definition.read_text().replace('ProductionJsInterruptionPlugin', 'DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin', 'DistageTestkitNativePlugin')
-            text = text.replace('val common = Seq(', policy.CONTROLS + '\nval common = Seq(\n' + policy.SETTINGS + '''
+def prepare_lane(args, compiler, platform, paths):
+    command, prepared = prepare(args, compiler, platform, paths)
+    build = Path(command['cwd'])
+    (build / 'project/ProductionInterruption.scala').unlink()
+    (build / 'shared/ForeignProperties.scala').write_text(FOREIGN)
+    definition = build / 'build.sbt'
+    text = definition.read_text().replace('ProductionJsInterruptionPlugin', 'DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin', 'DistageTestkitNativePlugin')
+    text = text.replace('val common = Seq(', policy.CONTROLS + '\nval common = Seq(\n' + policy.SETTINGS + '''
   libraryDependencies += "org.scalacheck" % ("scalacheck_" + candidatePlatform.value + "_" + scalaBinaryVersion.value) % "1.19.0" % Test,
   libraryDependencySchemes ++= (if (candidatePlatform.value == "native0.5") Seq("org.scala-native" % ("test-interface_native0.5_" + scalaBinaryVersion.value) % "always") else Seq.empty),
   Test / testOptions += Tests.Argument(TestFramework("org.scalacheck.ScalaCheckFramework"), "-minSuccessfulTests", "1"),
 ''')
-            text = text.replace('Test / testFrameworks := Seq(TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))', 'Test / testFrameworks := Seq(TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), TestFramework("org.scalacheck.ScalaCheckFramework"))')
-            definition.write_text(text)
-            command['cases'] = [
-                dict(name='mixed-full', request='testFull', owned='ABCDE', foreign=True, before=[]),
-                dict(name='mixed-incremental', request='test', owned='ABCDE', foreign=False, before=[]),
-                dict(name='mixed-quick', request='testQuick', owned='ABCDE', foreign=False, before=[]),
-                dict(name='mixed-selected', request='testOnly *SuiteB *ForeignProperties', owned='B', foreign=True, before=[]),
-                dict(name='foreign-only', request='testOnly *ForeignProperties', owned='', foreign=True, before=[]),
-                dict(name='owned-only', request='testOnly *SuiteA', owned='A', foreign=False, before=[]),
-                dict(name='after-partial', request='testQuick', owned='ABCDE', foreign=False, before=[]),
-                dict(name='exclude-foreign', request='testFull', owned='ABCDE', foreign=False, before=['set ' + platform + '/policyOptions := Seq(Tests.Exclude(Seq("candidate.ForeignProperties")))']),
-                dict(name='reset-full', request='testFull', owned='ABCDE', foreign=True, before=['set ' + platform + '/policyOptions := Seq.empty']),
-                dict(name='serial-mixed', request='testFull', owned='ABCDE', foreign=True, before=['set ' + platform + '/Test/parallelExecution := false']),
-                dict(name='host-one-mixed', request='testFull', owned='ABCDE', foreign=True, before=['set ' + platform + '/Test/parallelExecution := true', 'set Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))']),
-            ]
-            requests = []
-            for case in command['cases']:
-                requests += case['before'] + [platform + '/preparePolicy ' + case['name'], platform + '/' + case['request'], platform + '/collectPolicy ' + case['name']]
-            command['argv'] = command['argv'][:command['argv'].index(platform + '/testFull')] + requests
-            inputs += [row for row in prepared if not Path(row['path']).is_relative_to(build)]
-            inputs += [dict(path=str(path), sha256=sha(path)) for path in build.rglob('*') if path.is_file()]
-            commands.append(command)
+    text = text.replace('Test / testFrameworks := Seq(TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"))', 'Test / testFrameworks := Seq(TestFramework("izumi.distage.testkit.runner.bootstrap.Framework"), TestFramework("org.scalacheck.ScalaCheckFramework"))')
+    definition.write_text(text)
+    command['cases'] = [
+        dict(name='mixed-full', request='testFull', owned='ABCDE', foreign=True, before=[]),
+        dict(name='mixed-incremental', request='test', owned='ABCDE', foreign=False, before=[]),
+        dict(name='mixed-quick', request='testQuick', owned='ABCDE', foreign=False, before=[]),
+        dict(name='mixed-selected', request='testOnly *SuiteB *ForeignProperties', owned='B', foreign=True, before=[]),
+        dict(name='foreign-only', request='testOnly *ForeignProperties', owned='', foreign=True, before=[]),
+        dict(name='owned-only', request='testOnly *SuiteA', owned='A', foreign=False, before=[]),
+        dict(name='after-partial', request='testQuick', owned='ABCDE', foreign=False, before=[]),
+        dict(name='exclude-foreign', request='testFull', owned='ABCDE', foreign=False, before=['set ' + platform + '/policyOptions := Seq(Tests.Exclude(Seq("candidate.ForeignProperties")))']),
+        dict(name='reset-full', request='testFull', owned='ABCDE', foreign=True, before=['set ' + platform + '/policyOptions := Seq.empty']),
+        dict(name='serial-mixed', request='testFull', owned='ABCDE', foreign=True, before=['set ' + platform + '/Test/parallelExecution := false']),
+        dict(name='host-one-mixed', request='testFull', owned='ABCDE', foreign=True, before=['set ' + platform + '/Test/parallelExecution := true', 'set Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))']),
+    ]
+    requests = []
+    for case in command['cases']:
+        requests += case['before'] + [platform + '/preparePolicy ' + case['name'], platform + '/' + case['request'], platform + '/collectPolicy ' + case['name']]
+    command['argv'] = command['argv'][:command['argv'].index(platform + '/testFull')] + requests
+    return command, prepared
+
+def main():
+    parser = target_parser()
+    args = parser.parse_args()
+    args.host_threads, args.logical_suite_alias = '2', True
+    commands, inputs, out = prepare_lanes(args, prepare_lane, [])
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands), indent=2) + '\n')
 
     checked_lanes(commands, out, inputs, 1800, 0)

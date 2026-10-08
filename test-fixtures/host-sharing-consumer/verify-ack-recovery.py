@@ -12,8 +12,6 @@ TIMEOUT_SECONDS=240
 GRACE_SECONDS=10
 
 
-
-
 EXTRA=r'''
 val changeAckMode = inputKey[Unit]("Choose explicit normal or halt-after-ack target completion")
 changeAckMode := {

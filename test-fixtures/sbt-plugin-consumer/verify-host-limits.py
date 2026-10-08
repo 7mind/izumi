@@ -91,9 +91,6 @@ final class HostWindow(directory: Path, limit: Int, log: sbt.util.Logger) extend
 '''
 
 
-
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact-version', required=True)

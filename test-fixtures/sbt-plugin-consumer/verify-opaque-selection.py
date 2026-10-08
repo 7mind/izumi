@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, run_process, sha, consumer_parser
+from fixture_harness import load_module, run_process, sha, scala_consumer_parser
 
 CONTROLS = r'''
 val prepareSelection = inputKey[Unit]("Prepare one public selection contract")
@@ -88,13 +88,9 @@ captureSelection := Def.uncached {
 '''
 
 
-
-
-
 def main():
-    parser = consumer_parser()
+    parser = scala_consumer_parser(multiple=False)
     parser.add_argument('--plugin-version', required=True)
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     root = args.repo_root.resolve()
     out = args.evidence_dir.resolve()

@@ -5,7 +5,7 @@ from typing import TextIO
 from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module, terminate_process, consumer_parser
+from fixture_harness import write_sbt_project, load_module, terminate_process, scala_consumer_parser
 
 WAIT_SECONDS=180
 RELEASE_WAIT_SECONDS=30
@@ -123,8 +123,7 @@ def verify(capture,row,runs,resources):
     else:assert not outcome['failures'] and all(n.find('error') is None and n.find('failure') is None for n in nodes)
     return dict(**row,bodies=len(bodies),results=15,xmlCases=len(nodes),resource=acquired[0],run=outcome['run'],hostPid=parent,bodyPids=sorted(pids))
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
+    parser = scala_consumer_parser(multiple=False)
     parser.add_argument('--execution-mode',choices=['both','inprocess','fork'],default='both')
     args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
     # Reuse the identical suite/resource fixture without its task-interruption proxy.

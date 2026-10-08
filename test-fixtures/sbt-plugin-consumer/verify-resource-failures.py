@@ -5,7 +5,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser, execution_stream
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, scala_consumer_parser, execution_stream
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -116,9 +116,6 @@ captureFailure := {
 '''
 
 
-
-
-
 def test_identity(value):
     return value['suite'], tuple(value['path'])
 
@@ -189,9 +186,7 @@ def verify(case, row, resources, runs, parents):
 
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
-    args = parser.parse_args()
+    args = scala_consumer_parser(multiple=False).parse_args()
     root = args.repo_root.resolve(); out = args.evidence_dir.resolve(); out.mkdir()
     freeze_driver(__file__, out / 'driver.py')
     build = out / 'build'

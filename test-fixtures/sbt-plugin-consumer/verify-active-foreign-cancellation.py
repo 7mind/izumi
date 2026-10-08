@@ -12,7 +12,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module as module, consumer_parser
+from fixture_harness import write_sbt_project, load_module as module, scala_consumer_parser
 
 FOREIGN_GATE = r'''
         private final val GateTimeoutSeconds = 30L
@@ -26,9 +26,6 @@ FOREIGN_GATE = r'''
           require(java.nio.file.Files.isRegularFile(path), "ACTIVE_FOREIGN_GATE_TIMEOUT")
         }
 '''
-
-
-
 
 
 def replace_once(text, original, replacement):
@@ -79,9 +76,7 @@ def verify(capture, row, runs, resources):
 
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
-    args = parser.parse_args()
+    args = scala_consumer_parser(multiple=False).parse_args()
     root = args.repo_root.resolve()
     out = args.evidence_dir.resolve()
     out.mkdir()

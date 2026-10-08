@@ -5,6 +5,7 @@ from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import write_sbt_project, freeze_driver, sha, wait_process
+from fixture_framework import framework_source
 
 ROOT=Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS=180
@@ -12,31 +13,18 @@ GRACE_SECONDS=10
 HOLD_WAIT_SECONDS=120
 HOLD_WINDOW_SECONDS=5
 EXPECTED_CONTROL_COUNT=2
-SOURCE=r'''package fixture
+SOURCE = framework_source(
+    prefix=r'''package fixture
 import sbt.testing.{Event,EventHandler,Fingerprint,Framework,Logger,OptionalThrowable,Runner,Selector,Status,SubclassFingerprint,Task,TaskDef,TestSelector}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files,Paths,StandardOpenOption}
 abstract class BatchSpec
 final class SuiteA extends BatchSpec
 final class SuiteB extends BatchSpec
-final class BatchFramework extends Framework {
-  private val HostWaitSeconds = 20L
-  private val PollMillis = 5L
-  private val fp = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = classOf[BatchSpec].getName
-    override def requireNoArgConstructor(): Boolean = true
-  }
-  override def name(): String = "generic-held-batch"
-  override def fingerprints(): Array[Fingerprint] = Array(fp)
-  override def runner(arguments: Array[String], remoteArguments: Array[String], loader: ClassLoader): Runner = new Runner {
-    override def args(): Array[String] = arguments.clone()
-    override def remoteArgs(): Array[String] = remoteArguments.clone()
-    override def tasks(definitions: Array[TaskDef]): Array[Task] = definitions.sortBy(_.fullyQualifiedName()).map { definition => new Task {
-      override def taskDef(): TaskDef = definition
-      override def tags(): Array[String] = Array.empty
-      override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-        val audit = Paths.get(sys.props("fixture.audit-root"))
+''',
+    framework='BatchFramework', fingerprint='fp', superclass='classOf[BatchSpec].getName', label='"generic-held-batch"',
+    members='  private val HostWaitSeconds = 20L\n  private val PollMillis = 5L\n', arguments='arguments.clone()', remote='remoteArguments.clone()', definitions='definitions.sortBy(_.fullyQualifiedName())',
+    execute=r'''        val audit = Paths.get(sys.props("fixture.audit-root"))
         (1 to 3).foreach { index =>
           val text = definition.fullyQualifiedName() + "\t" + index + "\t" + ProcessHandle.current().pid()
           val written = Files.write(audit.resolve(definition.fullyQualifiedName() + "-" + index + ".body"),text.getBytes(StandardCharsets.UTF_8),StandardOpenOption.CREATE_NEW,StandardOpenOption.WRITE)
@@ -50,10 +38,8 @@ final class BatchFramework extends Framework {
             override def duration(): Long = 0L
           })
         }
-        Array.empty
-      }
-    }}
-    override def done(): String = {
+''',
+    done=r'''{
       val audit = Paths.get(sys.props("fixture.audit-root"))
       val deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(HostWaitSeconds)
       while (!Files.isRegularFile(audit.resolve("host.first-complete")) && System.nanoTime() < deadline) Thread.sleep(PollMillis)
@@ -64,10 +50,8 @@ final class BatchFramework extends Framework {
         require(Files.isRegularFile(written),"Child done not recorded")
       }
       ""
-    }
-  }
-}
-'''
+    }''', tags='Array.empty', empty_tasks='Array.empty',
+)
 BUILD=r'''scalaVersion := "3.9.0"
 libraryDependencies += "org.scala-sbt" % "test-interface" % "1.0" % Test
 scalacOptions ++= Seq("-release:17", "-Ybackend-parallelism", "1")

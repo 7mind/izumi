@@ -5,12 +5,10 @@ from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, run_process, consumer_parser
+from fixture_harness import load_module, run_process, scala_consumer_parser
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
-    args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
+    args = scala_consumer_parser(multiple=False).parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
     matrix_path=root/'test-fixtures/sbt-plugin-consumer/verify-matrix.py'
     matrix = load_module('matrix', matrix_path)
     original=root/'test-fixtures/host-sharing-consumer';build=out/'build';build.mkdir()

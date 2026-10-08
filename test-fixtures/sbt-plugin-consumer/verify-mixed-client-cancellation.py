@@ -6,29 +6,18 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module as module, consumer_parser
+from fixture_harness import write_sbt_project, load_module as module, scala_consumer_parser
+from fixture_framework import framework_source
 
-FOREIGN = r'''package fixture
+FOREIGN = framework_source(
+    prefix=r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
 trait ForeignMarker
 final class ForeignSuite extends ForeignMarker
-final class ForeignFramework extends Framework {
-  private val marker = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = "fixture.ForeignMarker"
-    override def requireNoArgConstructor(): Boolean = true
-  }
-  override def name(): String = "Original foreign framework"
-  override def fingerprints(): Array[Fingerprint] = Array(marker)
-  override def runner(arguments: Array[String], remote: Array[String], loader: ClassLoader): Runner = new Runner {
-    override def args(): Array[String] = arguments
-    override def remoteArgs(): Array[String] = remote
-    override def done(): String = ""
-    override def tasks(definitions: Array[TaskDef]): Array[Task] = definitions.map { definition => new Task {
-      override def taskDef(): TaskDef = definition
-      override def tags(): Array[String] = Array.empty
-      override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-        (1 to 3).foreach { index =>
+''',
+    framework='ForeignFramework', fingerprint='marker', superclass='"fixture.ForeignMarker"', label='"Original foreign framework"',
+    members='', arguments='arguments', remote='remote', definitions='definitions',
+    execute=r'''        (1 to 3).foreach { index =>
           Audit.write(index.toString + ".foreign-body", Vector(definition.fullyQualifiedName(), index.toString, java.lang.ProcessHandle.current().pid().toString).mkString("\t"))
           val event = new Event {
             override def fullyQualifiedName(): String = definition.fullyQualifiedName()
@@ -40,12 +29,9 @@ final class ForeignFramework extends Framework {
           }
           handler.handle(event)
         }
-        Array.empty
-      }
-    } }
-  }
-}
-'''
+''',
+    done='""', tags='Array.empty', empty_tasks='Array.empty',
+)
 
 LISTENER = r'''
 Test / testFrameworks := new TestFramework("fixture.ForeignFramework") +: (Test / testFrameworks).value
@@ -69,13 +55,8 @@ Test / testOptions += {
 '''
 
 
-
-
-
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
-    args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
+    args = scala_consumer_parser(multiple=False).parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
     api_path=root/'test-fixtures/sbt-plugin-consumer/verify-client-cancellation.py'
     fixture_path=root/'test-fixtures/sbt-plugin-consumer/verify-task-cancellation.py'
     api=module('client_api',api_path);fixture=module('fixture',fixture_path)

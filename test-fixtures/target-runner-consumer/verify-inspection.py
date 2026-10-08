@@ -4,34 +4,22 @@ import json
 from pathlib import Path
 import re
 
-from verify import prepare, sha
+from verify import prepare
 
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import consumer_parser, checked_lanes
+from fixture_harness import checked_lanes
+from fixture_targets import target_parser, prepare_lanes
 
-def main():
-    parser = consumer_parser()
-    parser.add_argument('--production-host-version', required=True)
-    parser.add_argument('--host-threads', choices=['1', '2'], required=True)
-    parser.add_argument('--scala-version', nargs='+', choices=['3.9.0', '2.13.18'], required=True)
-    parser.add_argument('--logical-suite-alias', action='store_true', required=True)
-    args = parser.parse_args()
-    root, out = args.repo_root.resolve(), args.evidence_dir.resolve()
-    out.mkdir()
-    fixture = root / 'test-fixtures/target-runner-consumer'
-    paths = [path for path in fixture.rglob('*') if path.is_file() and path.suffix in ['.scala', '.sbt', '.properties', '.py']]
-    inputs = [dict(path=str(path), sha256=sha(path)) for path in paths]
-    commands = []
-    for compiler in args.scala_version:
-        for platform in ['js', 'native']:
-            command, prepared = prepare(args, compiler, platform, paths)
-            build = Path(command['cwd'])
-            (build / 'project/ProductionInterruption.scala').unlink()
-            definition = build / 'build.sbt'
-            text = definition.read_text().replace('ProductionJsInterruptionPlugin', 'DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin', 'DistageTestkitNativePlugin')
-            text = text.replace('val common = Seq(', '''val expectInspectionListFailure = taskKey[Unit]("Require rejected list selection")
+
+def prepare_lane(args, compiler, platform, paths):
+    command, prepared = prepare(args, compiler, platform, paths)
+    build = Path(command['cwd'])
+    (build / 'project/ProductionInterruption.scala').unlink()
+    definition = build / 'build.sbt'
+    text = definition.read_text().replace('ProductionJsInterruptionPlugin', 'DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin', 'DistageTestkitNativePlugin')
+    text = text.replace('val common = Seq(', '''val expectInspectionListFailure = taskKey[Unit]("Require rejected list selection")
 val expectInspectionPlanFailure = taskKey[Unit]("Require rejected plan selection")
 val markCandidateExecution = taskKey[Unit]("Mark the end of nonexecuting inspection commands")
 val common = Seq(
@@ -48,22 +36,27 @@ val common = Seq(
       case Result.Value(_) => throw new IllegalStateException("Unknown inspection suite unexpectedly planned")
     }
   },''')
-            definition.write_text(text)
-            target = 'candidate-' + ('sjs1' if platform == 'js' else 'native0.5')
-            test = dict(target=target, suite='logical:candidate.SuiteB', path=['equal display name', 'should', 'third'], variant=None)
-            encoded = json.dumps(json.dumps(test, separators=(',', ':')))
-            cases = [platform + '/Test/distageList', platform + '/Test/distagePlan',
-                     platform + '/Test/distageList --suite-id logical:candidate.SuiteB',
-                     platform + '/Test/distagePlan --suite-id logical:candidate.SuiteB --memoization disabled',
-                     platform + '/Test/distageList --test-id ' + encoded,
-                     platform + '/Test/distagePlan --test-id ' + encoded + ' --memoization disabled',
-                     platform + '/expectInspectionListFailure', platform + '/expectInspectionPlanFailure',
-                     platform + '/markCandidateExecution',
-                     platform + '/testFull']
-            command['argv'] = command['argv'][:command['argv'].index(platform + '/testFull')] + cases
-            inputs.extend(row for row in prepared if not Path(row['path']).is_relative_to(build))
-            inputs.extend(dict(path=str(path), sha256=sha(path)) for path in build.rglob('*') if path.is_file())
-            commands.append(command)
+    definition.write_text(text)
+    target = 'candidate-' + ('sjs1' if platform == 'js' else 'native0.5')
+    test = dict(target=target, suite='logical:candidate.SuiteB', path=['equal display name', 'should', 'third'], variant=None)
+    encoded = json.dumps(json.dumps(test, separators=(',', ':')))
+    cases = [platform + '/Test/distageList', platform + '/Test/distagePlan',
+             platform + '/Test/distageList --suite-id logical:candidate.SuiteB',
+             platform + '/Test/distagePlan --suite-id logical:candidate.SuiteB --memoization disabled',
+             platform + '/Test/distageList --test-id ' + encoded,
+             platform + '/Test/distagePlan --test-id ' + encoded + ' --memoization disabled',
+             platform + '/expectInspectionListFailure', platform + '/expectInspectionPlanFailure',
+             platform + '/markCandidateExecution',
+             platform + '/testFull']
+    command['argv'] = command['argv'][:command['argv'].index(platform + '/testFull')] + cases
+    return command, prepared
+
+def main():
+    parser = target_parser()
+    parser.add_argument('--host-threads', choices=['1', '2'], required=True)
+    parser.add_argument('--logical-suite-alias', action='store_true', required=True)
+    args = parser.parse_args()
+    commands, inputs, out = prepare_lanes(args, prepare_lane, [])
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands), indent=2) + '\n')
     checked_lanes(commands, out, inputs, 1200, 0)
     lanes = []

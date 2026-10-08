@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, wait_process, consumer_parser
+from fixture_harness import write_sbt_project, wait_process, scala_consumer_parser
 
 BODY_TIMEOUT_SECONDS = 30
 COMMAND_TIMEOUT_SECONDS = 180
@@ -68,8 +68,7 @@ def identity(test):
 
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
+    parser = scala_consumer_parser(multiple=False)
     parser.add_argument('--fork', choices=['true', 'false'], required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve()

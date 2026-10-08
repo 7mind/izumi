@@ -46,6 +46,12 @@ def consumer_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def scala_consumer_parser(*, multiple: bool) -> argparse.ArgumentParser:
+    parser = consumer_parser()
+    parser.add_argument('--scala-version', nargs='+' if multiple else None, choices=['3.9.0', '2.13.18'], required=True)
+    return parser
+
+
 def sha(path: Path | str) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -60,7 +66,8 @@ def load_module(name: str, path: Path) -> ModuleType:
 
 def freeze_driver(driver: Path | str, destination: Path) -> None:
     shutil.copy2(driver, destination)
-    shutil.copy2(__file__, destination.parent / 'fixture_harness.py')
+    for helper in ['fixture_harness.py', 'fixture_framework.py']:
+        shutil.copy2(Path(__file__).with_name(helper), destination.parent / helper)
 
 
 def freeze_sources(sources: list[Path], base: Path, destination: Path) -> list[FrozenInput]:

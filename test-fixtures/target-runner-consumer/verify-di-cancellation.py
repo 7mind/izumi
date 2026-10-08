@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import argparse
 from collections import Counter
 import json, re, shutil, sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import load_module, run_lanes
+from fixture_targets import target_parser, prepare_lanes
 
 FIXTURE=Path(__file__).resolve().parent
 TEMPLATE=FIXTURE/'di-failures'
@@ -60,48 +60,47 @@ def audit(manifest,out):
             records.append(dict(scala=command['scala'],platform=command['platform'],case=label,bodies=len(bodies),resources=len(acquired)+len(held),run=outcome['run']))
     return dict(contexts=len(records),bodies=sum(row['bodies'] for row in records),resources=sum(row['resources'] for row in records),records=records)
 
+
+def prepare_lane(args, compiler, platform, paths):
+    suffix=('sjs1' if platform=='js' else 'native0.5')+'_'+('3' if compiler.startswith('3.') else '2.13')
+    command,prepared=di.prepare_di(args,compiler,platform,paths,TEMPLATE,di.failure_suites(TEMPLATE),True)
+    build=Path(command['cwd'])
+    shutil.copyfile(HELD,build/'shared/Held.scala')
+    plugin=build/'shared/FixturePlugin.scala';plugin.write_text(plugin.read_text().replace('Seq(new FixturePlugin)','Seq(new FixturePlugin, new HeldPlugin)'))
+    suites=build/'shared/Suites.scala';suite_text=suites.read_text().replace('final class EffectCats extends Spec1[IO] with Configured','final class EffectCats extends Spec1[IO] with HeldConfigured')
+    for index in [1,2,3]:
+        suite_text=suite_text.replace('(value: SharedResource) => IO(record('+str(index)+', value))','(value: SharedResource, held: HeldResource) => IO { require(held != null); record('+str(index)+', value) }')
+    suites.write_text(suite_text)
+    platform_source=build/('platform-'+platform)/'Platform.scala'
+    definition=build/'build.sbt';text=definition.read_text().replace('distage-test-runner_','distage-testkit-runner_')
+    text=text.replace('val common = Seq(',policy.CONTROLS+'\nval common = Seq(\n'+policy.SETTINGS+SETTINGS)
+    definition.write_text(text)
+    marker=build/'held-finalizer.txt'
+    command['argv'].insert(7,'-Dcandidate.finalizer='+str(marker))
+    mark_method=('scala.scalajs.js.Dynamic.global.require("fs").writeFileSync('+json.dumps(str(marker))+', state)' if platform=='js' else '{ val writer = new java.io.PrintWriter('+json.dumps(str(marker))+'); try writer.print(state) finally writer.close() }')
+    platform_source.write_text(platform_source.read_text().replace('object Platform {','object Platform {\n  def finalizerMarker(state: String): Unit = { '+mark_method+'; () }\n'))
+    probe=build/'project/ProductionInterruption.scala';probe_text=probe.read_text()
+    old_condition='(files() -- prior).exists(path => Files.readString(path).contains("\\\"testStarted\\\""))'
+    assert old_condition in probe_text,old_condition
+    probe_text=probe_text.replace(old_condition,'Files.exists(Paths.get(sys.props("candidate.finalizer"))) && Files.readString(Paths.get(sys.props("candidate.finalizer"))) == "enter"')
+    probe_text=probe_text.replace('caller.interrupt()','caller.interrupt()\n                    Thread.sleep(200L)\n                    require(Files.readString(Paths.get(sys.props("candidate.finalizer"))) == "enter", "Finalizer was not held during cancellation")\n                    require(!(files() -- prior).exists(path => Files.readString(path).contains("\\\"kind\\\":\\\"completed\\\"")), "Application completed before its held finalizer")\n                    println("SDK_DI_FINALIZER_HELD_CHECK")')
+    probe_text=probe_text.replace('require(interrupted.get(),','require(Files.readString(Paths.get(sys.props("candidate.finalizer"))) == "exit", "SDK returned before DI finalizer exit")\n                require(interrupted.get(),')
+    probe.write_text(probe_text)
+    all_suites={name:[1,2,3] for name in ['candidate.Suite'+letter for letter in 'ABCDE']+['candidate.EffectCats','candidate.EffectZIO']}
+    rows=[('normal','testFull',all_suites,3,False,[],'one','alpha','dummy'),('cancelled','expectCandidateCancellation',all_suites,3,False,[platform+'/armCandidateInterruption'],'one','alpha','dummy'),('recovery','test',all_suites,3,False,[platform+'/disarmCandidateInterruption'],'one','alpha','dummy')]
+    requests=[];cases=[]
+    for name,request,suites,resources,unmemoized,before,revision,snapshot,repo in rows:
+        cases.append(dict(name=name,suites=suites,resources=resources,unmemoized=unmemoized,revision=revision,snapshot=snapshot,repo=repo));requests+=before+[platform+'/preparePolicy '+name,platform+'/'+request,platform+'/collectPolicy '+name]
+    command['cases']=cases;command['argv']=command['argv'][:command['argv'].index(platform+'/testFull')]+requests
+    prepared += di.runtime_publication_inputs('distage-testkit-runner_'+suffix,args.artifact_version)
+    return command, prepared
+
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',type=Path,required=True);parser.add_argument('--host-threads',choices=['1','2'],required=True);parser.add_argument('--artifact-version',required=True);parser.add_argument('--production-host-version',required=True);parser.add_argument('--evidence-dir',type=Path,required=True);parser.add_argument('--scala-version',nargs='+',choices=['3.9.0','2.13.18'],required=True);args=parser.parse_args()
-    args.repo_root=args.repo_root.resolve();ROOT=args.repo_root;args.logical_suite_alias=False
-    out=args.evidence_dir.resolve();out.mkdir();fixture=ROOT/'test-fixtures/target-runner-consumer'
-    paths=[path for path in fixture.rglob('*') if path.is_file() and path.suffix in ['.scala','.sbt','.properties','.py']]
-    inputs=[dict(path=str(path),sha256=sha(path)) for path in paths]+[dict(path=str(path),sha256=sha(path)) for path in TEMPLATE.glob('*.scala')]+[dict(path=str(HELD),sha256=sha(HELD)),dict(path=str(Path(__file__).resolve()),sha256=sha(Path(__file__)))];commands=[]
-    for compiler in args.scala_version:
-        for platform in ['js','native']:
-            suffix=('sjs1' if platform=='js' else 'native0.5')+'_'+('3' if compiler.startswith('3.') else '2.13')
-            command,prepared=di.prepare_di(args,compiler,platform,paths,TEMPLATE,di.failure_suites(TEMPLATE),True)
-            build=Path(command['cwd'])
-            shutil.copyfile(HELD,build/'shared/Held.scala')
-            plugin=build/'shared/FixturePlugin.scala';plugin.write_text(plugin.read_text().replace('Seq(new FixturePlugin)','Seq(new FixturePlugin, new HeldPlugin)'))
-            suites=build/'shared/Suites.scala';suite_text=suites.read_text().replace('final class EffectCats extends Spec1[IO] with Configured','final class EffectCats extends Spec1[IO] with HeldConfigured')
-            for index in [1,2,3]:
-                suite_text=suite_text.replace('(value: SharedResource) => IO(record('+str(index)+', value))','(value: SharedResource, held: HeldResource) => IO { require(held != null); record('+str(index)+', value) }')
-            suites.write_text(suite_text)
-            platform_source=build/('platform-'+platform)/'Platform.scala'
-            definition=build/'build.sbt';text=definition.read_text().replace('distage-test-runner_','distage-testkit-runner_')
-            text=text.replace('val common = Seq(',policy.CONTROLS+'\nval common = Seq(\n'+policy.SETTINGS+SETTINGS)
-            definition.write_text(text)
-            marker=build/'held-finalizer.txt'
-            command['argv'].insert(7,'-Dcandidate.finalizer='+str(marker))
-            mark_method=('scala.scalajs.js.Dynamic.global.require("fs").writeFileSync('+json.dumps(str(marker))+', state)' if platform=='js' else '{ val writer = new java.io.PrintWriter('+json.dumps(str(marker))+'); try writer.print(state) finally writer.close() }')
-            platform_source.write_text(platform_source.read_text().replace('object Platform {','object Platform {\n  def finalizerMarker(state: String): Unit = { '+mark_method+'; () }\n'))
-            probe=build/'project/ProductionInterruption.scala';probe_text=probe.read_text()
-            old_condition='(files() -- prior).exists(path => Files.readString(path).contains("\\\"testStarted\\\""))'
-            assert old_condition in probe_text,old_condition
-            probe_text=probe_text.replace(old_condition,'Files.exists(Paths.get(sys.props("candidate.finalizer"))) && Files.readString(Paths.get(sys.props("candidate.finalizer"))) == "enter"')
-            probe_text=probe_text.replace('caller.interrupt()','caller.interrupt()\n                    Thread.sleep(200L)\n                    require(Files.readString(Paths.get(sys.props("candidate.finalizer"))) == "enter", "Finalizer was not held during cancellation")\n                    require(!(files() -- prior).exists(path => Files.readString(path).contains("\\\"kind\\\":\\\"completed\\\"")), "Application completed before its held finalizer")\n                    println("SDK_DI_FINALIZER_HELD_CHECK")')
-            probe_text=probe_text.replace('require(interrupted.get(),','require(Files.readString(Paths.get(sys.props("candidate.finalizer"))) == "exit", "SDK returned before DI finalizer exit")\n                require(interrupted.get(),')
-            probe.write_text(probe_text)
-            all_suites={name:[1,2,3] for name in ['candidate.Suite'+letter for letter in 'ABCDE']+['candidate.EffectCats','candidate.EffectZIO']}
-            rows=[('normal','testFull',all_suites,3,False,[],'one','alpha','dummy'),('cancelled','expectCandidateCancellation',all_suites,3,False,[platform+'/armCandidateInterruption'],'one','alpha','dummy'),('recovery','test',all_suites,3,False,[platform+'/disarmCandidateInterruption'],'one','alpha','dummy')]
-            requests=[];cases=[]
-            for name,request,suites,resources,unmemoized,before,revision,snapshot,repo in rows:
-                cases.append(dict(name=name,suites=suites,resources=resources,unmemoized=unmemoized,revision=revision,snapshot=snapshot,repo=repo));requests+=before+[platform+'/preparePolicy '+name,platform+'/'+request,platform+'/collectPolicy '+name]
-            command['cases']=cases;command['argv']=command['argv'][:command['argv'].index(platform+'/testFull')]+requests
-            inputs += [row for row in prepared if not Path(row['path']).is_relative_to(build)]
-            inputs += di.runtime_publication_inputs('distage-testkit-runner_'+suffix,args.artifact_version)
-            inputs += [dict(path=str(path),sha256=sha(path)) for path in build.rglob('*') if path.is_file()]
-            commands.append(command)
+    parser = target_parser()
+    parser.add_argument('--host-threads', choices=['1', '2'], required=True)
+    args = parser.parse_args()
+    args.repo_root=args.repo_root.resolve();args.logical_suite_alias=False
+    commands, inputs, out = prepare_lanes(args, prepare_lane, [*TEMPLATE.glob('*.scala'), HELD, Path(__file__).resolve()])
     (out/'commands.json').write_text(json.dumps(dict(inputs=inputs,commands=commands),indent=2)+'\n')
     results = run_lanes(commands, out, 2400)
     mutable={str(Path(command['cwd'])/'shared/FixturePlugin.scala') for command in commands}

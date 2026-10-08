@@ -4,7 +4,7 @@ import json
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, scala_consumer_parser
 
 TIMEOUT_SECONDS = 240
 BUILD = r'''
@@ -79,13 +79,9 @@ object EarlyInputs {
 '''
 
 
-
-
-
 def main():
-    parser = consumer_parser()
+    parser = scala_consumer_parser(multiple=False)
     parser.add_argument('--plugin-version', required=True)
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve()
     out.mkdir()

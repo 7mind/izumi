@@ -7,12 +7,9 @@ import shutil
 import xml.etree.ElementTree as ET
 
 
-
-
-
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import sha, consumer_parser, checked_lanes
+from fixture_harness import sha, scala_consumer_parser, checked_lanes
 
 def verify(command, out):
     compiler, platform = command['scala'], command['platform']
@@ -124,11 +121,10 @@ def prepare(args, compiler, platform, paths):
 
 
 def main():
-    parser = consumer_parser()
+    parser = scala_consumer_parser(multiple=True)
     parser.add_argument('--production-host-version')
     parser.add_argument('--logical-suite-alias', action='store_true')
     parser.add_argument('--host-threads', choices=['1', '2'], required=True)
-    parser.add_argument('--scala-version', nargs='+', choices=['3.9.0', '2.13.18'], required=True)
     args = parser.parse_args()
     root, out = args.repo_root.resolve(), args.evidence_dir.resolve()
     out.mkdir()

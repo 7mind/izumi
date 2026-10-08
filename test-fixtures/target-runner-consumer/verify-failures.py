@@ -10,7 +10,8 @@ from verify import prepare, sha
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import consumer_parser, checked_lanes
+from fixture_harness import checked_lanes
+from fixture_targets import target_parser, prepare_lanes
 
 def configure(command, scenario):
     build = Path(command['cwd'])
@@ -121,28 +122,19 @@ def verify(command, out, scenario):
     return dict(scala=command['scala'], platform=command['platform'], physicalBodies=15 * repetitions, streams=streams, reports=reports)
 
 
+def prepare_lane(args, compiler, platform, paths):
+    command, prepared = prepare(args, compiler, platform, paths)
+    configure(command, args.scenario)
+    build = Path(command['cwd'])
+    return command, prepared
+
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--production-host-version', required=True)
+    parser = target_parser()
     parser.add_argument('--host-threads', choices=['1', '2'], required=True)
-    parser.add_argument('--scala-version', nargs='+', choices=['3.9.0', '2.13.18'], required=True)
     parser.add_argument('--logical-suite-alias', action='store_true', required=True)
     parser.add_argument('--scenario', choices=['body', 'launch'], required=True)
     args = parser.parse_args()
-    root, out = args.repo_root.resolve(), args.evidence_dir.resolve()
-    out.mkdir()
-    fixture = root / 'test-fixtures/target-runner-consumer'
-    paths = [path for path in fixture.rglob('*') if path.is_file() and path.suffix in ['.scala', '.sbt', '.properties', '.py']]
-    inputs = [dict(path=str(path), sha256=sha(path)) for path in paths]
-    commands = []
-    for compiler in args.scala_version:
-        for platform in ['js', 'native']:
-            command, prepared = prepare(args, compiler, platform, paths)
-            configure(command, args.scenario)
-            build = Path(command['cwd'])
-            inputs.extend(row for row in prepared if not Path(row['path']).is_relative_to(build))
-            inputs.extend(dict(path=str(path), sha256=sha(path)) for path in build.rglob('*') if path.is_file())
-            commands.append(command)
+    commands, inputs, out = prepare_lanes(args, prepare_lane, [])
     (out / 'commands.json').write_text(json.dumps(dict(inputs=inputs, commands=commands, scenario=args.scenario), indent=2) + '\n')
     checked_lanes(commands, out, inputs, 1200, 1 if args.scenario == 'body' else 0)
     lanes = [verify(command, out, args.scenario) for command in commands]

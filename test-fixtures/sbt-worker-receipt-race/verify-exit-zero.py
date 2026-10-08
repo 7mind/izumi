@@ -7,34 +7,23 @@ from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
+from fixture_framework import framework_source
 
 ROOT=Path(__file__).resolve().parents[2]
 EVENT_COUNT=15
 LANE_TIMEOUT_SECONDS=300
 SHUTDOWN_GRACE_SECONDS=10
-SOURCE=r'''package fixture
+SOURCE = framework_source(
+    prefix=r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths, StandardOpenOption}
 abstract class SuccessSpec
 final class SuccessSuite extends SuccessSpec
-final class SuccessFramework extends Framework {
-  private val fingerprint = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = classOf[SuccessSpec].getName
-    override def requireNoArgConstructor(): Boolean = true
-  }
-  override def name(): String = "exit-zero-control"
-  override def fingerprints(): Array[Fingerprint] = Array(fingerprint)
-  override def runner(arguments: Array[String], remoteArguments: Array[String], loader: ClassLoader): Runner = new Runner {
-    override def args(): Array[String] = arguments
-    override def remoteArgs(): Array[String] = remoteArguments
-    override def done(): String = "control complete"
-    override def tasks(definitions: Array[TaskDef]): Array[Task] = definitions.map { definition => new Task {
-      override def taskDef(): TaskDef = definition
-      override def tags(): Array[String] = Array.empty[String]
-      override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-        val directory = Paths.get(sys.props("fixture.audit-root"))
+''',
+    framework='SuccessFramework', fingerprint='fingerprint', superclass='classOf[SuccessSpec].getName', label='"exit-zero-control"',
+    members='', arguments='arguments', remote='remoteArguments', definitions='definitions',
+    execute=r'''        val directory = Paths.get(sys.props("fixture.audit-root"))
         (1 to 15).foreach { index =>
           handler.handle(new Event {
             override def fullyQualifiedName(): String = definition.fullyQualifiedName()
@@ -51,12 +40,9 @@ final class SuccessFramework extends Framework {
           println("GENERIC_EXIT_ZERO_HALT pid=" + ProcessHandle.current().pid() + " sent=15 exit=0")
           Runtime.getRuntime.halt(0)
         }
-        Array.empty[Task]
-      }
-    } }
-  }
-}
-'''
+''',
+    done='"control complete"', tags='Array.empty[String]', empty_tasks='Array.empty[Task]',
+)
 BUILD='''scalaVersion := "3.9.0"
 libraryDependencies += "org.scala-sbt" % "test-interface" % "1.0" % Test
 scalacOptions ++= Seq("-release:17", "-Ybackend-parallelism", "1")

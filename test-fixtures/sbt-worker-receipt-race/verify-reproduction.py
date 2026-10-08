@@ -6,32 +6,24 @@ from pathlib import Path
 import subprocess
 from xml.etree import ElementTree
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from fixture_framework import framework_source
+from fixture_harness import freeze_driver
 
 HELD_EVENT_MILLIS = 1200
 LANE_TIMEOUT_SECONDS = 300
 
 
-SOURCE = '''package fixture
+SOURCE = framework_source(
+    prefix=r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
 abstract class ErrorSpec
 final class ErrorSuite extends ErrorSpec
-final class ErrorFramework extends Framework {
-  private val fingerprint = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = classOf[ErrorSpec].getName
-    override def requireNoArgConstructor(): Boolean = true
-  }
-  override def name(): String = "generic-error-control"
-  override def fingerprints(): Array[Fingerprint] = Array(fingerprint)
-  override def runner(arguments: Array[String], remoteArguments: Array[String], loader: ClassLoader): Runner = new Runner {
-    override def args(): Array[String] = arguments
-    override def remoteArgs(): Array[String] = remoteArguments
-    override def done(): String = "generic control complete"
-    override def tasks(definitions: Array[TaskDef]): Array[Task] = definitions.map { definition => new Task {
-      override def taskDef(): TaskDef = definition
-      override def tags(): Array[String] = Array.empty[String]
-      override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-        handler.handle(new Event {
+''',
+    framework='ErrorFramework', fingerprint='fingerprint', superclass='classOf[ErrorSpec].getName', label='"generic-error-control"',
+    members='', arguments='arguments', remote='remoteArguments', definitions='definitions',
+    execute=r'''        handler.handle(new Event {
           override def fullyQualifiedName(): String = definition.fullyQualifiedName()
           override def fingerprint(): Fingerprint = definition.fingerprint()
           override def selector(): Selector = new TestSelector("intentional error")
@@ -39,12 +31,9 @@ final class ErrorFramework extends Framework {
           override def throwable(): OptionalThrowable = new OptionalThrowable(new IllegalStateException("INTENTIONAL_GENERIC_ERROR"))
           override def duration(): Long = 0L
         })
-        Array.empty[Task]
-      }
-    } }
-  }
-}
-'''
+''',
+    done='"generic control complete"', tags='Array.empty[String]', empty_tasks='Array.empty[Task]',
+)
 
 BUILD = '''import java.util.concurrent.{CountDownLatch, TimeUnit}
 scalaVersion := "3.9.0"
@@ -91,7 +80,7 @@ def main():
     evidence.mkdir(parents=True, exist_ok=False)
     outcomes = []
     driver_bytes = Path(__file__).read_bytes()
-    (evidence / "verify-reproduction.py").write_bytes(driver_bytes)
+    freeze_driver(__file__, evidence / "verify-reproduction.py")
     for sdk in ["2.0.9"]:
         for name, hold in [("fast", 0), ("held", HELD_EVENT_MILLIS)]:
             lane = evidence / ("sbt" + sdk + "-" + name)

@@ -70,9 +70,6 @@ captureRegistrationFixture := {
 '''
 
 
-
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--evidence-dir', type=Path, required=True)

@@ -66,7 +66,6 @@ captureTaskFailure := {
 '''
 
 
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--artifact-version', required=True)

@@ -7,9 +7,6 @@ import time
 import xml.etree.ElementTree as ET
 
 
-
-
-
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import run_process, sha as digest

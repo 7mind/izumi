@@ -5,34 +5,23 @@ from xml.etree import ElementTree
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import write_sbt_project, freeze_driver, run_process, sha
+from fixture_framework import framework_source
 
 ROOT = Path(__file__).resolve().parents[2]
 TIMEOUT_SECONDS = 180
 GRACE_SECONDS = 10
 EXPECTED_CONTROL_COUNT = 2
-SOURCE = r'''package fixture
+SOURCE = framework_source(
+    prefix=r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths, StandardOpenOption}
 abstract class ThrowSpec
 final class ThrowSuite extends ThrowSpec
-final class ThrowFramework extends Framework {
-  private val fingerprint = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = classOf[ThrowSpec].getName
-    override def requireNoArgConstructor(): Boolean = true
-  }
-  override def name(): String = "generic-task-throw-control"
-  override def fingerprints(): Array[Fingerprint] = Array(fingerprint)
-  override def runner(arguments: Array[String], remoteArguments: Array[String], loader: ClassLoader): Runner = new Runner {
-    override def args(): Array[String] = arguments.clone()
-    override def remoteArgs(): Array[String] = remoteArguments.clone()
-    override def done(): String = ""
-    override def tasks(definitions: Array[TaskDef]): Array[Task] = definitions.map { definition => new Task {
-      override def taskDef(): TaskDef = definition
-      override def tags(): Array[String] = Array.empty
-      override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-        handler.handle(new Event {
+''',
+    framework='ThrowFramework', fingerprint='fingerprint', superclass='classOf[ThrowSpec].getName', label='"generic-task-throw-control"',
+    members='', arguments='arguments.clone()', remote='remoteArguments.clone()', definitions='definitions',
+    execute=r'''        handler.handle(new Event {
           override def fullyQualifiedName(): String = definition.fullyQualifiedName()
           override def fingerprint(): Fingerprint = definition.fingerprint()
           override def selector(): Selector = new TestSelector("buffered success")
@@ -43,12 +32,9 @@ final class ThrowFramework extends Framework {
         val receipt = definition.fullyQualifiedName() + "\tSuccess\t" + ProcessHandle.current().pid()
         val _ = Files.write(Paths.get(sys.props("fixture.audit-root")).resolve("buffered.success"), receipt.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
         if (sys.props("fixture.mode") == "throw") throw new LinkageError("GENERIC_TASK_THROW_AFTER_BUFFERED_SUCCESS")
-        Array.empty
-      }
-    }}
-  }
-}
-'''
+''',
+    done='""', tags='Array.empty', empty_tasks='Array.empty',
+)
 BUILD = '''scalaVersion := "3.9.0"
 libraryDependencies += "org.scala-sbt" % "test-interface" % "1.0" % Test
 scalacOptions ++= Seq("-release:17", "-Ybackend-parallelism", "1")

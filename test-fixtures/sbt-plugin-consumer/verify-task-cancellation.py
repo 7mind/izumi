@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, scala_consumer_parser
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -202,9 +202,6 @@ captureCancellation := {
 '''
 
 
-
-
-
 def verify(directory, row, resources, runs):
     audit = directory / 'audit'
     bodies = [path.read_text().split('\t') for path in audit.glob('*.body')]
@@ -257,9 +254,7 @@ def verify(directory, row, resources, runs):
 
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
-    args = parser.parse_args()
+    args = scala_consumer_parser(multiple=False).parse_args()
     root = args.repo_root.resolve(); out = args.evidence_dir.resolve(); out.mkdir()
     freeze_driver(__file__, out / 'driver.py')
     build = out / 'build'

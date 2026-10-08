@@ -5,7 +5,7 @@ from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, load_module, consumer_parser
+from fixture_harness import write_sbt_project, load_module, scala_consumer_parser
 
 LISTENER = r'''
 Test / parallelExecution := false
@@ -48,9 +48,6 @@ Test / testOptions += {
 '''
 
 
-
-
-
 def verify_callbacks(capture):
     audit=capture/'audit'
     records=[tuple(p.read_text().split('\t')) for p in audit.glob('*.callback')]
@@ -61,8 +58,7 @@ def verify_callbacks(capture):
 
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version',choices=['3.9.0','2.13.18'],required=True)
+    parser = scala_consumer_parser(multiple=False)
     parser.add_argument('--execution-mode',choices=['both','inprocess','fork'],required=True)
     args=parser.parse_args();root=args.repo_root.resolve();out=args.evidence_dir.resolve();out.mkdir()
     client_path=root/'test-fixtures/sbt-plugin-consumer/verify-client-cancellation.py'

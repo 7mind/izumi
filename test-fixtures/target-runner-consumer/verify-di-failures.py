@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import argparse
 from collections import Counter
 import json, re, sys
 from pathlib import Path
 import xml.etree.ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import load_module, run_lanes, execution_stream
+from fixture_targets import target_parser, prepare_lanes
 
 FIXTURE=Path(__file__).resolve().parent
 TEMPLATE=FIXTURE/'di-failures'
@@ -88,30 +88,28 @@ def audit(manifest,out):
     report=dict(contexts=len(records),bodies=sum(row['bodies'] for row in records),terminalRecords=sum(row['terminalRecords'] for row in records),resources=sum(row['resources'] for row in records),records=records)
     return report
 
+
+def prepare_lane(args, compiler, platform, paths):
+    suffix=('sjs1' if platform=='js' else 'native0.5')+'_'+('3' if compiler.startswith('3.') else '2.13')
+    command,prepared=di.prepare_di(args,compiler,platform,paths,TEMPLATE,di.failure_suites(TEMPLATE),False)
+    build=Path(command['cwd'])
+    definition=build/'build.sbt';text=definition.read_text().replace('ProductionJsInterruptionPlugin','DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin','DistageTestkitNativePlugin').replace('distage-test-runner_','distage-testkit-runner_')
+    text=text.replace('val common = Seq(',policy.CONTROLS+CONTROLS+'\nval common = Seq(\n'+policy.SETTINGS+SETTINGS)
+    definition.write_text(text)
+    all_suites={name:[1,2,3] for name in ['candidate.Suite'+letter for letter in 'ABCDE']+['candidate.EffectCats','candidate.EffectZIO']}
+    rows=[('full','testFull',all_suites,3,False,[],'one','alpha','dummy'),('body-failure','expectProviderFailure',all_suites,3,False,[platform+'/editExternalConfiguration body-failure'],'one','body-failure','dummy'),('body-recovery','test',all_suites,3,False,[platform+'/editExternalConfiguration gamma'],'one','gamma','dummy'),('release-failure','expectProviderFailure',all_suites,3,False,[platform+'/editExternalConfiguration release-failure'],'one','release-failure','dummy'),('release-recovery','testQuick',all_suites,3,False,[platform+'/editExternalConfiguration delta'],'one','delta','dummy')]
+    requests=[];cases=[]
+    for name,request,suites,resources,unmemoized,before,revision,snapshot,repo in rows:
+        cases.append(dict(name=name,suites=suites,resources=resources,unmemoized=unmemoized,revision=revision,snapshot=snapshot,repo=repo));requests+=before+[platform+'/preparePolicy '+name,platform+'/'+request,platform+'/collectPolicy '+name]
+    command['cases']=cases;command['argv']=command['argv'][:command['argv'].index(platform+'/testFull')]+requests
+    prepared += di.runtime_publication_inputs('distage-testkit-runner_'+suffix,args.artifact_version)
+    return command, prepared
+
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',type=Path,required=True);parser.add_argument('--artifact-version',required=True);parser.add_argument('--production-host-version',required=True);parser.add_argument('--evidence-dir',type=Path,required=True);parser.add_argument('--scala-version',nargs='+',choices=['3.9.0','2.13.18'],required=True);args=parser.parse_args()
-    args.repo_root=args.repo_root.resolve();ROOT=args.repo_root;args.host_threads='2';args.logical_suite_alias=False
-    out=args.evidence_dir.resolve();out.mkdir();fixture=ROOT/'test-fixtures/target-runner-consumer'
-    paths=[path for path in fixture.rglob('*') if path.is_file() and path.suffix in ['.scala','.sbt','.properties','.py']]
-    inputs=[dict(path=str(path),sha256=sha(path)) for path in paths]+[dict(path=str(path),sha256=sha(path)) for path in TEMPLATE.glob('*.scala')]+[dict(path=str(Path(__file__).resolve()),sha256=sha(Path(__file__)))];commands=[]
-    for compiler in args.scala_version:
-        for platform in ['js','native']:
-            suffix=('sjs1' if platform=='js' else 'native0.5')+'_'+('3' if compiler.startswith('3.') else '2.13')
-            command,prepared=di.prepare_di(args,compiler,platform,paths,TEMPLATE,di.failure_suites(TEMPLATE),False)
-            build=Path(command['cwd'])
-            definition=build/'build.sbt';text=definition.read_text().replace('ProductionJsInterruptionPlugin','DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin','DistageTestkitNativePlugin').replace('distage-test-runner_','distage-testkit-runner_')
-            text=text.replace('val common = Seq(',policy.CONTROLS+CONTROLS+'\nval common = Seq(\n'+policy.SETTINGS+SETTINGS)
-            definition.write_text(text)
-            all_suites={name:[1,2,3] for name in ['candidate.Suite'+letter for letter in 'ABCDE']+['candidate.EffectCats','candidate.EffectZIO']}
-            rows=[('full','testFull',all_suites,3,False,[],'one','alpha','dummy'),('body-failure','expectProviderFailure',all_suites,3,False,[platform+'/editExternalConfiguration body-failure'],'one','body-failure','dummy'),('body-recovery','test',all_suites,3,False,[platform+'/editExternalConfiguration gamma'],'one','gamma','dummy'),('release-failure','expectProviderFailure',all_suites,3,False,[platform+'/editExternalConfiguration release-failure'],'one','release-failure','dummy'),('release-recovery','testQuick',all_suites,3,False,[platform+'/editExternalConfiguration delta'],'one','delta','dummy')]
-            requests=[];cases=[]
-            for name,request,suites,resources,unmemoized,before,revision,snapshot,repo in rows:
-                cases.append(dict(name=name,suites=suites,resources=resources,unmemoized=unmemoized,revision=revision,snapshot=snapshot,repo=repo));requests+=before+[platform+'/preparePolicy '+name,platform+'/'+request,platform+'/collectPolicy '+name]
-            command['cases']=cases;command['argv']=command['argv'][:command['argv'].index(platform+'/testFull')]+requests
-            inputs += [row for row in prepared if not Path(row['path']).is_relative_to(build)]
-            inputs += di.runtime_publication_inputs('distage-testkit-runner_'+suffix,args.artifact_version)
-            inputs += [dict(path=str(path),sha256=sha(path)) for path in build.rglob('*') if path.is_file()]
-            commands.append(command)
+    parser = target_parser()
+    args = parser.parse_args()
+    args.repo_root=args.repo_root.resolve();args.host_threads='2';args.logical_suite_alias=False
+    commands, inputs, out = prepare_lanes(args, prepare_lane, [*TEMPLATE.glob('*.scala'), Path(__file__).resolve()])
     (out/'commands.json').write_text(json.dumps(dict(inputs=inputs,commands=commands),indent=2)+'\n')
     results = run_lanes(commands, out, 2400)
     mutable={str(Path(command['cwd'])/'shared/FixturePlugin.scala') for command in commands}

@@ -8,7 +8,7 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import load_module, sha, wait_process, consumer_parser
+from fixture_harness import load_module, sha, wait_process, scala_consumer_parser
 
 CONTROLS = r'''
 val fixtureRuntimeProperty = settingKey[String]("Untracked plugin input")
@@ -36,13 +36,8 @@ verifyRuntimeInputs := {
 '''
 
 
-
-
-
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
-    args = parser.parse_args()
+    args = scala_consumer_parser(multiple=False).parse_args()
     root = args.repo_root.resolve()
     out = args.evidence_dir.resolve()
     out.mkdir()

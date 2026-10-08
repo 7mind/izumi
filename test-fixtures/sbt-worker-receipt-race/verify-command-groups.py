@@ -7,33 +7,22 @@ import time
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, sha, wait_process, consumer_parser
+from fixture_harness import write_sbt_project, freeze_driver, sha, wait_process, scala_consumer_parser
+from fixture_framework import framework_source
 
 TIMEOUT_SECONDS = 240
-SOURCE = r'''package fixture
+SOURCE = framework_source(
+    prefix=r'''package fixture
 import sbt.testing.{Event,EventHandler,Fingerprint,Framework,Logger,OptionalThrowable,Runner,Selector,Status,SubclassFingerprint,Task,TaskDef,TestSelector}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files,Paths,StandardOpenOption}
 abstract class GroupSpec
 final class SuiteA extends GroupSpec
 final class SuiteB extends GroupSpec
-final class GroupFramework extends Framework {
-  private val fp = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = classOf[GroupSpec].getName
-    override def requireNoArgConstructor(): Boolean = true
-  }
-  override def name(): String = "fork-command-groups"
-  override def fingerprints(): Array[Fingerprint] = Array(fp)
-  override def runner(arguments: Array[String], remoteArguments: Array[String], loader: ClassLoader): Runner = new Runner {
-    override def args(): Array[String] = arguments.clone()
-    override def remoteArgs(): Array[String] = remoteArguments.clone()
-    override def done(): String = ""
-    override def tasks(definitions: Array[TaskDef]): Array[Task] = definitions.sortBy(_.fullyQualifiedName()).map { definition => new Task {
-      override def taskDef(): TaskDef = definition
-      override def tags(): Array[String] = Array.empty
-      override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-        val audit = Paths.get(sys.props("fixture.audit-root"))
+''',
+    framework='GroupFramework', fingerprint='fp', superclass='classOf[GroupSpec].getName', label='"fork-command-groups"',
+    members='', arguments='arguments.clone()', remote='remoteArguments.clone()', definitions='definitions.sortBy(_.fullyQualifiedName())',
+    execute=r'''        val audit = Paths.get(sys.props("fixture.audit-root"))
         val pid = ProcessHandle.current().pid().toString
         (1 to 3).foreach { index =>
           val text = definition.fullyQualifiedName() + "\t" + index + "\t" + pid
@@ -61,12 +50,9 @@ final class GroupFramework extends Framework {
         if (mode == "halt" && definition.fullyQualifiedName() == "fixture.SuiteA") Runtime.getRuntime.halt(0)
         if (mode == "exit" && definition.fullyQualifiedName() == "fixture.SuiteA") System.exit(0)
         if (mode == "exit-one" && definition.fullyQualifiedName() == "fixture.SuiteA") System.exit(1)
-        Array.empty
-      }
-    }}
-  }
-}
-'''
+''',
+    done='""', tags='Array.empty', empty_tasks='Array.empty',
+)
 BUILD = r'''
 lazy val groupsConsumer = project.in(file(".")).enablePlugins(izumi.distage.sbt.DistageTestkitPlugin)
 scalaVersion := sys.props("fixture.scala-version")
@@ -165,7 +151,6 @@ captureGroups := {
 '''
 
 
-
 def is_process_alive(pid):
     try:
         os.kill(int(pid),0)
@@ -185,8 +170,7 @@ def held_worker(audit):
         return None
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0','2.13.18'], required=True)
+    parser = scala_consumer_parser(multiple=False)
     parser.add_argument('--expected-overlap-report', choices=['rejected','complete'], required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve(); out.mkdir()

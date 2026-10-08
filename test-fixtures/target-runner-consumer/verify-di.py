@@ -6,6 +6,7 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from fixture_harness import load_module, run_lanes
+from fixture_targets import target_parser, prepare_lanes
 
 FIXTURE=Path(__file__).resolve().parent
 sys.path.insert(0,str(FIXTURE))
@@ -150,20 +151,14 @@ def audit(command,out):
         records.append(dict(case=label,tests=sum(expected.values()),resources=len(acquired),run=outcome['run'],files=[dict(path=str(path),sha256=sha(path)) for path in capture.rglob('*') if path.is_file()]))
     return dict(scala=command['scala'],platform=command['platform'],cases=records)
 
-def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--repo-root',type=Path,required=True);parser.add_argument('--artifact-version',required=True);parser.add_argument('--production-host-version',required=True);parser.add_argument('--evidence-dir',type=Path,required=True);parser.add_argument('--scala-version',nargs='+',choices=['3.9.0','2.13.18'],required=True);args=parser.parse_args()
-    args.repo_root=args.repo_root.resolve();args.host_threads='2';args.logical_suite_alias=False
-    root=args.repo_root;template=root/'test-fixtures/target-runner-consumer/di'
-    out=args.evidence_dir.resolve();out.mkdir();fixture=root/'test-fixtures/target-runner-consumer'
-    paths=[path for path in fixture.rglob('*') if path.is_file() and path.suffix in ['.scala','.sbt','.properties','.py']]
-    inputs=[dict(path=str(path),sha256=sha(path)) for path in paths]+[dict(path=str(root/'build.sbt'),sha256=sha(root/'build.sbt'))]+[dict(path=str(path),sha256=sha(path)) for path in template.glob('*.scala')]+[dict(path=str(Path(__file__).resolve()),sha256=sha(Path(__file__)))];commands=[]
-    for compiler in args.scala_version:
-        for platform in ['js','native']:
-            command,prepared=prepare_di(args,compiler,platform,paths,template,(template/'Suites.scala').read_text(),False)
-            build=Path(command['cwd'])
-            definition=build/'build.sbt';text=definition.read_text().replace('ProductionJsInterruptionPlugin','DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin','DistageTestkitNativePlugin').replace('distage-test-runner_','distage-testkit-runner_')
-            text=text.replace('val common = Seq(',policy.CONTROLS+CONTROLS+'\nval common = Seq(\n'+policy.SETTINGS+SETTINGS)
-            settings='''
+
+def prepare_lane(args, compiler, platform, paths):
+    template = args.repo_root / 'test-fixtures/target-runner-consumer/di'
+    command,prepared=prepare_di(args,compiler,platform,paths,template,(template/'Suites.scala').read_text(),False)
+    build=Path(command['cwd'])
+    definition=build/'build.sbt';text=definition.read_text().replace('ProductionJsInterruptionPlugin','DistageTestkitJsPlugin').replace('ProductionNativeInterruptionPlugin','DistageTestkitNativePlugin').replace('distage-test-runner_','distage-testkit-runner_')
+    text=text.replace('val common = Seq(',policy.CONTROLS+CONTROLS+'\nval common = Seq(\n'+policy.SETTINGS+SETTINGS)
+    settings='''
 val scannedPluginSettings = Seq(
   libraryDependencies += "io.7mind.izumi" % ("distage-testkit-runner_" + candidatePlatform.value + "_" + scalaBinaryVersion.value) % sys.props("fixture.artifact-version"),
   libraryDependencySchemes ++= (if (candidatePlatform.value == "native0.5") Seq("org.scala-native" % ("test-interface_native0.5_" + scalaBinaryVersion.value) % "always") else Seq.empty),
@@ -173,23 +168,27 @@ val scannedPluginSettings = Seq(
 lazy val jsPlugins = project.in(file("plugin-js")).enablePlugins(ScalaJSPlugin).settings(scannedPluginSettings).settings(candidatePlatform := "sjs1")
 lazy val nativePlugins = project.in(file("plugin-native")).enablePlugins(ScalaNativePlugin).settings(scannedPluginSettings).settings(candidatePlatform := "native0.5")
 '''
-            text=text.replace('lazy val js =',settings+'\nlazy val js =',1)
-            text=text.replace('project.in(file("js"))','project.in(file("js")).dependsOn(jsPlugins)').replace('project.in(file("native"))','project.in(file("native")).dependsOn(nativePlugins)')
-            definition.write_text(text)
-            all_suites={name:[1,2,3] for name in ['candidate.Suite'+letter for letter in 'ABCDE']+['candidate.EffectCats','candidate.EffectZIO']};five={name:indices for name,indices in all_suites.items() if name.startswith('candidate.Suite')}
-            test=dict(target='candidate-'+('sjs1' if platform=='js' else 'native0.5'),suite='candidate.SuiteC',path=['equal display name','should','first'],variant=None)
-            selected=json.dumps(json.dumps(test,separators=(',',':')));axis=json.dumps(json.dumps(dict(axis='repo',value='prod'),separators=(',',':')))
-            rows=[('full','testFull',all_suites,3,False,[],'one','alpha','dummy'),('five','testOnly *Suite*',five,1,False,[],'one','alpha','dummy'),('two','testOnly *SuiteC *SuiteD',{name:[1,2,3] for name in ['candidate.SuiteC','candidate.SuiteD']},1,False,[],'one','alpha','dummy'),('individual','testOnly *SuiteC -- --test-id '+selected,{'candidate.SuiteC':[1]},1,False,[],'one','alpha','dummy'),('after-partial','testQuick',all_suites,3,False,[],'one','alpha','dummy'),('axis','testOnly *SuiteC *EffectCats *EffectZIO -- --axis '+axis,{name:[1,2,3] for name in ['candidate.SuiteC','candidate.EffectCats','candidate.EffectZIO']},3,False,[],'one','alpha','prod'),('unmemoized','testOnly *SuiteC -- --memoization disabled',{'candidate.SuiteC':[1,2,3]},3,True,[],'one','alpha','dummy'),('implementation-test','test',all_suites,3,False,[platform+'/editProviderImplementation'],'two','alpha','dummy'),('implementation-quick','testQuick',all_suites,3,False,[],'two','alpha','dummy'),('configuration-test','test',all_suites,3,False,[platform+'/editProviderConfiguration'],'two','beta','dummy'),('configuration-quick','testQuick',all_suites,3,False,[],'two','beta','dummy'),('host-one','testFull',all_suites,3,False,['set Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))'],'two','beta','dummy')]
-            rows += [('external-test','test',all_suites,3,False,[platform+'/editExternalConfiguration gamma'],'two','gamma','dummy'),('external-quick','testQuick',all_suites,3,False,[],'two','gamma','dummy'),('external-quick-change','testQuick',all_suites,3,False,[platform+'/editExternalConfiguration delta'],'two','delta','dummy'),('external-test-after-quick','test',all_suites,3,False,[],'two','delta','dummy')]
-            requests=[];cases=[]
-            for name,request,suites,resources,unmemoized,before,revision,snapshot,repo in rows:
-                cases.append(dict(name=name,suites=suites,resources=resources,unmemoized=unmemoized,revision=revision,snapshot=snapshot,repo=repo));requests+=before+[platform+'/preparePolicy '+name,platform+'/'+request,platform+'/collectPolicy '+name]
-            command['cases']=cases;command['argv']=command['argv'][:command['argv'].index(platform+'/testFull')]+requests
-            inputs += [row for row in prepared if not Path(row['path']).is_relative_to(build)]
-            module='distage-testkit-runner_'+('sjs1' if platform=='js' else 'native0.5')+'_'+('3' if compiler.startswith('3.') else '2.13')
-            inputs += runtime_publication_inputs(module,args.artifact_version)
-            inputs += [dict(path=str(path),sha256=sha(path)) for path in build.rglob('*') if path.is_file()]
-            commands.append(command)
+    text=text.replace('lazy val js =',settings+'\nlazy val js =',1)
+    text=text.replace('project.in(file("js"))','project.in(file("js")).dependsOn(jsPlugins)').replace('project.in(file("native"))','project.in(file("native")).dependsOn(nativePlugins)')
+    definition.write_text(text)
+    all_suites={name:[1,2,3] for name in ['candidate.Suite'+letter for letter in 'ABCDE']+['candidate.EffectCats','candidate.EffectZIO']};five={name:indices for name,indices in all_suites.items() if name.startswith('candidate.Suite')}
+    test=dict(target='candidate-'+('sjs1' if platform=='js' else 'native0.5'),suite='candidate.SuiteC',path=['equal display name','should','first'],variant=None)
+    selected=json.dumps(json.dumps(test,separators=(',',':')));axis=json.dumps(json.dumps(dict(axis='repo',value='prod'),separators=(',',':')))
+    rows=[('full','testFull',all_suites,3,False,[],'one','alpha','dummy'),('five','testOnly *Suite*',five,1,False,[],'one','alpha','dummy'),('two','testOnly *SuiteC *SuiteD',{name:[1,2,3] for name in ['candidate.SuiteC','candidate.SuiteD']},1,False,[],'one','alpha','dummy'),('individual','testOnly *SuiteC -- --test-id '+selected,{'candidate.SuiteC':[1]},1,False,[],'one','alpha','dummy'),('after-partial','testQuick',all_suites,3,False,[],'one','alpha','dummy'),('axis','testOnly *SuiteC *EffectCats *EffectZIO -- --axis '+axis,{name:[1,2,3] for name in ['candidate.SuiteC','candidate.EffectCats','candidate.EffectZIO']},3,False,[],'one','alpha','prod'),('unmemoized','testOnly *SuiteC -- --memoization disabled',{'candidate.SuiteC':[1,2,3]},3,True,[],'one','alpha','dummy'),('implementation-test','test',all_suites,3,False,[platform+'/editProviderImplementation'],'two','alpha','dummy'),('implementation-quick','testQuick',all_suites,3,False,[],'two','alpha','dummy'),('configuration-test','test',all_suites,3,False,[platform+'/editProviderConfiguration'],'two','beta','dummy'),('configuration-quick','testQuick',all_suites,3,False,[],'two','beta','dummy'),('host-one','testFull',all_suites,3,False,['set Global / concurrentRestrictions := Seq(Tags.limit(Tags.Test, 1))'],'two','beta','dummy')]
+    rows += [('external-test','test',all_suites,3,False,[platform+'/editExternalConfiguration gamma'],'two','gamma','dummy'),('external-quick','testQuick',all_suites,3,False,[],'two','gamma','dummy'),('external-quick-change','testQuick',all_suites,3,False,[platform+'/editExternalConfiguration delta'],'two','delta','dummy'),('external-test-after-quick','test',all_suites,3,False,[],'two','delta','dummy')]
+    requests=[];cases=[]
+    for name,request,suites,resources,unmemoized,before,revision,snapshot,repo in rows:
+        cases.append(dict(name=name,suites=suites,resources=resources,unmemoized=unmemoized,revision=revision,snapshot=snapshot,repo=repo));requests+=before+[platform+'/preparePolicy '+name,platform+'/'+request,platform+'/collectPolicy '+name]
+    command['cases']=cases;command['argv']=command['argv'][:command['argv'].index(platform+'/testFull')]+requests
+    module='distage-testkit-runner_'+('sjs1' if platform=='js' else 'native0.5')+'_'+('3' if compiler.startswith('3.') else '2.13')
+    prepared += runtime_publication_inputs(module,args.artifact_version)
+    return command, prepared
+
+def main():
+    parser = target_parser()
+    args = parser.parse_args()
+    args.repo_root=args.repo_root.resolve();args.host_threads='2';args.logical_suite_alias=False
+    commands, inputs, out = prepare_lanes(args, prepare_lane, [args.repo_root / 'build.sbt', *(args.repo_root / 'test-fixtures/target-runner-consumer/di').glob('*.scala'), Path(__file__).resolve()])
     (out/'commands.json').write_text(json.dumps(dict(inputs=inputs,commands=commands),indent=2)+'\n')
     results = run_lanes(commands, out, 2400)
     mutable={str(Path(command['cwd'])/'shared/FixturePlugin.scala') for command in commands}

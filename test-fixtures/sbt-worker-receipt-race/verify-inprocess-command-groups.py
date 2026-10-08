@@ -6,7 +6,7 @@ import shutil
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, scala_consumer_parser
 
 TIMEOUT_SECONDS = 240
 TESTS_PER_SUITE = 3
@@ -72,9 +72,6 @@ captureGroups := {
 '''
 
 
-
-
-
 def source_from_fork_fixture():
     path = Path(__file__).with_name('verify-command-groups.py')
     spec = importlib.util.spec_from_file_location('fork_command_groups', path)
@@ -88,8 +85,7 @@ def source_from_fork_fixture():
 
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
+    parser = scala_consumer_parser(multiple=False)
     parser.add_argument('--report-format', choices=['standard', 'legacy'], required=True)
     args = parser.parse_args()
     out = args.evidence_dir.resolve()

@@ -6,7 +6,8 @@ from xml.etree import ElementTree
 
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, consumer_parser
+from fixture_harness import write_sbt_project, freeze_driver, run_process, sha, scala_consumer_parser
+from fixture_framework import framework_source
 
 TIMEOUT_SECONDS = 600
 SHUTDOWN_GRACE_SECONDS = 10
@@ -32,30 +33,18 @@ final class SuiteA extends izumi.distage.testkit.runner.spec.AnyWordSpec {
   }
 }
 '''
-STOCK = r'''package fixture
+STOCK = framework_source(
+    prefix=r'''package fixture
 import sbt.testing.{Event, EventHandler, Fingerprint, Framework, Logger, OptionalThrowable, Runner, Selector, Status, SubclassFingerprint, Task, TaskDef, TestSelector}
 abstract class StockSuite { def runBodies(): Unit }
 final class SuiteA extends StockSuite {
 @BODY@
   override def runBodies(): Unit = (1 to 3).foreach(record)
 }
-final class StockFramework extends Framework {
-  private val fingerprint = new SubclassFingerprint {
-    override def isModule(): Boolean = false
-    override def superclassName(): String = classOf[StockSuite].getName
-    override def requireNoArgConstructor(): Boolean = true
-  }
-  override def name(): String = "stock-hook-control"
-  override def fingerprints(): Array[Fingerprint] = Array(fingerprint)
-  override def runner(arguments: Array[String], remote: Array[String], loader: ClassLoader): Runner = new Runner {
-    override def args(): Array[String] = arguments
-    override def remoteArgs(): Array[String] = remote
-    override def done(): String = ""
-    override def tasks(definitions: Array[TaskDef]): Array[Task] = definitions.map { definition => new Task {
-      override def taskDef(): TaskDef = definition
-      override def tags(): Array[String] = Array.empty[String]
-      override def execute(handler: EventHandler, loggers: Array[Logger]): Array[Task] = {
-        val suite = Class.forName(definition.fullyQualifiedName(), true, loader).getConstructor().newInstance().asInstanceOf[StockSuite]
+''',
+    framework='StockFramework', fingerprint='fingerprint', superclass='classOf[StockSuite].getName', label='"stock-hook-control"',
+    members='', arguments='arguments', remote='remote', definitions='definitions',
+    execute=r'''        val suite = Class.forName(definition.fullyQualifiedName(), true, loader).getConstructor().newInstance().asInstanceOf[StockSuite]
         suite.runBodies()
         Vector("first", "second", "third").foreach { leaf => handler.handle(new Event {
           override def fullyQualifiedName(): String = definition.fullyQualifiedName()
@@ -65,12 +54,9 @@ final class StockFramework extends Framework {
           override def throwable(): OptionalThrowable = new OptionalThrowable
           override def duration(): Long = 0L
         }) }
-        Array.empty[Task]
-      }
-    } }
-  }
-}
-'''
+''',
+    done='""', tags='Array.empty[String]', empty_tasks='Array.empty[Task]',
+)
 
 BUILD = r'''
 import sbt.complete.DefaultParsers.spaceDelimited
@@ -135,9 +121,6 @@ lazy val adapted = project.in(file("adapted")).enablePlugins(izumi.distage.sbt.D
 '''
 
 
-
-
-
 def verify(directory, row):
     audit = directory / 'audit'
     bodies = [path.read_text().split('\t') for path in sorted(audit.glob('*.body'))]
@@ -170,9 +153,7 @@ def verify(directory, row):
 
 
 def main():
-    parser = consumer_parser()
-    parser.add_argument('--scala-version', choices=['3.9.0', '2.13.18'], required=True)
-    args = parser.parse_args()
+    args = scala_consumer_parser(multiple=False).parse_args()
     root = args.repo_root.resolve(); out = args.evidence_dir.resolve(); out.mkdir()
     freeze_driver(__file__, out / 'driver.py')
     build = out / 'build'
