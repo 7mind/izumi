@@ -29,7 +29,7 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support proxies in sets (immediate case) https://github.com/7mind/izumi/issues/482" in {
     import CircularCase12.*
 
-    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+    val set = produceInstance[Set[Service]](mkInjector())(PlannerInput.everything(new ModuleDef {
       make[T1].from[Circular1Impl]
       make[T2].from[Circular2Impl]
 
@@ -37,8 +37,6 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
         .ref[T1]
         .ref[T2]
     }))
-
-    val set = context.get[Set[Service]]
 
     assert(set.hashCode() != 0)
     assert(set.toString().nonEmpty)
@@ -50,7 +48,7 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
   "support proxies in sets (completely immediate case) https://github.com/7mind/izumi/issues/482" in {
     import CircularCase13.*
 
-    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+    val set = produceInstance[Set[Service]](mkInjector())(PlannerInput.everything(new ModuleDef {
       make[T1].from[Circular1Impl]
       make[T2].from[Circular2Impl]
 
@@ -58,8 +56,6 @@ class TrueCircularDependenciesTest extends AnyWordSpec with MkInjector {
         .ref[T1]
         .ref[T2]
     }))
-
-    val set = context.get[Set[Service]]
 
     // there is no sane way to represent a case class having itself as an argument
     intercept[java.lang.reflect.InvocationTargetException] {

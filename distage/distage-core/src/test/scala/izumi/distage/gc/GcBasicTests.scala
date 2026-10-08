@@ -34,8 +34,7 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
     "handle by-name circular dependencies with sets through refs/2" in {
       import GcCases.InjectorCase13._
 
-      val injector = mkNoProxiesInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkNoProxiesInjector())(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -47,8 +46,6 @@ class GcBasicTests extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)

@@ -69,11 +69,9 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "Supports self-referencing circulars" in {
       import CircularCase3.*
 
-      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+      val instance = produceInstance[SelfReference](mkInjector())(PlannerInput.everything(new ModuleDef {
         make[SelfReference]
       }))
-
-      val instance = context.get[SelfReference]
 
       assert(instance eq instance.self)
     }
@@ -81,14 +79,12 @@ class CglibProxiesTestJvm extends AnyWordSpec with MkInjector with ScalatestGuar
     "Support self-referencing provider" in {
       import CircularCase3.*
 
-      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+      val instance = produceInstance[SelfReference](mkInjector())(PlannerInput.everything(new ModuleDef {
         make[SelfReference].from {
           (self: SelfReference) =>
             new SelfReference(self)
         }
       }))
-
-      val instance = context.get[SelfReference]
 
       assert(instance eq instance.self)
     }

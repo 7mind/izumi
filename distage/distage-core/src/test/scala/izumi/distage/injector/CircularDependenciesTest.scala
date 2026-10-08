@@ -68,11 +68,9 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
   "Support by-name self-referencing circulars" in {
     import CircularCase3._
 
-    val context = produceLocator(mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
+    val instance = produceInstance[ByNameSelfReference](mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
       make[ByNameSelfReference]
     }))
-
-    val instance = context.get[ByNameSelfReference]
 
     assert(instance eq instance.self)
   }
@@ -80,11 +78,9 @@ class CircularDependenciesTest extends AnyWordSpec with MkInjector with Scalates
   "Support self-referencing traits" in {
     import CircularCase3._
 
-    val context = produceLocator(mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
+    val instance = produceInstance[TraitSelfReference](mkNoProxiesInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[TraitSelfReference]
     }))
-
-    val instance = context.get[TraitSelfReference]
 
     assert(instance eq instance.self)
   }

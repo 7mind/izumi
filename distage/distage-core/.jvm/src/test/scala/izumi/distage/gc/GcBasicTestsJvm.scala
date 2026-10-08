@@ -16,8 +16,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "keep proxies alive in case of intersecting loops" in {
       import GcCases.InjectorCase1.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -30,8 +29,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
       assert(result.find[Trash].isEmpty)
       val c1 = result.get[Circular1]
       val c2 = result.get[Circular2]
@@ -52,8 +49,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "keep by-name loops alive" in {
       import GcCases.InjectorCase2.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[MkS3Client].from[Impl]
@@ -64,16 +60,13 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
       assert(result.get[App] != null)
     }
 
     "keep plans alive in case of complex loops" in {
       import GcCases.InjectorCase3.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             many[IntegrationComponent].add[S3Component]
@@ -87,8 +80,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Ctx].upload.client != null)
       val c1 = result.get[MkS3Client]
       val c2 = result.get[Ctx].upload.client
@@ -98,8 +89,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "keep plans alive in case of even more complex loops" in {
       import GcCases.InjectorCase4.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[MkS3Client]
@@ -113,16 +103,13 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Ctx] != null)
     }
 
     "keep proxies alive in case of pathologically intersecting loops" in {
       import GcCases.InjectorCase5.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -134,8 +121,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular2].c1 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
@@ -145,8 +130,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "keep proxies alive in case of pathologically intersecting loops with final classes" in {
       import GcCases.InjectorCase9.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[T1].from[Circular1]
@@ -156,8 +140,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
       assert(result.get[T1] != null)
       assert(result.get[T2] != null)
     }
@@ -165,8 +147,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "keep proxies alive in case of pathologically intersecting provider loops" in {
       import GcCases.InjectorCase6.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[Circular1].from {
@@ -195,7 +176,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-      val result = injector.produce(plan).unsafeGet()
       assert(result.get[Circular1].nothing == 1)
       assert(result.get[Circular2].nothing == 2)
       assert(result.get[Circular1].c2.nothing == 2)
@@ -205,8 +185,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "keep proxies alive in case of pathologically intersecting loops with by-name edges" in {
       import GcCases.InjectorCase7.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -216,8 +195,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2 != null)
@@ -227,8 +204,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "prefer non-final loop break" in {
       import GcCases.InjectorCase11.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -239,8 +215,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         )
       )
 
-      val result = injector.produce(plan).unsafeGet()
-
       assert(result.get[Circular1].c2 != null)
       assert(result.get[Circular1].c2.isInstanceOf[Circular2])
     }
@@ -248,8 +222,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "handle cglib by-name circular dependencies with sets" in {
       import GcCases.InjectorCase12.*
 
-      val injector = Injector[Identity](bootstrapOverrides = Seq(AutoSetModule().register[AutoCloseable](weak = false)))
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(Injector[Identity](bootstrapOverrides = Seq(AutoSetModule().register[AutoCloseable](weak = false))))(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -260,8 +233,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
         )
       )
 
-      val result = injector.produce(plan).unsafeGet()
-
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)
     }
@@ -269,8 +240,7 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
     "handle cglib by-name circular dependencies with sets through refs" in {
       import GcCases.InjectorCase12.*
 
-      val injector = mkInjector()
-      val plan = injector.planUnsafe(
+      val result = producePlannedLocator(mkInjector())(
         PlannerInput(
           new ModuleDef {
             make[Circular1]
@@ -285,8 +255,6 @@ class GcBasicTestsJvm extends AnyWordSpec with MkGcInjector {
           Activation.empty,
         )
       )
-
-      val result = injector.produce(plan).unsafeGet()
 
       assert(result.get[Circular1] != null)
       assert(result.get[Circular2] != null)

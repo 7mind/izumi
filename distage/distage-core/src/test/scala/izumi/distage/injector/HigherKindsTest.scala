@@ -37,9 +37,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
       make[F[Either[Int, F[String]]]].from(Pointed[F].point(Right[Int, F[String]](Pointed[F].point("hello")): Either[Int, F[String]]))
     }
 
-    val listInjector = mkInjector()
-    val listPlan = listInjector.planUnsafe(PlannerInput.everything(Definition[List](5)))
-    val listContext = listInjector.produce(listPlan).unsafeGet()
+    val listContext = producePlannedLocator(mkInjector())(PlannerInput.everything(Definition[List](5)))
 
     assert(listContext.get[TestTrait].get == List(5))
     assert(listContext.get[TestServiceClass[List]].get == List(5))
@@ -50,19 +48,14 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
     assert(listContext.get[Either[String, List[Int]]] == Right(List(1)))
     assert(listContext.get[List[Either[Int, List[String]]]] == List(Right(List("hello"))))
 
-    val optionTInjector = mkInjector()
-    val optionTPlan = optionTInjector.planUnsafe(PlannerInput.everything(Definition[OptionT[List, _]](5)))
-    val optionTContext = optionTInjector.produce(optionTPlan).unsafeGet()
+    val optionTContext = producePlannedLocator(mkInjector())(PlannerInput.everything(Definition[OptionT[List, _]](5)))
 
     assert(optionTContext.get[TestTrait].get == OptionT(List(Option(5))))
     assert(optionTContext.get[TestServiceClass[OptionT[List, _]]].get == OptionT(List(Option(5))))
     assert(optionTContext.get[TestServiceTrait[OptionT[List, _]]].get == OptionT(List(Option(10))))
     assert(optionTContext.get[OptionT[List, String]] == OptionT(List(Option("Hello 5!"))))
 
-    val eitherInjector = mkInjector()
-    val eitherPlan = eitherInjector.planUnsafe(PlannerInput.everything(Definition[Either[String, _]](5)))
-
-    val eitherContext = eitherInjector.produce(eitherPlan).unsafeGet()
+    val eitherContext = producePlannedLocator(mkInjector())(PlannerInput.everything(Definition[Either[String, _]](5)))
 
     assert(eitherContext.get[TestTrait].get == Right(5))
     assert(eitherContext.get[TestServiceClass[Either[String, _]]].get == Right(5))
@@ -73,9 +66,7 @@ class HigherKindsTest extends AnyWordSpec with MkInjector {
       == Right(Right(Right(Right(Right("aaa")))))
     )
 
-    val idInjector = mkInjector()
-    val idPlan = idInjector.planUnsafe(PlannerInput.everything(Definition[id](5)))
-    val idContext = idInjector.produce(idPlan).unsafeGet()
+    val idContext = producePlannedLocator(mkInjector())(PlannerInput.everything(Definition[id](5)))
 
     assert(idContext.get[TestTrait].get == 5)
     assert(idContext.get[TestServiceClass[id]].get == 5)

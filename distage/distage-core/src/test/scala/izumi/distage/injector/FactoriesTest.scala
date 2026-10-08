@@ -105,12 +105,11 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "handle generic arguments in factory methods" in {
     import FactoryCase1.*
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[GenericAssistedFactory](mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       makeFactory[GenericAssistedFactory]
       make[Dependency].from(ConcreteDep())
     }))
 
-    val instantiated = context.get[GenericAssistedFactory]
     val product = instantiated.x(List(SpecialDep()), List(5))
     assert(product.a.forall(_.isSpecial))
     assert(product.b.forall(_ == 5))
@@ -201,14 +200,12 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
       }
     ]
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[{ def makeConcreteDep(): Dependency @With[ConcreteDep] }](mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       makeFactory[{
           def makeConcreteDep(): Dependency @With[ConcreteDep]
         }
       ]
     }))
-
-    val instantiated = context.get[{ def makeConcreteDep(): Dependency @With[ConcreteDep] }]
 
     val instance = instantiated.makeConcreteDep()
     assert(instance.isInstanceOf[ConcreteDep])
@@ -320,12 +317,10 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "handle assisted dependencies in factory methods" in {
     import FactoryCase1.*
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[AssistedFactory](mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       makeFactory[AssistedFactory]
       make[Dependency].from(ConcreteDep())
     }))
-
-    val instantiated = context.get[AssistedFactory]
 
     assert(instantiated.x(5).a == 5)
   }
@@ -386,11 +381,9 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support refinement factory types with overrides" in {
     import FactoryCase7.*
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
+    val factory1 = produceInstance[IFactory1](mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[IFactory1].fromFactory[IFactory1 { def dep(): Dep }]
     }))
-
-    val factory1 = context.get[IFactory1]
 
     assert(factory1.dep() ne factory1.dep())
     assert(factory1.dep().isInstanceOf[Dep])
@@ -415,11 +408,9 @@ class FactoriesTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   "support make[].fromFactory: narrowing" in {
     import FactoryCase6.*
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
+    val factory = produceInstance[IFactory](mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[IFactory].fromFactory[IFactoryImpl]
     }))
-
-    val factory = context.get[IFactory]
 
     assert(factory.dep() ne factory.dep())
     assert(factory.dep().isInstanceOf[Dep])

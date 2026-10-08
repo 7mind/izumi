@@ -89,10 +89,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
   }
 
   private def prepareInheritedLocator(def1: PlannerInput) = {
-    val injector = mkInjector()
-
-    val plan1 = injector.planUnsafe(def1)
-    val loc = injector.produce(plan1).unsafeGet()
+    val loc = producePlannedLocator(mkInjector())(def1)
 
     val injector2 = Injector.inherit(loc)
 
@@ -102,8 +99,7 @@ class PrivateBindingsTest extends AnyWordSpec with MkInjector {
       })
       .withLocatorPrivacy(def1.locatorPrivacy) // we don't need this at the moment, but it may change in the future
 
-    val plan2 = injector2.planUnsafe(def2)
-    val loc2 = injector2.produce(plan2).unsafeGet()
+    val loc2 = producePlannedLocator(injector2)(def2)
     (loc, loc2)
   }
 

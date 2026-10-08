@@ -33,11 +33,10 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "handle one-arg trait" in {
     import TraitCase1.*
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[TestTrait](mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[Dependency1]
       makeTrait[TestTrait]
     }))
-    val instantiated = context.get[TestTrait]
     assert(instantiated.isInstanceOf[TestTrait])
     assert(instantiated.dep != null)
   }
@@ -80,13 +79,12 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "handle sub-type trait" in {
     import TraitCase2.*
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated3 = produceInstance[Trait2](mkNoCyclesInjector())(PlannerInput.everything(new ModuleDef {
       make[Trait2].fromTrait[Trait3]
       make[Dependency3]
       make[Dependency2]
       make[Dependency1]
     }))
-    val instantiated3 = context.get[Trait2]
     assert(instantiated3.isInstanceOf[Trait2])
     assert(instantiated3.asInstanceOf[Trait3].prr() == "Hello World")
   }
@@ -140,11 +138,10 @@ class AutoTraitsTest extends AnyWordSpec with MkInjector {
   "override protected defs in cglib traits" in {
     import TraitCase5.*
 
-    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[TestTrait](mkInjector())(PlannerInput.everything(new ModuleDef {
       makeTrait[TestTrait]
       make[Dep]
     }))
-    val instantiated = context.get[TestTrait]
 
     assert(instantiated.rd == Dep().toString)
   }

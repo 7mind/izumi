@@ -28,12 +28,11 @@ class ImplicitInjectionTest extends AnyWordSpec with MkInjector {
   "populates implicit parameters in class constructor from explicit DI object graph instead of scala's implicit resolution" in {
     import ImplicitCase1._
 
-    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[TestClass](mkInjector())(PlannerInput.everything(new ModuleDef {
       make[TestClass]
       make[Dep]
       make[DummyImplicit].from[MyDummyImplicit]
     }))
-    val instantiated = context.get[TestClass]
 
     assert(instantiated.dummyImplicit.isInstanceOf[MyDummyImplicit])
     assert(instantiated.dummyImplicit.asInstanceOf[MyDummyImplicit].imADummy)

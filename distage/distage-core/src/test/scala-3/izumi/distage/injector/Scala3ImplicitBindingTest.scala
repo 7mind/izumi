@@ -187,12 +187,11 @@ class Scala3ImplicitBindingTest extends AnyWordSpec with MkInjector with Scalate
 
       implicit val description: Description[X] = Description[X]("description")
 
-      val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+      val x = produceInstance[X](mkInjector())(PlannerInput.everything(new ModuleDef {
         make[Int].fromValue(1)
         make[X].from(bindImplicits(makeX[Int]))
       }))
 
-      val x = context.get[X]
       assert(x.s == description.description)
       assert(x.i == 1)
       assert(x.t1 == Tag[Int])

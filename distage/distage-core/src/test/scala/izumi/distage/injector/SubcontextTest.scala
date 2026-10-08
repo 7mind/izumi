@@ -82,9 +82,7 @@ class SubcontextTest extends AnyWordSpec with MkInjector {
       }).localDependency[Arg]
     }
 
-    val context = produceLocator(mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]]))
-
-    val local = context.get[Subcontext[Identity, Int]]
+    val local = produceInstance[Subcontext[Identity, Int]](mkNoCyclesInjector())(PlannerInput(module, Activation.empty, DIKey.get[Subcontext[Identity, Int]]))
 
     assert(local.provide[Arg](Arg(10)).produceRun(identity) == 20)
   }

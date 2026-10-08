@@ -213,11 +213,10 @@ class BasicTest extends AnyWordSpec with MkInjector with ScalatestGuards {
   // BasicProvisionerTest
   "instantiate simple class" in {
     import BasicCase1.*
-    val context = produceLocator(mkInjector())(PlannerInput.everything(new ModuleDef {
+    val instantiated = produceInstance[TestCaseClass2](mkInjector())(PlannerInput.everything(new ModuleDef {
       make[TestCaseClass2]
       make[TestInstanceBinding].from(new TestInstanceBinding)
     }))
-    val instantiated = context.get[TestCaseClass2]
 
     assert(instantiated.a.z.nonEmpty)
   }
