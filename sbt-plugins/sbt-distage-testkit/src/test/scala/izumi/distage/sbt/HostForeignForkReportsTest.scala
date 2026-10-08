@@ -54,8 +54,7 @@ object HostForeignForkReportsTest {
       (if (repeated) Vector(HostForkAdmission(ForkProcessId(102L), Set(name))) else Vector.empty)
     val projection = new HostForeignForkReports(store, Seq(received, listener), receipt)
     if (Set("process", "owner", "selector", "duration", "fingerprint", "failure", "active").contains(scenario)) {
-      try { projection.cancel(admissions); throw new AssertionError("Invalid foreign projection accepted") }
-      catch { case _: IllegalArgumentException => () }
+      HostFixtures.rejects(projection.cancel(admissions))
       require(listener.groups == 0 && listener.events.isEmpty, "Invalid foreign projection emitted callbacks")
     } else {
       projection.cancel(admissions)

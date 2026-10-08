@@ -134,13 +134,7 @@ public final class ForkCompletionAgent extends Thread {
     }
 
     private void publish(String suffix, String value) throws IOException {
-        Path temporary = Files.createTempFile(prefix.getParent(), "fork-publication-", ".tmp");
-        try {
-            Files.writeString(temporary, value, StandardCharsets.UTF_8);
-            Files.move(temporary, path(suffix), StandardCopyOption.ATOMIC_MOVE);
-        } finally {
-            Files.deleteIfExists(temporary);
-        }
+        TargetFiles.publish(path(suffix), "fork-publication-", temporary -> Files.writeString(temporary, value, StandardCharsets.UTF_8));
     }
 
     private static final class CaptureListener extends AgentBuilder.Listener.Adapter {

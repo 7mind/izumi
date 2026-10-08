@@ -17,8 +17,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
@@ -89,28 +89,22 @@ public final class TaskCompleteness {
             String line = SCHEMA_VERSION + "\t" + value.token() + "\t" + value.suite().value() + "\t" + value.pid() + "\t" + value.returnedNormally()
                 + "\t" + counts.success() + "\t" + counts.failure() + "\t" + counts.error() + "\t" + counts.skipped() + "\t" + counts.ignored() + "\t" + counts.canceled() + "\t" + counts.pending();
             try {
-                Path temporary = Files.createTempFile(directory, "target-publication-", ".tmp");
-                try {
-                    Files.writeString(temporary, line, StandardCharsets.UTF_8);
-                    Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE);
-                } finally { Files.deleteIfExists(temporary); }
+                TargetFiles.publish(destination, "target-publication-", temporary -> Files.writeString(temporary, line, StandardCharsets.UTF_8));
             } catch (IOException cause) { throw new IllegalStateException("Cannot publish target terminal record", cause); }
         }
 
         @Override
         public List<Completion> completed() {
-            List<Completion> records = new ArrayList<>();
-            try (var entries = Files.list(directory)) {
-                for (Path path : entries.filter(value -> value.getFileName().toString().endsWith(FILE_SUFFIX)).toList()) {
+            try {
+                return TargetFiles.<Completion, IOException>read(directory, value -> value.getFileName().toString().endsWith(FILE_SUFFIX), path -> {
                     String[] fields = Files.readString(path, StandardCharsets.UTF_8).split("\t", -1);
                     if (fields.length != 12 || !fields[0].equals(SCHEMA_VERSION) || !(fields[4].equals("true") || fields[4].equals("false"))) throw new IllegalArgumentException("Malformed target terminal record: " + path);
                     UUID token = UUID.fromString(fields[1]);
                     if (!path.getFileName().toString().equals(FILE_PREFIX + token + FILE_SUFFIX)) throw new IllegalArgumentException("Target terminal filename differs from its token");
-                    records.add(new Completion(token, new SuiteName(fields[2]), Long.parseLong(fields[3]), Boolean.parseBoolean(fields[4]),
-                        new Counts(Integer.parseInt(fields[5]), Integer.parseInt(fields[6]), Integer.parseInt(fields[7]), Integer.parseInt(fields[8]), Integer.parseInt(fields[9]), Integer.parseInt(fields[10]), Integer.parseInt(fields[11]))));
-                }
+                    return new Completion(token, new SuiteName(fields[2]), Long.parseLong(fields[3]), Boolean.parseBoolean(fields[4]),
+                        new Counts(Integer.parseInt(fields[5]), Integer.parseInt(fields[6]), Integer.parseInt(fields[7]), Integer.parseInt(fields[8]), Integer.parseInt(fields[9]), Integer.parseInt(fields[10]), Integer.parseInt(fields[11])));
+                });
             } catch (IOException cause) { throw new IllegalStateException("Cannot read target terminal records", cause); }
-            return List.copyOf(records);
         }
     }
 
@@ -139,19 +133,12 @@ public final class TaskCompleteness {
 
     public static Task[] protect(Task[] tasks) {
         Objects.requireNonNull(tasks, "Runner returned no task array");
-        Task[] guarded = new Task[tasks.length];
-        for (int index = 0; index < tasks.length; index++) guarded[index] = protect(tasks[index]);
-        return guarded;
+        return Arrays.stream(tasks).map(TaskCompleteness::protect).toArray(Task[]::new);
     }
 
     public static Task[] captureForeign(Task[] tasks, ForeignRunReports.Store store) {
         Objects.requireNonNull(store, "Missing foreign target report store");
-        Task[] captured = new Task[tasks.length];
-        for (int index = 0; index < tasks.length; index++) {
-            Task task = tasks[index];
-            captured[index] = isOwned(task.taskDef()) ? task : captureForeign(task, store, new SuiteName(task.taskDef().fullyQualifiedName()));
-        }
-        return captured;
+        return Arrays.stream(tasks).map(task -> isOwned(task.taskDef()) ? task : captureForeign(task, store, new SuiteName(task.taskDef().fullyQualifiedName()))).toArray(Task[]::new);
     }
 
     private static Task captureForeign(Task task, ForeignRunReports.Store store, SuiteName owner) {
@@ -197,9 +184,7 @@ public final class TaskCompleteness {
         @Override public synchronized void record(Event event) { events.add(ForeignRunReports.EventSnapshot.from(event)); }
         @Override public Task[] children(Task[] tasks) {
             Objects.requireNonNull(tasks, "Task returned no child task array");
-            Task[] captured = new Task[tasks.length];
-            for (int index = 0; index < tasks.length; index++) captured[index] = captureForeign(tasks[index], store, owner);
-            return captured;
+            return Arrays.stream(tasks).map(task -> captureForeign(task, store, owner)).toArray(Task[]::new);
         }
         @Override public synchronized void finish() { store.publish(new ForeignRunReports.Report(UUID.randomUUID(), owner, group, ProcessHandle.current().pid(), events)); }
     }
@@ -227,9 +212,7 @@ public final class TaskCompleteness {
         @Override public synchronized Task[] children(Task[] tasks) {
             Objects.requireNonNull(tasks, "Task returned no child task array");
             remaining = Math.addExact(remaining, tasks.length);
-            Task[] children = new Task[tasks.length];
-            for (int index = 0; index < tasks.length; index++) children[index] = new GuardedTask(tasks[index], this);
-            return children;
+            return Arrays.stream(tasks).map(task -> new GuardedTask(task, this)).toArray(Task[]::new);
         }
 
         @Override public synchronized void failed() { returnedNormally = false; }

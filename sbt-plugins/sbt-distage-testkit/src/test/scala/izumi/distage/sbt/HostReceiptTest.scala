@@ -260,10 +260,8 @@ object HostReceiptTest {
         override def afterCommand(command: String, result: Either[Throwable, State]): Unit = throw failure
       }
       val completion = new HostCommandCompletion(inherited, Seq(current))
-      var observed = Option.empty[Throwable]
-      try completion.afterCommand("test", Left(new InterruptedException("cancelled")))
-      catch { case cause: Throwable => observed = Some(cause) }
-      require(observed.contains(failure), "Inherited command callback failure was replaced")
+      val observed = rejected(classOf[IllegalStateException])(completion.afterCommand("test", Left(new InterruptedException("cancelled"))))
+      require(observed eq failure, "Inherited command callback failure was replaced")
       require(failure.getSuppressed.length == 1 && !Files.exists(generation.store.directory), "Callback failure prevented command cleanup")
       current.finishCommand()
     }
@@ -366,18 +364,15 @@ object HostReceiptTest {
         listener.startGroup(name.value)
         listener.testEvent(TestEvent(Seq(event(name, Status.Success))))
         generation.store.close()
-        var publicationFailure = Option.empty[Throwable]
-        try listener.endGroup(name.value, TestResult.Passed)
-        catch { case scala.util.control.NonFatal(cause) => publicationFailure = Some(cause) }
-        require(publicationFailure.exists(cause => cause.isInstanceOf[IllegalArgumentException] && cause.getMessage.contains("Fork receipt directory is closed")), "Publication fault was not reproduced: " + publicationFailure)
+        val publicationFailure = rejected(classOf[IllegalArgumentException])(listener.endGroup(name.value, TestResult.Passed))
+        require(publicationFailure.getMessage.contains("Fork receipt directory is closed"), "Publication fault was not reproduced: " + publicationFailure)
         listener.doComplete(TestResult.Passed)
-        var verificationFailure = Option.empty[Throwable]
-        try {
+        val verificationFailure = try rejected(classOf[MessageOnlyException]) {
           if (completionOnly) current.receipt.verifyCompletion()
-          else current.consume(output(new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0)))
-        } catch { case scala.util.control.NonFatal(cause) => verificationFailure = Some(cause) }
+          else { val _ = current.consume(output(new SuiteResult(TestResult.Passed, 1, 0, 0, 0, 0, 0, 0))) }
+        }
         finally current.abort(generation)
-        require(verificationFailure.exists(cause => cause.isInstanceOf[MessageOnlyException] && (cause.getCause eq publicationFailure.get)), "HOST_PUBLICATION_FALSE_SUCCESS: verification did not retain the publication cause: " + verificationFailure)
+        require(verificationFailure.getCause eq publicationFailure, "HOST_PUBLICATION_FALSE_SUCCESS: verification did not retain the publication cause: " + verificationFailure)
       }
     }
 
@@ -403,12 +398,6 @@ object HostReceiptTest {
   private def check(name: String)(body: => Unit): Unit = {
     body
     println("HOST_RECEIPT_CHECK_OK " + name)
-  }
-
-  private def rejects[A <: Throwable](expected: Class[A])(body: => Unit): Unit = {
-    var observed = Option.empty[Throwable]
-    try body catch { case scala.util.control.NonFatal(cause) => observed = Some(cause) }
-    require(observed.exists(expected.isInstance), "Receipt counterexample did not produce " + expected.getName + ": " + observed)
   }
 
   private def output(counts: SuiteResult): Tests.Output = Tests.Output(counts.result, Map(name.value -> counts), Nil)

@@ -1,13 +1,13 @@
 package izumi.distage.sbt
 
-import izumi.distage.sbt.target.{ForeignRunReports, ForkCompletionAgent, TaskCompleteness, TaskGroups}
+import izumi.distage.sbt.target.{ForeignRunReports, ForkCompletionAgent, TargetFiles, TaskCompleteness, TaskGroups}
 import izumi.distage.testkit.protocol.ForkProcessId
 import net.bytebuddy.ByteBuddy
 
 import sbt.{MessageOnlyException, Tests}
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.{Files, Path}
 import java.util.{Base64, UUID}
 import java.util.jar.{Attributes, JarEntry, JarOutputStream, Manifest}
 import java.util.concurrent.TimeUnit
@@ -92,7 +92,7 @@ private[sbt] final class HostForkCompletion(directory: Path) {
     val _ = manifest.getMainAttributes.put(Attributes.Name.CLASS_PATH, byteBuddy.toASCIIString + " " + testInterface.toASCIIString)
     val output = new JarOutputStream(Files.newOutputStream(agent), manifest)
     try {
-      Vector(classOf[ForkCompletionAgent], classOf[TaskCompleteness], classOf[ForeignRunReports], classOf[TaskGroups]).flatMap(value => value +: value.getDeclaredClasses.toVector).foreach { agentClass =>
+      Vector(classOf[ForkCompletionAgent], classOf[TaskCompleteness], classOf[ForeignRunReports], classOf[TaskGroups], classOf[TargetFiles]).flatMap(value => value +: value.getDeclaredClasses.toVector).foreach { agentClass =>
         val name = agentClass.getName.replace('.', '/') + ".class"
         val source = agentClass.getResourceAsStream("/" + name)
         require(source != null, "Fork completion agent bytecode is missing: " + name)
@@ -107,11 +107,5 @@ private[sbt] final class HostForkCompletion(directory: Path) {
 
   private def path(prefix: Path, suffix: String): Path = prefix.resolveSibling(prefix.getFileName.toString + "." + suffix)
   private def read(path: Path): String = new String(Files.readAllBytes(path), StandardCharsets.UTF_8)
-  private def publish(path: Path, value: String): Unit = {
-    val temporary = Files.createTempFile(directory, "fork-decision-", ".tmp")
-    try {
-      val _ = Files.write(temporary, value.getBytes(StandardCharsets.UTF_8))
-      val _ = Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE)
-    } finally { val _ = Files.deleteIfExists(temporary) }
-  }
+  private def publish(path: Path, value: String): Unit = TargetFiles.publish(path, "fork-decision-", temporary => { val _ = Files.write(temporary, value.getBytes(StandardCharsets.UTF_8)); () })
 }

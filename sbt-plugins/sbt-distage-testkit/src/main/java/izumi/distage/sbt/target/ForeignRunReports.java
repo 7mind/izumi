@@ -14,8 +14,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -77,26 +75,22 @@ public final class ForeignRunReports {
             Path destination = directory.resolve(FILE_PREFIX + report.token() + FILE_SUFFIX);
             if (Files.exists(destination)) throw new IllegalStateException("Duplicate foreign report token");
             try {
-                Path temporary = Files.createTempFile(directory, "foreign-publication-", ".tmp");
-                try {
+                TargetFiles.publish(destination, "foreign-publication-", temporary -> {
                     try (ObjectOutputStream output = new ObjectOutputStream(Files.newOutputStream(temporary))) { output.writeObject(report); }
-                    Files.move(temporary, destination, StandardCopyOption.ATOMIC_MOVE);
-                } finally { Files.deleteIfExists(temporary); }
+                });
             } catch (IOException cause) { throw new IllegalStateException("Cannot publish foreign target report", cause); }
         }
 
         @Override public List<Report> completed() {
-            List<Report> result = new ArrayList<>();
-            try (var entries = Files.list(directory)) {
-                for (Path path : entries.filter(value -> value.getFileName().toString().endsWith(FILE_SUFFIX)).toList()) {
+            try {
+                return TargetFiles.<Report, ClassNotFoundException>read(directory, value -> value.getFileName().toString().endsWith(FILE_SUFFIX), path -> {
                     try (ObjectInputStream input = new ObjectInputStream(Files.newInputStream(path))) {
                         Report report = (Report) input.readObject();
                         if (!path.getFileName().toString().equals(FILE_PREFIX + report.token() + FILE_SUFFIX)) throw new IllegalArgumentException("Foreign report filename differs from its token");
-                        result.add(report);
+                        return report;
                     }
-                }
+                });
             } catch (IOException | ClassNotFoundException cause) { throw new IllegalStateException("Cannot read foreign target reports", cause); }
-            return List.copyOf(result);
         }
     }
 }

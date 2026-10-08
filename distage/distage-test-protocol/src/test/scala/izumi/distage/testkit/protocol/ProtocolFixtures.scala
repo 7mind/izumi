@@ -72,6 +72,9 @@ object ProtocolFixtures {
     reject(golden.replace("\"schemaVersion\":4", "\"schemaVersion\":5"), "Unsupported protocol schema")
     reject(golden.replace("\"kind\":\"cancel\"", "\"kind\":\"unknown\""), "Unknown protocol kind")
     reject(golden.replace("protocol-fixture", ""), "Identity must not be empty")
+    val unknownEvent = """{"schemaVersion":4,"message":{"kind":"event","sequence":"0","event":{"kind":"unknown"}}}"""
+    reject(unknownEvent, "Missing required field")
+    reject(unknownEvent.replace("\"kind\":\"unknown\"", "\"kind\":\"unknown\",\"run\":\"\""), "Identity must not be empty")
     reject(golden + "\n", "one channel line")
     reject("x" * (ProtocolCodec.MaxFrameCharacters + 1), "character limit")
     def corrupt(message: ProtocolMessage)(edit: HCursor => ACursor): String = {
@@ -162,26 +165,14 @@ object ProtocolFixtures {
     verify(!skippedWithFailure.successful, "Skipped result carrying a failure must not report aggregate success")
     rejectProducer(ProtocolMessage.Completed(skippedWithFailure), "Skipped test must not carry a failure")
     val depthLimit = 32
-    def failureAtDepth(depth: Int): Failure = {
-      var nested = failure.copy(causes = Vector.empty, assertion = None)
-      var remaining = depth - 1
-      while (remaining > 0) {
-        nested = failure.copy(causes = Vector(nested), assertion = None)
-        remaining -= 1
-      }
-      nested
-    }
+    def failureAtDepth(depth: Int): Failure =
+      (1 until depth).foldLeft(failure.copy(causes = Vector.empty, assertion = None))((nested, _) => failure.copy(causes = Vector(nested), assertion = None))
     def failureFrameAtDepth(depth: Int, suppressed: Boolean): String = {
       val relation = if (suppressed) "suppressed" else "causes"
       val emptyRelation = if (suppressed) "causes" else "suppressed"
       val prefix = "{\"phase\":\"test\",\"exceptionClass\":\"Failure\",\"message\":\"failure\",\"stack\":[],\"" + relation + "\":["
       val suffix = "],\"assertion\":null,\"" + emptyRelation + "\":[],\"captureErrors\":[]}"
-      var nested = prefix + suffix
-      var remaining = depth - 1
-      while (remaining > 0) {
-        nested = prefix + nested + suffix
-        remaining -= 1
-      }
+      val nested = (1 until depth).foldLeft(prefix + suffix)((value, _) => prefix + value + suffix)
       s"""{"schemaVersion":4,"message":{"kind":"rejected","run":"protocol-fixture","failure":$nested}}"""
     }
     val deepestSupported = ProtocolMessage.Rejected(run, failureAtDepth(depthLimit))

@@ -363,32 +363,21 @@ object ProtocolCodec {
     }(identity)
   private implicit val outcomeCodec: Codec[RunOutcome] =
     Codec.forProduct4("run", "results", "failures", "cancelled")(RunOutcome.apply)(value => (value.run, value.results, value.failures, value.cancelled))
-  private implicit val eventCodec: Codec[RunEvent] = product(
-    Decoder.instance { cursor => for {
-      kind <- cursor.get[String]("kind")
-      run <- cursor.get[RunId]("run")
-      event <- kind match {
-        case "started" => Right(RunEvent.Started(run))
-        case "testStarted" => cursor.get[TestId]("test").map(RunEvent.TestStarted(run, _))
-        case "testCompleted" => cursor.get[TestResult]("result").map(RunEvent.TestCompleted(run, _))
-        case "phaseFailed" => cursor.get[Failure]("failure").map(RunEvent.PhaseFailed(run, _))
-        case "finished" => cursor.get[RunOutcome]("outcome").flatMap { outcome =>
-          if (outcome.run == run) Right(RunEvent.Finished(run, outcome)) else Left(DecodingFailure("Event and outcome run identities differ", cursor.history))
-        }
-        case other => unknown(cursor, other)
-      }
-    } yield event },
-    Encoder.instance { event =>
-      val run = "run" -> runIdCodec(event.run)
-      event match {
-        case _: RunEvent.Started => tagged("started", run)
-        case RunEvent.TestStarted(_, test) => tagged("testStarted", run, "test" -> testIdCodec(test))
-        case RunEvent.TestCompleted(_, result) => tagged("testCompleted", run, "result" -> resultCodec(result))
-        case RunEvent.PhaseFailed(_, failure) => tagged("phaseFailed", run, "failure" -> failureCodec(failure))
-        case RunEvent.Finished(_, outcome) => tagged("finished", run, "outcome" -> outcomeCodec(outcome))
-      }
-    },
-  )
+  private implicit val eventCodec: Codec[RunEvent] = {
+    val codec = union(
+      variant[RunEvent, RunEvent.Started]("started", Codec.forProduct1("run")(RunEvent.Started.apply)(_.run)),
+      variant[RunEvent, RunEvent.TestStarted]("testStarted", Codec.forProduct2("run", "test")(RunEvent.TestStarted.apply)(value => (value.run, value.test))),
+      variant[RunEvent, RunEvent.TestCompleted]("testCompleted", Codec.forProduct2("run", "result")(RunEvent.TestCompleted.apply)(value => (value.run, value.result))),
+      variant[RunEvent, RunEvent.PhaseFailed]("phaseFailed", Codec.forProduct2("run", "failure")(RunEvent.PhaseFailed.apply)(value => (value.run, value.failure))),
+      variant[RunEvent, RunEvent.Finished](
+        "finished",
+        checked(Codec.forProduct2("run", "outcome")(RunEvent.Finished.apply)(value => (value.run, value.outcome))) {
+          value => if (value.outcome.run == value.run) Right(value) else Left("Event and outcome run identities differ")
+        },
+      ),
+    )
+    product(Decoder.instance(cursor => cursor.get[String]("kind").flatMap(_ => cursor.get[RunId]("run")).flatMap(_ => codec(cursor))), codec)
+  }
   private implicit val operationCodec: Codec[RequestOperation] = enumeration(Vector(
     "resolve" -> RequestOperation.Resolve, "plan" -> RequestOperation.Plan, "execute" -> RequestOperation.Execute,
   ))

@@ -127,8 +127,5 @@ object HostJUnitReportsTest {
     override def replace(name: HostJUnitFileName, report: Elem): Unit = { reports = reports.updated(name, report) }
   }
 
-  private def rejects(operation: => Unit): Unit = {
-    try { operation; throw new AssertionError("Invalid report accepted") }
-    catch { case _: IllegalArgumentException => () }
-  }
+  private def rejects(operation: => Unit): Unit = HostFixtures.rejects(operation)
 }

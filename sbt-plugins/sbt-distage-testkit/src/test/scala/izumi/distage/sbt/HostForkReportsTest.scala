@@ -68,8 +68,7 @@ object HostForkReportsTest {
     val admissions = Vector(HostForkAdmission(first, Set(name))) ++ (if (repeated) Vector(HostForkAdmission(second, Set(name))) else Vector.empty)
     val projection = new HostForkReports(reports, terminals, Seq(definition), Seq(received, listener), receipt, host)
     if (Set("mismatch", "duplicates", "selector-mismatch", "duration-mismatch", "failure-mismatch", "unknown-process", "terminal-process", "group-counts", "active-group").contains(scenario)) {
-      try { projection.cancel(admissions); throw new AssertionError("Invalid fork projection accepted") }
-      catch { case _: IllegalArgumentException => () }
+      HostFixtures.rejects(projection.cancel(admissions))
       require(listener.groups == 0 && listener.events.isEmpty, "Invalid fork reports emitted host callbacks")
     } else {
       projection.cancel(admissions)
