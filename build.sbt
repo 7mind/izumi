@@ -3026,9 +3026,7 @@ lazy val `izumi` = (project in file("."))
     setting_181,
     setting_182,
     setting_183,
-    setting_184,
-    setting_185,
-    setting_186
+    setting_184
   )
   .enablePlugins(SitePreviewPlugin, SbtgenVerificationPlugin)
   .aggregate(
@@ -3819,41 +3817,22 @@ lazy val setting_178 = ThisBuild / publishTo := {
 }
 
 
-lazy val setting_179 = ThisBuild / credentials ++= {
-  val credTarget = Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-new.properties"
-  if (credTarget.exists) {
-    Seq(Credentials(credTarget))
-  } else {
-    Seq.empty
-  }
+lazy val setting_179 = ThisBuild / credentials ++= Seq(
+  Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-new.properties",
+  Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties",
+  file(".") / ".secrets" / "credentials.sonatype-nexus.properties",
+).flatMap { credTarget =>
+  if (credTarget.exists) Seq(Credentials(credTarget)) else Seq.empty
 }
 
-lazy val setting_180 = ThisBuild / credentials ++= {
-  val credTarget = Path.userHome / ".sbt" / "secrets" / "credentials.sonatype-nexus.properties"
-  if (credTarget.exists) {
-    Seq(Credentials(credTarget))
-  } else {
-    Seq.empty
-  }
-}
+lazy val setting_180 = ThisBuild / homepage := Some(url("https://izumi.7mind.io"))
 
-lazy val setting_181 = ThisBuild / credentials ++= {
-  val credTarget = file(".") / ".secrets" / "credentials.sonatype-nexus.properties"
-  if (credTarget.exists) {
-    Seq(Credentials(credTarget))
-  } else {
-    Seq.empty
-  }
-}
+lazy val setting_181 = ThisBuild / licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
 
-lazy val setting_182 = ThisBuild / homepage := Some(url("https://izumi.7mind.io"))
-
-lazy val setting_183 = ThisBuild / licenses := Seq("BSD-style" -> url("http://www.opensource.org/licenses/bsd-license.php"))
-
-lazy val setting_184 = ThisBuild / developers := List(
+lazy val setting_182 = ThisBuild / developers := List(
           Developer(id = "7mind", name = "Septimal Mind", url = url("https://github.com/7mind"), email = "team@7mind.io"),
         )
 
-lazy val setting_185 = ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
+lazy val setting_183 = ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/7mind/izumi"), "scm:git:https://github.com/7mind/izumi.git"))
 
-lazy val setting_186 = Global / concurrentRestrictions += Tags.limit(scala.scalanative.sbtplugin.ScalaNativePlugin.autoImport.NativeTags.Link, 1)
+lazy val setting_184 = Global / concurrentRestrictions += Tags.limit(scala.scalanative.sbtplugin.ScalaNativePlugin.autoImport.NativeTags.Link, 1)
