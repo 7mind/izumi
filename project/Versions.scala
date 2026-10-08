@@ -15,14 +15,10 @@ object V {
   val zio = "2.1.26"
   val zio_interop_cats = "23.1.0.14"
 
-  val monix = "3.4.0"
-  val monix_bio = "1.2.0"
-
   val circe = "0.14.14"
   val circe_derivation = "0.13.0-M5"
   val pureconfig = "0.17.10"
   val magnolia = "1.1.10"
-  val jawn = "1.6.0"
 
   val portable_scala_reflect = "1.1.3"
 

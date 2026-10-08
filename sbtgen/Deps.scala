@@ -10,7 +10,6 @@ object Izumi {
 
   object V {
     val izumi_reflect = Version.VExpr("V.izumi_reflect")
-    val sbtgen = Version.VExpr("V.sbtgen")
     val kind_projector = Version.VExpr("V.kind_projector")
     val cats = Version.VExpr("V.cats")
     val cats_effect = Version.VExpr("V.cats_effect")
@@ -19,7 +18,6 @@ object Izumi {
     val zio = Version.VExpr("V.zio")
     val zio_interop_cats = Version.VExpr("V.zio_interop_cats")
     val circe = Version.VExpr("V.circe")
-    val circe_generic_extras = Version.VExpr("V.circe_generic_extras")
     val circe_derivation = Version.VExpr("V.circe_derivation")
     val pureconfig = Version.VExpr("V.pureconfig")
     val magnolia = Version.VExpr("V.magnolia")
@@ -33,7 +31,6 @@ object Izumi {
     val scala_java_time = Version.VExpr("V.scala_java_time")
     val docker_java = Version.VExpr("V.docker_java")
     val commons_compress = Version.VExpr("V.commons_compress")
-    val scalajs_java_securerandom = Version.VExpr("V.scalajs_java_securerandom")
     val scalajs_macrotask_executor = Version.VExpr("V.scalajs_macrotask_executor")
     val portable_scala_reflect = Version.VExpr("V.portable_scala_reflect")
   }
@@ -46,8 +43,6 @@ object Izumi {
     val sbt_unidoc = Version.VExpr("PV.sbt_unidoc")
     val sbt_scoverage = Version.VExpr("PV.sbt_scoverage")
     val sbt_pgp = Version.VExpr("PV.sbt_pgp")
-
-    val scala_js_version = Version.VExpr("PV.scala_js_version")
   }
 
   val settings = GlobalSettings(
@@ -104,15 +99,12 @@ object Izumi {
 
     final val typesafe_config = Library("com.typesafe", "config", V.typesafe_config, LibraryType.Invariant)
 
-    final val scala_sbt = Library("org.scala-sbt", "sbt", Version.VExpr("sbtVersion.value"), LibraryType.Invariant)
     final val sbt_test_interface = Library("org.scala-sbt", "test-interface", V.sbt_test_interface, LibraryType.Invariant) in Scope.Compile.jvm
     final val scalajs_test_interface = Library("org.scala-js", "scalajs-test-interface_2.13", V.scalajs_test_interface, LibraryType.Invariant) in Scope.Compile.js
     final val native_test_interface = Library("org.scala-native", "test-interface", settings.scalaNativeVersion, LibraryType.Auto) in Scope.Compile.native
-    final val scala_compiler = Library("org.scala-lang", "scala-compiler", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala3_compiler = Library("org.scala-lang", "scala3-compiler", Version.VExpr("scalaVersion.value"), LibraryType.AutoJvm) in Scope.Provided.all.scalaVersion(
       ScalaVersionScope.AllScala3
     )
-    final val scala_library = Library("org.scala-lang", "scala-library", Version.VExpr("scalaVersion.value"), LibraryType.Invariant)
     final val scala_reflect = Library("org.scala-lang", "scala-reflect", Version.VExpr("scalaVersion.value"), LibraryType.Invariant) in Scope.Provided.all.scalaVersion(
       ScalaVersionScope.AllScala2
     )
@@ -465,7 +457,6 @@ object Izumi {
       final val jsonCirceTest = ArtifactId("fundamentals-json-circe-test")
       final val languageTest = ArtifactId("fundamentals-language-test")
 
-      final val typesafeConfig = ArtifactId("fundamentals-typesafe-config")
 //      final val reflection = ArtifactId("fundamentals-reflection")
       final val jsonCirce = ArtifactId("fundamentals-json-circe")
 //
@@ -543,10 +534,6 @@ object Izumi {
     }
 
   }
-
-  final val forkTests = Seq(
-    "fork" in (SettingScope.Test, Platform.Jvm) := true
-  )
 
   final val assertionFixtureSettings = Seq(
     "testOptions" in SettingScope.Test := Const.EmptySeq,
