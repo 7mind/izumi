@@ -82,30 +82,6 @@ sealed trait LowPriorityDefaultModulesInstances2 extends LowPriorityDefaultModul
     DefaultModule(ZIOSupportModule[R])
   }
 
-//  /**
-//    * This instance uses 'no more orphans' trick to provide an Optional instance
-//    * only IFF you have monix-bio as a dependency without REQUIRING a monix-bio dependency.
-//    *
-//    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-//    *
-//    * @see [[izumi.distage.modules.support.MonixBIOSupportModule]]
-//    */
-//  implicit final def forMonixBIO[BIO[_, _]: `monix.bio.IO`]: DefaultModule2[BIO] = {
-//    DefaultModule(MonixBIOSupportModule)
-//  }
-//
-//  /**
-//    * This instance uses 'no more orphans' trick to provide an Optional instance
-//    * only IFF you have monix as a dependency without REQUIRING a monix dependency.
-//    *
-//    * Optional instance via https://blog.7mind.io/no-more-orphans.html
-//    *
-//    * @see [[izumi.distage.modules.support.MonixSupportModule]]
-//    */
-//  implicit final def forMonix[Task[_]: `monix.eval.Task`]: DefaultModule[Task] = {
-//    DefaultModule(MonixSupportModule)
-//  }
-
   /**
     * This instance uses 'no more orphans' trick to provide an Optional instance
     * only IFF you have cats-effect as a dependency without REQUIRING a cats-effect dependency.
