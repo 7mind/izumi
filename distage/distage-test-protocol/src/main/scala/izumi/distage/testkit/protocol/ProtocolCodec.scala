@@ -319,36 +319,33 @@ object ProtocolCodec {
       error =>
         if (error.exceptionClass.nonEmpty) Right(error) else Left("Failure capture exception class must not be empty")
     }(identity)
-  private def failureDecoder(depth: Int): Decoder[Failure] = Decoder.instance { cursor =>
-    if (depth > MaxFailureDepth) Left(DecodingFailure("Failure graph depth exceeds its limit", cursor.history))
-    else for {
-      phase <- cursor.get[FailurePhase]("phase")
-      exceptionClass <- cursor.get[String]("exceptionClass")
-      message <- cursor.get[String]("message")
-      stack <- cursor.get[Vector[String]]("stack")
-      causes <- cursor.get[Vector[Failure]]("causes")(Decoder.decodeVector(failureDecoder(depth + 1)))
-      assertion <- cursor.get[Option[AssertionDiagnostic]]("assertion")
-      suppressed <- cursor.get[Vector[Failure]]("suppressed")(Decoder.decodeVector(failureDecoder(depth + 1)))
-      captureErrors <- cursor.get[Vector[FailureCaptureError]]("captureErrors")
-      _ <- if (captureErrors.map(_.field).distinct.size == captureErrors.size) Right(()) else Left(DecodingFailure("Duplicate failure capture fields", cursor.history))
-      _ <- if (captureErrors.forall { error => error.field match {
-        case FailureCaptureField.Message => message.isEmpty
-        case FailureCaptureField.Cause => causes.isEmpty
-        case FailureCaptureField.Stack => stack.isEmpty
-      } }) Right(()) else Left(DecodingFailure("Failed capture fields must be unavailable", cursor.history))
-    } yield Failure(phase, exceptionClass, message, stack, causes, assertion, suppressed, captureErrors)
-  }
-  private def failureEncoder(depth: Int): Encoder[Failure] = Encoder.instance { value =>
-    require(depth <= MaxFailureDepth, "Failure graph depth exceeds its limit")
-    Json.obj(
-      "phase" -> phaseCodec(value.phase), "exceptionClass" -> Json.fromString(value.exceptionClass), "message" -> Json.fromString(value.message),
-      "stack" -> Encoder.encodeVector[String].apply(value.stack), "causes" -> Json.fromValues(value.causes.map(failureEncoder(depth + 1).apply)),
-      "assertion" -> Encoder.encodeOption[AssertionDiagnostic].apply(value.assertion),
-      "suppressed" -> Json.fromValues(value.suppressed.map(failureEncoder(depth + 1).apply)),
-      "captureErrors" -> Encoder.encodeVector[FailureCaptureError].apply(value.captureErrors),
+  private def failureAtDepth(depth: Int): Codec[Failure] = {
+    lazy val next = failureAtDepth(depth + 1)
+    implicit val children: Codec[Vector[Failure]] = product(
+      Decoder.instance(cursor => Decoder.decodeVector(next)(cursor)),
+      Encoder.instance(values => Json.fromValues(values.map(next.apply))),
+    )
+    val fields = Codec.forProduct8("phase", "exceptionClass", "message", "stack", "causes", "assertion", "suppressed", "captureErrors")(Failure.apply)(
+      value => (value.phase, value.exceptionClass, value.message, value.stack, value.causes, value.assertion, value.suppressed, value.captureErrors)
+    )
+    product(
+      Decoder.instance(cursor => if (depth > MaxFailureDepth) Left(DecodingFailure("Failure graph depth exceeds its limit", cursor.history)) else fields(cursor)).emap {
+        value =>
+          if (value.captureErrors.map(_.field).distinct.size != value.captureErrors.size) Left("Duplicate failure capture fields")
+          else if (!value.captureErrors.forall { error => error.field match {
+            case FailureCaptureField.Message => value.message.isEmpty
+            case FailureCaptureField.Cause => value.causes.isEmpty
+            case FailureCaptureField.Stack => value.stack.isEmpty
+          } }) Left("Failed capture fields must be unavailable")
+          else Right(value)
+      },
+      Encoder.instance { value =>
+        require(depth <= MaxFailureDepth, "Failure graph depth exceeds its limit")
+        fields(value)
+      },
     )
   }
-  private implicit val failureCodec: Codec[Failure] = product(failureDecoder(1), failureEncoder(1))
+  private implicit val failureCodec: Codec[Failure] = failureAtDepth(1)
   private implicit val statusCodec: Codec[TestStatus] = enumeration(Vector(
     "succeeded" -> TestStatus.Succeeded, "failed" -> TestStatus.Failed, "cancelled" -> TestStatus.Cancelled, "skipped" -> TestStatus.Skipped,
   ))
