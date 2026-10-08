@@ -9,7 +9,7 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.4.0")
 
 ////////////////////////////////////////////////////////////////////////////////
 
-addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.122")
+addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.124")
 
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % PV.sbt_pgp)
 
