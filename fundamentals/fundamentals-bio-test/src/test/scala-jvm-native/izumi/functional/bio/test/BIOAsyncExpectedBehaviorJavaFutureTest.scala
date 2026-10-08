@@ -1,7 +1,7 @@
 package izumi.functional.bio.test
 
-import izumi.functional.bio.{Async2, F}
 import izumi.distage.testkit.runner.spec.Assertion
+import izumi.functional.bio.{Async2, F}
 import izumi.reflect.TagKK
 
 import java.util.concurrent.CompletableFuture
@@ -11,7 +11,7 @@ trait BIOAsyncExpectedBehaviorJavaFutureTest[F[+_, +_]] { this: BIOAsyncExpected
 
   protected def platformName: String
 
-  s"implementor ${TagKK[F].tag} of {Async2,Primitives2,Fork2} on $platformName" should {
+  s"implementor ${TagKK[F].tag} of {Async2,Primitives2,Fork2} on ${this.platformName}" should {
 
     "have fromFutureJava call cancel when interrupted" in {
       val cs = new CompletableFuture[Unit]()

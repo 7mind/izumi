@@ -1,7 +1,7 @@
 package izumi.functional.bio
 
 import izumi.functional.bio.data.InterruptAction
-import zio.{Executor, Supervisor, ZEnvironment, ZIO, ZLayer}
+import zio.{Executor, Supervisor, ZEnvironment, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
 import scala.concurrent.Future

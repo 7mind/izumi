@@ -1,76 +1,68 @@
 package izumi.fundamentals.platform.resources
 
+import izumi.fundamentals.platform.resources.GlobParser.GlobPattern
 import izumi.fundamentals.testkit.AnyWordSpec
 
+object GlobParserTest {
+  private final case class ParsedCase(name: String, input: String, expected: GlobPattern)
+  private final case class RegexCase(name: String, input: String, matching: List[String], nonmatching: List[String])
+  private final case class PatternCase(name: String, pattern: GlobPattern, matching: List[String], nonmatching: List[String])
+}
+
 class GlobParserTest extends AnyWordSpec {
+  import GlobParserTest.*
+
+  private def checkParsing(cases: ParsedCase*): Unit = cases.foreach {
+    testcase =>
+      testcase.name in {
+        val pattern = GlobParser.parseGlobExpr(testcase.input)
+        assert(pattern.basePath == testcase.expected.basePath)
+        assert(pattern.includePatterns == testcase.expected.includePatterns)
+        assert(pattern.excludePatterns == testcase.expected.excludePatterns)
+      }
+  }
+
+  private def checkRegexes(cases: RegexCase*): Unit = cases.foreach {
+    testcase =>
+      testcase.name in {
+        val regex = GlobParser.globToRegex(testcase.input)
+        testcase.matching.foreach(path => assert(path.matches(regex)))
+        testcase.nonmatching.foreach(path => assert(!path.matches(regex)))
+      }
+  }
+
+  private def checkPatterns(cases: PatternCase*): Unit = cases.foreach {
+    testcase =>
+      testcase.name in {
+        testcase.matching.foreach(path => assert(GlobParser.matchesPattern(path, testcase.pattern)))
+        testcase.nonmatching.foreach(path => assert(!GlobParser.matchesPattern(path, testcase.pattern)))
+      }
+  }
 
   "GlobParser.parseGlobExpr" should {
-    "parse explicit base path syntax" in {
-      val pattern = GlobParser.parseGlobExpr("src/main/scala{**/*.scala,!**/*Test*}")
-
-      assert(pattern.basePath == "src/main/scala")
-      assert(pattern.includePatterns == List("**/*.scala"))
-      assert(pattern.excludePatterns == List("**/*Test*"))
-    }
-
-    "parse multiple include patterns with explicit base path" in {
-      val pattern = GlobParser.parseGlobExpr("config{*.conf,*.json,*.yaml}")
-
-      assert(pattern.basePath == "config")
-      assert(pattern.includePatterns == List("*.conf", "*.json", "*.yaml"))
-      assert(pattern.excludePatterns.isEmpty)
-    }
-
-    "parse multiple include and exclude patterns" in {
-      val pattern = GlobParser.parseGlobExpr("data{**/*.csv,**/*.json,!**/test/*,!**/*backup*}")
-
-      assert(pattern.basePath == "data")
-      assert(pattern.includePatterns == List("**/*.csv", "**/*.json"))
-      assert(pattern.excludePatterns == List("**/test/*", "**/*backup*"))
-    }
-
-    "parse legacy syntax with auto-extracted base path" in {
-      val pattern = GlobParser.parseGlobExpr("src/main/scala/**/*.scala")
-
-      assert(pattern.basePath == "src/main/scala")
-      assert(pattern.includePatterns == List("**/*.scala"))
-      assert(pattern.excludePatterns.isEmpty)
-    }
-
-    "parse legacy syntax with negation and auto-extracted base path" in {
-      val pattern = GlobParser.parseGlobExpr("src/**/*.scala,!**/test/*")
-
-      assert(pattern.basePath == "src")
-      assert(pattern.includePatterns == List("**/*.scala"))
-      assert(pattern.excludePatterns == List("**/test/*"))
-    }
-
-    "handle pattern with no wildcards" in {
-      val pattern = GlobParser.parseGlobExpr("some/path/file.txt")
-
-      assert(pattern.basePath == "some/path/file.txt")
-      assert(pattern.includePatterns == List(""))
-    }
-
-    "handle empty base path for pattern starting with wildcard" in {
-      val pattern = GlobParser.parseGlobExpr("*.txt")
-
-      assert(pattern.basePath == "")
-      assert(pattern.includePatterns == List("*.txt"))
-    }
-
-    "trim whitespace in patterns" in {
-      val pattern = GlobParser.parseGlobExpr("src{ *.scala , *.java , !*Test* }")
-
-      assert(pattern.includePatterns == List("*.scala", "*.java"))
-      assert(pattern.excludePatterns == List("*Test*"))
-    }
-
-    "handle empty patterns gracefully" in {
-      val pattern = GlobParser.parseGlobExpr("src{*.scala,,*.java}")
-
-      assert(pattern.includePatterns == List("*.scala", "*.java"))
-    }
+    checkParsing(
+      ParsedCase("parse explicit base path syntax", "src/main/scala{**/*.scala,!**/*Test*}", GlobPattern("src/main/scala", List("**/*.scala"), List("**/*Test*"))),
+      ParsedCase(
+        "parse multiple include patterns with explicit base path",
+        "config{*.conf,*.json,*.yaml}",
+        GlobPattern("config", List("*.conf", "*.json", "*.yaml"), List.empty),
+      ),
+      ParsedCase(
+        "parse multiple include and exclude patterns",
+        "data{**/*.csv,**/*.json,!**/test/*,!**/*backup*}",
+        GlobPattern("data", List("**/*.csv", "**/*.json"), List("**/test/*", "**/*backup*")),
+      ),
+      ParsedCase("parse legacy syntax with auto-extracted base path", "src/main/scala/**/*.scala", GlobPattern("src/main/scala", List("**/*.scala"), List.empty)),
+      ParsedCase(
+        "parse legacy syntax with negation and auto-extracted base path",
+        "src/**/*.scala,!**/test/*",
+        GlobPattern("src", List("**/*.scala"), List("**/test/*")),
+      ),
+      ParsedCase("handle pattern with no wildcards", "some/path/file.txt", GlobPattern("some/path/file.txt", List(""), List.empty)),
+      ParsedCase("handle empty base path for pattern starting with wildcard", "*.txt", GlobPattern("", List("*.txt"), List.empty)),
+      ParsedCase("trim whitespace in patterns", "src{ *.scala , *.java , !*Test* }", GlobPattern("src", List("*.scala", "*.java"), List("*Test*"))),
+      ParsedCase("handle empty patterns gracefully", "src{*.scala,,*.java}", GlobPattern("src", List("*.scala", "*.java"), List.empty)),
+    )
   }
 
   "GlobParser.globToRegex" should {
@@ -83,41 +75,13 @@ class GlobParserTest extends AnyWordSpec {
       assert(!"dir/file.txt".matches(regex))
     }
 
-    "convert recursive wildcard **" in {
-      val regex = GlobParser.globToRegex("**/*.txt")
-      assert("dir/file.txt".matches(regex))
-      assert("a/b/c/file.txt".matches(regex))
-      assert("file.txt".matches(regex))
-    }
-
-    "convert ** at start of pattern" in {
-      val regex = GlobParser.globToRegex("**/test.txt")
-      assert("test.txt".matches(regex))
-      assert("dir/test.txt".matches(regex))
-      assert("a/b/c/test.txt".matches(regex))
-    }
-
-    "convert ** in middle of pattern" in {
-      val regex = GlobParser.globToRegex("src/**/Test.scala")
-      assert("src/Test.scala".matches(regex))
-      assert("src/main/Test.scala".matches(regex))
-      assert("src/main/scala/Test.scala".matches(regex))
-    }
-
-    "convert ? wildcard" in {
-      val regex = GlobParser.globToRegex("file?.txt")
-      assert("file1.txt".matches(regex))
-      assert("fileA.txt".matches(regex))
-      assert(!"file.txt".matches(regex))
-      assert(!"file12.txt".matches(regex))
-      assert(!"dir/file1.txt".matches(regex))
-    }
-
-    "escape special regex characters" in {
-      val regex = GlobParser.globToRegex("file.txt")
-      assert("file.txt".matches(regex))
-      assert(!"fileXtxt".matches(regex))
-    }
+    checkRegexes(
+      RegexCase("convert recursive wildcard **", "**/*.txt", List("dir/file.txt", "a/b/c/file.txt", "file.txt"), List.empty),
+      RegexCase("convert ** at start of pattern", "**/test.txt", List("test.txt", "dir/test.txt", "a/b/c/test.txt"), List.empty),
+      RegexCase("convert ** in middle of pattern", "src/**/Test.scala", List("src/Test.scala", "src/main/Test.scala", "src/main/scala/Test.scala"), List.empty),
+      RegexCase("convert ? wildcard", "file?.txt", List("file1.txt", "fileA.txt"), List("file.txt", "file12.txt", "dir/file1.txt")),
+      RegexCase("escape special regex characters", "file.txt", List("file.txt"), List("fileXtxt")),
+    )
 
     "escape parentheses and brackets" in {
       val regex1 = GlobParser.globToRegex("file(1).txt")
@@ -127,20 +91,15 @@ class GlobParserTest extends AnyWordSpec {
       assert("file[a].txt".matches(regex2))
     }
 
-    "handle multiple wildcards" in {
-      val regex = GlobParser.globToRegex("*/*.txt")
-      assert("dir/file.txt".matches(regex))
-      assert(!"file.txt".matches(regex))
-      assert(!"dir/sub/file.txt".matches(regex))
-    }
-
-    "handle complex patterns" in {
-      val regex = GlobParser.globToRegex("src/**/*Test*.scala")
-      assert("src/FooTest.scala".matches(regex))
-      assert("src/main/TestBar.scala".matches(regex))
-      assert("src/main/scala/MyTestSuite.scala".matches(regex))
-      assert(!"src/main/scala/MyClass.scala".matches(regex))
-    }
+    checkRegexes(
+      RegexCase("handle multiple wildcards", "*/*.txt", List("dir/file.txt"), List("file.txt", "dir/sub/file.txt")),
+      RegexCase(
+        "handle complex patterns",
+        "src/**/*Test*.scala",
+        List("src/FooTest.scala", "src/main/TestBar.scala", "src/main/scala/MyTestSuite.scala"),
+        List("src/main/scala/MyClass.scala"),
+      ),
+    )
   }
 
   "GlobParser.matchesGlob" should {
@@ -171,44 +130,23 @@ class GlobParserTest extends AnyWordSpec {
   }
 
   "GlobParser.matchesPattern" should {
-    "match with single include pattern" in {
-      val pattern = GlobParser.GlobPattern("", List("*.txt"), List.empty)
-      assert(GlobParser.matchesPattern("file.txt", pattern))
-      assert(!GlobParser.matchesPattern("file.scala", pattern))
-    }
-
-    "match with multiple include patterns" in {
-      val pattern = GlobParser.GlobPattern("", List("*.txt", "*.md"), List.empty)
-      assert(GlobParser.matchesPattern("file.txt", pattern))
-      assert(GlobParser.matchesPattern("README.md", pattern))
-      assert(!GlobParser.matchesPattern("file.scala", pattern))
-    }
-
-    "exclude with exclude patterns" in {
-      val pattern = GlobParser.GlobPattern("", List("**/*.scala"), List("**/*Test*"))
-      assert(GlobParser.matchesPattern("src/Main.scala", pattern))
-      assert(!GlobParser.matchesPattern("src/MainTest.scala", pattern))
-      assert(!GlobParser.matchesPattern("src/test/FooTest.scala", pattern))
-    }
-
-    "match with multiple include and exclude patterns" in {
-      val pattern = GlobParser.GlobPattern(
-        "",
-        List("**/*.scala", "**/*.java"),
-        List("**/*Test*", "**/target/*")
-      )
-
-      assert(GlobParser.matchesPattern("src/Main.scala", pattern))
-      assert(GlobParser.matchesPattern("src/Main.java", pattern))
-      assert(!GlobParser.matchesPattern("src/MainTest.scala", pattern))
-      assert(!GlobParser.matchesPattern("target/Main.scala", pattern))
-      assert(!GlobParser.matchesPattern("src/Main.txt", pattern))
-    }
-
-    "require at least one include pattern to match" in {
-      val pattern = GlobParser.GlobPattern("", List("*.txt"), List("*test*"))
-      assert(!GlobParser.matchesPattern("file.scala", pattern))
-    }
+    checkPatterns(
+      PatternCase("match with single include pattern", GlobPattern("", List("*.txt"), List.empty), List("file.txt"), List("file.scala")),
+      PatternCase("match with multiple include patterns", GlobPattern("", List("*.txt", "*.md"), List.empty), List("file.txt", "README.md"), List("file.scala")),
+      PatternCase(
+        "exclude with exclude patterns",
+        GlobPattern("", List("**/*.scala"), List("**/*Test*")),
+        List("src/Main.scala"),
+        List("src/MainTest.scala", "src/test/FooTest.scala"),
+      ),
+      PatternCase(
+        "match with multiple include and exclude patterns",
+        GlobPattern("", List("**/*.scala", "**/*.java"), List("**/*Test*", "**/target/*")),
+        List("src/Main.scala", "src/Main.java"),
+        List("src/MainTest.scala", "target/Main.scala", "src/Main.txt"),
+      ),
+      PatternCase("require at least one include pattern to match", GlobPattern("", List("*.txt"), List("*test*")), List.empty, List("file.scala")),
+    )
   }
 
   "GlobParser Windows compatibility" should {
@@ -220,54 +158,41 @@ class GlobParserTest extends AnyWordSpec {
       assert(!GlobParser.matchesGlob("a\\b\\file.txt", "*/file.txt"))
     }
 
-    "normalize backslash-separated paths in matchesPattern" in {
-      val pattern = GlobParser.GlobPattern("", List("**/*.scala"), List("**/*Test*"))
-      assert(GlobParser.matchesPattern("src\\Main.scala", pattern))
-      assert(!GlobParser.matchesPattern("src\\MainTest.scala", pattern))
-    }
+    checkPatterns(
+      PatternCase(
+        "normalize backslash-separated paths in matchesPattern",
+        GlobPattern("", List("**/*.scala"), List("**/*Test*")),
+        List("src\\Main.scala"),
+        List("src\\MainTest.scala"),
+      ),
+    )
 
-    "normalize backslashes in parseGlobExpr input" in {
-      val pattern = GlobParser.parseGlobExpr("src\\main\\scala{**\\*.scala,!**\\*Test*}")
-      assert(pattern.basePath == "src/main/scala")
-      assert(pattern.includePatterns == List("**/*.scala"))
-      assert(pattern.excludePatterns == List("**/*Test*"))
-    }
-
-    "normalize backslashes in legacy parseGlobExpr input" in {
-      val pattern = GlobParser.parseGlobExpr("src\\main\\scala\\**\\*.scala")
-      assert(pattern.basePath == "src/main/scala")
-      assert(pattern.includePatterns == List("**/*.scala"))
-    }
+    checkParsing(
+      ParsedCase(
+        "normalize backslashes in parseGlobExpr input",
+        "src\\main\\scala{**\\*.scala,!**\\*Test*}",
+        GlobPattern("src/main/scala", List("**/*.scala"), List("**/*Test*")),
+      ),
+      ParsedCase("normalize backslashes in legacy parseGlobExpr input", "src\\main\\scala\\**\\*.scala", GlobPattern("src/main/scala", List("**/*.scala"), List.empty)),
+    )
   }
 
   "GlobParser edge cases" should {
 
-    "handle pattern with only exclude patterns" in {
-      val pattern = GlobParser.parseGlobExpr("src{!**/*Test*}")
-      assert(pattern.includePatterns.isEmpty)
-      assert(pattern.excludePatterns == List("**/*Test*"))
-    }
-
-    "handle empty braces" in {
-      val pattern = GlobParser.parseGlobExpr("src{}")
-      assert(pattern.basePath == "src")
-      assert(pattern.includePatterns.isEmpty)
-      assert(pattern.excludePatterns.isEmpty)
-    }
-
-    "handle base path with trailing slash before braces" in {
-      val pattern = GlobParser.parseGlobExpr("src/main/scala/{**/*.scala,!**/*Test*}")
-      assert(pattern.basePath == "src/main/scala/")
-      assert(pattern.includePatterns == List("**/*.scala"))
-      assert(pattern.excludePatterns == List("**/*Test*"))
-    }
-
-    "handle base path without trailing slash before braces" in {
-      val pattern = GlobParser.parseGlobExpr("src/main/scala{**/*.scala,!**/*Test*}")
-      assert(pattern.basePath == "src/main/scala")
-      assert(pattern.includePatterns == List("**/*.scala"))
-      assert(pattern.excludePatterns == List("**/*Test*"))
-    }
+    checkParsing(
+      ParsedCase("handle pattern with only exclude patterns", "src{!**/*Test*}", GlobPattern("src", List.empty, List("**/*Test*"))),
+      ParsedCase("handle empty braces", "src{}", GlobPattern("src", List.empty, List.empty)),
+      ParsedCase(
+        "handle base path with trailing slash before braces",
+        "src/main/scala/{**/*.scala,!**/*Test*}",
+        GlobPattern("src/main/scala/", List("**/*.scala"), List("**/*Test*")),
+      ),
+      ParsedCase(
+        "handle base path without trailing slash before braces",
+        "src/main/scala{**/*.scala,!**/*Test*}",
+        GlobPattern("src/main/scala", List("**/*.scala"), List("**/*Test*")),
+      ),
+    )
 
     "normalize paths correctly with trailing slash" in {
       // Both forms should work equivalently
@@ -284,11 +209,9 @@ class GlobParserTest extends AnyWordSpec {
       assert(GlobParser.matchesGlob("a/b/c/d/file.txt", "**/**/file.txt"))
     }
 
-    "match patterns starting with **/" in {
-      val regex = GlobParser.globToRegex("**/test/*")
-      assert("test/file.txt".matches(regex))
-      assert("a/b/test/file.txt".matches(regex))
-    }
+    checkRegexes(
+      RegexCase("match patterns starting with **/", "**/test/*", List("test/file.txt", "a/b/test/file.txt"), List.empty),
+    )
 
     "not match across directory boundaries with *" in {
       assert(!GlobParser.matchesGlob("a/b/file.txt", "*/file.txt"))

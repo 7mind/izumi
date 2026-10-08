@@ -32,99 +32,87 @@ class LoggerLogMethodTest extends AnyWordSpec {
         assert(logEntry.message.template == StringContext(s"Call to $testFuncName(${1}, ${2}) => ${3.0}"))
         assert(logEntry.message.args.isEmpty)
       case _ =>
-        val stringContext = StringContext(
+        val expected = expectedMessage(
           s"Call to $testFuncName(",
           ", ",
           ") => ",
           "",
-        )
-        val args = Seq(
+        )(
           LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
           LogArg(Seq("y"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
           LogArg(Seq("result"), 3.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
         )
-        assert(logEntry.message.template == stringContext)
-        assert(logEntry.message.args == args)
+        assertMessage(logEntry, expected)
         assert(logEntry.context.static.pos.position.file.contains("LoggerLogMethodTest.scala"))
     }
     ()
   }
 
   def `log curried method`(test: TestSink => Any): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       "Call to curriedFunc(",
       ")(",
       ") => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("y"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("result"), 3.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
     )
-    Log.Message(stringContext, args)
   }
 
   def `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(
     test: TestSink => Any
   )(implicit methodName: String = "add"
   ): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       s"Call to $methodName(",
       ") => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("x"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
     )
-    Log.Message(stringContext, args)
   }
 
   def `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(
     test: TestSink => Any
   )(implicit methodName: String = "byNameTestFuncExec10"
   ): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       s"Call to $methodName(",
       ") => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("fn"), 11, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("result"), List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), hiddenName = false, Some(LogstageCodec.listCodec(using LogstageCodec.LogstageCodecInt))),
     )
-    Log.Message(stringContext, args)
   }
 
   def `log method with side-effecting implicit parameter, with printImplicits=true, has surprising semantics - side-effecting implicit def producing implicit parameter is evaluated twice for logging`(
     test: TestSink => Any
   )(implicit methodName: String = "sideEffectImplicitFun"
   ): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       s"Call to $methodName(using ",
       ") => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("sideEffectImplicit"), SideEffectImplicit(), hiddenName = false, None),
       LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit)),
     )
-    Log.Message(stringContext, args)
   }
 
   def `log method with side-effecting implicit parameter, with printImplicits=false, has expected semantics - side-effecting implicit def producing implicit parameter is evaluated only once`(
     test: TestSink => Any
   )(implicit methodName: String = "sideEffectImplicitFun"
   ): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       s"Call to $methodName => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit))
     )
-    Log.Message(stringContext, args)
   }
 
   def `logging doesn't happen when under level threshold`(
@@ -145,44 +133,35 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     val Seq(add1P, add2P, add2PD) = testSink.fetch().toIndexedSeq
 
-    val add1PMessage = Log.Message(
-      StringContext(
-        "Call to add(",
-        ") => ",
-        "",
-      ),
-      Seq(
-        LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      ),
+    val add1PMessage = expectedMessage(
+      "Call to add(",
+      ") => ",
+      "",
+    )(
+      LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
     )
 
-    val add2PMessage = Log.Message(
-      StringContext(
-        "Call to add(",
-        ", ",
-        ") => ",
-        "",
-      ),
-      Seq(
-        LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      ),
+    val add2PMessage = expectedMessage(
+      "Call to add(",
+      ", ",
+      ") => ",
+      "",
+    )(
+      LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
     )
 
-    val add2PDMessage = Log.Message(
-      StringContext(
-        "Call to add(",
-        ", ",
-        ") => ",
-        "",
-      ),
-      Seq(
-        LogArg(Seq("y"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
-        LogArg(Seq("z"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
-        LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      ),
+    val add2PDMessage = expectedMessage(
+      "Call to add(",
+      ", ",
+      ") => ",
+      "",
+    )(
+      LogArg(Seq("y"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
+      LogArg(Seq("z"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
+      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
     )
 
     assertMessage(add1P, add1PMessage)
@@ -201,54 +180,45 @@ class LoggerLogMethodTest extends AnyWordSpec {
     val withoutTypesAndImplicits = logEntry(1)
     val withTypesWithoutImplicits = logEntry(2)
 
-    val withoutTypesMessage = Log.Message(
-      StringContext(
-        "Call to hktCurFuncWithImplicit(",
-        ")(using ",
-        ", ",
-        ", ",
-        ") => ",
-        "",
-      ),
-      Seq(
-        LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-      ),
+    val withoutTypesMessage = expectedMessage(
+      "Call to hktCurFuncWithImplicit(",
+      ")(using ",
+      ", ",
+      ", ",
+      ") => ",
+      "",
+    )(
+      LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
     )
     assertMessage(withoutTypes, withoutTypesMessage)
 
-    val withoutTypesAndImplicitsMessage = Log.Message(
-      StringContext(
-        "Call to hktCurFuncWithImplicit(",
-        ") => ",
-        "",
-      ),
-      Seq(
-        LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-      ),
+    val withoutTypesAndImplicitsMessage = expectedMessage(
+      "Call to hktCurFuncWithImplicit(",
+      ") => ",
+      "",
+    )(
+      LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
     )
     assertMessage(withoutTypesAndImplicits, withoutTypesAndImplicitsMessage)
 
-    val withTypesWithoutImplicitsMessage = Log.Message(
-      StringContext(
-        "Call to hktCurFuncWithImplicit[",
-        ", ",
-        ", ",
-        "](",
-        ") => ",
-        "",
-      ),
-      Seq(
-        LogArg(Seq("C"), "List", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-        LogArg(Seq("F"), "Option[String]", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-        LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-        LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-      ),
+    val withTypesWithoutImplicitsMessage = expectedMessage(
+      "Call to hktCurFuncWithImplicit[",
+      ", ",
+      ", ",
+      "](",
+      ") => ",
+      "",
+    )(
+      LogArg(Seq("C"), "List", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      LogArg(Seq("F"), "Option[String]", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
     )
     assertMessage(withTypesWithoutImplicits, withTypesWithoutImplicitsMessage)
     ()
@@ -259,21 +229,19 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     test(testSink) match {
       case Failure(e) =>
-        val stringContext = StringContext(
+        val expected = expectedMessage(
           s"Call to $testFuncName(",
           ", ",
           ") => ",
           "",
-        )
-        val args = Seq(
+        )(
           LogArg(Seq("a"), -1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
           LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
           LogArg(Seq("error"), e, hiddenName = false, Some(LogstageCodec.LogstageCodecThrowable)),
         )
 
         val Seq(logEntry) = testSink.fetch()
-        assert(logEntry.message.template == stringContext)
-        assert(logEntry.message.args == args)
+        assertMessage(logEntry, expected)
         ()
       case succ @ Success(_) =>
         fail(s"Expected failure but got success=$succ")
@@ -285,15 +253,14 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     val ordering = test(testSink)
 
-    val stringContext = StringContext(
+    val expected = expectedMessage(
       "Call to withContextBoundFunc[",
       "](",
       ", ",
       ")(using ",
       ") => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
       LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
@@ -302,21 +269,17 @@ class LoggerLogMethodTest extends AnyWordSpec {
     )
 
     val Seq(logEntry) = testSink.fetch()
-    assert(logEntry.message.template == stringContext)
-    assert(logEntry.message.args == args)
+    assertMessage(logEntry, expected)
     ()
   }
 
   def `log no arguments method`(test: TestSink => Any): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       "Call to noArgsFunc() => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit))
     )
-
-    Log.Message(stringContext, args)
   }
 
   def `log higher kinded type with implicit method`(test: TestSink => Any): Unit = checkLog(test) {
@@ -347,45 +310,40 @@ class LoggerLogMethodTest extends AnyWordSpec {
   }
 
   def `log higher kinded type with implicit method without types`(test: TestSink => Any): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       "Call to hktCurFuncWithImplicit(",
       ")(using ",
       ", ",
       ", ",
       ") => ",
       "",
-    )
-    val args = Seq(
+    )(
       LogArg(Seq("a"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("result"), true, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
     )
-
-    Log.Message(stringContext, args)
   }
 
   def `log generic method`(test: TestSink => Any): Unit = checkLog(test) {
-    val stringContext = StringContext(
+    expectedMessage(
       "Call to genericFunc[",
       ", ",
       "](",
       ", ",
       ") => ",
       "",
-    )
-
-    val args = Seq(
+    )(
       LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
       LogArg(Seq("B"), "String", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
       LogArg(Seq("x"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
       LogArg(Seq("y"), "b", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
       LogArg(Seq("result"), "2b", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
     )
-
-    Log.Message(stringContext, args)
   }
+
+  private def expectedMessage(parts: String*)(args: LogArg*): Log.Message = Log.Message(StringContext(parts*), args)
 
   private def checkLog[A](test: TestSink => A)(expected: => Log.Message): Unit = {
     val sink = new TestSink(Some(new StringRenderingPolicy(RenderingOptions.simple, None)))

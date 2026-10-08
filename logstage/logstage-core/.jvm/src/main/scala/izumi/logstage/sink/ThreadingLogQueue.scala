@@ -2,6 +2,7 @@ package izumi.logstage.sink
 
 import izumi.functional.lifecycle.Lifecycle
 import izumi.fundamentals.platform.functional.Identity
+import izumi.fundamentals.platform.language.Quirks.Discarder
 import izumi.logstage.api.Log
 import izumi.logstage.api.logger.LogSink
 
@@ -34,7 +35,7 @@ class ThreadingLogQueue(sleepTime: FiniteDuration, batchSize: Int) extends Threa
   override protected def unregisterShutdownHook(): Unit = {
     try {
       // removeShutdownHook doesn't work if it gets invoked while hook is running which is exactly the case for termination by signal
-      Runtime.getRuntime.removeShutdownHook(shutdownHook)
+      Runtime.getRuntime.removeShutdownHook(shutdownHook).discard()
     } catch {
       case _: IllegalStateException =>
     }

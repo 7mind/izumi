@@ -3,8 +3,12 @@ package izumi.fundamentals.platform.versions
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.testkit.AnyWordSpec
 
-class VersionTest extends AnyWordSpec {
+object VersionTest {
   private final case class ParseCase[A](name: String, input: String, expected: A)
+}
+
+class VersionTest extends AnyWordSpec {
+  import VersionTest.*
 
   private def checkParsing[A](parse: String => A)(cases: ParseCase[A]*): Unit = {
     cases.foreach { testcase =>
