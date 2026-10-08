@@ -2,6 +2,7 @@ package izumi.functional.bio.test
 
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.bio.{Exit, F}
+import izumi.functional.bio.data.InterruptAction
 import izumi.fundamentals.testkit.AsyncWordSpec
 import izumi.distage.testkit.runner.spec.Assertion
 
@@ -71,8 +72,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
       } { _ =>
         F.async[Throwable, Unit](_ => { bodyEntered.success(()); () })
       }
-      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      val (future, interrupt) = runInterruptibly(effect)
       for {
         _ <- withTimeout(bodyEntered.future, InterruptionTimeout)
         _ <- interrupt.interrupt.runOnEC(executionContext)
@@ -119,8 +119,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
       } { _ =>
         F.sync { bodies.incrementAndGet(); () }
       }
-      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      val (future, interrupt) = runInterruptibly(effect)
       for {
         _ <- withTimeout(acquireEntered.future, InterruptionTimeout)
         _ <- interrupt.interrupt.runOnEC(executionContext)
@@ -142,8 +141,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
       } { (_, _) =>
         F.sync { released.incrementAndGet(); () }
       }(_ => F.unit)
-      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      val (future, interrupt) = runInterruptibly(effect)
       for {
         _ <- withTimeout(acquireEntered.future, InterruptionTimeout)
         _ <- interrupt.interrupt.runOnEC(executionContext)
@@ -164,8 +162,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
           ()
         }
       }
-      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+      val (future, interrupt) = runInterruptibly(effect)
       for {
         _ <- withTimeout(entered.future, InterruptionTimeout)
         _ <- interrupt.interrupt.runOnEC(executionContext)
@@ -344,12 +341,16 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
   }
 
   private def checkInterruption(effect: MiniBIOAsync[Throwable, Unit], started: Future[Unit]): Future[Assertion] = {
-    val (future, interrupt) = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext).unsafeRunAsyncAsInterruptibleFuture(effect)
+    val (future, interrupt) = runInterruptibly(effect)
     for {
       _ <- started
       _ <- interrupt.interrupt.runOnEC(executionContext)
       exit <- withTimeout(future, InterruptionTimeout)
     } yield assertInterrupted(exit)
+  }
+
+  private def runInterruptibly[E, A](effect: => MiniBIOAsync[E, A]): (Future[Exit[E, A]], InterruptAction[MiniBIOAsync]) = {
+    MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext).unsafeRunAsyncAsInterruptibleFuture(effect)
   }
 
   private def runWithExit[E, A](effect: MiniBIOAsync[E, A]): Future[Exit[E, A]] = {
@@ -371,8 +372,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
         delivered.success(())
       }
     })(_ => F.sync { continuations.incrementAndGet(); () })
-    val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-    val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(transform(body))
+    val (future, interrupt) = runInterruptibly(transform(body))
     for {
       _ <- withTimeout(entered.future, InterruptionTimeout)
       _ <- interrupt.interrupt.runOnEC(executionContext)
@@ -403,8 +403,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
         }
       }
     }(_ => body)
-    val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-    val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
+    val (future, interrupt) = runInterruptibly(effect)
     for {
       _ <- withTimeout(releaseEntered.future, InterruptionTimeout)
       _ <- interrupt.interrupt.runOnEC(executionContext)
@@ -450,8 +449,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
     val left = new Child
     val right = new Child
     val children = Vector(left, right)
-    val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-    val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(combine(left.effect, right.effect))
+    val (future, interrupt) = runInterruptibly(combine(left.effect, right.effect))
     val result = for {
       _ <- withTimeout(Future.sequence(children.map(_.entered.future)), InterruptionTimeout)
       _ = left.bodyGate.success(())

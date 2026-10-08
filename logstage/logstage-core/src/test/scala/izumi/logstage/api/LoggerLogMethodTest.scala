@@ -18,6 +18,7 @@ import scala.util.{Failure, Success, Try}
 
 @nowarn("msg=unused local definition")
 class LoggerLogMethodTest extends AnyWordSpec {
+  import LoggerLogMethodTest.ParameterGroup
   private val tc = new TestClass
 
   def `log method`(test: TestSink => Any)(implicit testFuncName: String = "testFunc", mode: EncodingMode = EncodingMode.NonStrict): Unit = {
@@ -32,16 +33,13 @@ class LoggerLogMethodTest extends AnyWordSpec {
         assert(logEntry.message.template == StringContext(s"Call to $testFuncName(${1}, ${2}) => ${3.0}"))
         assert(logEntry.message.args.isEmpty)
       case _ =>
-        val expected = expectedMessage(
-          s"Call to $testFuncName(",
-          ", ",
-          ") => ",
-          "",
-        )(
-          LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("y"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("result"), 3.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
-        )
+        val expected = expectedCall(
+          testFuncName,
+          parameters(
+            LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+            LogArg(Seq("y"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+          ),
+        )(LogArg(Seq("result"), 3.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)))
         assertMessage(logEntry, expected)
         assert(logEntry.context.static.pos.position.file.contains("LoggerLogMethodTest.scala"))
     }
@@ -49,29 +47,19 @@ class LoggerLogMethodTest extends AnyWordSpec {
   }
 
   def `log curried method`(test: TestSink => Any): Unit = checkLog(test) {
-    expectedMessage(
-      "Call to curriedFunc(",
-      ")(",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("y"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), 3.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
-    )
+    expectedCall(
+      "curriedFunc",
+      parameters(LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))),
+      parameters(LogArg(Seq("y"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))),
+    )(LogArg(Seq("result"), 3.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)))
   }
 
   def `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(
     test: TestSink => Any
   )(implicit methodName: String = "add"
   ): Unit = checkLog(test) {
-    expectedMessage(
-      s"Call to $methodName(",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("x"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+    expectedCall(methodName, parameters(LogArg(Seq("x"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))))(
+      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))
     )
   }
 
@@ -79,13 +67,8 @@ class LoggerLogMethodTest extends AnyWordSpec {
     test: TestSink => Any
   )(implicit methodName: String = "byNameTestFuncExec10"
   ): Unit = checkLog(test) {
-    expectedMessage(
-      s"Call to $methodName(",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("fn"), 11, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), hiddenName = false, Some(LogstageCodec.listCodec(using LogstageCodec.LogstageCodecInt))),
+    expectedCall(methodName, parameters(LogArg(Seq("fn"), 11, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))))(
+      LogArg(Seq("result"), List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), hiddenName = false, Some(LogstageCodec.listCodec(using LogstageCodec.LogstageCodecInt)))
     )
   }
 
@@ -93,13 +76,8 @@ class LoggerLogMethodTest extends AnyWordSpec {
     test: TestSink => Any
   )(implicit methodName: String = "sideEffectImplicitFun"
   ): Unit = checkLog(test) {
-    expectedMessage(
-      s"Call to $methodName(using ",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("sideEffectImplicit"), SideEffectImplicit(), hiddenName = false, None),
-      LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit)),
+    expectedCall(methodName, implicitParameters(LogArg(Seq("sideEffectImplicit"), SideEffectImplicit(), hiddenName = false, None)))(
+      LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit))
     )
   }
 
@@ -107,12 +85,7 @@ class LoggerLogMethodTest extends AnyWordSpec {
     test: TestSink => Any
   )(implicit methodName: String = "sideEffectImplicitFun"
   ): Unit = checkLog(test) {
-    expectedMessage(
-      s"Call to $methodName => ",
-      "",
-    )(
-      LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit))
-    )
+    expectedCall(methodName)(LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit)))
   }
 
   def `logging doesn't happen when under level threshold`(
@@ -133,36 +106,25 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     val Seq(add1P, add2P, add2PD) = testSink.fetch().toIndexedSeq
 
-    val add1PMessage = expectedMessage(
-      "Call to add(",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+    val add1PMessage = expectedCall("add", parameters(LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))))(
+      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))
     )
 
-    val add2PMessage = expectedMessage(
-      "Call to add(",
-      ", ",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-    )
+    val add2PMessage = expectedCall(
+      "add",
+      parameters(
+        LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      ),
+    )(LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)))
 
-    val add2PDMessage = expectedMessage(
-      "Call to add(",
-      ", ",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("y"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
-      LogArg(Seq("z"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
-      LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-    )
+    val add2PDMessage = expectedCall(
+      "add",
+      parameters(
+        LogArg(Seq("y"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
+        LogArg(Seq("z"), 1.0, hiddenName = false, Some(LogstageCodec.LogstageCodecDouble)),
+      ),
+    )(LogArg(Seq("result"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)))
 
     assertMessage(add1P, add1PMessage)
     assertMessage(add2P, add2PMessage)
@@ -180,46 +142,32 @@ class LoggerLogMethodTest extends AnyWordSpec {
     val withoutTypesAndImplicits = logEntry(1)
     val withTypesWithoutImplicits = logEntry(2)
 
-    val withoutTypesMessage = expectedMessage(
-      "Call to hktCurFuncWithImplicit(",
-      ")(using ",
-      ", ",
-      ", ",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-    )
+    val withoutTypesMessage = expectedCall(
+      "hktCurFuncWithImplicit",
+      parameters(LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))),
+      implicitParameters(
+        LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      ),
+    )(LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)))
     assertMessage(withoutTypes, withoutTypesMessage)
 
-    val withoutTypesAndImplicitsMessage = expectedMessage(
-      "Call to hktCurFuncWithImplicit(",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-    )
+    val withoutTypesAndImplicitsMessage = expectedCall(
+      "hktCurFuncWithImplicit",
+      parameters(LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))),
+    )(LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)))
     assertMessage(withoutTypesAndImplicits, withoutTypesAndImplicitsMessage)
 
-    val withTypesWithoutImplicitsMessage = expectedMessage(
-      "Call to hktCurFuncWithImplicit[",
-      ", ",
-      ", ",
-      "](",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("C"), "List", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("F"), "Option[String]", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-    )
+    val withTypesWithoutImplicitsMessage = expectedCall(
+      "hktCurFuncWithImplicit",
+      typeParameters(
+        LogArg(Seq("C"), "List", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("F"), "Option[String]", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      ),
+      parameters(LogArg(Seq("a"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))),
+    )(LogArg(Seq("result"), false, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)))
     assertMessage(withTypesWithoutImplicits, withTypesWithoutImplicitsMessage)
     ()
   }
@@ -229,16 +177,13 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     test(testSink) match {
       case Failure(e) =>
-        val expected = expectedMessage(
-          s"Call to $testFuncName(",
-          ", ",
-          ") => ",
-          "",
-        )(
-          LogArg(Seq("a"), -1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("error"), e, hiddenName = false, Some(LogstageCodec.LogstageCodecThrowable)),
-        )
+        val expected = expectedCall(
+          testFuncName,
+          parameters(
+            LogArg(Seq("a"), -1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+            LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+          ),
+        )(LogArg(Seq("error"), e, hiddenName = false, Some(LogstageCodec.LogstageCodecThrowable)))
 
         val Seq(logEntry) = testSink.fetch()
         assertMessage(logEntry, expected)
@@ -253,20 +198,15 @@ class LoggerLogMethodTest extends AnyWordSpec {
 
     val ordering = test(testSink)
 
-    val expected = expectedMessage(
-      "Call to withContextBoundFunc[",
-      "](",
-      ", ",
-      ")(using ",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("evidence$1"), ordering, hiddenName = false, None),
-      LogArg(Seq("result"), true, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-    )
+    val expected = expectedCall(
+      "withContextBoundFunc",
+      typeParameters(LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString))),
+      parameters(
+        LogArg(Seq("x"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("y"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      ),
+      implicitParameters(LogArg(Seq("evidence$1"), ordering, hiddenName = false, None)),
+    )(LogArg(Seq("result"), true, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)))
 
     val Seq(logEntry) = testSink.fetch()
     assertMessage(logEntry, expected)
@@ -274,73 +214,51 @@ class LoggerLogMethodTest extends AnyWordSpec {
   }
 
   def `log no arguments method`(test: TestSink => Any): Unit = checkLog(test) {
-    expectedMessage(
-      "Call to noArgsFunc() => ",
-      "",
-    )(
-      LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit))
-    )
+    expectedCall("noArgsFunc", parameters())(LogArg(Seq("result"), (), hiddenName = false, Some(LogstageCodec.LogstageCodecUnit)))
   }
 
   def `log higher kinded type with implicit method`(test: TestSink => Any): Unit = checkLog(test) {
-    val stringContext = StringContext(
-      "Call to hktCurFuncWithImplicit[",
-      ", ",
-      ", ",
-      "](",
-      ")(using ",
-      ", ",
-      ", ",
-      ") => ",
-      "",
-    )
     val vectorTryStringTpeString = if (IzScala.scalaRelease.major == 2) "Vector[scala.util.Try[String]]" else "Vector[Try[String]]"
-    val args = Seq(
-      LogArg(Seq("C"), "List", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("F"), vectorTryStringTpeString, hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("a"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), true, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-    )
-
-    Log.Message(stringContext, args)
+    expectedCall(
+      "hktCurFuncWithImplicit",
+      typeParameters(
+        LogArg(Seq("C"), "List", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("F"), vectorTryStringTpeString, hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      ),
+      parameters(LogArg(Seq("a"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))),
+      implicitParameters(
+        LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      ),
+    )(LogArg(Seq("result"), true, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)))
   }
 
   def `log higher kinded type with implicit method without types`(test: TestSink => Any): Unit = checkLog(test) {
-    expectedMessage(
-      "Call to hktCurFuncWithImplicit(",
-      ")(using ",
-      ", ",
-      ", ",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("a"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("result"), true, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)),
-    )
+    expectedCall(
+      "hktCurFuncWithImplicit",
+      parameters(LogArg(Seq("a"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt))),
+      implicitParameters(
+        LogArg(Seq("b"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("c"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("d"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      ),
+    )(LogArg(Seq("result"), true, hiddenName = false, Some(LogstageCodec.LogstageCodecBoolean)))
   }
 
   def `log generic method`(test: TestSink => Any): Unit = checkLog(test) {
-    expectedMessage(
-      "Call to genericFunc[",
-      ", ",
-      "](",
-      ", ",
-      ") => ",
-      "",
-    )(
-      LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("B"), "String", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("x"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-      LogArg(Seq("y"), "b", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-      LogArg(Seq("result"), "2b", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-    )
+    expectedCall(
+      "genericFunc",
+      typeParameters(
+        LogArg(Seq("A"), "Int", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("B"), "String", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      ),
+      parameters(
+        LogArg(Seq("x"), 2, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("y"), "b", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+      ),
+    )(LogArg(Seq("result"), "2b", hiddenName = false, Some(LogstageCodec.LogstageCodecString)))
   }
 
   private final class InvocationProbe(sink: TestSink, requestedLevel: Log.Level) {
@@ -368,7 +286,30 @@ class LoggerLogMethodTest extends AnyWordSpec {
       result
   }
 
-  private def expectedMessage(parts: String*)(args: LogArg*): Log.Message = Log.Message(StringContext(parts*), args)
+  private def parameters(arguments: LogArg*): ParameterGroup = ParameterGroup("(", ")", arguments)
+  private def implicitParameters(arguments: LogArg*): ParameterGroup = ParameterGroup("(using ", ")", arguments)
+  private def typeParameters(arguments: LogArg*): ParameterGroup = ParameterGroup("[", "]", arguments)
+
+  private def expectedCall(name: String, groups: ParameterGroup*)(result: LogArg): Log.Message = {
+    val parts = Vector.newBuilder[String]
+    val arguments = Vector.newBuilder[LogArg]
+    var prefix = s"Call to $name"
+    groups.foreach {
+      group =>
+        if (group.arguments.isEmpty) prefix += group.opening + group.closing
+        else {
+          group.arguments.zipWithIndex.foreach {
+            case (argument, index) =>
+              parts += (if (index == 0) prefix + group.opening else ", ")
+              arguments += argument
+          }
+          prefix = group.closing
+        }
+    }
+    parts += prefix + " => "
+    parts += ""
+    Log.Message(StringContext(parts.result()*), arguments.result() :+ result)
+  }
 
   private def checkLog[A](test: TestSink => A)(expected: => Log.Message): Unit = {
     val sink = new TestSink(Some(new StringRenderingPolicy(RenderingOptions.simple, None)))
@@ -486,26 +427,32 @@ class LoggerLogMethodTest extends AnyWordSpec {
     }
 
     "log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging" in {
-      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 0, Log.Level.Info) { probe =>
-        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 0, Log.Level.Info) {
+        probe =>
+          probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
       })
     }
 
     "log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging" in {
-      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(checkInvocation(2, 0, Log.Level.Info) { probe =>
-        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
-      })
+      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(
+        checkInvocation(2, 0, Log.Level.Info) {
+          probe =>
+            probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+        }
+      )
     }
 
     "log method with by-name parameter has expected semantics - by-name is executed only by its caller" in {
-      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) { probe =>
-        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) {
+        probe =>
+          probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
       })
     }
 
     "log method with side-effecting parameter has expected semantics - the side-effecting expression evaluates only once if logging is disabled" in {
-      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) { probe =>
-        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) {
+        probe =>
+          probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
       })
     }
 
@@ -652,34 +599,40 @@ class LoggerLogMethodTest extends AnyWordSpec {
     }
 
     "logIO log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging" in {
-      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 0, Log.Level.Info) { probe =>
-        runZIO {
-          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
-        }
+      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 0, Log.Level.Info) {
+        probe =>
+          runZIO {
+            probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+          }
       })
     }
 
     "logIO log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging" in {
-      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(checkInvocation(2, 0, Log.Level.Info) { probe =>
-        runZIO {
-          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(
+        checkInvocation(2, 0, Log.Level.Info) {
+          probe =>
+            runZIO {
+              probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+            }
         }
-      })
+      )
     }
 
     "logIO log method with by-name parameter has expected semantics - by-name is executed only by its caller" in {
-      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) { probe =>
-        runZIO {
-          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
-        }
+      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) {
+        probe =>
+          runZIO {
+            probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+          }
       })
     }
 
     "logIO log method with side-effecting parameter has expected semantics - the side-effecting expression evaluates only once if logging is disabled" in {
-      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) { probe =>
-        runZIO {
-          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
-        }
+      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) {
+        probe =>
+          runZIO {
+            probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+          }
       })
     }
 
@@ -741,36 +694,42 @@ class LoggerLogMethodTest extends AnyWordSpec {
     }
 
     "logIO log methodF with by-name parameter has surprising semantics - by-name is fully executed one more time for logging" in {
-      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 1, Log.Level.Info) { probe =>
-        runZIO {
-          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag) {
-            probe.receiver.byNameTestFuncExec10F(probe.argument)
+      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 1, Log.Level.Info) {
+        probe =>
+          runZIO {
+            probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag) {
+              probe.receiver.byNameTestFuncExec10F(probe.argument)
+            }
           }
-        }
       })(using methodName = "byNameTestFuncExec10F")
     }
 
     "logIO log methodF with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging" in {
-      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(checkInvocation(2, 0, Log.Level.Info) { probe =>
-        runZIO {
-          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.addF(probe.argument))
+      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(
+        checkInvocation(2, 0, Log.Level.Info) {
+          probe =>
+            runZIO {
+              probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.addF(probe.argument))
+            }
         }
-      })(using methodName = "addF")
+      )(using methodName = "addF")
     }
 
     "logIO log methodF with by-name parameter has expected semantics - by-name is executed only by its caller" in {
-      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) { probe =>
-        runZIO {
-          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10F(probe.argument))
-        }
+      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) {
+        probe =>
+          runZIO {
+            probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10F(probe.argument))
+          }
       })
     }
 
     "logIO log methodF with side-effecting parameter has expected semantics - the side-effecting expression evaluates only once if logging is disabled" in {
-      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) { probe =>
-        runZIO {
-          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.addF(probe.argument))
-        }
+      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) {
+        probe =>
+          runZIO {
+            probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.addF(probe.argument))
+          }
       })
     }
 
@@ -868,4 +827,8 @@ class LoggerLogMethodTest extends AnyWordSpec {
       ZIO.unit
     }
   }
+}
+
+object LoggerLogMethodTest {
+  private final case class ParameterGroup(opening: String, closing: String, arguments: Seq[LogArg])
 }

@@ -3,35 +3,21 @@ package izumi.fundamentals.platform.uuid
 import izumi.fundamentals.testkit.AnyWordSpec
 
 import java.nio.ByteBuffer
+import java.util.UUID
 
 class IzUUIDTest extends AnyWordSpec {
 
+  private final val UUIDByteSize = 16
+
   "IzUUID" should {
 
-    "generate a time UUID" in {
-      val uuid = IzUUID.generateTimeUUID()
-      assert(uuid != null)
-      assert(uuid.version() == 1)
-    }
+    "generate a time UUID" in assertTimeUUID(IzUUID.generateTimeUUID())
 
-    "generate time UUID bytes" in {
-      val bytes = IzUUID.generateTimeUUIDBytes()
-      assert(bytes.length == 16)
-    }
+    "generate time UUID bytes" in assertUUIDBytes(IzUUID.generateTimeUUIDBytes())
 
-    "create time UUID from timestamp" in {
-      val now = System.currentTimeMillis()
-      val uuid = IzUUID.getTimeUUID(now)
-      assert(uuid != null)
-      assert(uuid.version() == 1)
-    }
+    "create time UUID from timestamp" in assertTimeUUID(IzUUID.getTimeUUID(System.currentTimeMillis()))
 
-    "create time UUID from microseconds" in {
-      val nowMicros = System.currentTimeMillis() * 1000
-      val uuid = IzUUID.getTimeUUIDFromMicros(nowMicros)
-      assert(uuid != null)
-      assert(uuid.version() == 1)
-    }
+    "create time UUID from microseconds" in assertTimeUUID(IzUUID.getTimeUUIDFromMicros(System.currentTimeMillis() * 1000))
 
     "create random time UUID from microseconds" in {
       val nowMicros = System.currentTimeMillis() * 1000
@@ -42,47 +28,21 @@ class IzUUIDTest extends AnyWordSpec {
       assert(uuid1 != uuid2)
     }
 
-    "create time UUID with nanos" in {
-      val now = System.currentTimeMillis()
-      val uuid = IzUUID.getTimeUUID(now, 5000L)
-      assert(uuid != null)
-      assert(uuid.version() == 1)
-    }
+    "create time UUID with nanos" in assertTimeUUID(IzUUID.getTimeUUID(System.currentTimeMillis(), 5000L))
 
-    "create time UUID with nanos and clockSeqAndNode" in {
-      val now = System.currentTimeMillis()
-      val uuid = IzUUID.getTimeUUID(now, 5000L, 0x123456789ABCL)
-      assert(uuid != null)
-      assert(uuid.version() == 1)
-    }
+    "create time UUID with nanos and clockSeqAndNode" in assertTimeUUID(IzUUID.getTimeUUID(System.currentTimeMillis(), 5000L, 0x123456789ABCL))
 
     "parse UUID from ByteBuffer" in {
       val original = IzUUID.generateTimeUUID()
-      val bytes = IzUUID.decompose(original)
-      val buffer = ByteBuffer.wrap(bytes)
-      val parsed = IzUUID.getUUID(buffer)
+      val parsed = IzUUID.getUUID(ByteBuffer.wrap(IzUUID.decompose(original)))
       assert(parsed == original)
     }
 
-    "decompose UUID to bytes" in {
-      val uuid = IzUUID.generateTimeUUID()
-      val bytes = IzUUID.decompose(uuid)
-      assert(bytes.length == 16)
-    }
+    "decompose UUID to bytes" in assertUUIDBytes(IzUUID.decompose(IzUUID.generateTimeUUID()))
 
-    "generate minTimeUUID" in {
-      val now = System.currentTimeMillis()
-      val minUuid = IzUUID.minTimeUUID(now)
-      assert(minUuid != null)
-      assert(minUuid.version() == 1)
-    }
+    "generate minTimeUUID" in assertTimeUUID(IzUUID.minTimeUUID(System.currentTimeMillis()))
 
-    "generate maxTimeUUID" in {
-      val now = System.currentTimeMillis()
-      val maxUuid = IzUUID.maxTimeUUID(now)
-      assert(maxUuid != null)
-      assert(maxUuid.version() == 1)
-    }
+    "generate maxTimeUUID" in assertTimeUUID(IzUUID.maxTimeUUID(System.currentTimeMillis()))
 
     "min and max UUIDs should be ordered correctly" in {
       val now = System.currentTimeMillis()
@@ -106,17 +66,9 @@ class IzUUIDTest extends AnyWordSpec {
       assert(math.abs(extracted - nowMicros) < 1000000)
     }
 
-    "get time UUID bytes from millis" in {
-      val now = System.currentTimeMillis()
-      val bytes = IzUUID.getTimeUUIDBytes(now)
-      assert(bytes.length == 16)
-    }
+    "get time UUID bytes from millis" in assertUUIDBytes(IzUUID.getTimeUUIDBytes(System.currentTimeMillis()))
 
-    "get time UUID bytes from millis and nanos" in {
-      val now = System.currentTimeMillis()
-      val bytes = IzUUID.getTimeUUIDBytes(now, 5000)
-      assert(bytes.length == 16)
-    }
+    "get time UUID bytes from millis and nanos" in assertUUIDBytes(IzUUID.getTimeUUIDBytes(System.currentTimeMillis(), 5000))
 
     "reject invalid nanos in getTimeUUIDBytes" in {
       val now = System.currentTimeMillis()
@@ -145,4 +97,10 @@ class IzUUIDTest extends AnyWordSpec {
 
   }
 
+  private def assertUUIDBytes(bytes: Array[Byte]): Unit = assert(bytes.length == UUIDByteSize)
+
+  private def assertTimeUUID(uuid: UUID): Unit = {
+    assert(uuid != null)
+    assert(uuid.version() == 1)
+  }
 }

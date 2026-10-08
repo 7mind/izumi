@@ -22,24 +22,15 @@ class BasicLoggingTest extends AnyWordSpec {
         s"argument1: $arg1, argument2: $arg2, argument2 again: $arg2, expression ${2 + 2}, ${2 + 2}"
       )
 
-      val expectation = if (IzScala.scalaRelease.major == 3) {
-        // on scala3 we get access to exact raw tree w/o optimizations
-        List(
-          LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("EXPRESSION:2.+(2)"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("EXPRESSION:2.+(2)"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        )
-      } else {
-        List(
-          LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-          LogArg(Seq("UNNAMED:4"), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
-        )
-      }
+      // on scala3 we get access to exact raw tree w/o optimizations
+      val expressionName = if (IzScala.scalaRelease.major == 3) "EXPRESSION:2.+(2)" else "UNNAMED:4"
+      val expectation = List(
+        LogArg(Seq("arg1"), 1, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq("arg2"), "argument 2", hiddenName = false, Some(LogstageCodec.LogstageCodecString)),
+        LogArg(Seq(expressionName), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+        LogArg(Seq(expressionName), 4, hiddenName = false, Some(LogstageCodec.LogstageCodecInt)),
+      )
 
       val expectedParts = List("argument1: ", ", argument2: ", ", argument2 again: ", ", expression ", ", ", "")
 

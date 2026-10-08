@@ -6,6 +6,8 @@ import izumi.fundamentals.testkit.AnyWordSpec
 
 class Entropy1Test extends AnyWordSpec {
 
+  private final val SampleCount = 100
+
   val entropy: Entropy1[Identity] = Entropy1.Standard
 
   "Entropy1" should {
@@ -16,18 +18,9 @@ class Entropy1Test extends AnyWordSpec {
       assert(!second.contains(first))
     }
 
-    "generate different ints" in {
-      val result1 = entropy.nextInt()
-      val result2 = entropy.nextInt()
-      val result3 = entropy.nextInt()
-      assert(result1 != result2 || result2 != result3)
-    }
+    "generate different ints" in checkThreeSamples(() => entropy.nextInt())
 
-    "generate different ints with max bound" in {
-      val results = (1 to 100).map(_ => entropy.nextInt(1000))
-      assert(results.distinct.size > 1)
-      assert(results.forall(r => r >= 0 && r < 1000))
-    }
+    "generate different ints with max bound" in checkSamples(() => entropy.nextInt(1000))(r => r >= 0 && r < 1000)
 
     "reject non-positive max in nextInt" in {
       assertThrows[IllegalArgumentException] {
@@ -38,18 +31,9 @@ class Entropy1Test extends AnyWordSpec {
       }
     }
 
-    "generate different longs" in {
-      val result1 = entropy.nextLong()
-      val result2 = entropy.nextLong()
-      val result3 = entropy.nextLong()
-      assert(result1 != result2 || result2 != result3)
-    }
+    "generate different longs" in checkThreeSamples(() => entropy.nextLong())
 
-    "generate different longs with max bound" in {
-      val results = (1 to 100).map(_ => entropy.nextLong(1000L))
-      assert(results.distinct.size > 1)
-      assert(results.forall(r => r >= 0L && r < 1000L))
-    }
+    "generate different longs with max bound" in checkSamples(() => entropy.nextLong(1000L))(r => r >= 0L && r < 1000L)
 
     "reject non-positive max in nextLong" in {
       assertThrows[IllegalArgumentException] {
@@ -60,23 +44,11 @@ class Entropy1Test extends AnyWordSpec {
       }
     }
 
-    "generate different floats" in {
-      val results = (1 to 100).map(_ => entropy.nextFloat())
-      assert(results.distinct.size > 1)
-      assert(results.forall(r => r >= 0.0f && r <= 1.0f))
-    }
+    "generate different floats" in checkSamples(() => entropy.nextFloat())(r => r >= 0.0f && r <= 1.0f)
 
-    "generate different doubles" in {
-      val results = (1 to 100).map(_ => entropy.nextDouble())
-      assert(results.distinct.size > 1)
-      assert(results.forall(r => r >= 0.0 && r <= 1.0))
-    }
+    "generate different doubles" in checkSamples(() => entropy.nextDouble())(r => r >= 0.0 && r <= 1.0)
 
-    "generate different gaussians" in {
-      val results = (1 to 100).map(_ => entropy.nextGaussian())
-      assert(results.distinct.size > 1)
-      assert(results.forall(r => !r.isNaN && !r.isInfinite))
-    }
+    "generate different gaussians" in checkSamples(() => entropy.nextGaussian())(r => !r.isNaN && !r.isInfinite)
 
     "generate different byte arrays" in {
       val result1 = entropy.nextBytes(16)
@@ -91,11 +63,7 @@ class Entropy1Test extends AnyWordSpec {
       assert(result.length == 0)
     }
 
-    "generate different printable chars" in {
-      val results = (1 to 100).map(_ => entropy.nextPrintableChar())
-      assert(results.distinct.size > 1)
-      assert(results.forall(c => c >= '!' && c <= '~'))
-    }
+    "generate different printable chars" in checkSamples(() => entropy.nextPrintableChar())(c => c >= '!' && c <= '~')
 
     "generate different strings" in {
       val result1 = entropy.nextString(10)
@@ -157,4 +125,16 @@ class Entropy1Test extends AnyWordSpec {
 
   }
 
+  private def checkSamples[A](sample: () => A)(valid: A => Boolean): Unit = {
+    val results = (1 to SampleCount).map(_ => sample())
+    assert(results.distinct.size > 1)
+    assert(results.forall(valid))
+  }
+
+  private def checkThreeSamples[A](sample: () => A): Unit = {
+    val result1 = sample()
+    val result2 = sample()
+    val result3 = sample()
+    assert(result1 != result2 || result2 != result3)
+  }
 }

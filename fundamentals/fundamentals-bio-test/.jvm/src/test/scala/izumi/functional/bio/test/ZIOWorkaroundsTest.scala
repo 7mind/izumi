@@ -14,61 +14,13 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
 
   "Issue https://github.com/zio/zio/issues/6911" should {
 
-    "not reproduce with F.parTraverse" in runtime.unsafeRun {
-      F.parTraverse(
-        List(
-          F.unit.forever,
-          F.terminate(new RuntimeException("testexception")),
-        )
-      )(identity).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.parTraverse" in checkTermination(F.parTraverse(failingChildren)(identity))
 
-    "not reproduce with F.parTraverse_" in runtime.unsafeRun {
-      F.parTraverse_(
-        List(
-          F.unit.forever,
-          F.terminate(new RuntimeException("testexception")),
-        )
-      )(identity).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.parTraverse_" in checkTermination(F.parTraverse_(failingChildren)(identity))
 
-    "not reproduce with F.parTraverseN" in runtime.unsafeRun {
-      F.parTraverseN(2)(
-        List(
-          F.unit.forever,
-          F.terminate(new RuntimeException("testexception")),
-        )
-      )(identity).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.parTraverseN" in checkTermination(F.parTraverseN(2)(failingChildren)(identity))
 
-    "not reproduce with F.parTraverseN_" in runtime.unsafeRun {
-      F.parTraverseN_(2)(
-        List(
-          F.unit.forever,
-          F.terminate(new RuntimeException("testexception")),
-        )
-      )(identity).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.parTraverseN_" in checkTermination(F.parTraverseN_(2)(failingChildren)(identity))
 
     "not reproduce with F.race" in runtime.unsafeRun {
       F.race(
@@ -95,53 +47,13 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
         }
     }
 
-    "not reproduce with F.zipWithPar" in runtime.unsafeRun {
-      F.zipWithPar(
-        F.unit.forever.widen[Unit],
-        F.terminate(new RuntimeException("testexception")).widen[Unit],
-      )((_, _) => ()).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.zipWithPar" in checkTermination(F.zipWithPar(F.unit.forever.widen[Unit], failingChild.widen[Unit])((_, _) => ()))
 
-    "not reproduce with F.zipPar" in runtime.unsafeRun {
-      F.zipPar(
-        F.unit.forever,
-        F.terminate(new RuntimeException("testexception")),
-      ).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.zipPar" in checkTermination(F.zipPar(F.unit.forever, failingChild))
 
-    "not reproduce with F.zipParLeft" in runtime.unsafeRun {
-      F.zipParLeft(
-        F.unit.forever,
-        F.terminate(new RuntimeException("testexception")),
-      ).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.zipParLeft" in checkTermination(F.zipParLeft(F.unit.forever, failingChild))
 
-    "not reproduce with F.zipParRight" in runtime.unsafeRun {
-      F.zipParRight(
-        F.unit.forever,
-        F.terminate(new RuntimeException("testexception")),
-      ).sandboxExit.map {
-          case Exit.Termination(exc, _, _) =>
-            assert(exc.getMessage.contains("testexception"))
-          case other =>
-            fail(s"Unexpected status: $other")
-        }
-    }
+    "not reproduce with F.zipParRight" in checkTermination(F.zipParRight(F.unit.forever, failingChild))
 
     "guaranteeExceptOnInterrupt works correctly" in runtime.unsafeRun {
       for {
@@ -321,4 +233,14 @@ class ZIOWorkaroundsTest extends AnyWordSpec {
 
   }
 
+  private def failingChild: zio.UIO[Nothing] = F.terminate(new RuntimeException("testexception"))
+
+  private def failingChildren: List[zio.UIO[Nothing]] = List(F.unit.forever, failingChild)
+
+  private def checkTermination[A](effect: zio.UIO[A]): Assertion = runtime.unsafeRun {
+    effect.sandboxExit.map {
+      case Exit.Termination(exc, _, _) => assert(exc.getMessage.contains("testexception"))
+      case other => fail(s"Unexpected status: $other")
+    }
+  }
 }
