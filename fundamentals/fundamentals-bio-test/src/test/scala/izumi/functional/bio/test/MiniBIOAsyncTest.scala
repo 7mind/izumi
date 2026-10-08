@@ -3,10 +3,11 @@ package izumi.functional.bio.test
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.bio.{Exit, F}
 import izumi.fundamentals.testkit.AsyncWordSpec
+import izumi.distage.testkit.runner.spec.Assertion
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration.*
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.Success
 
 class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecific {
@@ -20,43 +21,19 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
 
     "support async" in {
       val promise = Promise[Int]()
-      val effect = F.async[Throwable, Int] {
-        cb =>
-          promise.future.onComplete {
-            case scala.util.Success(v) => cb(Right(v))
-            case scala.util.Failure(e) => cb(Left(e))
-          }
-      }
-      val future = effect.runOnEC(executionContext).map {
-        case Exit.Success(value) => assert(value == 777)
-        case _ => fail("Expected Success")
-      }
+      val future = checkSuccess(asyncPromise(promise), executionContext)(value => assert(value == 777))
       executionContext.execute(() => promise.success(777))
       future
     }
 
     "support fromFuture" in {
       val future = Future(777)
-      F.fromFuture(future).runOnEC(executionContext).map {
-        case Exit.Success(value) => assert(value == 777)
-        case _ => fail("Expected Success")
-      }
+      checkSuccess(F.fromFuture(future), executionContext)(value => assert(value == 777))
     }
 
     "fromFuture should be interruptible" in {
       val gate = Promise[Unit]()
-      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(F.fromFuture(gate.future))
-      val result = for {
-        _ <- interrupt.interrupt.runOnEC(executionContext)
-        exit <- withTimeout(future, 2.seconds)
-      } yield {
-        exit match {
-          case Exit.Interruption(t, _, _) => assert(t.isInstanceOf[InterruptedException])
-          case other => fail(s"Expected Interruption(InterruptedException), got $other")
-        }
-      }
-      result
+      checkInterruption(F.fromFuture(gate.future), Future.successful(()))
     }
 
     "async should be interruptible" in {
@@ -64,19 +41,7 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
       val effect = F.async[Throwable, Unit] { _ =>
         started.success(())
       }
-      val runner = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext)
-      val (future, interrupt) = runner.unsafeRunAsyncAsInterruptibleFuture(effect)
-      val result = for {
-        _ <- started.future
-        _ <- interrupt.interrupt.runOnEC(executionContext)
-        exit <- withTimeout(future, 2.seconds)
-      } yield {
-        exit match {
-          case Exit.Interruption(t, _, _) => assert(t.isInstanceOf[InterruptedException])
-          case other => fail(s"Expected Interruption(InterruptedException), got $other")
-        }
-      }
-      result
+      checkInterruption(effect, started.future)
     }
 
     "defer interruption until an uninterruptible operation completes" in {
@@ -285,41 +250,25 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
     }
 
     "support parTraverse" in {
-      val items = List(1, 2, 3)
-      val effect = F.parTraverse(items)(x => F.pure(x * 10))
-      effect.runOnEC(executionContext).map {
-        case Exit.Success(value) => assert(value == List(10, 20, 30))
-        case _ => fail("Expected Success")
-      }
+      checkSuccess(F.parTraverse(List(1, 2, 3))(x => F.pure(x * 10)), executionContext)(value => assert(value == List(10, 20, 30)))
     }
 
     "support parTraverse_" in {
       var count = 0
       val items = List(1, 2, 3, 4, 5, 6)
       val effect = F.parTraverse_(items)(_ => F.sync(count += 1))
-      effect.runOnEC(executionContext).map {
-        case Exit.Success(_) => assert(count == 6)
-        case _ => fail("Expected Success")
-      }
+      checkSuccess(effect, executionContext)(_ => assert(count == 6))
     }
 
     "support parTraverseN" in {
-      val items = List(1, 2, 3, 4, 5, 6)
-      val effect = F.parTraverseN(3)(items)(x => F.sync(x * 10))
-      effect.runOnEC(executionContext).map {
-        case Exit.Success(value) => assert(value == List(10, 20, 30, 40, 50, 60))
-        case _ => fail("Expected Success")
-      }
+      checkSuccess(F.parTraverseN(3)(List(1, 2, 3, 4, 5, 6))(x => F.sync(x * 10)), executionContext)(value => assert(value == List(10, 20, 30, 40, 50, 60)))
     }
 
     "support parTraverseN_" in {
       var count = 0
       val items = List(1, 2, 3, 4, 5, 6)
       val effect = F.parTraverseN_(3)(items)(_ => F.sync(count += 1))
-      effect.runOnEC(executionContext).map {
-        case Exit.Success(_) => assert(count == 6)
-        case _ => fail("Expected Success")
-      }
+      checkSuccess(effect, executionContext)(_ => assert(count == 6))
     }
 
     "support parTraverseN with failure" in {
@@ -341,84 +290,26 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
     }
 
     "parTraverse executes in parallel, not sequentially" in {
-      val promise = Promise[Unit]()
-
-      val result = F.parTraverse(
-        List(
-          blockingAwait(promise),
-          F.sync(promise.complete(Success(()))),
-        )
-      )(identity)
-
-      result
-        .runOnEC(parallelEc).map {
-          case Exit.Success(value) => assert(value.size == 2)
-          case _ => fail("Expected Success")
-        }(using parallelEc)
+      checkParallel(effects => F.parTraverse(effects)(identity))(value => assert(value.size == 2))
     }
 
     "parTraverse_ executes in parallel, not sequentially" in {
-      val promise = Promise[Unit]()
-
-      val result = F.parTraverse_(
-        List(
-          blockingAwait(promise),
-          F.sync(promise.complete(Success(()))),
-        )
-      )(F.map(_)(_ => ()))
-
-      result
-        .runOnEC(parallelEc).map {
-          case Exit.Success(_) => succeed
-          case _ => fail("Expected Success")
-        }(using parallelEc)
+      checkParallel(effects => F.parTraverse_(effects)(F.map(_)(_ => ())))(_ => succeed)
     }
 
     "parTraverseN executes in parallel, not sequentially" in {
-      val promise = Promise[Unit]()
-
-      val result = F.parTraverseN(2)(
-        List(
-          blockingAwait(promise),
-          F.sync(promise.complete(Success(()))),
-        )
-      )(identity)
-
-      result
-        .runOnEC(parallelEc).map {
-          case Exit.Success(value) => assert(value.size == 2)
-          case _ => fail("Expected Success")
-        }(using parallelEc)
+      checkParallel(effects => F.parTraverseN(2)(effects)(identity))(value => assert(value.size == 2))
     }
 
     "parTraverseN_ executes in parallel, not sequentially" in {
-      val promise = Promise[Unit]()
-
-      val result = F.parTraverseN_(2)(
-        List(
-          blockingAwait(promise),
-          F.sync(promise.complete(Success(()))),
-        )
-      )(F.map(_)(_ => ()))
-
-      result
-        .runOnEC(parallelEc).map {
-          case Exit.Success(_) => succeed
-          case _ => fail("Expected Success")
-        }(using parallelEc)
+      checkParallel(effects => F.parTraverseN_(2)(effects)(F.map(_)(_ => ())))(_ => succeed)
     }
 
     "multiple flatMaps after async should all execute (stack continuation bug regression test)" in {
       val promise = Promise[Int]()
 
       // Create an async operation followed by multiple flatMaps (left-associated to expose the bug)
-      val asyncOp = F.async[Throwable, Int] {
-        cb =>
-          promise.future.onComplete {
-            case scala.util.Success(v) => cb(Right(v))
-            case scala.util.Failure(e) => cb(Left(e))
-          }
-      }
+      val asyncOp = asyncPromise(promise)
       val effect = F.flatMap(F.flatMap(F.flatMap(asyncOp)(x => F.pure(x + 1)))(y => F.pure(y * 10)))(z => F.pure(z + 5))
 
       val future = effect.runOnEC(executionContext)
@@ -430,6 +321,35 @@ class MiniBIOAsyncTest extends AsyncWordSpec with MiniBIOAsyncTestPlatformSpecif
       }
     }
 
+  }
+
+  private def asyncPromise[A](promise: Promise[A]): MiniBIOAsync[Throwable, A] = F.async { callback =>
+    promise.future.onComplete {
+      case scala.util.Success(value) => callback(Right(value))
+      case scala.util.Failure(error) => callback(Left(error))
+    }
+  }
+
+  private def checkSuccess[E, A](effect: MiniBIOAsync[E, A], ec: ExecutionContext)(check: A => Assertion): Future[Assertion] = {
+    effect.runOnEC(ec).map {
+      case Exit.Success(value) => check(value)
+      case _ => fail("Expected Success")
+    }(using ec)
+  }
+
+  private def checkParallel[A](traverse: List[MiniBIOAsync[Throwable, Any]] => MiniBIOAsync[Throwable, A])(check: A => Assertion): Future[Assertion] = {
+    val promise = Promise[Unit]()
+    val effects = List(blockingAwait(promise), F.sync(promise.complete(Success(()))))
+    checkSuccess(traverse(effects), parallelEc)(check)
+  }
+
+  private def checkInterruption(effect: MiniBIOAsync[Throwable, Unit], started: Future[Unit]): Future[Assertion] = {
+    val (future, interrupt) = MiniBIOAsync.UnsafeRunMiniBIOAsync(using executionContext).unsafeRunAsyncAsInterruptibleFuture(effect)
+    for {
+      _ <- started
+      _ <- interrupt.interrupt.runOnEC(executionContext)
+      exit <- withTimeout(future, InterruptionTimeout)
+    } yield assertInterrupted(exit)
   }
 
   private def runWithExit[E, A](effect: MiniBIOAsync[E, A]): Future[Exit[E, A]] = {

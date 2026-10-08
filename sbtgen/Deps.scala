@@ -231,12 +231,13 @@ object Izumi {
     private val jvmPlatform = PlatformEnv(
       platform = Platform.Jvm,
       language = targetScala3,
-      settings = Seq.empty,
+      settings = Seq(SettingDef.RawSettingDef("""PlatformSourceSets.settings("jvm-native")""")),
     )
     private val jsPlatform = PlatformEnv(
       platform = Platform.Js,
       language = targetScala3,
       settings = portableCoverageSettings ++ Seq(
+        SettingDef.RawSettingDef("""PlatformSourceSets.settings("js-native")"""),
         "scalaJSLinkerConfig" in (SettingScope.Project, Platform.Js) := "{ scalaJSLinkerConfig.value.withBatchMode(true).withModuleKind(ModuleKind.CommonJSModule) }".raw,
       ),
     )
@@ -253,6 +254,7 @@ object Izumi {
       platform = Platform.Native,
       language = targetScala3,
       settings = portableCoverageSettings ++ Seq(
+        SettingDef.RawSettingDef("""PlatformSourceSets.settings("jvm-native", "js-native")"""),
         // The target test interface must match the Native plugin's host adapter.
         "libraryDependencySchemes" += """"org.scala-native" %% "test-interface_native0.5" % VersionScheme.Always""".raw,
       ),
@@ -582,6 +584,10 @@ object Izumi {
   )
 
   private val fundamentalsTestPlugins = Plugins(enabled = Seq(Plugin("_root_.izumi.distage.sbt.DistageTestkitPlugin")))
+
+  private val legacyTestkitSources = SettingDef.RawSettingDef(
+    """Seq(Test / unmanagedSourceDirectories += (LocalRootProject / baseDirectory).value / "distage" / "distage-testkit-runner" / "src" / "test" / "scala-legacy")"""
+  )
 
   private def fundamentalsTestSettings(targetName: String): Seq[SettingDef] = Seq(
     "skip" in SettingScope.Raw("publish") := true,
@@ -1021,10 +1027,11 @@ object Izumi {
       Artifact(
         name = Projects.distage.testkitRunner,
         libs = Seq(zio_core in Scope.Optional.all, cats_effect in Scope.Test.all),
-        depends = Seq(Projects.distage.testkitCore, Projects.distage.testRunner).map(_ in Scope.Compile.all) ++
+        depends = Seq(Projects.distage.testkitCore in Scope.Compile.all, Projects.distage.testRunner tin Scope.Compile.all) ++
           Seq(Projects.fundamentals.assertionsCats, Projects.fundamentals.assertionsBIO).map(_ in Scope.Test.all),
         platforms = Targets.cross,
         settings = assertionFixtureSettings ++ Seq(
+          legacyTestkitSources,
           "mainClass" in SettingScope.Test := "Some(\"izumi.distage.testkit.runner.di.DistageProviderFixtures\")".raw,
         ),
       ),
@@ -1036,6 +1043,7 @@ object Izumi {
           Seq(Projects.distage.framework).map(_ tin Scope.Compile.all),
         platforms = Targets.cross,
         settings = plainSuiteSettings("distage-testkit-runner-test") ++ Seq(
+          legacyTestkitSources,
           "skip" in SettingScope.Raw("publish") := true,
           "nativeConfig" in (SettingScope.Test, Platform.Native) := """nativeConfig.value.withEmbedResources(true)""".raw,
         ),

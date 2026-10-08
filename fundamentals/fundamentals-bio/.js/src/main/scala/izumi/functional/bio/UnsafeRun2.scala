@@ -1,12 +1,9 @@
 package izumi.functional.bio
 
-import izumi.functional.bio.Exit.ZIOExit
 import izumi.functional.bio.data.InterruptAction
-import zio._izumicompat_.__ZIOSucceedCompat.zioSucceed
-import zio.{Executor, Fiber, FiberId, Runtime, Supervisor, Trace, UIO, Unsafe, ZEnvironment, ZIO, ZLayer}
+import zio.{Executor, Supervisor, ZEnvironment, ZIO, ZLayer}
 //import zio.stacktracer.TracingImplicits.disableAutoTrace
 
-import java.util.concurrent.atomic.AtomicBoolean
 import scala.concurrent.Future
 
 /**
@@ -37,21 +34,7 @@ object UnsafeRun2 {
     otherRuntimeConfiguration: List[ZLayer[Any, Nothing, Any]] = List.empty,
     initialEnv: ZEnvironment[R] = ZEnvironment.empty,
   ): ZIORunner[R] = {
-    val runtimeConfiguration = {
-      val cpuLayer = customCpuPool.fold(ZLayer.empty)(ec => Runtime.setExecutor(ec))
-      val blockingLayer = customBlockingPool.fold(ZLayer.empty)(ec => Runtime.setBlockingExecutor(ec))
-      val handlerSupervisorLayer = handler match {
-        case FailureHandler.Default => ZLayer.empty
-        case handler @ FailureHandler.Custom(_) => Runtime.addSupervisor(ZIORunner.failureHandlerSupervisor(handler))
-      }
-      cpuLayer >+> blockingLayer >+> handlerSupervisorLayer >+>
-      otherRuntimeConfiguration.foldLeft(ZLayer.empty)(_ >+> _)
-    }
-
-    new ZIORunner(
-      runtimeConfiguration,
-      initialEnv,
-    )
+    new ZIORunner(ZIORunnerSupport.configuration(customCpuPool, customBlockingPool, handler, otherRuntimeConfiguration), initialEnv)
   }
 
   //  def createMonixBIO(s: Scheduler, opts: monix.bio.IO.Options): UnsafeRun2[monix.bio.IO] = new MonixBIORunner(s, opts)
@@ -65,66 +48,10 @@ object UnsafeRun2 {
   class ZIORunner[R](
     val runtimeConfiguration: ZLayer[Any, Nothing, Any], // zio.Runtime.* layers combined with `>+>`
     val initialEnv: ZEnvironment[R],
-  ) extends UnsafeRun2[ZIO[R, +_, +_]] {
-
-    lazy val runtime: Runtime[R] = Unsafe
-      .unsafe {
-        implicit unsafe =>
-          Runtime.unsafe.fromLayer(runtimeConfiguration)
-      }.mapEnvironment(_ => initialEnv)
-
-    override def unsafeRunAsync[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): Unit = {
-      val interrupted = new AtomicBoolean(true)
-      Unsafe.unsafe {
-        implicit unsafe =>
-          runtime.unsafe
-            .fork {
-              ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false)))
-            }
-            .unsafe
-            .addObserver(exitResult => callback(ZIOExit.toExit(exitResult)(interrupted.get())))
-      }
-    }
-
-    override def unsafeRunAsyncAsFuture[E, A](io: => ZIO[R, E, A]): Future[Exit[E, A]] = {
-      val p = scala.concurrent.Promise[Exit[E, A]]()
-      unsafeRunAsync(io)(p.success)
-      p.future
-    }
-
-    override def unsafeRunAsyncInterruptible[E, A](io: => ZIO[R, E, A])(callback: Exit[E, A] => Unit): InterruptAction[ZIO[R, +_, +_]] = {
-      val interrupted = new AtomicBoolean(true)
-
-      Unsafe.unsafe {
-        implicit u =>
-          val fiber = runtime.unsafe.fork(ZIOExit.ZIOSignalOnNoExternalInterruptFailure(io)(zioSucceed(interrupted.set(false))))
-          fiber.unsafe.addObserver(exit => callback(ZIOExit.toExit(exit)(interrupted.get())))
-          InterruptAction(fiber.interruptAs(FiberId.None).void)
-      }
-    }
-
-    override def unsafeRunAsyncAsInterruptibleFuture[E, A](io: => ZIO[R, E, A]): (Future[Exit[E, A]], InterruptAction[ZIO[R, +_, +_]]) = {
-      val p = scala.concurrent.Promise[Exit[E, A]]()
-      val canceler = unsafeRunAsyncInterruptible(io)(p.success)
-      (p.future, canceler)
-    }
-  }
+  ) extends ZIOAsyncRunner[R]
 
   object ZIORunner {
 
-    def failureHandlerSupervisor(handler: FailureHandler.Custom): Supervisor[Unit] = new Supervisor[Unit] {
-      // @formatter:off
-      override def value(implicit trace: Trace): UIO[Unit] = ZIO.unit
-      override def onStart[R, E, A](environment: ZEnvironment[R], effect: ZIO[R, E, A], parent: Option[Fiber.Runtime[Any, Any]], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = ()
-      // @formatter:on
-
-      override def onEnd[R, E, A](exit: zio.Exit[E, A], fiber: Fiber.Runtime[E, A])(implicit unsafe: Unsafe): Unit = {
-        exit match {
-          case zio.Exit.Success(_) => ()
-          case zio.Exit.Failure(cause) =>
-            handler.handler.apply(ZIOExit.toExit(cause)(outerInterruptionConfirmed = true))
-        }
-      }
-    }
+    def failureHandlerSupervisor(handler: FailureHandler.Custom): Supervisor[Unit] = ZIORunnerSupport.failureHandlerSupervisor(handler)
   }
 }

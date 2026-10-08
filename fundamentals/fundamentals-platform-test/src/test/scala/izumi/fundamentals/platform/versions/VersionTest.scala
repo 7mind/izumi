@@ -4,31 +4,26 @@ import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.testkit.AnyWordSpec
 
 class VersionTest extends AnyWordSpec {
+  private final case class ParseCase[A](name: String, input: String, expected: A)
+
+  private def checkParsing[A](parse: String => A)(cases: ParseCase[A]*): Unit = {
+    cases.foreach { testcase =>
+      testcase.name in { assert(parse(testcase.input) == testcase.expected) }
+    }
+  }
+
+  private def assertSorted[A: Ordering](versions: List[A], expectedOrder: List[Int]): Unit = {
+    assert(versions.sorted == expectedOrder.map(versions))
+  }
+
   "Version.parseSemver" should {
-    "parse basic semantic versions" in {
-      val result = Version.parseSemver("1.2.3")
-      assert(result.contains(Version.Semver(1, 2, 3, None, None)))
-    }
-
-    "parse semantic versions with pre-release" in {
-      val result = Version.parseSemver("1.0.0-alpha")
-      assert(result.contains(Version.Semver(1, 0, 0, Some("alpha"), None)))
-    }
-
-    "parse semantic versions with pre-release and build metadata" in {
-      val result = Version.parseSemver("1.0.0-alpha.1+20130313144700")
-      assert(result.contains(Version.Semver(1, 0, 0, Some("alpha.1"), Some("20130313144700"))))
-    }
-
-    "parse semantic versions with build metadata only" in {
-      val result = Version.parseSemver("1.0.0+20130313144700")
-      assert(result.contains(Version.Semver(1, 0, 0, None, Some("20130313144700"))))
-    }
-
-    "parse complex pre-release identifiers" in {
-      val result = Version.parseSemver("1.0.0-rc.1.2.3")
-      assert(result.contains(Version.Semver(1, 0, 0, Some("rc.1.2.3"), None)))
-    }
+    checkParsing(Version.parseSemver)(
+      ParseCase("parse basic semantic versions", "1.2.3", Some(Version.Semver(1, 2, 3, None, None))),
+      ParseCase("parse semantic versions with pre-release", "1.0.0-alpha", Some(Version.Semver(1, 0, 0, Some("alpha"), None))),
+      ParseCase("parse semantic versions with pre-release and build metadata", "1.0.0-alpha.1+20130313144700", Some(Version.Semver(1, 0, 0, Some("alpha.1"), Some("20130313144700")))),
+      ParseCase("parse semantic versions with build metadata only", "1.0.0+20130313144700", Some(Version.Semver(1, 0, 0, None, Some("20130313144700")))),
+      ParseCase("parse complex pre-release identifiers", "1.0.0-rc.1.2.3", Some(Version.Semver(1, 0, 0, Some("rc.1.2.3"), None))),
+    )
 
     "return None for invalid formats" in {
       assert(Version.parseSemver("1.2").isEmpty)
@@ -46,40 +41,15 @@ class VersionTest extends AnyWordSpec {
   }
 
   "Version.parseCanonical" should {
-    "parse simple version numbers" in {
-      val result = Version.parseCanonical("1.2.3")
-      assert(result.contains(Version.Canonical(NEList(1, 2, 3), List.empty)))
-    }
-
-    "parse versions with qualifiers" in {
-      val result = Version.parseCanonical("1.2.3-SNAPSHOT")
-      assert(result.contains(Version.Canonical(NEList(1, 2, 3), List("SNAPSHOT"))))
-    }
-
-    "parse versions with multiple qualifiers" in {
-      val result = Version.parseCanonical("1.2.3-alpha-SNAPSHOT-TEST")
-      assert(result.contains(Version.Canonical(NEList(1, 2, 3), List("alpha", "SNAPSHOT", "TEST"))))
-    }
-
-    "parse single component versions" in {
-      val result = Version.parseCanonical("42")
-      assert(result.contains(Version.Canonical(NEList(42), List.empty)))
-    }
-
-    "parse two component versions" in {
-      val result = Version.parseCanonical("1.0")
-      assert(result.contains(Version.Canonical(NEList(1, 0), List.empty)))
-    }
-
-    "parse four or more component versions" in {
-      val result = Version.parseCanonical("1.2.3.4")
-      assert(result.contains(Version.Canonical(NEList(1, 2, 3, 4), List.empty)))
-    }
-
-    "parse versions with qualifiers and multiple components" in {
-      val result = Version.parseCanonical("1.0-beta-1")
-      assert(result.contains(Version.Canonical(NEList(1, 0), List("beta", "1"))))
-    }
+    checkParsing(Version.parseCanonical)(
+      ParseCase("parse simple version numbers", "1.2.3", Some(Version.Canonical(NEList(1, 2, 3), List.empty))),
+      ParseCase("parse versions with qualifiers", "1.2.3-SNAPSHOT", Some(Version.Canonical(NEList(1, 2, 3), List("SNAPSHOT")))),
+      ParseCase("parse versions with multiple qualifiers", "1.2.3-alpha-SNAPSHOT-TEST", Some(Version.Canonical(NEList(1, 2, 3), List("alpha", "SNAPSHOT", "TEST")))),
+      ParseCase("parse single component versions", "42", Some(Version.Canonical(NEList(42), List.empty))),
+      ParseCase("parse two component versions", "1.0", Some(Version.Canonical(NEList(1, 0), List.empty))),
+      ParseCase("parse four or more component versions", "1.2.3.4", Some(Version.Canonical(NEList(1, 2, 3, 4), List.empty))),
+      ParseCase("parse versions with qualifiers and multiple components", "1.0-beta-1", Some(Version.Canonical(NEList(1, 0), List("beta", "1")))),
+    )
 
     "return None for invalid formats" in {
       assert(Version.parseCanonical("").isEmpty)
@@ -90,35 +60,14 @@ class VersionTest extends AnyWordSpec {
   }
 
   "Version.parse" should {
-    "parse as Semver when possible" in {
-      val result = Version.parse("1.2.3")
-      assert(result == Version.Semver(1, 2, 3, None, None))
-    }
-
-    "parse as Semver with pre-release and build" in {
-      val result = Version.parse("1.0.0-alpha+build")
-      assert(result == Version.Semver(1, 0, 0, Some("alpha"), Some("build")))
-    }
-
-    "fall back to Canonical for non-semver versions" in {
-      val result = Version.parse("1.2")
-      assert(result == Version.Canonical(NEList(1, 2), List.empty))
-    }
-
-    "fall back to Canonical for four component versions" in {
-      val result = Version.parse("1.2.3.4")
-      assert(result == Version.Canonical(NEList(1, 2, 3, 4), List.empty))
-    }
-
-    "return Unknown for invalid versions" in {
-      val result = Version.parse("not-a-version")
-      assert(result == Version.Unknown("not-a-version"))
-    }
-
-    "return Unknown for empty string" in {
-      val result = Version.parse("")
-      assert(result == Version.Unknown(""))
-    }
+    checkParsing(Version.parse)(
+      ParseCase("parse as Semver when possible", "1.2.3", Version.Semver(1, 2, 3, None, None)),
+      ParseCase("parse as Semver with pre-release and build", "1.0.0-alpha+build", Version.Semver(1, 0, 0, Some("alpha"), Some("build"))),
+      ParseCase("fall back to Canonical for non-semver versions", "1.2", Version.Canonical(NEList(1, 2), List.empty)),
+      ParseCase("fall back to Canonical for four component versions", "1.2.3.4", Version.Canonical(NEList(1, 2, 3, 4), List.empty)),
+      ParseCase("return Unknown for invalid versions", "not-a-version", Version.Unknown("not-a-version")),
+      ParseCase("return Unknown for empty string", "", Version.Unknown("")),
+    )
 
     "handle various version formats" in {
       assert(Version.parse("v1.2.3") == Version.Unknown("v1.2.3"))
@@ -182,15 +131,7 @@ class VersionTest extends AnyWordSpec {
         Version.Canonical(NEList(1, 1, 0), List.empty),
         Version.Canonical(NEList(1, 0, 1), List.empty),
       )
-      val sorted = versions.sorted
-      assert(
-        sorted == List(
-          Version.Canonical(NEList(1, 0, 0), List.empty),
-          Version.Canonical(NEList(1, 0, 1), List.empty),
-          Version.Canonical(NEList(1, 1, 0), List.empty),
-          Version.Canonical(NEList(2, 0, 0), List.empty),
-        )
-      )
+      assertSorted(versions, List(1, 3, 2, 0))
     }
 
     "consider versions without qualifiers as newer" in {
@@ -205,14 +146,7 @@ class VersionTest extends AnyWordSpec {
         Version.Canonical(NEList(1, 0, 0), List("alpha")),
         Version.Canonical(NEList(1, 0, 0), List("rc")),
       )
-      val sorted = versions.sorted
-      assert(
-        sorted == List(
-          Version.Canonical(NEList(1, 0, 0), List("alpha")),
-          Version.Canonical(NEList(1, 0, 0), List("beta")),
-          Version.Canonical(NEList(1, 0, 0), List("rc")),
-        )
-      )
+      assertSorted(versions, List(1, 0, 2))
     }
 
     "handle different component lengths" in {
@@ -230,15 +164,7 @@ class VersionTest extends AnyWordSpec {
         Version.Semver(1, 1, 0, None, None),
         Version.Semver(1, 0, 1, None, None),
       )
-      val sorted = versions.sorted
-      assert(
-        sorted == List(
-          Version.Semver(1, 0, 0, None, None),
-          Version.Semver(1, 0, 1, None, None),
-          Version.Semver(1, 1, 0, None, None),
-          Version.Semver(2, 0, 0, None, None),
-        )
-      )
+      assertSorted(versions, List(1, 3, 2, 0))
     }
 
     "consider pre-release versions as lower precedence" in {
@@ -254,15 +180,7 @@ class VersionTest extends AnyWordSpec {
         Version.Semver(1, 0, 0, Some("beta"), None),
         Version.Semver(1, 0, 0, Some("rc.1"), None),
       )
-      val sorted = versions.sorted
-      assert(
-        sorted == List(
-          Version.Semver(1, 0, 0, Some("alpha"), None),
-          Version.Semver(1, 0, 0, Some("alpha.1"), None),
-          Version.Semver(1, 0, 0, Some("beta"), None),
-          Version.Semver(1, 0, 0, Some("rc.1"), None),
-        )
-      )
+      assertSorted(versions, List(1, 0, 2, 3))
     }
 
     "handle numeric vs alphanumeric pre-release identifiers" in {
@@ -290,15 +208,7 @@ class VersionTest extends AnyWordSpec {
         Version.Semver(1, 0, 0, None, Some("build.3")),
         Version.Semver(1, 0, 0, Some("rc"), Some("build.4")),
       )
-      val sorted = versions.sorted
-      assert(
-        sorted == List(
-          Version.Semver(1, 0, 0, Some("alpha"), Some("build.2")),
-          Version.Semver(1, 0, 0, Some("beta"), Some("build.1")),
-          Version.Semver(1, 0, 0, Some("rc"), Some("build.4")),
-          Version.Semver(1, 0, 0, None, Some("build.3")),
-        )
-      )
+      assertSorted(versions, List(1, 0, 3, 2))
     }
 
     "ignore build metadata when comparing versions with same pre-release" in {
@@ -326,15 +236,7 @@ class VersionTest extends AnyWordSpec {
         Version.Unknown("not-a-version"),
         Version.Unknown("1.0-custom"),
       )
-      val sorted = versions.sorted
-      assert(
-        sorted == List(
-          Version.Unknown("1.0-custom"),
-          Version.Unknown("not-a-version"),
-          Version.Unknown("v1.0"),
-          Version.Unknown("v2.0"),
-        )
-      )
+      assertSorted(versions, List(3, 2, 1, 0))
     }
   }
 
@@ -419,18 +321,7 @@ class VersionTest extends AnyWordSpec {
         Version.Unknown("1.0.0"),
         Version.Canonical(NEList(1, 0, 0), List.empty),
       )
-
-      val sorted = versions.sorted
-      assert(
-        sorted == List(
-          Version.Unknown("1.0.0"),
-          Version.Semver(1, 0, 0, Some("alpha"), None),
-          Version.Canonical(NEList(1, 0, 0), List("beta")),
-          Version.Unknown("1.0.0-custom"),
-          Version.Semver(1, 0, 0, Some("rc"), None),
-          Version.Canonical(NEList(1, 0, 0), List.empty),
-        )
-      )
+      assertSorted(versions, List(4, 3, 2, 0, 1, 5))
     }
 
     "maintain reflexivity, symmetry, and transitivity" in {
