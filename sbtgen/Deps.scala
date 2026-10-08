@@ -1329,6 +1329,7 @@ object Izumi {
     rootPlugins = Projects.root.plugins,
     globalPlugins = Projects.plugins,
     appendPlugins = Defaults.SbtGenPlugins ++ Seq(
+      SbtPlugin("org.portable-scala", "sbt-crossproject", settings.crossProjectVersion),
       SbtPlugin("com.github.sbt", "sbt-pgp", PV.sbt_pgp),
       SbtPlugin("org.scoverage", "sbt-scoverage", PV.sbt_scoverage),
       SbtPlugin("com.github.sbt", "sbt-unidoc", PV.sbt_unidoc),

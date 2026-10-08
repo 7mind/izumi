@@ -14,6 +14,8 @@ addSbtPlugin("org.scala-native"   % "sbt-scala-native"              % "0.5.12")
 
 addSbtPlugin("io.7mind.izumi.sbt" % "sbt-izumi" % "0.0.122")
 
+addSbtPlugin("org.portable-scala" % "sbt-crossproject" % "1.4.0")
+
 addSbtPlugin("com.github.sbt" % "sbt-pgp" % PV.sbt_pgp)
 
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % PV.sbt_scoverage)
