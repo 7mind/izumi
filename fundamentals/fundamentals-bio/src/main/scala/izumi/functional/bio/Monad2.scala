@@ -51,13 +51,7 @@ trait Monad2[F[+_, +_]] extends Applicative2[F] {
   }
 
   def find[E, A](l: Iterable[A])(f: A => F[E, Boolean]): F[E, Option[A]] = {
-    def go(l: List[A]): F[E, Option[A]] = {
-      l match {
-        case head :: tail => flatMap(f(head))(if (_) pure(Some(head)) else go(tail))
-        case Nil => pure(None)
-      }
-    }
-    go(l.toList)
+    collectFirst(l)(a => map(f(a))(if (_) Some(a) else None))
   }
 
   def collectFirst[E, A, B](l: Iterable[A])(f: A => F[E, Option[B]]): F[E, Option[B]] = {

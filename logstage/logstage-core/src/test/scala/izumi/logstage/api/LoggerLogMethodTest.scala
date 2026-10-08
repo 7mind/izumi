@@ -343,6 +343,31 @@ class LoggerLogMethodTest extends AnyWordSpec {
     )
   }
 
+  private final class InvocationProbe(sink: TestSink, requestedLevel: Log.Level) {
+    private var parameters = 0
+    private var arguments = 0
+    private var receivers = 0
+    val logger: IzLogger = if (requestedLevel == Log.Level.Trace) IzLogger(threshold = Log.Level.Info, sink = sink) else IzLogger(sink = sink)
+    lazy val loggerIO: LogIO2[zio.IO] = LogIO2.fromLogger(logger)
+    def level: Log.Level = { parameters += 1; requestedLevel }
+    def flag: Boolean = { parameters += 1; false }
+    def argument: Int = { arguments += 1; arguments }
+    def receiver: TestClass = { receivers += 1; tc }
+    def verify(expectedArguments: Int, expectedReceivers: Int): Unit = {
+      assert(parameters == 3)
+      assert(arguments == expectedArguments)
+      assert(receivers == expectedReceivers)
+    }
+  }
+
+  private def checkInvocation[A](expectedArguments: Int, expectedReceivers: Int, level: Log.Level)(body: InvocationProbe => A): TestSink => A = {
+    sink =>
+      val probe = new InvocationProbe(sink, level)
+      val result = body(probe)
+      probe.verify(expectedArguments, expectedReceivers)
+      result
+  }
+
   private def expectedMessage(parts: String*)(args: LogArg*): Log.Message = Log.Message(StringContext(parts*), args)
 
   private def checkLog[A](test: TestSink => A)(expected: => Log.Message): Unit = {
@@ -461,67 +486,27 @@ class LoggerLogMethodTest extends AnyWordSpec {
     }
 
     "log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging" in {
-      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging` {
-        testSink =>
-          val logger = IzLogger(sink = testSink)
-          var macroParamCounter = 0
-          var counter = 0
-          logger.logMethod(
-            { macroParamCounter += 1; Log.Level.Info },
-            { macroParamCounter += 1; false },
-            { macroParamCounter += 1; false },
-          )(tc.byNameTestFuncExec10 { counter += 1; counter })
-          assert(macroParamCounter == 3)
-          assert(counter == 11)
-      }
+      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 0, Log.Level.Info) { probe =>
+        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+      })
     }
 
     "log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging" in {
-      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging` {
-        testSink =>
-          val logger = IzLogger(sink = testSink)
-          var macroParamCounter = 0
-          var counter = 0
-          logger.logMethod(
-            { macroParamCounter += 1; Log.Level.Info },
-            { macroParamCounter += 1; false },
-            { macroParamCounter += 1; false },
-          )(tc.add { counter += 1; counter })
-          assert(macroParamCounter == 3)
-          assert(counter == 2)
-      }
+      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(checkInvocation(2, 0, Log.Level.Info) { probe =>
+        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+      })
     }
 
     "log method with by-name parameter has expected semantics - by-name is executed only by its caller" in {
-      `logging doesn't happen when under level threshold` {
-        testSink =>
-          val logger = IzLogger(threshold = Log.Level.Info, sink = testSink)
-          var macroParamCounter = 0
-          var counter = 0
-          logger.logMethod(
-            { macroParamCounter += 1; Log.Level.Trace },
-            { macroParamCounter += 1; false },
-            { macroParamCounter += 1; false },
-          )(tc.byNameTestFuncExec10 { counter += 1; counter })
-          assert(macroParamCounter == 3)
-          assert(counter == 10)
-      }
+      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) { probe =>
+        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+      })
     }
 
     "log method with side-effecting parameter has expected semantics - the side-effecting expression evaluates only once if logging is disabled" in {
-      `logging doesn't happen when under level threshold` {
-        testSink =>
-          val logger = IzLogger(threshold = Log.Level.Info, sink = testSink)
-          var macroParamCounter = 0
-          var counter = 0
-          logger.logMethod(
-            { macroParamCounter += 1; Log.Level.Trace },
-            { macroParamCounter += 1; false },
-            { macroParamCounter += 1; false },
-          )(tc.add { counter += 1; counter })
-          assert(macroParamCounter == 3)
-          assert(counter == 1)
-      }
+      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) { probe =>
+        probe.logger.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+      })
     }
 
     "log method with side-effecting implicit parameter, with printImplicits=true, has surprising semantics - side-effecting implicit def producing implicit parameter is evaluated twice for logging" in {
@@ -667,77 +652,35 @@ class LoggerLogMethodTest extends AnyWordSpec {
     }
 
     "logIO log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging" in {
-      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(sink = testSink))
-          var macroParamCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethod(
-              { macroParamCounter += 1; Log.Level.Info },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            )(tc.byNameTestFuncExec10 { counter += 1; counter })
-          }
-          assert(macroParamCounter == 3)
-          assert(counter == 11)
-      }
+      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 0, Log.Level.Info) { probe =>
+        runZIO {
+          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+        }
+      })
     }
 
     "logIO log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging" in {
-      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(sink = testSink))
-          var macroParamCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethod(
-              { macroParamCounter += 1; Log.Level.Info },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            )(tc.add {
-              counter += 1; counter
-            })
-          }
-          assert(macroParamCounter == 3)
-          assert(counter == 2)
-      }
+      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(checkInvocation(2, 0, Log.Level.Info) { probe =>
+        runZIO {
+          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+        }
+      })
     }
 
     "logIO log method with by-name parameter has expected semantics - by-name is executed only by its caller" in {
-      `logging doesn't happen when under level threshold` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(threshold = Log.Level.Info, sink = testSink))
-          var macroParamCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethod(
-              { macroParamCounter += 1; Log.Level.Trace },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            )(tc.byNameTestFuncExec10 { counter += 1; counter })
-          }
-          assert(macroParamCounter == 3)
-          assert(counter == 10)
-      }
+      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) { probe =>
+        runZIO {
+          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10(probe.argument))
+        }
+      })
     }
 
     "logIO log method with side-effecting parameter has expected semantics - the side-effecting expression evaluates only once if logging is disabled" in {
-      `logging doesn't happen when under level threshold` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(threshold = Log.Level.Info, sink = testSink))
-          var macroParamCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethod(
-              { macroParamCounter += 1; Log.Level.Trace },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            )(tc.add { counter += 1; counter })
-          }
-          assert(macroParamCounter == 3)
-          assert(counter == 1)
-      }
+      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) { probe =>
+        runZIO {
+          probe.loggerIO.logMethod(probe.level, probe.flag, probe.flag)(tc.add(probe.argument))
+        }
+      })
     }
 
     "logIO log method with side-effecting implicit parameter, with printImplicits=true, has surprising semantics - side-effecting implicit def producing implicit parameter is evaluated twice for logging" in {
@@ -798,79 +741,37 @@ class LoggerLogMethodTest extends AnyWordSpec {
     }
 
     "logIO log methodF with by-name parameter has surprising semantics - by-name is fully executed one more time for logging" in {
-      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(sink = testSink))
-          var macroParamCounter = 0
-          var effEvalCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethodF(
-              { macroParamCounter += 1; Log.Level.Info },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            ) {
-              ({ effEvalCounter += 1; tc }).byNameTestFuncExec10F { counter += 1; counter }
-            }
+      `log method with by-name parameter has surprising semantics - by-name is fully executed one more time for logging`(checkInvocation(11, 1, Log.Level.Info) { probe =>
+        runZIO {
+          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag) {
+            probe.receiver.byNameTestFuncExec10F(probe.argument)
           }
-          assert(macroParamCounter == 3)
-          assert(effEvalCounter == 1)
-          assert(counter == 11)
-      }(using methodName = "byNameTestFuncExec10F")
+        }
+      })(using methodName = "byNameTestFuncExec10F")
     }
 
     "logIO log methodF with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging" in {
-      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(sink = testSink))
-          var macroParamCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethodF(
-              { macroParamCounter += 1; Log.Level.Info },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            )(tc.addF { counter += 1; counter })
-          }
-          assert(macroParamCounter == 3)
-          assert(counter == 2)
-      }(using methodName = "addF")
+      `log method with side-effecting parameter has surprising semantics - the entire side-effecting expression producing the parameter is evaluated twice for logging`(checkInvocation(2, 0, Log.Level.Info) { probe =>
+        runZIO {
+          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.addF(probe.argument))
+        }
+      })(using methodName = "addF")
     }
 
     "logIO log methodF with by-name parameter has expected semantics - by-name is executed only by its caller" in {
-      `logging doesn't happen when under level threshold` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(threshold = Log.Level.Info, sink = testSink))
-          var macroParamCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethodF(
-              { macroParamCounter += 1; Log.Level.Trace },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            )(tc.byNameTestFuncExec10F { counter += 1; counter })
-          }
-          assert(macroParamCounter == 3)
-          assert(counter == 10)
-      }
+      `logging doesn't happen when under level threshold`(checkInvocation(10, 0, Log.Level.Trace) { probe =>
+        runZIO {
+          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.byNameTestFuncExec10F(probe.argument))
+        }
+      })
     }
 
     "logIO log methodF with side-effecting parameter has expected semantics - the side-effecting expression evaluates only once if logging is disabled" in {
-      `logging doesn't happen when under level threshold` {
-        testSink =>
-          val logger: LogIO2[zio.IO] = LogIO2.fromLogger(IzLogger(threshold = Log.Level.Info, sink = testSink))
-          var macroParamCounter = 0
-          var counter = 0
-          runZIO {
-            logger.logMethodF(
-              { macroParamCounter += 1; Log.Level.Trace },
-              { macroParamCounter += 1; false },
-              { macroParamCounter += 1; false },
-            )(tc.addF { counter += 1; counter })
-          }
-          assert(macroParamCounter == 3)
-          assert(counter == 1)
-      }
+      `logging doesn't happen when under level threshold`(checkInvocation(1, 0, Log.Level.Trace) { probe =>
+        runZIO {
+          probe.loggerIO.logMethodF(probe.level, probe.flag, probe.flag)(tc.addF(probe.argument))
+        }
+      })
     }
 
     "logIO log methodF with side-effecting implicit parameter, with printImplicits=true, has surprising semantics - side-effecting implicit def producing implicit parameter is evaluated twice for logging" in {

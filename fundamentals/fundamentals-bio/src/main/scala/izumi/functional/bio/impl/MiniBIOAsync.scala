@@ -3,7 +3,7 @@ package izumi.functional.bio.impl
 import izumi.functional.bio.Exit.Trace
 import izumi.functional.bio.data.{InterruptAction, Morphism2, RestoreInterruption2}
 import izumi.functional.bio.impl.MiniBIOAsync.Fail
-import izumi.functional.bio.{BlockingIO2, Exit, UnsafeRun2, WeakAsync2, WeakTemporal2}
+import izumi.functional.bio.{Exit, UnsafeRun2, WeakAsync2, WeakTemporal2}
 import izumi.fundamentals.collections.nonempty.NEList
 import izumi.fundamentals.platform.language.Quirks.Discarder
 
@@ -365,36 +365,15 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
     succ: A => MiniBIOAsync[E1, B],
   ) extends MiniBIOAsync[E1, B]
 
-  implicit object WeakAsyncForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with BlockingIO2[MiniBIOAsync] with WeakTemporal2[MiniBIOAsync] {
+  implicit object WeakAsyncForMiniBIOAsync extends WeakAsync2[MiniBIOAsync] with MiniBIOInstance[MiniBIOAsync] with WeakTemporal2[MiniBIOAsync] {
     override def pure[A](a: A): MiniBIOAsync[Nothing, A] = Sync(() => Exit.Success(a))
     override def flatMap[E, A, B](r: MiniBIOAsync[E, A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, B] = FlatMap(r, f)
     override def fail[E](v: => E): MiniBIOAsync[E, Nothing] = Fail(() => Exit.Error.forTypedError(v))
     override def terminate(v: => Throwable): MiniBIOAsync[Nothing, Nothing] = Fail.terminate(v)
     override def sendInterruptToSelf: MiniBIOAsync[Nothing, Unit] = SelfInterrupt
     override def fromSandboxExit[E, A](effect: => Exit.Uninterrupted[E, A]): MiniBIOAsync[E, A] = Sync(() => effect)
-
-    override def syncThrowable[A](effect: => A): MiniBIOAsync[Throwable, A] = Sync {
-      () =>
-        try {
-          Exit.Success(effect)
-        } catch { case e: Throwable => Exit.Error.forThrowable(e) }
-    }
-    override def sync[A](effect: => A): MiniBIOAsync[Nothing, A] = {
-      Sync(() => Exit.Success(effect))
-    }
-
-    override def redeem[E, A, E2, B](r: MiniBIOAsync[E, A])(err: E => MiniBIOAsync[E2, B], succ: A => MiniBIOAsync[E2, B]): MiniBIOAsync[E2, B] = {
-      Redeem[E, A, E2, B](
-        r,
-        {
-          case e: Exit.Termination => Fail.halt(e)
-          case Exit.Error(e, _) => err(e)
-        },
-        succ,
-      )
-    }
-
-    override def catchAll[E, A, E2](r: MiniBIOAsync[E, A])(f: E => MiniBIOAsync[E2, A]): MiniBIOAsync[E2, A] = redeem(r)(f, pure)
+    override protected def halt[E](failure: Exit.FailureUninterrupted[E]): MiniBIOAsync[E, Nothing] = Fail.halt(failure)
+    override protected def redeemExit[E, A, E2, B](r: MiniBIOAsync[E, A])(err: Exit.FailureUninterrupted[E] => MiniBIOAsync[E2, B], succ: A => MiniBIOAsync[E2, B]): MiniBIOAsync[E2, B] = Redeem(r, err, succ)
 
     override def bracketExcept[E, A, B](
       acquire: RestoreInterruption2[MiniBIOAsync] => MiniBIOAsync[E, A]
@@ -412,24 +391,7 @@ object MiniBIOAsync extends MiniBIOAsyncPlatformSpecific {
       )
     }
 
-    override def sandbox[E, A](r: MiniBIOAsync[E, A]): MiniBIOAsync[Exit.FailureUninterrupted[E], A] = {
-      Redeem[E, A, Exit.FailureUninterrupted[E], A](r, e => fail(e), pure)
-    }
-
-    override def traverse[E, A, B](l: Iterable[A])(f: A => MiniBIOAsync[E, B]): MiniBIOAsync[E, List[B]] = {
-      val x = l.foldLeft(pure(Nil): MiniBIOAsync[E, List[B]]) {
-        (acc, a) =>
-          flatMap(acc)(list => map(f(a))(_ :: list))
-      }
-      map(x)(_.reverse)
-    }
-
     override def uninterruptibleExcept[E, A](f: RestoreInterruption2[MiniBIOAsync] => MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = Mask(f)
-
-    // BlockingIO2
-    override def shiftBlocking[E, A](f: MiniBIOAsync[E, A]): MiniBIOAsync[E, A] = f
-    override def syncInterruptibleBlocking[A](f: => A): MiniBIOAsync[Throwable, A] = syncBlocking(f)
-    override def syncBlocking[A](f: => A): MiniBIOAsync[Throwable, A] = syncThrowable(scala.concurrent.blocking(f))
 
     // WeakAsync2
     override def async[E, A](register: (Either[E, A] => Unit) => Unit): MiniBIOAsync[E, A] = {
