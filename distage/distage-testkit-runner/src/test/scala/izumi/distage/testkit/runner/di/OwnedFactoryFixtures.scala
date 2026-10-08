@@ -1,16 +1,15 @@
 package izumi.distage.testkit.runner.di
 
-import distage.{ModuleDef, TagK}
+import distage.TagK
 import izumi.distage.testkit.runner.TestCancelled
 import izumi.distage.testkit.runner.api.TestFinalizationReporter
-import izumi.distage.testkit.runner.impl.services.{TestConfigLoader, TestkitLogging}
+import izumi.distage.testkit.runner.impl.services.TestConfigLoader
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.lifecycle.Lifecycle
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner}
 import izumi.fundamentals.platform.functional.Identity
 
-import java.util.concurrent.atomic.AtomicInteger
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 private[di] object OwnedFactoryFixtures {
@@ -33,32 +32,10 @@ private[di] object OwnedFactoryFixtures {
     verify: (String, Boolean) => Unit,
   )(implicit F: QuasiIO[F], FA: QuasiAsync[F]): Future[Unit] = {
     implicit val ec: ExecutionContext = context
-    val outerAcquired = new AtomicInteger(0)
-    val outerReleased = new AtomicInteger(0)
-    val graphAcquired = new AtomicInteger(0)
-    val graphReleased = new AtomicInteger(0)
-    val graphFailure = new OriginalFailure(label + " original runner graph release")
-    val outerFailure = new OriginalFailure(label + " original outer allocation release")
-    val releasing = Promise[Unit]()
-    val release = Promise[Unit]()
+    val fixture = new OwnedRuntimeFixture(new OriginalFailure(label + " original runner graph release"), new OriginalFailure(label + " original outer allocation release"), fails)
+    import fixture.*
     val recorded = new RecordingFinalization
-    val lifecycle = Lifecycle.makeSimple[Unit] { val _ = outerAcquired.incrementAndGet(); () } { _ =>
-      val _ = outerReleased.incrementAndGet()
-      if (fails) throw outerFailure
-    }.flatMap(_ => delegate)
-    val overrides = new ModuleDef {
-      make[TestkitLogging].fromResource { () => Lifecycle.make[F, TestkitLogging](F.maybeSuspend {
-        val _ = graphAcquired.incrementAndGet()
-        new TestkitLogging { override def enableDebugOutput: Boolean = false }
-      }) { _ =>
-        F.flatMap(F.maybeSuspend { val _ = releasing.success(()) })(_ =>
-          F.flatMap(FA.fromFuture(release.future))(_ => F.flatMap(F.maybeSuspend { val _ = graphReleased.incrementAndGet() })(_ =>
-            if (fails) F.fail[Unit](graphFailure) else F.unit
-          ))
-        )
-      } }
-    }
-    val factory = TestRunnerRuntime.asyncRuntimeFor[F](lifecycle, List(overrides))
+    val factory = runtime(delegate)
     val preparation = factory.prepare(new PreparedRuntimeFixtures.EmptyReporter, new TestFinalizationReporter.Rethrowing, recorded,
       _.isInstanceOf[TestCancelled], Nil, new TestConfigLoader.TestConfigLoaderImpl, DistageRunnerOptions(false, false))
     preparation.flatMap { prepared =>

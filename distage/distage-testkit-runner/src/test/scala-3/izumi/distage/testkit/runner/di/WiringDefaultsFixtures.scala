@@ -1,10 +1,10 @@
 package izumi.distage.testkit.runner.di
 
-import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer}
+import izumi.distage.framework.PlanCheckConfig
 import izumi.distage.modules.DefaultModule
 import izumi.distage.testkit.runner.TestSuite
 import izumi.distage.testkit.model.TestConfig
-import izumi.distage.testkit.runner.spec.{SpecWiring, TestAssertions, WiringAssertions}
+import izumi.distage.testkit.runner.spec.SpecWiring
 import izumi.fundamentals.platform.functional.Identity
 
 private[di] object WiringDefaultsFixtures extends WiringDefaultsControls {
@@ -18,10 +18,4 @@ private[di] object WiringDefaultsFixtures extends WiringDefaultsControls {
       override protected def config: TestConfig = WiringFrontendFixtures.configuration
     }
 
-  def assertion(app: WiringFrontendFixtures.App): Unit = {
-    val cfg = PlanCheckConfig.empty
-    val plan = PlanCheckMaterializer[app.type, cfg.type](true, Seq.empty, app, "*", "", "*", Some(false), Some(false), Some(false))
-    val assertions = new TestAssertions with WiringAssertions {}
-    assertions.assertWiringCompileTime(app, cfg)(plan)
-  }
 }

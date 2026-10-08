@@ -34,16 +34,10 @@ object ApplicationLauncherFixtures {
       channel.sink.close()
       val source = channel.source()
       val bodies = new AtomicInteger(0)
-      var messages = Vector.empty[ProtocolMessage]
-      val output = new ProtocolOutput {
-        override def accept(message: ProtocolMessage): Unit = synchronized {
-          require(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "Launcher output must round-trip")
-          messages :+= message
-        }
-      }
+      val output = new FixtureSupport.RecordingOutput
       val factory: () => TestSuite = () => new AnyWordSpec { "launcher body" in { val _ = bodies.incrementAndGet() } }
       ApplicationLauncher.run(identity, Vector(factory), context, source, output).map { result =>
-        val snapshot = output.synchronized(messages)
+        val snapshot = output.messages
         verify(result.successful == test.successful && bodies.get() == (if (test.executed) 1 else 0), label + " " + test.name + " has the expected result and body count")
         verify(result.outcome.exists(_.cancelled) == test.cancelled && result.outcome.isDefined == (test.executed || test.cancelled), label + " " + test.name + " retains only an actual execution outcome")
         verify(snapshot.collect { case ProtocolMessage.Completed(outcome) => outcome } == result.outcome.toVector, label + " " + test.name + " agrees with terminal output")
@@ -68,31 +62,22 @@ object ApplicationLauncherFixtures {
     val failure = RunnerFailure.message(FailurePhase.Planning, "Controlled failed launcher plan")
     val registrations = new AtomicInteger(0)
     val executions = new AtomicInteger(0)
-    val suite = new TestSuite {
-      override def register(registration: RegistrationContext): RegisteredSuite = {
-        val _ = registrations.incrementAndGet()
-        val descriptor = SuiteDescriptor(SuiteId("FailedLauncherPlan"), "FailedLauncherPlan")
-        val test = TestDescriptor(TestId(registration.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-        val provider = new FixtureSupport.Provider {
-          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new FixtureSupport.Plan(selected) {
-            override val inspection: PlanInspection = PlanInspection(Vector.empty, Vector.empty, Vector(PlanFailure(tests.map(_.id), failure)))
-            override def execute(context: RunExecutionContext): Future[ProviderOutcome] = { val _ = (context, executions.incrementAndGet()); throw new IllegalStateException("Failed plan inspection must not execute") }
-          })
-        }
-        RegisteredSuite(descriptor, Vector(test), provider)
+    val suite = FixtureSupport.suite("FailedLauncherPlan", Vector("body")) { _ =>
+      val _ = registrations.incrementAndGet()
+      new FixtureSupport.Provider {
+        override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new FixtureSupport.Plan(selected) {
+          override val inspection: PlanInspection = PlanInspection(Vector.empty, Vector.empty, Vector(PlanFailure(tests.map(_.id), failure)))
+          override def execute(context: RunExecutionContext): Future[ProviderOutcome] = { val _ = (context, executions.incrementAndGet()); throw new IllegalStateException("Failed plan inspection must not execute") }
+        })
       }
     }
     val channel = make()
     new FramedProtocolOutput(channel.sink).accept(ProtocolMessage.Request(RequestOperation.Plan, run, request))
     channel.sink.close()
     val source = channel.source()
-    var messages = Vector.empty[ProtocolMessage]
-    val output = new ProtocolOutput { override def accept(message: ProtocolMessage): Unit = synchronized {
-      require(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "Failed plan must round-trip")
-      messages :+= message
-    } }
+    val output = new FixtureSupport.RecordingOutput
     ApplicationLauncher.run(identity, Vector(() => suite), context, source, output).map { result =>
-      val snapshot = output.synchronized(messages)
+      val snapshot = output.messages
       val plans = snapshot.collect { case ProtocolMessage.Planned(`run`, value) => value }
       verify(!result.successful && result.outcome.isEmpty, label + " failed plan inspection is unsuccessful without an execution outcome")
       verify(plans.size == 1 && plans.head.inspection.failures.map(_.failure) == Vector(failure), label + " failed plan inspection preserves its planning diagnostic")
@@ -119,13 +104,7 @@ object ApplicationLauncherFixtures {
         registration.close().map(_ => ProviderOutcome(results, Vector.empty, context.cancellation.isRequested))
       }
     }
-    val suite = new TestSuite {
-      override def register(context: RegistrationContext): RegisteredSuite = {
-        val suite = SuiteDescriptor(SuiteId("LauncherInputFailure"), "LauncherInputFailure")
-        val test = TestDescriptor(TestId(context.target, suite.id, Vector("held"), None), "held", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-        RegisteredSuite(suite, Vector(test), provider)
-      }
-    }
+    val suite = FixtureSupport.suite("LauncherInputFailure", Vector("held"))(_ => provider)
     val channel = make()
     val input = new FramedProtocolOutput(channel.sink)
     input.accept(ProtocolMessage.Request(RequestOperation.Execute, run, request))

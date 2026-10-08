@@ -11,29 +11,26 @@ private[runner] object PlanAggregationFixtures {
     val executions = new AtomicInteger(0)
     val sink = new FixtureSupport.RecordingSink
     def events: Vector[ProtocolMessage.Event] = sink.events
-    def suite(name: String): TestSuite = new TestSuite {
-      override def register(registration: RegistrationContext): RegisteredSuite = {
-        val descriptor = TestDescriptor(TestId(identity.target, SuiteId(name), Vector("test"), None), "test", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-        val provider = new FixtureSupport.Provider {
-          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new FixtureSupport.Plan(selected) {
-            override val inspection: PlanInspection = PlanInspection(
-              Vector(DependencyKey(DependencyKeyId(7), "same label"), DependencyKey(DependencyKeyId(13), "same label")),
-              Vector(
-                PlanScope(PlanScopeId(Vector(9)), PlanScopeKind.Runtime, Vector(descriptor.id), Vector(PlanStep(DependencyKeyId(7), PlanOperation.UseInstance, Vector.empty))),
-                PlanScope(PlanScopeId(Vector(9, 2)), PlanScopeKind.Test, Vector(descriptor.id), Vector(PlanStep(DependencyKeyId(13), PlanOperation.CallProvider, Vector(DependencyKeyId(7))))),
-              ),
-              Vector.empty,
-            )
-            override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
-              val _ = executions.incrementAndGet()
-              val result = TestResult(descriptor.id, TestStatus.Succeeded, None, 0L)
-              execution.emit(ProviderEvent.TestStarted(descriptor.id))
-              execution.emit(ProviderEvent.TestCompleted(result))
-              Future.successful(ProviderOutcome(Vector(result), Vector.empty, cancelled = false))
-            }
-          })
-        }
-        RegisteredSuite(SuiteDescriptor(descriptor.id.suite, name), Vector(descriptor), provider)
+    def suite(name: String): TestSuite = FixtureSupport.suite(name, Vector("test")) { tests =>
+      val descriptor = tests.head
+      new FixtureSupport.Provider {
+        override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = Future.successful(new FixtureSupport.Plan(selected) {
+          override val inspection: PlanInspection = PlanInspection(
+            Vector(DependencyKey(DependencyKeyId(7), "same label"), DependencyKey(DependencyKeyId(13), "same label")),
+            Vector(
+              PlanScope(PlanScopeId(Vector(9)), PlanScopeKind.Runtime, Vector(descriptor.id), Vector(PlanStep(DependencyKeyId(7), PlanOperation.UseInstance, Vector.empty))),
+              PlanScope(PlanScopeId(Vector(9, 2)), PlanScopeKind.Test, Vector(descriptor.id), Vector(PlanStep(DependencyKeyId(13), PlanOperation.CallProvider, Vector(DependencyKeyId(7))))),
+            ),
+            Vector.empty,
+          )
+          override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
+            val _ = executions.incrementAndGet()
+            val result = TestResult(descriptor.id, TestStatus.Succeeded, None, 0L)
+            execution.emit(ProviderEvent.TestStarted(descriptor.id))
+            execution.emit(ProviderEvent.TestCompleted(result))
+            Future.successful(ProviderOutcome(Vector(result), Vector.empty, cancelled = false))
+          }
+        })
       }
     }
     val session = new RunSession(identity, Vector(() => suite("FirstPlanProvider"), () => suite("SecondPlanProvider")), context, sink)

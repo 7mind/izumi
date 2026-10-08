@@ -9,7 +9,7 @@ import distage.{DIKey, Injector, Locator, LocatorRef}
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
-import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle}
+import izumi.distage.model.definition.{Activation, BootstrapModule, Lifecycle, ModuleBase}
 import izumi.distage.model.exceptions.runtime.ProvisioningException
 import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
@@ -58,7 +58,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     }
   }
 
-//  val logLevel = "warn"
   val logLevel = "info"
 
   "Role Launcher" should {
@@ -76,7 +75,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         )
       )
 
-//      assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse.filter(!_.isInstanceOf[LogSink]))
       assert(probe.resources.getStartedCloseables() == probe.resources.getClosedCloseables().reverse)
 
       assert(
@@ -191,7 +189,6 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
     "integration checks are discovered and ran from a class binding when key is not an IntegrationCheck" in {
       val probe = new XXX_TestWhiteboxProbe()
 
-      val logger = IzLogger()
       val definition = new ResourcesPluginBase {
         make[TestResource[IO]].from[IntegrationResource0[IO]]
         many[TestResource[IO]]
@@ -200,32 +197,16 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         probe ++
         DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
-      val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        options = PlanningOptions.default,
-        activation = Activation.empty,
-        bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
-        logger = logger,
-      )
-
-      val plans = roleAppPlanner.makePlan(roots)
-      Injector().produce(plans.runtime).use {
-        Injector
-          .inherit[IO](_).produce(plans.app).use {
-            locator =>
-              IO {
-                assert(probe.resources.getStartedCloseables().size == 3)
-                assert(probe.resources.getCheckedResources().size == 2)
-                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
-              }
-          }.unsafeRunSync()(IORuntime.global)
+      withApp(definition, roots) { locator =>
+        assert(probe.resources.getStartedCloseables().size == 3)
+        assert(probe.resources.getCheckedResources().size == 2)
+        assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
       }
     }
 
     "integration checks are discovered and ran from resource bindings" in {
       val probe = new XXX_TestWhiteboxProbe()
 
-      val logger = IzLogger()
       val definition = new ResourcesPluginBase {
         make[TestResource[IO]].fromResource {
           (r: IntegrationResource1[IO]) =>
@@ -237,30 +218,14 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         probe ++
         DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[IO]]]: DIKey)
-      val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        options = PlanningOptions.default,
-        activation = Activation.empty,
-        bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
-        logger = logger,
-      )
-
-      val plans = roleAppPlanner.makePlan(roots)
-      Injector().produce(plans.runtime).use {
-        Injector
-          .inherit[IO](_).produce(plans.app).use {
-            locator =>
-              IO {
-                assert(probe.resources.getStartedCloseables().size == 3)
-                assert(probe.resources.getCheckedResources().size == 2)
-                assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
-              }
-          }.unsafeRunSync()(IORuntime.global)
+      withApp(definition, roots) { locator =>
+        assert(probe.resources.getStartedCloseables().size == 3)
+        assert(probe.resources.getCheckedResources().size == 2)
+        assert(probe.resources.getCheckedResources().toSet[Any] == Set[Any](locator.get[TestResource[IO]], locator.get[IntegrationResource1[IO]]))
       }
     }
 
     "integration checks are discovered and ran, ignoring duplicating reference bindings" in {
-      val logger = IzLogger()
       val initCounter = new XXX_ResourceEffectsRecorder[IO]
       val initCounterIdentity = new XXX_ResourceEffectsRecorder[Identity]
 
@@ -278,35 +243,19 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
         DefaultModule[IO]
       val roots = Set(DIKey.get[Set[TestResource[Identity]]]: DIKey, DIKey.get[Set[TestResource[IO]]]: DIKey)
 
-      val roleAppPlanner = new RoleAppPlanner.Impl[IO](
-        options = PlanningOptions.default,
-        activation = Activation.empty,
-        bsModule = BootstrapModule.empty,
-        bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
-        logger = logger,
-      )
+      withApp(definition, roots) { locator =>
+        assert(initCounter.getStartedCloseables().size == 2)
+        assert(initCounter.getCheckedResources().size == 1)
+        assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
 
-      val plans = roleAppPlanner.makePlan(roots)
-
-      Injector().produce(plans.runtime).use {
-        Injector
-          .inherit[IO](_).produce(plans.app).use {
-            locator =>
-              IO {
-                assert(initCounter.getStartedCloseables().size == 2)
-                assert(initCounter.getCheckedResources().size == 1)
-                assert(initCounter.getCheckedResources().toSet[Any] == Set[Any](locator.get[IntegrationResource1[IO]]))
-
-                assert(initCounterIdentity.getStartedCloseables().size == 3)
-                assert(initCounterIdentity.getCheckedResources().size == 2)
-                assert(
-                  initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
-                    locator.get[IntegrationResource0[Identity]],
-                    locator.get[IntegrationResource1[Identity]],
-                  )
-                )
-              }
-          }.unsafeRunSync()(IORuntime.global)
+        assert(initCounterIdentity.getStartedCloseables().size == 3)
+        assert(initCounterIdentity.getCheckedResources().size == 2)
+        assert(
+          initCounterIdentity.getCheckedResources().toSet == Set[IntegrationCheck[Identity]](
+            locator.get[IntegrationResource0[Identity]],
+            locator.get[IntegrationResource1[Identity]],
+          )
+        )
       }
     }
 
@@ -470,71 +419,35 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
             commonOverrideConf =>
               TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
 
-              assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-              assert(configTestConfig.commonReference == 2, "common-reference")
-              assert(configTestConfig.common == 3, "common")
-              assert(configTestConfig.applicationReference == 4, "application-reference")
-              assert(configTestConfig.application == 5, "application")
-              assert(configTestConfig.roleReference == 6, "role-reference")
-              assert(configTestConfig.role == 7, "role")
+              assertConfig(configTestConfig, ConfigTestConfig(1, 2, 3, 4, 5, 6, 7))
 
               TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-              assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-              assert(configTestConfig.commonReference == 29, "common-reference")
-              assert(configTestConfig.common == 3, "common")
-              assert(configTestConfig.applicationReference == 9, "application-reference")
-              assert(configTestConfig.application == 5, "application")
-              assert(configTestConfig.roleReference == 9, "role-reference")
-              assert(configTestConfig.role == 7, "role")
+              assertConfig(configTestConfig, ConfigTestConfig(1, 29, 3, 9, 5, 9, 7))
 
               withProperties(
                 DebugProperties.`distage.roles.always-include-reference-role-configs`.name -> "false"
               ) {
                 TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-                assert(configTestConfig.commonReferenceDev == 1, "common-reference-dev")
-                assert(configTestConfig.commonReference == 29, "common-reference")
-                assert(configTestConfig.common == 3, "common")
-                assert(configTestConfig.applicationReference == 9, "application-reference")
-                assert(configTestConfig.application == 5, "application")
-                assert(configTestConfig.roleReference == 9, "role-reference")
-                assert(configTestConfig.role == 5, "role")
+                assertConfig(configTestConfig, ConfigTestConfig(1, 29, 3, 9, 5, 9, 5))
                 ()
               }
 
               TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
 
-              assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-              assert(configTestConfig.commonReference == 28, "common-reference")
-              assert(configTestConfig.common == 8, "common")
-              assert(configTestConfig.applicationReference == 8, "application-reference")
-              assert(configTestConfig.application == 8, "application")
-              assert(configTestConfig.roleReference == 6, "role-reference")
-              assert(configTestConfig.role == 7, "role")
+              assertConfig(configTestConfig, ConfigTestConfig(8, 28, 8, 8, 8, 6, 7))
 
               TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-              assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-              assert(configTestConfig.commonReference == 289, "common-reference")
-              assert(configTestConfig.common == 8, "common")
-              assert(configTestConfig.applicationReference == 9, "application-reference")
-              assert(configTestConfig.application == 8, "application")
-              assert(configTestConfig.roleReference == 9, "role-reference")
-              assert(configTestConfig.role == 7, "role") // role reference beats explicit common config
+              assertConfig(configTestConfig, ConfigTestConfig(8, 289, 8, 9, 8, 9, 7)) // role reference beats explicit common config
 
               withProperties(
                 DebugProperties.`distage.roles.always-include-reference-common-configs`.name -> "false"
               ) {
                 TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id))
 
-                assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-                assert(configTestConfig.commonReference == 8, "common-reference")
-                assert(configTestConfig.common == 8, "common")
-                assert(configTestConfig.applicationReference == 8, "application-reference")
-                assert(configTestConfig.application == 8, "application")
-                assert(configTestConfig.roleReference == 6, "role-reference")
-                assert(configTestConfig.role == 7, "role")
+                assertConfig(configTestConfig, ConfigTestConfig(8, 8, 8, 8, 8, 6, 7))
                 ()
               }
 
@@ -543,25 +456,13 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
               ) {
                 TestEntrypoint.main(Array("-c", commonOverrideConf, "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-                assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-                assert(configTestConfig.commonReference == 289, "common-reference")
-                assert(configTestConfig.common == 8, "common")
-                assert(configTestConfig.applicationReference == 9, "application-reference")
-                assert(configTestConfig.application == 8, "application")
-                assert(configTestConfig.roleReference == 9, "role-reference")
-                assert(configTestConfig.role == 8, "role")
+                assertConfig(configTestConfig, ConfigTestConfig(8, 289, 8, 9, 8, 9, 8))
                 ()
               }
 
               TestEntrypoint.main(Array("-c", commonOverrideConf, "-nc", "-ll", logLevel, ":" + ConfigTestRole.id, "-c", roleOverrideConf))
 
-              assert(configTestConfig.commonReferenceDev == 8, "common-reference-dev")
-              assert(configTestConfig.commonReference == 89, "common-reference")
-              assert(configTestConfig.common == 8, "common")
-              assert(configTestConfig.applicationReference == 9, "application-reference")
-              assert(configTestConfig.application == 8, "application")
-              assert(configTestConfig.roleReference == 9, "role-reference")
-              assert(configTestConfig.role == 8, "role")
+              assertConfig(configTestConfig, ConfigTestConfig(8, 89, 8, 9, 8, 9, 8))
 
               // system property config overrides
 
@@ -571,13 +472,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                 ConfigFactory.invalidateCaches()
                 TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
 
-                assert(configTestConfig.commonReferenceDev == 20, "common-reference-dev")
-                assert(configTestConfig.commonReference == 2, "common-reference")
-                assert(configTestConfig.common == 3, "common")
-                assert(configTestConfig.applicationReference == 4, "application-reference")
-                assert(configTestConfig.application == 5, "application")
-                assert(configTestConfig.roleReference == 6, "role-reference")
-                assert(configTestConfig.role == 7, "role")
+                assertConfig(configTestConfig, ConfigTestConfig(20, 2, 3, 4, 5, 6, 7))
                 ()
               }
           }
@@ -596,13 +491,7 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
             ConfigFactory.invalidateCaches()
             TestEntrypoint.main(Array("-ll", logLevel, ":" + ConfigTestRole.id))
 
-            assert(configTestConfig.commonReferenceDev == 25, "common-reference-dev")
-            assert(configTestConfig.commonReference == 2, "common-reference")
-            assert(configTestConfig.common == 3, "common")
-            assert(configTestConfig.applicationReference == 4, "application-reference")
-            assert(configTestConfig.application == 5, "application")
-            assert(configTestConfig.roleReference == 6, "role-reference")
-            assert(configTestConfig.role == 7, "role")
+            assertConfig(configTestConfig, ConfigTestConfig(25, 2, 3, 4, 5, 6, 7))
             ()
           } finally {
             EnvHacker.modifySystemEnvironment(_.remove("CONFIG_FORCE_configTest_commonReferenceDev"))
@@ -707,9 +596,32 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
                 new StaticTestMainLogIO2[zio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id, "-c", customRoleConfigRes))
             }
         }
-//        new StaticTestMainLogIO2[monix.bio.IO].main(Array("-ll", logLevel, "-c", checkTestGoodRes, ":" + StaticTestRole.id))
       }
     }
+  }
+
+  private def withApp(definition: ModuleBase, roots: Set[DIKey])(check: Locator => Unit): Unit = {
+    val planner = new RoleAppPlanner.Impl[IO](
+      options = PlanningOptions.default,
+      activation = Activation.empty,
+      bsModule = BootstrapModule.empty,
+      bootloader = Injector.bootloader[Identity](BootstrapModule.empty, Activation.empty, DefaultModule.empty, PlannerInput(definition, roots, Activation.empty)),
+      logger = IzLogger(),
+    )
+    val plans = planner.makePlan(roots)
+    Injector().produce(plans.runtime).use { runtime =>
+      Injector.inherit[IO](runtime).produce(plans.app).use(locator => IO(check(locator))).unsafeRunSync()(IORuntime.global)
+    }
+  }
+
+  private def assertConfig(actual: ConfigTestConfig, expected: ConfigTestConfig): Unit = {
+    assert(actual.commonReferenceDev == expected.commonReferenceDev, "common-reference-dev")
+    assert(actual.commonReference == expected.commonReference, "common-reference")
+    assert(actual.common == expected.common, "common")
+    assert(actual.applicationReference == expected.applicationReference, "application-reference")
+    assert(actual.application == expected.application, "application")
+    assert(actual.roleReference == expected.roleReference, "role-reference")
+    assert(actual.role == expected.role, "role")
   }
 
   private def withResourceFile[R](name: String)(f: String => R): R = {

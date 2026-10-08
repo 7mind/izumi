@@ -5,7 +5,6 @@ import izumi.distage.plugins.PluginConfig
 import izumi.distage.testkit.model.{SuiteId as EngineSuiteId, TestActivationStrategy, TestConfig}
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
-import izumi.distage.testkit.runner.impl.services.TestkitLogging
 import izumi.distage.testkit.runner.spec.{Spec1, SpecIdentity}
 import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.lifecycle.Lifecycle
@@ -18,17 +17,13 @@ import scala.util.{Success, Try}
 
 private[di] object SpecRuntimeFactoryFixtures {
   private final class Resource
-  private final class Statistics extends ResourceStatistics {
+  private final class Statistics(fails: Boolean) extends OwnedRuntimeFixture(
+    new IllegalStateException("owned runner graph release failure"),
+    new IllegalStateException("owned outer runtime release failure"),
+    fails,
+  ) {
     val ignoredAcquired = new AtomicInteger(0)
-    val outerAcquired = new AtomicInteger(0)
-    val outerReleased = new AtomicInteger(0)
-    val graphAcquired = new AtomicInteger(0)
-    val graphReleased = new AtomicInteger(0)
     val entered = Promise[Unit]()
-    val releasing = Promise[Unit]()
-    val release = Promise[Unit]()
-    val graphFailure = new IllegalStateException("owned runner graph release failure")
-    val outerFailure = new IllegalStateException("owned outer runtime release failure")
     val module = new ModuleDef {
       make[Resource].fromResource(() => Lifecycle.makeSimple[Resource] {
         val _ = acquired.incrementAndGet(); new Resource
@@ -50,23 +45,9 @@ private[di] object SpecRuntimeFactoryFixtures {
     verify: (String, Boolean) => Unit)(implicit F: QuasiIO[F], FA: QuasiAsync[F]): Future[Unit] = {
     implicit val ec: ExecutionContext = context
     Vector("inspection", "execute", "cancel", "cancel-failure", "mixed", "selected", "closed-reuse").foldLeft(Future.unit) { (previous, mode) => previous.flatMap { _ =>
-      val stats = new Statistics
       val fails = mode == "cancel-failure"
-      val lifecycle = Lifecycle.makeSimple[Unit] { val _ = stats.outerAcquired.incrementAndGet(); () } { _ =>
-        val _ = stats.outerReleased.incrementAndGet()
-        if (fails) throw stats.outerFailure
-      }.flatMap(_ => delegate)
-      val overrides = new ModuleDef {
-        make[TestkitLogging].fromResource { () => Lifecycle.make[F, TestkitLogging](F.maybeSuspend {
-          val _ = stats.graphAcquired.incrementAndGet()
-          new TestkitLogging { override def enableDebugOutput: Boolean = false }
-        }) { _ => F.flatMap(F.maybeSuspend { val _ = stats.releasing.success(()) })(_ =>
-          F.flatMap(FA.fromFuture(stats.release.future))(_ => F.flatMap(F.maybeSuspend { val _ = stats.graphReleased.incrementAndGet() })(_ =>
-            if (fails) F.fail[Unit](stats.graphFailure) else F.unit
-          ))
-        ) } }
-      }
-      val runtime = TestRunnerRuntime.asyncRuntimeFor[F](lifecycle, List(overrides))
+      val stats = new Statistics(fails)
+      val runtime = stats.runtime(delegate)
       val ignored = TestRunnerRuntime.asyncRuntimeFor[MiniBIOAsync[Throwable, _]](
         Lifecycle.makeSimple[Unit] { val _ = stats.ignoredAcquired.incrementAndGet(); throw new IllegalStateException("Unchosen runtime was acquired") }(_ => ()).flatMap(_ => TestRunnerRuntime.runnerLifecycleForMiniBIOAsync()), Nil)
       val suites: Vector[() => TestSuite] = if (mode.startsWith("cancel")) Vector(() => new CancellingSuite[F](stats, runtime))

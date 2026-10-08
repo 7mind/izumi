@@ -191,13 +191,7 @@ object SessionEnvironmentFixtures {
 
   private def concurrentPlugins(label: String, makeLoader: PluginPackageCache => PluginLoader, executionContext: ExecutionContext): Future[Unit] = {
     val provisions = new AtomicInteger(0)
-    val definitions = new ModuleDef {
-      make[FixtureValue].from {
-        () =>
-          provisions.incrementAndGet().discard()
-          new FixtureValue
-      }
-    }
+    val definitions = fixtureModule(provisions)
     val config = PluginConfig.constUnchecked(definitions).cachePackages(true)
     val loads = new AtomicInteger(0)
     val create = (cache: PluginPackageCache) => new PluginLoader {
@@ -225,13 +219,7 @@ object SessionEnvironmentFixtures {
 
   private def pluginContracts(checks: Checks, label: String, makeLoader: PluginPackageCache => PluginLoader): Unit = {
     val provisions = new AtomicInteger(0)
-    val definitions = new ModuleDef {
-      make[FixtureValue].from {
-        () =>
-          provisions.incrementAndGet().discard()
-          new FixtureValue
-      }
-    }
+    val definitions = fixtureModule(provisions)
     val config = PluginConfig.constUnchecked(definitions).cachePackages(true)
     val requests = scala.collection.mutable.ArrayBuffer.empty[PluginConfig]
     val create = (cache: PluginPackageCache) => new PluginLoader {
@@ -281,13 +269,7 @@ object SessionEnvironmentFixtures {
 
   private def contracts(checks: Checks, label: String, makeLoader: () => PluginLoader): Unit = {
     val provisions = new AtomicInteger(0)
-    val definitions = new ModuleDef {
-      make[FixtureValue].from {
-        () =>
-          provisions.incrementAndGet().discard()
-          new FixtureValue
-      }
-    }
+    val definitions = fixtureModule(provisions)
     val config = TestConfig.empty.copy(pluginConfig = PluginConfig.constUnchecked(definitions))
     val firstModule = new ModuleDef { make[String].fromValue("first-default") }
     val secondModule = new ModuleDef { make[String].fromValue("second-default") }
@@ -411,6 +393,13 @@ object SessionEnvironmentFixtures {
   private def emptyRoles(): RolesInfo = RolesInfo(Set.empty, Set.empty, Set.empty, Set.empty, Set.empty, Set.empty)
 
   private final class FixtureValue
+
+  private def fixtureModule(provisions: AtomicInteger): Module = new ModuleDef {
+    make[FixtureValue].from { () =>
+      provisions.incrementAndGet().discard()
+      new FixtureValue
+    }
+  }
 
   private final class StaticPluginLoader extends PluginLoader {
     override def load(config: PluginConfig): LoadedPlugins = {

@@ -75,14 +75,8 @@ private[di] object SpecActivationFixtures {
         }
       }
       val identity = CatalogueIdentity(BuildId("spec-activation"), BuildTargetId("spec-target"), CatalogueId(request.name))
-      var messages = Vector.empty[ProtocolMessage]
-      val output = new ProtocolOutput {
-        override def accept(message: ProtocolMessage): Unit = synchronized {
-          require(ProtocolCodec.decode(ProtocolCodec.encode(message)) == Right(message), "Activation application output must round-trip")
-          messages :+= message
-        }
-      }
-      def snapshot: Vector[ProtocolMessage] = output.synchronized(messages)
+      val output = new FixtureSupport.RecordingOutput
+      def snapshot: Vector[ProtocolMessage] = output.messages
       val run = RunId(request.name)
       val application = new TestApplication(run, identity, Vector(() => suite), context, output)
       application.accept(ProtocolMessage.Discover(run, identity.build, identity.target)).flatMap { _ =>

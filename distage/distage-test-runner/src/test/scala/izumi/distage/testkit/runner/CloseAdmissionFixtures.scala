@@ -15,29 +15,25 @@ private[runner] object CloseAdmissionFixtures {
       val release = Promise[Unit]()
       var cancellation = Option.empty[Cancellation]
       var pending = Option.empty[ExecutionPlan]
-      val suite = new TestSuite {
-        override def register(registration: RegistrationContext): RegisteredSuite = {
-          val descriptor = SuiteDescriptor(SuiteId("CloseAdmission"), "CloseAdmission")
-          val test = TestDescriptor(TestId(registration.target, descriptor.id, Vector("body"), None), "body", SourceLocation.Unavailable, EffectiveSettings(Vector.empty, memoization = true))
-          val provider = new FixtureSupport.Provider {
-            override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
-              val plan = new FixtureSupport.Plan(selected) {
-                override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
-                  cancellation = Some(execution.cancellation)
-                  val registration = execution.cancellation.onRequest(() => release.future)
-                  val _ = entered.success(())
-                  release.future.flatMap(_ => registration.close()).map { _ =>
-                    val cancelled = execution.cancellation.isRequested
-                    val result = TestResult(test.id, if (cancelled) TestStatus.Cancelled else TestStatus.Succeeded, None, 0L)
-                    execution.emit(ProviderEvent.TestCompleted(result))
-                    ProviderOutcome(Vector(result), Vector.empty, cancelled)
-                  }
+      val suite = FixtureSupport.suite("CloseAdmission", Vector("body")) { tests =>
+        val test = tests.head
+        new FixtureSupport.Provider {
+          override def plan(selected: Vector[TestDescriptor]): Future[ExecutionPlan] = {
+            val plan = new FixtureSupport.Plan(selected) {
+              override def execute(execution: RunExecutionContext): Future[ProviderOutcome] = {
+                cancellation = Some(execution.cancellation)
+                val registration = execution.cancellation.onRequest(() => release.future)
+                val _ = entered.success(())
+                release.future.flatMap(_ => registration.close()).map { _ =>
+                  val cancelled = execution.cancellation.isRequested
+                  val result = TestResult(test.id, if (cancelled) TestStatus.Cancelled else TestStatus.Succeeded, None, 0L)
+                  execution.emit(ProviderEvent.TestCompleted(result))
+                  ProviderOutcome(Vector(result), Vector.empty, cancelled)
                 }
               }
-              if (application) { pending = Some(plan); publication.future } else Future.successful(plan)
             }
+            if (application) { pending = Some(plan); publication.future } else Future.successful(plan)
           }
-          RegisteredSuite(descriptor, Vector(test), provider)
         }
       }
       val run = RunId(if (application) "queued-application" else "active-session")

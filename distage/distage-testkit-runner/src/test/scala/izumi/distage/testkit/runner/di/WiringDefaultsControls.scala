@@ -2,13 +2,20 @@ package izumi.distage.testkit.runner.di
 
 import izumi.distage.testkit.protocol.*
 import izumi.distage.testkit.runner.*
+import izumi.distage.framework.{PlanCheckConfig, PlanCheckMaterializer}
+import izumi.distage.testkit.runner.spec.{TestAssertions, WiringAssertions}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 private[di] trait WiringDefaultsControls {
   def withConfig(app: WiringFrontendFixtures.App): TestSuite
   def withDefaults(app: WiringFrontendFixtures.App): TestSuite
-  def assertion(app: WiringFrontendFixtures.App): Unit
+  def assertion(app: WiringFrontendFixtures.App): Unit = {
+    val cfg = PlanCheckConfig.empty
+    val plan = PlanCheckMaterializer[app.type, cfg.type](true, Seq.empty, app, "*", "", "*", Some(false), Some(false), Some(false))
+    val assertions = new TestAssertions with WiringAssertions {}
+    assertions.assertWiringCompileTime(app, cfg)(plan)
+  }
 
   def run(context: ExecutionContext, verify: (String, Boolean) => Unit): Future[Unit] = {
     implicit val ec: ExecutionContext = context
