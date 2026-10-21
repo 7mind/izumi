@@ -152,6 +152,7 @@ sealed trait LowPriorityDefaultModulesInstances4 extends LowPriorityDefaultModul
 sealed trait LowPriorityDefaultModulesInstances5 {
   implicit final def fromQuasiIO[F[_]: TagK: QuasiIO: QuasiAsync: QuasiTemporal: QuasiIORunner]: DefaultModule[F] = {
     DefaultModule(new ModuleDef {
+      addImplicit[TagK[F]]
       addImplicit[QuasiFunctor[F]]
       addImplicit[QuasiApplicative[F]]
       addImplicit[QuasiPrimitives[F]]
