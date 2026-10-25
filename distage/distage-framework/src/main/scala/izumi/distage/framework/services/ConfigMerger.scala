@@ -1,6 +1,6 @@
 package izumi.distage.framework.services
 
-import izumi.distage.config.DistageConfigImpl
+import izumi.distage.config.{DistageConfigImpl, DistageConfigValueImpl}
 import izumi.distage.config.model.*
 import izumi.distage.model.definition.Id
 import izumi.fundamentals.platform.strings.IzString.*
@@ -79,30 +79,31 @@ object ConfigMerger {
     }
 
     private def verifyConfigs(fallbackOrdered: List[ConfigLoadResult.Success]): Unit = {
-      import izumi.fundamentals.collections.IzCollections.*
-      val keyIndex = fallbackOrdered
+      val definitions = fallbackOrdered
         .filter(_.src.isInstanceOf[ConfigSource.Resource])
-        .flatMap(c => getKeys(c.config).map(key => (key, c)))
+        .flatMap(c => getValues(c.config).map { case (key, value) => (key, (c, value)) })
 
-      keyIndex.toUniqueMap(identity) match {
-        case Left(dups) =>
-          val diag = dups.map { case (key, configs) => s"$key is defined in ${configs.map(_.clue).niceList(prefix = "* ").shift(2)}" }
-          logger.warn(s"Reference config resources have ${diag.niceList() -> "conflicting keys"}")
-        case Right(_) =>
+      val conflicts = definitions.groupBy(_._1).toList.sortBy(_._1).collect {
+        case (key, defs) if defs.map(_._2._2).distinct.size > 1 => key -> defs.map(_._2._1)
+      }
+
+      if (conflicts.nonEmpty) {
+        val diag = conflicts.map { case (key, configs) => s"$key is defined with different values in ${configs.map(_.clue).niceList(prefix = "* ").shift(2)}" }
+        logger.warn(s"Reference config resources have ${diag.niceList() -> "conflicting keys"}")
       }
     }
 
-    protected def getKeys(config: DistageConfigImpl): collection.Set[String] = {
+    protected def getValues(config: DistageConfigImpl): collection.Map[String, DistageConfigValueImpl] = {
       if (DistageConfigImpl.isResolved(config)) {
-        DistageConfigImpl.allKeys(config)
+        DistageConfigImpl.allValues(config)
       } else {
         Try {
           DistageConfigImpl.resolveAllowUnresolved(config)
         }.toOption.filter(DistageConfigImpl.isResolved) match {
           case Some(value) =>
-            DistageConfigImpl.allKeys(value)
+            DistageConfigImpl.allValues(value)
           case None =>
-            Set.empty
+            Map.empty
         }
       }
     }

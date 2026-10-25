@@ -45,6 +45,21 @@ package object config {
       }
       allPrefixedKeys(None, config).toSet
     }
+    def allValues(config: DistageConfigImpl): collection.Map[String, DistageConfigValueImpl] = {
+      def allPrefixedValues(prefix: Option[String], obj: JsonObject): List[(String, Json)] = {
+        obj.toIterable.iterator.flatMap {
+          case (k, v) =>
+            val prefixedKey = prefix.fold(k)(_ + "." + k)
+            v.asObject match {
+              case Some(value) =>
+                allPrefixedValues(Some(prefixedKey), value)
+              case None =>
+                List(prefixedKey -> v)
+            }
+        }.toList
+      }
+      allPrefixedValues(None, config).toMap
+    }
 
     private def downPath(config: DistageConfigImpl, path: String): Option[Json] = {
       val pathParts = DIConfigReaderPlatformSpecific.splitUnquotedConfigPath(path)

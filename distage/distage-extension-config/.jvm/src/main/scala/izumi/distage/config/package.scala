@@ -17,6 +17,7 @@ package object config {
     def maybeOriginDescription(config: DistageConfigImpl): Option[String] = Some(config.origin().description())
     def getConfig(config: DistageConfigImpl, path: String): Option[Config] = Try(config.getConfig(path)).toOption
     def allKeys(config: DistageConfigImpl): collection.Set[String] = config.entrySet().asScala.map(_.getKey)
+    def allValues(config: DistageConfigImpl): collection.Map[String, DistageConfigValueImpl] = config.entrySet().asScala.iterator.map(e => (e.getKey, e.getValue)).toMap
   }
 
   type DistageConfigValueImpl = com.typesafe.config.ConfigValue
