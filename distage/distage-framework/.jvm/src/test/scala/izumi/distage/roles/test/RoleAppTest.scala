@@ -15,6 +15,7 @@ import izumi.distage.model.provisioning.IntegrationCheck
 import izumi.distage.modules.DefaultModule
 import izumi.distage.plugins.{PluginBase, PluginConfig}
 import izumi.distage.roles.DebugProperties
+import izumi.distage.roles.bundled.{RunAllRoles, RunAllTasks}
 import izumi.distage.roles.test.fixtures.*
 import izumi.distage.roles.test.fixtures.Fixture.*
 import izumi.distage.roles.test.fixtures.roles.TestRole00
@@ -139,6 +140,34 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
           assert(err.getMessage.contains(ClashingRoles.clashingId))
           assert(err.getMessage.toLowerCase.contains("clash"))
       }
+    }
+
+    "run every custom task exactly once with shared arguments via all-tasks" in {
+      val recorder = new RunAllFixture.Recorder
+
+      new TestEntrypointBase() {
+        override protected def pluginConfig: PluginConfig = PluginConfig.const(Seq(new RunAllFixturePlugin[IO](recorder)))
+      }.main(Array("-ll", logLevel, ":" + RunAllTasks.id, "x", "y"))
+
+      assert(
+        recorder.recorded.sorted == List(
+          s"${RunAllFixture.TaskA.id}(x,y)",
+          s"${RunAllFixture.TaskB.id}(x,y)",
+        )
+      )
+    }
+
+    "start and stop every custom service exactly once with shared arguments via all-roles" in {
+      val recorder = new RunAllFixture.Recorder
+
+      new TestEntrypointBase() {
+        override protected def pluginConfig: PluginConfig = PluginConfig.const(Seq(new RunAllFixturePlugin[IO](recorder)))
+      }.main(Array("-ll", logLevel, ":" + RunAllRoles.id, "x"))
+
+      val (starts, stops) = recorder.recorded.splitAt(2)
+      assert(starts.sorted == List(s"start ${RunAllFixture.ServiceA.id}(x)", s"start ${RunAllFixture.ServiceB.id}(x)"))
+      assert(stops.sorted == List(s"stop ${RunAllFixture.ServiceA.id}", s"stop ${RunAllFixture.ServiceB.id}"))
+      assert(stops == starts.reverse.map(_.stripPrefix("start ").takeWhile(_ != '(')).map(id => s"stop $id"))
     }
 
     "be able to read activations from config" in {
