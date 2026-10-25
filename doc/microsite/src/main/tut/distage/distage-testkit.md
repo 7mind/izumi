@@ -680,6 +680,65 @@ Technical note: divergence of memoization levels is calculated based on equality
 
 Note: [original github ticket](https://github.com/7mind/izumi/issues/1188)
 
+#### Memoization Environment Merging
+
+Distinct `TestConfig`s do not necessarily produce distinct memoization environments.
+Before running, the test runner plans every distinct environment and merges the environments whose plans turn out to be equal,
+so that suites with slightly different configs still share memoized components.
+Planning and merging proceed in these steps:
+
+1. Tests are partitioned by execution parameters: effect type, `DefaultModule`, `parallelEnvs`, `planningOptions` and `logLevel`.
+   Tests in different partitions are never merged.
+2. Within a partition, tests are grouped by their environment, i.e. by their `TestConfig` excluding `parallelSuites`, `parallelTests` and `debugOutput`.
+   Each group is planned separately: its config is loaded, its activation is computed, and its bootstrap plan,
+   effect runtime plan and memoization level plans are built.
+3. Groups with equal bootstrap modules, equal bootstrap plans and equal effect runtime plans
+   (the plan for `QuasiIORunner` and `TestTreeRunner` of the effect type) are merged into a single memoization tree
+   and use a single memoization store.
+4. Within a memoization tree, groups share each memoization level for as long as their plans for that level and all levels above it are equal.
+   On the first level whose plan differs, the tree branches and memoized components of that level and below are allocated separately for each branch.
+
+To ensure that suites end up in the same memoization environment:
+
+- Derive the configs of all suites from a common base, e.g. a shared base trait that overrides `config`, and change it with `super.config.copy(...)`.
+- Keep execution parameters, `bootstrapPluginConfig` and `bootstrapOverrides` the same across suites. Any difference in bootstrap modules prevents merging.
+- Keep the effective application config the same across suites: a different config, whether due to `configBaseName`, `configOverrides` or config resources, prevents merging.
+- Changes to `pluginConfig`, `moduleOverrides`, `activation` and `memoizationRoots` are safe as long as they do not alter the effect runtime plan.
+  If such a change does not alter implementations of memoized components *or* their transitive dependencies,
+  the suites share the whole memoization tree, otherwise they share only the memoization levels above the first divergent one.
+
+For example, given
+
+```scala
+trait PostgresTestBase extends SpecZIO {
+  override protected def config: TestConfig = super.config.copy(
+    memoizationRoots = Set(DIKey[PostgresContainer]),
+  )
+}
+
+class FakeClockTest extends PostgresTestBase {
+  override protected def config: TestConfig = super.config.copy(
+    moduleOverrides = new ModuleDef {
+      make[Clock].from[FakeClock]
+    },
+  )
+}
+
+class ExtraBootstrapTest extends PostgresTestBase {
+  override protected def config: TestConfig = super.config.copy(
+    bootstrapOverrides = new BootstrapModuleDef {
+      make[BootstrapHook].from[MyBootstrapHook]
+    },
+  )
+}
+```
+
+suites extending `PostgresTestBase` and `FakeClockTest` share a single `PostgresContainer`, unless `PostgresContainer` depends on `Clock`,
+while `ExtraBootstrapTest` runs in a separate memoization environment and allocates its own `PostgresContainer`.
+
+The test runner logs the number of created memoization trees and the number of merged environments before running tests,
+along with the structure of each memoization tree. Enable `debugOutput` to additionally print the effect runtime plan of each memoization tree.
+
 #### Forced Roots
 
 `forcedRoots` field of `TestConfig` specifies components to synthetically add to the dependencies of every test within this test suite / memoization environment.
