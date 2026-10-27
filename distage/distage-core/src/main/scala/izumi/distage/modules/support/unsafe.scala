@@ -6,6 +6,7 @@ import izumi.functional.bio.Exit
 import izumi.functional.bio.data.{Morphism1, RestoreInterruption1}
 import izumi.functional.quasi.*
 import izumi.fundamentals.platform.functional.Identity
+import izumi.reflect.TagK
 
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -114,6 +115,7 @@ object unsafe {
     implicit val quasiIORunnerEither: QuasiIORunner[Either[Throwable, _]] = quasiIORunnerTry.contramapK(Morphism1(_.toTry))
 
     implicit val defaultModuleEither: DefaultModule[Either[Throwable, _]] = DefaultModule(new ModuleDef {
+      addImplicit[TagK[Either[Throwable, _]]]
       addImplicit[QuasiIO[Either[Throwable, _]]]
       addImplicit[QuasiIORunner[Either[Throwable, _]]]
       addImplicit[QuasiAsync[Either[Throwable, _]]]
@@ -249,6 +251,7 @@ object unsafe {
     implicit val quasiIORunnerTry: QuasiIORunner[Try] = QuasiIORunner.IdentityImpl.contramapK(Morphism1[Try, Identity](_.get))
 
     implicit val defaultModuleTry: DefaultModule[Try] = DefaultModule(new ModuleDef {
+      addImplicit[TagK[Try]]
       addImplicit[QuasiIO[Try]]
       addImplicit[QuasiIORunner[Try]]
       addImplicit[QuasiAsync[Try]]
