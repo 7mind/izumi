@@ -268,10 +268,10 @@ open class ContainerResource[F[_], Tag](
       portSet <- F.maybeSuspend(ports.map(_.port).toSet)
       candidatesNested <- F.traverse {
         matchingImageContainers
+          .flatMap(c => inspectCandidate(c).map(c -> _))
           .flatMap {
-            c =>
+            case (c, cInspection) =>
               val id = c.getId
-              val cInspection = rawClient.inspectContainerCmd(id).exec()
               val cNetworks = cInspection.getNetworkSettings.getNetworks.asScala.keys.toList
               val missingNetworks = config.networks.filterNot(n => cNetworks.contains(n.name))
               val cHooksDigest = Option(cInspection.getConfig.getLabels).flatMap(labels => Option(labels.get(DockerConst.Labels.hooksDigest)))
@@ -323,6 +323,20 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
+  private def inspectCandidate(candidate: Container): Option[InspectContainerResponse] = {
+    try {
+      Some(rawClient.inspectContainerCmd(candidate.getId).exec())
+    } catch {
+      case _: NotFoundException =>
+        logger.info(s"Container ${candidate.getId} was removed before it could be inspected so will not be reused")
+        None
+    }
+  }
+
+  private def createdWithoutReuse(container: Container): Boolean = {
+    Option(container.getLabels).flatMap(labels => Option(labels.get(DockerConst.Labels.reuseLabel))).contains(false.toString)
+  }
+
   private def findMatchingImages(imageName: String, ports: Seq[PortDecl]): F[List[Container]] = {
 
     /*
@@ -347,6 +361,7 @@ open class ContainerResource[F[_], Tag](
           .withStatusFilter(statusFilter.asJava)
           .withLabelFilter(config.userTags.asJava)
           .exec().asScala.toList
+          .filterNot(createdWithoutReuse)
           .sortBy(_.getId)
       } catch {
         case c: Throwable =>
