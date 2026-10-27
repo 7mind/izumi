@@ -393,6 +393,9 @@ The container ports will also add to the configured environment variables:
 
 - `DISTAGE_PORT_<protocol>_<originalPort>` are the host ports allocated for the container
 
+If another process takes an allocated host port before the container starts, distage removes the container
+and creates it again with newly allocated host ports, up to 10 attempts in total.
+
 
 ### Docker Metadata
 

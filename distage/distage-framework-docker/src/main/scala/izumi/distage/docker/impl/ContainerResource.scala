@@ -1,7 +1,7 @@
 package izumi.distage.docker.impl
 
 import com.github.dockerjava.api.command.InspectContainerResponse
-import com.github.dockerjava.api.exception.{NotFoundException, UnauthorizedException}
+import com.github.dockerjava.api.exception.{InternalServerErrorException, NotFoundException, UnauthorizedException}
 import com.github.dockerjava.api.model.*
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.HealthCheckResult.GoodHealthcheck
 import izumi.distage.docker.healthcheck.ContainerHealthCheck.{HealthCheckResult, VerifiedContainerConnectivity}
@@ -24,6 +24,7 @@ import izumi.fundamentals.platform.network.IzSockets
 import izumi.fundamentals.platform.strings.IzString.*
 import izumi.logstage.api.IzLogger
 
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import scala.annotation.nowarn
 import scala.concurrent.duration.*
@@ -68,6 +69,8 @@ open class ContainerResource[F[_], Tag](
     }
   }
 
+  protected def freeHostPort(): Int = IzSockets.temporaryLocalPort()
+
   def copy(
     config: Docker.ContainerConfig[Tag] = config,
     client: DockerClientWrapper[F] = client,
@@ -80,10 +83,10 @@ open class ContainerResource[F[_], Tag](
     new ContainerResource[F, Tag](config, client, logger, deps)(F, P, T)
   }
 
-  override def acquire: F[DockerContainer[Tag]] = F.suspendF {
-    val ports = config.ports.map {
+  private def declarePorts(): Seq[PortDecl] = {
+    config.ports.map {
       containerPort =>
-        val local = IzSockets.temporaryLocalPort()
+        val local = freeHostPort()
         val exposedPort = containerPort match {
           case containerPort: DockerPort.Static => toExposedPort(containerPort, containerPort.number)
           case containerPort: DockerPort.Dynamic => toExposedPort(containerPort, local)
@@ -95,6 +98,10 @@ open class ContainerResource[F[_], Tag](
         )
         PortDecl(containerPort, local, binding, labels)
     }
+  }
+
+  override def acquire: F[DockerContainer[Tag]] = F.suspendF {
+    val ports = declarePorts()
 
     // use container registry or global registry if `useRegistry` is true
     val imageRegistry = config.registry.orElse(client.globalRegistry)
@@ -349,6 +356,32 @@ open class ContainerResource[F[_], Tag](
   }
 
   protected def runNew(imageName: String, imageRegistry: Option[String], registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = {
+    for {
+      _ <- F.when(config.autoPull) {
+        doPull(imageName, imageRegistry, registryAuth)
+      }
+      out <- F.tailRecM((1, ports)) {
+        case (attempt, attemptPorts) =>
+          F.redeem[DockerContainer[Tag], Either[(Int, Seq[PortDecl]), DockerContainer[Tag]]](createAndStart(imageName, registryAuth, attemptPorts))(
+            failure = {
+              case conflict if ContainerResource.isHostPortConflict(conflict) && attempt < ContainerResource.hostPortConflictMaxAttempts =>
+                F.maybeSuspend {
+                  logger.warn(
+                    s"A host port of the container from `$imageName` was taken before the container started, will create it again with new host ports, $attempt out of ${ContainerResource.hostPortConflictMaxAttempts -> "maxAttempts"} attempts failed: $conflict"
+                  )
+                  Left((attempt + 1, declarePorts()))
+                }
+              case failure =>
+                F.fail(failure)
+            },
+            success = container => F.pure(Right(container)),
+          )
+      }
+      result <- await(out)
+    } yield result
+  }
+
+  private def createAndStart(imageName: String, registryAuth: Option[AuthConfig], ports: Seq[PortDecl]): F[DockerContainer[Tag]] = F.suspendF {
     val allPortLabels = ports.flatMap(p => p.labels).toMap ++ stableLabels
 
     val baseCmd = rawClient.createContainerCmd(imageName).withLabels(allPortLabels.asJava)
@@ -364,36 +397,30 @@ open class ContainerResource[F[_], Tag](
     val containerEnv = config.env.env(ports.map(p => p.port -> p.binding.getBinding.getHostPortSpec).toMap)
     val adjustedEnv = portsEnv ++ containerEnv
 
-    for {
-      _ <- F.when(config.autoPull) {
-        doPull(imageName, imageRegistry, registryAuth)
-      }
-      out <- F.bracketCase(acquire = F.maybeSuspend {
-        @nowarn("msg=method.*Bind.*deprecated")
-        val createContainerCmd = Value(baseCmd)
-          .mut(config.name)(_.withName(_))
-          .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
-          .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
-          .mut(adjustedEnv.nonEmpty)(_.withEnv(adjustedEnv.map { case (k, v) => s"$k=$v" }.toList.asJava))
-          .mut(config.cmd.nonEmpty)(_.withCmd(config.cmd.toList.asJava))
-          .mut(config.entrypoint.nonEmpty)(_.withEntrypoint(config.entrypoint.toList.asJava))
-          .mut(config.cwd)(_.withWorkingDir(_))
-          .mut(config.user)(_.withUser(_))
-          .mut(config.platform)(_.withPlatform(_))
-          .mut(registryAuth)(_.withAuthConfig(_))
-          .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
-          .mut(volumes.nonEmpty)(c => c.withHostConfig(c.getHostConfig.withBinds(volumes.toList.asJava)))
-          .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
-          .get
+    F.bracketCase(acquire = F.maybeSuspend {
+      @nowarn("msg=method.*Bind.*deprecated")
+      val createContainerCmd = Value(baseCmd)
+        .mut(config.name)(_.withName(_))
+        .mut(ports.nonEmpty)(_.withExposedPorts(ports.map(_.binding.getExposedPort).asJava))
+        .mut(ports.nonEmpty)(_.withPortBindings(ports.map(_.binding).asJava))
+        .mut(adjustedEnv.nonEmpty)(_.withEnv(adjustedEnv.map { case (k, v) => s"$k=$v" }.toList.asJava))
+        .mut(config.cmd.nonEmpty)(_.withCmd(config.cmd.toList.asJava))
+        .mut(config.entrypoint.nonEmpty)(_.withEntrypoint(config.entrypoint.toList.asJava))
+        .mut(config.cwd)(_.withWorkingDir(_))
+        .mut(config.user)(_.withUser(_))
+        .mut(config.platform)(_.withPlatform(_))
+        .mut(registryAuth)(_.withAuthConfig(_))
+        .mut(volumes.nonEmpty)(_.withVolumes(volumes.map(_.getVolume).asJava))
+        .mut(volumes.nonEmpty)(c => c.withHostConfig(c.getHostConfig.withBinds(volumes.toList.asJava)))
+        .map(c => c.withHostConfig(c.getHostConfig.withAutoRemove(config.autoRemove)))
+        .get
 
-        logger.debug(s"Going to create container from image `$imageName`...")
-        ContainerId(createContainerCmd.exec().getId)
-      })(release = {
-        case (containerId, Some(_)) => client.removeContainer(containerId, ContainerDestroyMeta.NoMeta, RemovalReason.FailedToStart)
-        case (_, None) => F.unit
-      })(use = startCreated(imageName, _))
-      result <- await(out)
-    } yield result
+      logger.debug(s"Going to create container from image `$imageName`...")
+      ContainerId(createContainerCmd.exec().getId)
+    })(release = {
+      case (containerId, Some(_)) => client.removeContainer(containerId, ContainerDestroyMeta.NoMeta, RemovalReason.FailedToStart)
+      case (_, None) => F.unit
+    })(use = startCreated(imageName, _))
   }
 
   private def startCreated(imageName: String, containerId: ContainerId): F[DockerContainer[Tag]] = {
@@ -599,6 +626,19 @@ open class ContainerResource[F[_], Tag](
 
 object ContainerResource {
   final case class PortDecl(port: DockerPort, localFree: Int, binding: PortBinding, labels: Map[String, String])
+
+  final val hostPortConflictMaxAttempts = 10
+
+  private val hostPortConflictMessages = Seq("address already in use", "port is already allocated")
+
+  def isHostPortConflict(failure: Throwable): Boolean = {
+    failure match {
+      case serverError: InternalServerErrorException =>
+        Option(serverError.getMessage).map(_.toLowerCase(Locale.ROOT)).exists(message => hostPortConflictMessages.exists(message.contains))
+      case _ =>
+        false
+    }
+  }
 
   def hooksDigest(reuseKeys: Seq[String]): Option[String] = {
     if (reuseKeys.isEmpty) None else Some(IzHash.sha256(reuseKeys.map(IzHash.sha256).mkString))
