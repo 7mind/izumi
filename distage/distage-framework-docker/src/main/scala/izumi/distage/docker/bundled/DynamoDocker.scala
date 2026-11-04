@@ -1,24 +1,40 @@
 package izumi.distage.docker.bundled
 
 import distage.{ModuleDef, TagK}
-import izumi.distage.docker.ContainerDef
+import izumi.distage.docker.ContainerDefTemplate
 import izumi.distage.docker.model.Docker.DockerPort
 
 /**
-  * Example AWS DynamoDB Local docker.
-  * You're encouraged to use this definition as a template and modify it to your needs.
+  * Template for creating customized AWS DynamoDB Local docker containers.
+  *
+  * {{{
+  * object MyDynamo extends DynamoDockerTemplateDef {
+  *   override def version: String = "2.4.0"
+  * }
+  *
+  * // in ModuleDef:
+  * make[MyDynamo.Container].fromResource(MyDynamo.make[F])
+  * }}}
+  *
+  * @see [[DynamoDocker]] for a ready-to-use default instance
   */
-object DynamoDocker extends ContainerDef {
+trait DynamoDockerTemplateDef extends ContainerDefTemplate {
+  self: Singleton =>
+
+  override def image: String = "amazon/dynamodb-local"
+  override def version: String = "3.3.0"
+
   val primaryPort: DockerPort = DockerPort.TCP(8000)
 
   override def config: Config = {
     Config(
-      registry = Some("public.ecr.aws"),
-      image = "aws-dynamodb-local/aws-dynamodb-local:2.3.0",
+      image = s"$image:$version",
       ports = Seq(primaryPort),
     )
   }
 }
+
+object DynamoDocker extends DynamoDockerTemplateDef
 
 class DynamoDockerModule[F[_]: TagK] extends ModuleDef {
   make[DynamoDocker.Container].fromResource {

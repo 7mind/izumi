@@ -5,9 +5,48 @@ import izumi.distage.docker.impl.ContainerResource
 import izumi.distage.model.definition.Lifecycle
 import izumi.distage.model.providers.Functoid
 
-trait ContainerDef {
-  // `ContainerDef`s must be top-level objects, otherwise `.Container` and `.Config` won't be referencable in ModuleDef
-  self: Singleton =>
+/**
+  * Base trait for Docker container definitions.
+  *
+  * Must be extended by an `object` so that [[Tag]] becomes a unique path-dependent type
+  * usable in `ModuleDef` bindings.
+  *
+  * For simple containers, extend `ContainerDef` directly:
+  *
+  * {{{
+  * object MyRedis extends ContainerDef {
+  *   val primaryPort: DockerPort = DockerPort.TCP(6379)
+  *
+  *   override def config: Config = Config(
+  *     image = "redis:7",
+  *     ports = Seq(primaryPort),
+  *   )
+  * }
+  *
+  * // in ModuleDef:
+  * make[MyRedis.Container].fromResource(MyRedis.make[F])
+  * }}}
+  *
+  * For common services, extend one of the bundled template classes
+  * (e.g. [[bundled.PostgresDockerTemplateDef]], [[bundled.CassandraDockerTemplateDef]])
+  * which provide sensible defaults and customization points:
+  *
+  * {{{
+  * object MyPostgres extends PostgresDockerTemplateDef {
+  *   override def version: String = "15"
+  *   override def postgresPassword: String = "secret"
+  * }
+  * }}}
+  *
+  * To kill all containers spawned by distage, use the following command:
+  *
+  * {{{
+  *   docker rm -f $(docker ps -q -a -f 'label=distage.type')
+  * }}}
+  *
+  * @see [[bundled]]
+  */
+trait ContainerDef { self: Singleton =>
 
   type Tag
 
