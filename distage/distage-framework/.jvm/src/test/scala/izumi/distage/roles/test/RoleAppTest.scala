@@ -4,6 +4,7 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
+import com.networknt.schema.{InputFormat, SchemaRegistry, SpecificationVersion}
 import com.typesafe.config.{ConfigFactory, ConfigObject}
 import distage.{DIKey, Injector, Locator, LocatorRef}
 import io.circe.Json
@@ -504,6 +505,33 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
           val schema = io.circe.parser.parse(new String(Files.readAllBytes(jsonSchema(role, version).toPath), UTF_8)).toTry.get
           assert(schema.hcursor.downField("properties").downField("activation").focus.contains(expectedActivationSchema), role)
       }
+
+      val schemaRegistry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12)
+      def schemaErrors(role: String, config: Json) = {
+        val schema = schemaRegistry.getSchema(new String(Files.readAllBytes(jsonSchema(s"$role-minimized", version).toPath), UTF_8), InputFormat.JSON)
+        schema.validate(config.noSpaces, InputFormat.JSON).asScala.toList
+      }
+      def writtenConfig(name: String): Json = io.circe.parser.parse(new String(Files.readAllBytes(cfg(name, version).toPath), UTF_8)).toTry.get
+
+      for {
+        role <- Seq("configtest", "testrole03", "testrole04", "testrole05")
+        kind <- Seq("minimized", "full")
+      } {
+        val errors = schemaErrors(role, writtenConfig(s"$role-$kind"))
+        assert(errors.isEmpty, s"$role-$kind: $errors")
+      }
+
+      val role5Config = writtenConfig("testrole05-minimized")
+      def role5Errors(modify: Json => Option[Json]): List[String] = schemaErrors("testrole05", modify(role5Config).get).map(_.getKeyword)
+      def role5Activation(choices: (String, String)*): Json => Option[Json] =
+        _.hcursor.downField("activation").set(Json.obj(choices.map { case (k, v) => (k, Json.fromString(v)) }*)).top
+
+      assert(role5Errors(_.hcursor.downField("rolelocal1").downField("dummy").delete.top).isEmpty)
+      assert(role5Errors(_.hcursor.downField("rolelocal1").downField("dummy").downField("a").set(Json.fromString("1")).top) == List("type"))
+      assert(role5Errors(_.hcursor.downField("rolelocal1").downField("str").delete.top) == List("required"))
+      assert(role5Errors(role5Activation("role05localaxis" -> "rolelocal2", "axiscomponentaxis" -> "incorrect")).isEmpty)
+      assert(role5Errors(role5Activation("role05localaxis" -> "rolelocal3")) == List("enum"))
+      assert(role5Errors(role5Activation("unknownaxis" -> "rolelocal1")) == List("additionalProperties"))
     }
 
     "prioritize configs as expected, support system property" in {

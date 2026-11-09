@@ -50,4 +50,5 @@ object V {
 
   // test-only
   val scalamock = "7.5.2"
+  val json_schema_validator = "3.0.9"
 }
