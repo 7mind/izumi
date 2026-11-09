@@ -7,6 +7,7 @@ import io.circe.Json
 import izumi.distage.config.codec.ConfigMetaType
 import izumi.distage.config.codec.ConfigMetaType.ConfigField
 import izumi.distage.config.model.ConfTag
+import izumi.distage.framework.model.ActivationInfo
 import izumi.distage.framework.services.{ConfigFilteringStrategy, ConfigMerger, RoleAppPlanner}
 import izumi.distage.model.definition.{Binding, Id}
 import izumi.distage.model.plan.Roots
@@ -40,6 +41,7 @@ final class ConfigWriter[F[_]: TagK](
   logger: IzLogger,
   launcherVersion: ArtifactVersion @Id("launcher-version"),
   roleInfo: RolesInfo,
+  activationInfo: ActivationInfo,
   roleAppPlanner: RoleAppPlanner,
   appConfig: AppConfig,
   configMerger: ConfigMerger,
@@ -50,7 +52,7 @@ final class ConfigWriter[F[_]: TagK](
   // fixme: always include `activation` section in configs (Used in RoleAppLauncherImpl#configActivationSection, but not seen in config bindings, since it's not read by DI)
   //  should've been unnecessary after https://github.com/7mind/izumi/issues/779
   //  but, the contents of the MainAppModule (including `"activation"` config read) are not accessible here from `RoleAppPlanner` yet...
-  private val _HackyMandatorySection = ConfigPath("activation", wildcard = true)
+  private val _HackyMandatorySection = ConfigPath(JsonSchemaGenerator.ActivationSection, wildcard = true)
 
   override def start(roleParameters: EntrypointArgs): F[Unit] = {
     F.maybeSuspend {
@@ -129,7 +131,7 @@ final class ConfigWriter[F[_]: TagK](
     val filteredModule = bindings.filter(reachable.contains)
     val configTags = extractConfigTags(filteredModule.bindings)
 
-    val schema = new JsonSchemaGenerator().generateSchema(configTags)
+    val schema = new JsonSchemaGenerator().generateSchema(configTags, activationInfo)
 
     val resolvedConfig =
       extractConfigPaths(configTags).toSet + _HackyMandatorySection

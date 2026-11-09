@@ -6,6 +6,7 @@ import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
 import com.typesafe.config.{ConfigFactory, ConfigObject}
 import distage.{DIKey, Injector, Locator, LocatorRef}
+import io.circe.Json
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
@@ -488,6 +489,21 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(configTestDoc == "docstest: ConfigTestConfig doc")
       val commonReferenceDevFieldDoc = configTestConfigCursor.downField("properties").downField("commonReferenceDev").downField("$comment").as[String].toTry.get
       assert(commonReferenceDevFieldDoc == "docstest: field doc")
+
+      val expectedActivationSchema = Json.obj(
+        "type" -> Json.fromString("object"),
+        "properties" -> Json.obj(
+          "axiscomponentaxis" -> Json.obj("enum" -> Json.arr(Json.fromString("correct"), Json.fromString("incorrect"))),
+          "mode" -> Json.obj("enum" -> Json.arr(Json.fromString("prod"), Json.fromString("test"))),
+          "role05localaxis" -> Json.obj("enum" -> Json.arr(Json.fromString("rolelocal1"), Json.fromString("rolelocal2"))),
+        ),
+        "additionalProperties" -> Json.False,
+      )
+      Seq("testrole03-minimized", "testrole05-minimized").foreach {
+        role =>
+          val schema = io.circe.parser.parse(new String(Files.readAllBytes(jsonSchema(role, version).toPath), UTF_8)).toTry.get
+          assert(schema.hcursor.downField("properties").downField("activation").focus.contains(expectedActivationSchema), role)
+      }
     }
 
     "prioritize configs as expected, support system property" in {

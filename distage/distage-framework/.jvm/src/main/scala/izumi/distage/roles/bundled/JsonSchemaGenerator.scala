@@ -4,17 +4,30 @@ import io.circe.{Json, JsonObject}
 import izumi.distage.config.codec.ConfigMetaType.{ConfigField, TCaseClass, TVariant}
 import izumi.distage.config.codec.{ConfigMetaBasicType, ConfigMetaType, ConfigMetaTypeId}
 import izumi.distage.config.model.ConfTag
-import izumi.distage.roles.bundled.JsonSchemaGenerator.TLAccumulator
+import izumi.distage.framework.model.ActivationInfo
+import izumi.distage.roles.bundled.JsonSchemaGenerator.{ActivationSection, TLAccumulator}
 import izumi.fundamentals.collections.nonempty.NEList
 
 import scala.collection.mutable
 
 class JsonSchemaGenerator {
 
-  def generateSchema(tags: Seq[ConfTag]): Json = {
+  def generateSchema(tags: Seq[ConfTag], activationInfo: ActivationInfo): Json = {
     val unified = unifyTopLevel(tags)
     val schema = generateSchema(unified)
-    schema
+    schema.deepMerge(JsonObject("properties" -> JsonObject(ActivationSection -> activationSchema(activationInfo)).toJson).toJson)
+  }
+
+  private def activationSchema(activationInfo: ActivationInfo): Json = {
+    val axes = activationInfo.availableChoices.toSeq.map {
+      case (axis, choices) =>
+        (axis.name, JsonObject("enum" -> Json.fromValues(choices.toSeq.map(_.value).sorted.map(Json.fromString))).toJson)
+    }.sortBy(_._1)
+    JsonObject(
+      "type" -> Json.fromString("object"),
+      "properties" -> JsonObject(axes*).toJson,
+      "additionalProperties" -> Json.False,
+    ).toJson
   }
 
   private def unifyTopLevel(tags: Seq[ConfTag]): ConfigMetaType = {
@@ -239,6 +252,8 @@ class JsonSchemaGenerator {
 }
 
 object JsonSchemaGenerator {
+  final val ActivationSection = "activation"
+
   final case class TLAccumulator(typings: mutable.HashSet[ConfigMetaType], entries: mutable.HashMap[String, TLAccumulator]) {
 
     def add(pathElement: String, typing: Option[ConfigMetaType]): Unit = {
