@@ -94,7 +94,16 @@ class JsonSchemaGenerator {
         st.branches.foreach {
           case (_, tpe) => generateSchema(tpe, defs)
         }
-        val fields = Seq("anyOf" -> Json.fromValues(st.branches.map(_._2).map(refOf))) ++ genDoc(st.doc)
+        val branches = st.branches.map {
+          case (name, tpe) =>
+            JsonObject(
+              "type" -> Json.fromString("object"),
+              "properties" -> JsonObject(name -> refOf(tpe)).toJson,
+              "required" -> Json.arr(Json.fromString(name)),
+              "additionalProperties" -> Json.False,
+            ).toJson
+        }
+        val fields = Seq("anyOf" -> Json.fromValues(branches)) ++ genDoc(st.doc)
         JsonObject(fields*).toJson
 
       case _: ConfigMetaType.TUnknown =>

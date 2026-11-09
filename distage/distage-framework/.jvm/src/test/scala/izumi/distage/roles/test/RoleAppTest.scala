@@ -514,15 +514,17 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       def writtenConfig(name: String): Json = io.circe.parser.parse(new String(Files.readAllBytes(cfg(name, version).toPath), UTF_8)).toTry.get
 
       for {
-        role <- Seq("configtest", "testrole03", "testrole04", "testrole05")
+        role <- Seq("configtest", "testrole00", "testrole03", "testrole04", "testrole05")
         kind <- Seq("minimized", "full")
       } {
         val errors = schemaErrors(role, writtenConfig(s"$role-$kind"))
         assert(errors.isEmpty, s"$role-$kind: $errors")
       }
 
-      val role5Config = writtenConfig("testrole05-minimized")
-      def role5Errors(modify: Json => Option[Json]): List[String] = schemaErrors("testrole05", modify(role5Config).get).map(_.getKeyword)
+      def modifiedConfigErrors(role: String)(modify: Json => Option[Json]): List[String] =
+        schemaErrors(role, modify(writtenConfig(s"$role-minimized")).get).map(_.getKeyword)
+      def role5Errors(modify: Json => Option[Json]): List[String] = modifiedConfigErrors("testrole05")(modify)
+      def role0SealedTraitErrors(value: Json): Set[String] = modifiedConfigErrors("testrole00")(_.hcursor.downField("testservice").downField("a").set(value).top).toSet
       def role5Activation(choices: (String, String)*): Json => Option[Json] =
         _.hcursor.downField("activation").set(Json.obj(choices.map { case (k, v) => (k, Json.fromString(v)) }*)).top
 
@@ -532,6 +534,11 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(role5Errors(role5Activation("role05localaxis" -> "rolelocal2", "axiscomponentaxis" -> "incorrect")).isEmpty)
       assert(role5Errors(role5Activation("role05localaxis" -> "rolelocal3")) == List("enum"))
       assert(role5Errors(role5Activation("unknownaxis" -> "rolelocal1")) == List("additionalProperties"))
+
+      assert(role0SealedTraitErrors(Json.obj("A2" -> Json.obj("v2" -> Json.fromString("x")))).isEmpty)
+      assert(role0SealedTraitErrors(Json.obj("A3" -> Json.obj("v1" -> Json.fromInt(1)))) == Set("required", "additionalProperties"))
+      assert(role0SealedTraitErrors(Json.obj("A1" -> Json.obj("v1" -> Json.fromString("x")))) == Set("type", "required", "additionalProperties"))
+      assert(role0SealedTraitErrors(Json.obj("A1" -> Json.obj("v1" -> Json.fromInt(1)), "A2" -> Json.obj("v2" -> Json.fromString("x")))) == Set("additionalProperties"))
     }
 
     "prioritize configs as expected, support system property" in {
