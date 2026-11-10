@@ -1,6 +1,10 @@
 package izumi.distage.testkit.docker
 
+import com.github.dockerjava.api.command.InspectImageResponse
 import com.github.dockerjava.api.exception.NotFoundException
+import com.github.dockerjava.core.DockerClientConfig
+import com.github.dockerjava.transport.DockerHttpClient
+import com.github.dockerjava.zerodep.ZerodepDockerHttpClient
 import distage.{DefaultModule2, ModuleDef, TagKK}
 import izumi.distage.docker.ContainerDef
 import izumi.distage.docker.healthcheck.ContainerHealthCheck
@@ -11,6 +15,10 @@ import izumi.distage.testkit.model.TestConfig
 import izumi.distage.testkit.scalatest.Spec2
 import izumi.functional.bio.{F, IO2}
 import org.scalatest.Assertion
+
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets.UTF_8
+import scala.util.Using
 
 final class DockerPullWithPlatformTestZIO extends DockerPullWithPlatformTest[zio.IO]
 
@@ -42,6 +50,19 @@ abstract class DockerPullWithPlatformTest[F[+_, +_]: DefaultModule2: TagKK: IO2]
     }
   )
 
+  private def inspectRiscV64Image(config: DockerClientConfig): InspectImageResponse = {
+    val platform = URLEncoder.encode("""{"os":"linux","architecture":"riscv64"}""", UTF_8.name)
+    val request = DockerHttpClient.Request.builder().method(DockerHttpClient.Request.Method.GET).path(s"/images/$imageName/json?platform=$platform").build()
+    Using.resource(new ZerodepDockerHttpClient.Builder().dockerHost(config.getDockerHost).sslConfig(config.getSSLConfig).build()) {
+      httpClient =>
+        Using.resource(httpClient.execute(request)) {
+          response =>
+            assert(response.getStatusCode == 200)
+            config.getObjectMapper.readValue(response.getBody, classOf[InspectImageResponse])
+        }
+    }
+  }
+
   "Platform-specific image pull" should {
 
     "pull hello-world for linux/riscv64 and verify image architecture" in {
@@ -58,7 +79,7 @@ abstract class DockerPullWithPlatformTest[F[+_, +_]: DefaultModule2: TagKK: IO2]
 
         def verifyImagePulled: F[Throwable, Assertion] = {
           F.syncThrowable {
-            val inspection = client.rawClient.inspectImageCmd(imageName).exec()
+            val inspection = inspectRiscV64Image(client.rawClientConfig)
             assert(inspection.getArch == "riscv64")
             assert(inspection.getOs == "linux")
           }
