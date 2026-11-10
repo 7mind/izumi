@@ -34,6 +34,7 @@ object Izumi {
     val bytebuddy = Version.VExpr("V.bytebuddy")
     val scala_java_time = Version.VExpr("V.scala_java_time")
     val scalamock = Version.VExpr("V.scalamock")
+    val json_schema_validator = Version.VExpr("V.json_schema_validator")
     val docker_java = Version.VExpr("V.docker_java")
     val commons_compress = Version.VExpr("V.commons_compress")
     val scalajs_java_securerandom = Version.VExpr("V.scalajs_java_securerandom")
@@ -148,6 +149,7 @@ object Izumi {
 
     final val scala_java_time = Library("io.github.cquiroz", "scala-java-time", V.scala_java_time, LibraryType.Auto)
     final val scalamock = Library("org.scalamock", "scalamock", V.scalamock, LibraryType.Auto)
+    final val json_schema_validator = Library("com.networknt", "json-schema-validator", V.json_schema_validator, LibraryType.Invariant)
     final val scalajs_macrotask_executor = Library("org.scala-js", "scala-js-macrotask-executor", V.scalajs_macrotask_executor, LibraryType.Auto)
 
     final val slf4j_api = Library("org.slf4j", "slf4j-api", V.slf4j, LibraryType.Invariant)
@@ -759,6 +761,7 @@ object Izumi {
         libs = allCatsOptional ++ allMonadsTest ++ Seq(scala_reflect) ++ Seq(scala3_compiler) ++ Seq(
           circe_parser in Scope.Test.all,
           circe_parser in Scope.Compile.js,
+          json_schema_validator in Scope.Test.jvm,
         ),
         depends = Seq(Projects.distage.extensionLogstage, Projects.logstage.renderingCirce).map(_ in Scope.Compile.all) ++
           Seq(Projects.distage.core, Projects.distage.frameworkApi, Projects.distage.plugins, Projects.distage.config).map(_ in Scope.Compile.all) ++

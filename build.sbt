@@ -3394,6 +3394,11 @@ lazy val `distage-framework` = crossProject(JVMPlatform, JSPlatform).crossType(C
   )
   .enablePlugins(SitePreviewPlugin)
 lazy val `distage-frameworkJVM` = `distage-framework`.jvm
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.networknt" % "json-schema-validator" % V.json_schema_validator % Test
+    )
+  )
 lazy val `distage-frameworkJS` = `distage-framework`.js
   .settings(
     libraryDependencies ++= Seq(

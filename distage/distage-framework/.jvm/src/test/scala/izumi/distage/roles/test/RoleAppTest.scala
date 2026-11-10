@@ -4,8 +4,10 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import com.github.pshirshov.test.plugins.{StaticTestMainLogIO2, StaticTestRole}
 import com.github.pshirshov.test3.plugins.Fixture3
+import com.networknt.schema.{InputFormat, SchemaRegistry, SpecificationVersion}
 import com.typesafe.config.{ConfigFactory, ConfigObject}
 import distage.{DIKey, Injector, Locator, LocatorRef}
+import io.circe.Json
 import izumi.distage.framework.config.PlanningOptions
 import izumi.distage.framework.services.RoleAppPlanner
 import izumi.distage.model.PlannerInput
@@ -488,6 +490,55 @@ class RoleAppTest extends AnyWordSpec with WithProperties {
       assert(configTestDoc == "docstest: ConfigTestConfig doc")
       val commonReferenceDevFieldDoc = configTestConfigCursor.downField("properties").downField("commonReferenceDev").downField("$comment").as[String].toTry.get
       assert(commonReferenceDevFieldDoc == "docstest: field doc")
+
+      val expectedActivationSchema = Json.obj(
+        "type" -> Json.fromString("object"),
+        "properties" -> Json.obj(
+          "axiscomponentaxis" -> Json.obj("enum" -> Json.arr(Json.fromString("correct"), Json.fromString("incorrect"))),
+          "mode" -> Json.obj("enum" -> Json.arr(Json.fromString("prod"), Json.fromString("test"))),
+          "role05localaxis" -> Json.obj("enum" -> Json.arr(Json.fromString("rolelocal1"), Json.fromString("rolelocal2"))),
+        ),
+        "additionalProperties" -> Json.False,
+      )
+      Seq("testrole03-minimized", "testrole05-minimized").foreach {
+        role =>
+          val schema = io.circe.parser.parse(new String(Files.readAllBytes(jsonSchema(role, version).toPath), UTF_8)).toTry.get
+          assert(schema.hcursor.downField("properties").downField("activation").focus.contains(expectedActivationSchema), role)
+      }
+
+      val schemaRegistry = SchemaRegistry.withDefaultDialect(SpecificationVersion.DRAFT_2020_12)
+      def schemaErrors(role: String, config: Json) = {
+        val schema = schemaRegistry.getSchema(new String(Files.readAllBytes(jsonSchema(s"$role-minimized", version).toPath), UTF_8), InputFormat.JSON)
+        schema.validate(config.noSpaces, InputFormat.JSON).asScala.toList
+      }
+      def writtenConfig(name: String): Json = io.circe.parser.parse(new String(Files.readAllBytes(cfg(name, version).toPath), UTF_8)).toTry.get
+
+      for {
+        role <- Seq("configtest", "testrole00", "testrole03", "testrole04", "testrole05")
+        kind <- Seq("minimized", "full")
+      } {
+        val errors = schemaErrors(role, writtenConfig(s"$role-$kind"))
+        assert(errors.isEmpty, s"$role-$kind: $errors")
+      }
+
+      def modifiedConfigErrors(role: String)(modify: Json => Option[Json]): List[String] =
+        schemaErrors(role, modify(writtenConfig(s"$role-minimized")).get).map(_.getKeyword)
+      def role5Errors(modify: Json => Option[Json]): List[String] = modifiedConfigErrors("testrole05")(modify)
+      def role0SealedTraitErrors(value: Json): Set[String] = modifiedConfigErrors("testrole00")(_.hcursor.downField("testservice").downField("a").set(value).top).toSet
+      def role5Activation(choices: (String, String)*): Json => Option[Json] =
+        _.hcursor.downField("activation").set(Json.obj(choices.map { case (k, v) => (k, Json.fromString(v)) }*)).top
+
+      assert(role5Errors(_.hcursor.downField("rolelocal1").downField("dummy").delete.top).isEmpty)
+      assert(role5Errors(_.hcursor.downField("rolelocal1").downField("dummy").downField("a").set(Json.fromString("1")).top) == List("type"))
+      assert(role5Errors(_.hcursor.downField("rolelocal1").downField("str").delete.top) == List("required"))
+      assert(role5Errors(role5Activation("role05localaxis" -> "rolelocal2", "axiscomponentaxis" -> "incorrect")).isEmpty)
+      assert(role5Errors(role5Activation("role05localaxis" -> "rolelocal3")) == List("enum"))
+      assert(role5Errors(role5Activation("unknownaxis" -> "rolelocal1")) == List("additionalProperties"))
+
+      assert(role0SealedTraitErrors(Json.obj("A2" -> Json.obj("v2" -> Json.fromString("x")))).isEmpty)
+      assert(role0SealedTraitErrors(Json.obj("A3" -> Json.obj("v1" -> Json.fromInt(1)))) == Set("required", "additionalProperties"))
+      assert(role0SealedTraitErrors(Json.obj("A1" -> Json.obj("v1" -> Json.fromString("x")))) == Set("type", "required", "additionalProperties"))
+      assert(role0SealedTraitErrors(Json.obj("A1" -> Json.obj("v1" -> Json.fromInt(1)), "A2" -> Json.obj("v2" -> Json.fromString("x")))) == Set("additionalProperties"))
     }
 
     "prioritize configs as expected, support system property" in {
