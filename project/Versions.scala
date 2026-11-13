@@ -49,6 +49,6 @@ object V {
   val paradox_material_theme = "0.7.0"
 
   // test-only
-  val scalamock = "7.5.2"
+  val scalamock = "7.5.5"
   val json_schema_validator = "3.0.9"
 }
