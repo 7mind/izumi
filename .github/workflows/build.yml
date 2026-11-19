@@ -95,6 +95,8 @@ jobs:
       - name: Upload dependency graph
         if: needs.checksecret.outputs.HAVE_SECRETS == 'true'
         uses: scalacenter/sbt-dependency-submission@v3.2.3
+        with:
+          modules-ignore: logstage-scala-compat-test_3
 
   build-js:
     runs-on: ubuntu-latest
