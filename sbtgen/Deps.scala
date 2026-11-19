@@ -509,6 +509,7 @@ object Izumi {
       final val basePath = Seq("logstage")
 
       final lazy val core = ArtifactId("logstage-core")
+      final lazy val scalaCompatTest = ArtifactId("logstage-scala-compat-test")
       final lazy val renderingCirce = ArtifactId("logstage-rendering-circe")
       final lazy val adapterSlf4j = ArtifactId("logstage-adapter-slf4j")
       final lazy val sinkSlf4j = ArtifactId("logstage-sink-slf4j")
@@ -824,6 +825,15 @@ object Izumi {
         ).map(_ in Scope.Compile.all),
       ),
       Artifact(
+        name = Projects.logstage.scalaCompatTest,
+        libs = Nil,
+        depends = Seq(Projects.logstage.core in Scope.Test.jvm),
+        platforms = Targets.jvm.map(_.copy(language = Seq(ScalaVersion("3.10.1")))),
+        settings = Seq(
+          "skip" in SettingScope.Raw("publish") := true
+        ),
+      ),
+      Artifact(
         name = Projects.logstage.renderingCirce,
         libs = Seq(
           circe_core in Scope.Compile.all,
@@ -868,7 +878,7 @@ object Izumi {
         libs = (allMonads ++ doobie_all).map(_ in Scope.Compile.all) ++
           Seq(circe_generic in Scope.Compile.all) ++
           Seq(zio_managed in Scope.Compile.all),
-        depends = all.flatMap(_.artifacts).map(_.name in Scope.Compile.all).distinct,
+        depends = all.flatMap(_.artifacts).map(_.name).filterNot(_ == Projects.logstage.scalaCompatTest).map(_ in Scope.Compile.all).distinct,
         settings = Seq(
           // ignore microsite in IDEA
           """SettingKey[Boolean]("ide-skip-project")""" := true,
@@ -930,7 +940,9 @@ object Izumi {
               .map { case (file, path) => conv.toVirtualFile(file.toPath) -> path }
           }""".raw,
           SettingDef.RawSettingDef(
-            "ScalaUnidoc / unidoc / unidocProjectFilter := inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)"
+            """ScalaUnidoc / unidoc / unidocProjectFilter := (
+              inAggregates(`fundamentals-jvm`, transitive = true) || inAggregates(`distage-jvm`, transitive = true) || inAggregates(`logstage-jvm`, transitive = true)
+            ) -- inProjects(`logstage-scala-compat-test`)"""
           ),
           // Overlay src/main/paradox-overlay/ on the resolved paradox-material-theme
           // directory. We hook on `paradoxTemplate` (the task that constructs the
