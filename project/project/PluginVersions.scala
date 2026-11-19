@@ -1,13 +1,13 @@
 object PV {
-  val scala_js_version = "1.22.0"
+  val scala_js_version = "1.23.0"
 
   val sbt_mdoc = "2.9.2"
-  val jsoup = "1.23.2"
-  val sbt_paradox = "0.11.0"
+  val jsoup = "1.24.1"
+  val sbt_paradox = "0.11.1"
   val sbt_ghpages = "0.10.0"
   val sbt_site = "1.8.0"
   val sbt_unidoc = "0.6.1"
   val sbt_scoverage = "2.4.4"
-  val sbt_pgp = "2.3.2"
+  val sbt_pgp = "2.4.0"
   val sbt_assembly = "0.14.9"
 }
