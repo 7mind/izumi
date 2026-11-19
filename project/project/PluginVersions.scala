@@ -1,5 +1,5 @@
 object PV {
-  val scala_js_version = "1.22.0"
+  val scala_js_version = "1.23.0"
 
   val sbt_mdoc = "2.9.2"
   val jsoup = "1.24.1"
