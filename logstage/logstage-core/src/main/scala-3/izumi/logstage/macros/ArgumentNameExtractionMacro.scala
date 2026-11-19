@@ -15,6 +15,7 @@ class ArgumentNameExtractionMacro[Q <: Quotes](strict: Boolean)(using final val 
   import qctx.reflect.*
 
   private val arrowAssocSym: Symbol = Symbol.requiredMethod("scala.Predef.ArrowAssoc")
+  private lazy val predefArrowSyms: List[Symbol] = defn.PredefModule.moduleClass.declaredMethod("->")
 
   @inline override protected final def debug(arg: Term, s: => String): Unit = {
     if (applyDebug) {
@@ -67,6 +68,8 @@ class ArgumentNameExtractionMacro[Q <: Quotes](strict: Boolean)(using final val 
               ),
               List(rightExpr),
             ) =>
+          Some((leftExpr, rightExpr))
+        case Apply(TypeApply(Apply(TypeApply(arrow, List(_)), leftExpr :: Nil), List(_)), rightExpr :: Nil) if predefArrowSyms.contains(arrow.symbol) =>
           Some((leftExpr, rightExpr))
         case _ => None
       }
