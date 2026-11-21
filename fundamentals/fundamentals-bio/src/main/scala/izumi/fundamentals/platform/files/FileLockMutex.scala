@@ -85,19 +85,14 @@ object FileLockMutex {
       }
     }
 
-    type Attempt = Either[Int, (Int, FileLock)]
-
-    def retryOnFileLock(
-      start: Int,
-      onFirstOverlap: => F[Unit],
-    )(doAcquire: => F[FileLock]
-    ): F[Attempt] = {
-      F.tailRecM[Int, Attempt](start) {
+    def enterGate(gate: FileChannel): F[Either[Int, Boolean]] = {
+      F.tailRecM[Int, Either[Int, Boolean]](0) {
         attempts =>
-          F.redeem[FileLock, Either[Int, Attempt]](doAcquire)(
+          def acquire = waitForExternal(F.maybeSuspend(Option(gate.tryLock(0L, 1L, true))))
+          F.redeem[FileLock, Either[Int, Either[Int, Boolean]]](acquire)(
             {
               case _: OverlappingFileLockException =>
-                F.when(attempts == start)(onFirstOverlap).flatMap {
+                F.when(attempts == 0)(lockAlreadyExistedLog).flatMap {
                   _ =>
                     if (attempts < maxAttempts) {
                       val next = attempts + 1
@@ -108,17 +103,9 @@ object FileLockMutex {
                 }
               case other => F.fail(other)
             },
-            lock => F.pure(Right(Right((attempts, lock)))),
+            _ => F.pure(Right(Right(attempts == 0))),
           )
       }
-    }
-
-    def openMutex(file: File, reportedOverlap: Boolean): F[AsynchronousFileChannel] = F.maybeSuspend(file.createNewFile()).flatMap {
-      created =>
-        F.when(!created && !reportedOverlap)(lockAlreadyExistedLog).flatMap {
-          _ =>
-            F.maybeSuspend(AsynchronousFileChannel.open(file.toPath, StandardOpenOption.WRITE))
-        }
     }
 
     Lifecycle.liftF(F.maybeSuspend(new File(System.getProperty("java.io.tmpdir"), s"$filename.tmp").getCanonicalFile)).flatMap {
@@ -137,23 +124,22 @@ object FileLockMutex {
         def openGate = F.maybeSuspend(FileChannel.open(sidecar, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE))
         Lifecycle.make(openGate)(gate => F.maybeSuspend(gate.close())).flatMap {
           gate =>
-            Lifecycle.liftF(retryOnFileLock(0, lockAlreadyExistedLog)(waitForExternal(F.maybeSuspend(Option(gate.tryLock(0L, 1L, true)))))).flatMap {
+            Lifecycle.liftF(enterGate(gate)).flatMap {
               case Left(attempts) => Lifecycle.liftF(fail(attempts))
-              case Right((used, _)) =>
+              case Right(firstAttempt) =>
+                def openMutex = F.maybeSuspend(file.createNewFile()).flatMap {
+                  created =>
+                    F.when(!created && firstAttempt)(lockAlreadyExistedLog)
+                      .flatMap(_ => F.maybeSuspend(AsynchronousFileChannel.open(file.toPath, StandardOpenOption.WRITE)))
+                }
                 Lifecycle
-                  .make(openMutex(file, used != 0))(
+                  .make(openMutex)(
                     channel =>
                       F.maybeSuspend {
                         try channel.close()
                         finally gate.close()
                       }
-                  ).evalMap {
-                    channel =>
-                      retryOnFileLock(used, F.unit)(acquireLock(channel)).flatMap {
-                        case Left(attempts) => fail(attempts)
-                        case Right((_, lock)) => succ(lock)
-                      }
-                  }
+                  ).evalMap(channel => acquireLock(channel).flatMap(succ))
             }
         }
     }
