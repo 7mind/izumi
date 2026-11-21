@@ -3,7 +3,7 @@ package izumi.fundamentals.platform.files
 import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.functional.Identity
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future, TimeoutException}
 import scala.concurrent.duration.*
 import scala.io.StdIn
 
@@ -50,8 +50,11 @@ object FileLockMutexProcess {
             require(contender.isEmpty, "duplicate WAIT")
             val thread = new Thread(() => {
               try {
-                println("REQUEST")
-                mutex(other, new OnPendingFileLock(() => println("SUBMITTED"))).use(_ => println("ACQUIRED"))
+                val observed = new OnPendingFileLock[Identity](future => {
+                  try { val _ = Await.ready(future, 1.second) }
+                  catch { case _: TimeoutException => println("PENDING") }
+                })
+                mutex(other, observed).use(_ => ())
                 println("COMPLETE")
               } catch {
                 case error: Throwable =>
@@ -77,18 +80,16 @@ object FileLockMutexProcess {
   }
 }
 
-private[files] final class OnPendingFileLock(pending: () => Unit) extends QuasiAsync[Identity] {
-  private val delegate = QuasiAsync.quasiAsyncIdentity
-
-  override def fromFuture[A](effect: => Future[A]): A = {
+private[files] final class OnPendingFileLock[F[_]](pending: Future[?] => Unit)(implicit delegate: QuasiAsync[F]) extends QuasiAsync[F] {
+  override def fromFuture[A](effect: => Future[A]): F[A] = delegate.fromFuture {
     val future = effect
-    if (!future.isCompleted) pending()
-    delegate.fromFuture[A](future)
+    if (!future.isCompleted) pending(future)
+    future
   }
 
-  override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): A = delegate.async[A](effect)
-  override def parTraverse[A, B](l: IterableOnce[A])(f: A => B): List[B] = delegate.parTraverse(l)(f)
-  override def parTraverse_[A](l: IterableOnce[A])(f: A => Unit): Unit = delegate.parTraverse_(l)(f)
-  override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => B): List[B] = delegate.parTraverseN(n)(l)(f)
-  override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => Unit): Unit = delegate.parTraverseN_(n)(l)(f)
+  override def async[A](effect: (Either[Throwable, A] => Unit) => Unit): F[A] = delegate.async[A](effect)
+  override def parTraverse[A, B](l: IterableOnce[A])(f: A => F[B]): F[List[B]] = delegate.parTraverse(l)(f)
+  override def parTraverse_[A](l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = delegate.parTraverse_(l)(f)
+  override def parTraverseN[A, B](n: Int)(l: IterableOnce[A])(f: A => F[B]): F[List[B]] = delegate.parTraverseN(n)(l)(f)
+  override def parTraverseN_[A](n: Int)(l: IterableOnce[A])(f: A => F[Unit]): F[Unit] = delegate.parTraverseN_(n)(l)(f)
 }

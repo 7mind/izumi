@@ -11,12 +11,13 @@ import org.scalatest.Outcome
 import org.scalatest.wordspec.FixtureAnyWordSpec
 
 import java.io.{BufferedReader, File, IOException, InputStreamReader, PrintWriter}
-import java.net.URLClassLoader
+import java.net.{URL, URLClassLoader}
 import java.nio.channels.{FileLock, OverlappingFileLockException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, LinkedBlockingQueue, TimeUnit}
+import java.util.jar.{Attributes, JarOutputStream, Manifest}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
@@ -33,6 +34,23 @@ private[files] trait FileLockMutexFixture extends FixtureAnyWordSpec {
       Using.resource(Files.newDirectoryStream(dir))(_.forEach(path => Files.delete(path)))
       Files.delete(dir)
     }
+  }
+
+  protected def classpath: List[URL] = {
+    val loaders = Iterator.iterate[ClassLoader](getClass.getClassLoader)(_.getParent).takeWhile(_ != null)
+    val urls = loaders.collect { case loader: URLClassLoader => loader.getURLs.toList }.flatten
+    (urls ++ System.getProperty("java.class.path").split(File.pathSeparator).iterator.map(p => Paths.get(p).toUri.toURL)).toList.distinct
+  }
+
+  protected def childJvm(main: String, name: String, args: String*): ProcessBuilder = {
+    val dir = Paths.get(System.getProperty("java.io.tmpdir"), name).getParent
+    val jar = Files.createTempFile(dir, "classpath-", ".jar")
+    val manifest = new Manifest()
+    manifest.getMainAttributes.put(Attributes.Name.MANIFEST_VERSION, "1.0").discard()
+    manifest.getMainAttributes.put(Attributes.Name.CLASS_PATH, classpath.map(_.toURI.toASCIIString).mkString(" ")).discard()
+    Using.resource(new JarOutputStream(Files.newOutputStream(jar), manifest))(_ => ())
+    val java = Paths.get(System.getProperty("java.home"), "bin", "java").toString
+    new ProcessBuilder((List(java, "-Xmx128m", s"-Djava.io.tmpdir=${System.getProperty("java.io.tmpdir")}", "-cp", jar.toString, main, name) ++ args).asJava)
   }
 }
 
@@ -102,15 +120,14 @@ class FileLockMutexTest extends FileLockMutexFixture {
     "wait for another process even when the same-process retry budget is zero" in { mutexName =>
       val name = mutexName()
       withChild(name, mutexName()) { child =>
-        val sleeping = new CountDownLatch(1)
+        val pending = new CountDownLatch(1)
         val acquired = start {
-          mutex(name, 0, observingTimer(sleeping), (_, _) => fail("unexpected overlap retry"), new OnPendingFileLock(() => sleeping.countDown()))(
+          mutex(name, 0, timer, (_, _) => fail("unexpected overlap retry"), onPending[Identity](pending))(
             _ => fail("external ownership exhausted the same-process budget"),
             _.isValid,
           ).use(identity)
         }
-        awaitContention(acquired, sleeping, name)
-        assert(!acquired.isCompleted)
+        awaitContention(acquired, pending)
         child.command("RELEASE")
         assert(Await.result(acquired, watchdog))
       }
@@ -121,17 +138,17 @@ class FileLockMutexTest extends FileLockMutexFixture {
       val second = mutexName()
       withChild(second, first) { child =>
         val (_, release) = mutex(first, 0, timer, (_, _) => ())(_ => (), _ => ()).unsafeAllocate()
-        val sleeping = new CountDownLatch(1)
+        val pending = new CountDownLatch(1)
         val acquired = start {
-          mutex(second, 0, observingTimer(sleeping), (_, _) => fail("unexpected overlap retry"), new OnPendingFileLock(() => if (!hasProcLocks) sleeping.countDown()))(
+          mutex(second, 0, timer, (_, _) => fail("unexpected overlap retry"), onPending[Identity](pending))(
             _ => fail("unexpected exhaustion"),
             _.isValid,
           ).use(identity)
         }
         val outcome = try {
-          awaitContention(acquired, sleeping, second)
+          awaitContention(acquired, pending)
           child.command("WAIT")
-          child.awaitAny(if (hasProcLocks) Set("SLEEP", "ERROR") else Set("SUBMITTED", "SLEEP", "ERROR"))
+          child.awaitAny(Set("SLEEP", "PENDING", "ERROR"))
         } finally release()
         child.command("RELEASE")
         assert(Await.result(acquired, watchdog))
@@ -179,19 +196,19 @@ class FileLockMutexTest extends FileLockMutexFixture {
     }
 
     "release a pending file lock when a MiniBIOAsync waiter is interrupted" in { mutexName =>
-      assume(Files.isRegularFile(Paths.get("/proc/locks")))
       implicit val ec: ExecutionContext = ExecutionContext.global
       type Task[A] = MiniBIOAsync[Throwable, A]
       val name = mutexName()
       withChild(name, mutexName()) { child =>
+        val pending = new CountDownLatch(1)
         val (result, interrupt) = QuasiIORunner[Task].runFutureInterruptible {
           FileLockMutex.withLocalMutex[Task, Boolean](name, retryWait, 0, (_, _) => QuasiIO[Task].unit, QuasiIO[Task].unit)(
             _ => QuasiIO[Task].fail(new AssertionError("unexpected exhaustion")),
             _ => QuasiIO[Task].pure(true),
-          )
+          )(QuasiIO[Task], onPending[Task](pending), QuasiTemporal[Task])
         }
         try {
-          awaitContention(result, new CountDownLatch(1), name)
+          awaitContention(result, pending)
           Await.result(interrupt(), watchdog)
           assert(Await.ready(result, watchdog).value.exists(_.isFailure))
         } finally child.command("RELEASE")
@@ -200,17 +217,17 @@ class FileLockMutexTest extends FileLockMutexFixture {
     }
 
     "interrupt a ZIO wait through BIO before its owner releases the lock" in { mutexName =>
-      assume(hasProcLocks)
       val name = mutexName()
       withChild(name, mutexName()) { child =>
+        val pending = new CountDownLatch(1)
         val succeeded = new CountDownLatch(1)
         val wait = FileLockMutex.withLocalMutex[zio.Task, Boolean](name, retryWait, 0, (_, _) => zio.ZIO.unit, zio.ZIO.unit)(
           _ => zio.ZIO.fail(new AssertionError("unexpected exhaustion")),
           _ => zio.ZIO.succeed { succeeded.countDown(); true },
-        )(QuasiIO.fromBIO[zio.IO], QuasiAsync.fromBIO[zio.IO], QuasiTemporal.fromBIO[zio.IO])
+        )(QuasiIO.fromBIO[zio.IO], onPending[zio.Task](pending)(QuasiAsync.fromBIO[zio.IO]), QuasiTemporal.fromBIO[zio.IO])
         val result = zio.Unsafe.unsafe { implicit unsafe => zio.Runtime.default.unsafe.runToFuture(wait) }
         try {
-          awaitContention(result, new CountDownLatch(1), name)
+          awaitContention(result, pending)
           assert(Await.result(result.cancel(), watchdog).isInterrupted)
           assert(succeeded.getCount == 1L)
         } finally child.command("RELEASE")
@@ -219,16 +236,16 @@ class FileLockMutexTest extends FileLockMutexFixture {
     }
 
     "cancel an external wait before its owner releases the lock" in { mutexName =>
-      assume(Files.isRegularFile(Paths.get("/proc/locks")))
       val name = mutexName()
       withChild(name, mutexName()) { child =>
+        val pending = new CountDownLatch(1)
         val succeeded = new CountDownLatch(1)
         val (result, cancelWait) = FileLockMutex.withLocalMutex[IO, Boolean](name, retryWait, 0, (_, _) => IO.unit, IO.unit)(
           _ => IO.raiseError(new AssertionError("unexpected exhaustion")),
           _ => IO { succeeded.countDown(); true },
-        ).unsafeToFutureCancelable()(IORuntime.global)
+        )(QuasiIO[IO], onPending[IO](pending), QuasiTemporal[IO]).unsafeToFutureCancelable()(IORuntime.global)
         try {
-          awaitContention(result, new CountDownLatch(1), name)
+          awaitContention(result, pending)
           Await.result(cancelWait(), watchdog)
           assert(succeeded.getCount == 1L)
         } finally child.command("RELEASE")
@@ -250,8 +267,6 @@ class FileLockMutexTest extends FileLockMutexFixture {
     }
   }
 
-  private def hasProcLocks: Boolean = Files.isRegularFile(Paths.get("/proc/locks"))
-
   private def mutex[A](
     name: String,
     maximum: Int,
@@ -265,12 +280,7 @@ class FileLockMutexTest extends FileLockMutexFixture {
     success,
   )(QuasiIO.quasiIOIdentity, async, temporal)
 
-  private def observingTimer(sleeping: CountDownLatch): QuasiTemporal[Identity] = new QuasiTemporal[Identity] {
-    override def sleep(duration: FiniteDuration): Unit = {
-      sleeping.countDown()
-      timer.sleep(duration)
-    }
-  }
+  private def onPending[F[_]](pending: CountDownLatch)(implicit async: QuasiAsync[F]): QuasiAsync[F] = new OnPendingFileLock[F](_ => pending.countDown())
 
   private def start[A](action: => A): Future[A] = {
     val result = Promise[A]()
@@ -280,19 +290,9 @@ class FileLockMutexTest extends FileLockMutexFixture {
     result.future
   }
 
-  private def awaitContention(acquired: Future[Boolean], sleeping: CountDownLatch, name: String): Unit = {
-    val deadline = watchdog.fromNow
-    val locks = Paths.get("/proc/locks")
-    def blocked: Boolean = if (Files.isRegularFile(locks)) {
-      val file = Paths.get(System.getProperty("java.io.tmpdir"), s"$name.tmp")
-      val inode = Files.getAttribute(file, "unix:ino").toString
-      val blockedOwner = s"->\\s+POSIX\\s+ADVISORY\\s+WRITE\\s+${ProcessHandle.current().pid()}\\s+\\S+:$inode\\s".r
-      blockedOwner.findFirstIn(new String(Files.readAllBytes(locks), StandardCharsets.UTF_8)).isDefined
-    } else false
-    while (!sleeping.await(retryWait.toMillis, TimeUnit.MILLISECONDS) && !blocked) {
-      assert(!acquired.isCompleted, s"mutex completed before release: ${acquired.value}")
-      assert(deadline.hasTimeLeft(), "no observed external-process contention")
-    }
+  private def awaitContention(acquired: Future[Boolean], pending: CountDownLatch): Unit = {
+    val submitted = pending.await(watchdog.toMillis, TimeUnit.MILLISECONDS)
+    assert(submitted, s"no pending lock request: ${acquired.value}")
     assert(!acquired.isCompleted, s"mutex completed before release: ${acquired.value}").discard()
   }
 
@@ -301,24 +301,8 @@ class FileLockMutexTest extends FileLockMutexFixture {
     use(child)
   }
 
-  private def childClasspath(): String = {
-    val loaders = Iterator.iterate[ClassLoader](getClass.getClassLoader)(_.getParent).takeWhile(_ != null)
-    val urls = loaders.collect { case loader: URLClassLoader => loader.getURLs.toList }.flatten
-    val locations = urls.map(url => Paths.get(url.toURI).toString).toList
-    (locations ++ System.getProperty("java.class.path").split(File.pathSeparator).toList).distinct.mkString(File.pathSeparator)
-  }
-
   private final class Child(own: String, other: String) extends AutoCloseable {
-    private val process = new ProcessBuilder(
-      Paths.get(System.getProperty("java.home"), "bin", "java").toString,
-      "-Xmx128m",
-      s"-Djava.io.tmpdir=${System.getProperty("java.io.tmpdir")}",
-      "-cp",
-      childClasspath(),
-      "izumi.fundamentals.platform.files.FileLockMutexProcess",
-      own,
-      other,
-    ).redirectErrorStream(true).start()
+    private val process = childJvm("izumi.fundamentals.platform.files.FileLockMutexProcess", own, other).redirectErrorStream(true).start()
     private val commands = new PrintWriter(process.getOutputStream, true)
     private val events = new LinkedBlockingQueue[String]()
     private val transcript = new ConcurrentLinkedQueue[String]()
