@@ -2,9 +2,8 @@ package izumi.fundamentals.platform.files
 
 import cats.effect.IO
 import cats.effect.unsafe.IORuntime
-import izumi.functional.bio.impl.MiniBIOAsync
 import izumi.functional.lifecycle.Lifecycle
-import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiIORunner, QuasiTemporal}
+import izumi.functional.quasi.{QuasiAsync, QuasiIO, QuasiTemporal}
 import izumi.fundamentals.platform.functional.Identity
 import izumi.fundamentals.platform.language.Quirks.Discarder
 import org.scalatest.Outcome
@@ -16,11 +15,11 @@ import java.nio.channels.{FileLock, OverlappingFileLockException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.UUID
-import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, LinkedBlockingQueue, TimeUnit}
+import java.util.concurrent.{ConcurrentLinkedQueue, Executors, LinkedBlockingQueue, TimeUnit}
 import java.util.jar.{Attributes, JarOutputStream, Manifest}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.*
-import scala.concurrent.{Await, ExecutionContext, Future, Promise}
+import scala.concurrent.{Await, ExecutionContext, Future, Promise, TimeoutException}
 import scala.jdk.CollectionConverters.*
 import scala.util.{Try, Using}
 
@@ -120,14 +119,14 @@ class FileLockMutexTest extends FileLockMutexFixture {
     "wait for another process even when the same-process retry budget is zero" in { mutexName =>
       val name = mutexName()
       withChild(name, mutexName()) { child =>
-        val pending = new CountDownLatch(1)
+        val started = Promise[Unit]()
         val acquired = start {
-          mutex(name, 0, timer, (_, _) => fail("unexpected overlap retry"), onPending[Identity](pending))(
+          mutex(name, 0, timer, (_, _) => fail("unexpected overlap retry"), started.success(()).discard())(
             _ => fail("external ownership exhausted the same-process budget"),
             _.isValid,
           ).use(identity)
         }
-        awaitContention(acquired, pending)
+        awaitContention(acquired, started)
         child.command("RELEASE")
         assert(Await.result(acquired, watchdog))
       }
@@ -138,21 +137,22 @@ class FileLockMutexTest extends FileLockMutexFixture {
       val second = mutexName()
       withChild(second, first) { child =>
         val (_, release) = mutex(first, 0, timer, (_, _) => ())(_ => (), _ => ()).unsafeAllocate()
-        val pending = new CountDownLatch(1)
+        val started = Promise[Unit]()
         val acquired = start {
-          mutex(second, 0, timer, (_, _) => fail("unexpected overlap retry"), onPending[Identity](pending))(
+          mutex(second, 0, timer, (_, _) => fail("unexpected overlap retry"), started.success(()).discard())(
             _ => fail("unexpected exhaustion"),
             _.isValid,
           ).use(identity)
         }
-        val outcome = try {
-          awaitContention(acquired, pending)
+        try {
+          awaitContention(acquired, started)
           child.command("WAIT")
-          child.awaitAny(Set("SLEEP", "PENDING", "ERROR"))
+          assert(child.awaitAny(Set("WAITING", "ERROR")) == "WAITING")
+          val early = child.pollAny(Set("COMPLETE", "ERROR"), 1.second)
+          assert(early.isEmpty, s"contender finished before release: $early")
         } finally release()
         child.command("RELEASE")
         assert(Await.result(acquired, watchdog))
-        assert(!outcome.startsWith("ERROR"), outcome)
         assert(child.awaitAny(Set("COMPLETE", "ERROR")) == "COMPLETE")
       }
     }
@@ -195,61 +195,25 @@ class FileLockMutexTest extends FileLockMutexFixture {
       } finally release.foreach(_())
     }
 
-    "release a pending file lock when a MiniBIOAsync waiter is interrupted" in { mutexName =>
-      implicit val ec: ExecutionContext = ExecutionContext.global
-      type Task[A] = MiniBIOAsync[Throwable, A]
-      val name = mutexName()
-      withChild(name, mutexName()) { child =>
-        val pending = new CountDownLatch(1)
-        val (result, interrupt) = QuasiIORunner[Task].runFutureInterruptible {
-          FileLockMutex.withLocalMutex[Task, Boolean](name, retryWait, 0, (_, _) => QuasiIO[Task].unit, QuasiIO[Task].unit)(
-            _ => QuasiIO[Task].fail(new AssertionError("unexpected exhaustion")),
-            _ => QuasiIO[Task].pure(true),
-          )(QuasiIO[Task], onPending[Task](pending), QuasiTemporal[Task])
-        }
-        try {
-          awaitContention(result, pending)
-          Await.result(interrupt(), watchdog)
-          assert(Await.ready(result, watchdog).value.exists(_.isFailure))
-        } finally child.command("RELEASE")
-        assert(mutex(name, 0, timer, (_, _) => ())(_ => false, _.isValid).use(identity))
-      }
-    }
-
     "interrupt a ZIO wait through BIO before its owner releases the lock" in { mutexName =>
-      val name = mutexName()
-      withChild(name, mutexName()) { child =>
-        val pending = new CountDownLatch(1)
-        val succeeded = new CountDownLatch(1)
-        val wait = FileLockMutex.withLocalMutex[zio.Task, Boolean](name, retryWait, 0, (_, _) => zio.ZIO.unit, zio.ZIO.unit)(
+      checkInterruptedWait(mutexName) { (name, ec, started, succeeded) =>
+        val wait = FileLockMutex.withLocalMutex[zio.Task, Unit](name, retryWait, 0, (_, _) => zio.ZIO.unit, zio.ZIO.succeed(started()))(
           _ => zio.ZIO.fail(new AssertionError("unexpected exhaustion")),
-          _ => zio.ZIO.succeed { succeeded.countDown(); true },
-        )(QuasiIO.fromBIO[zio.IO], onPending[zio.Task](pending)(QuasiAsync.fromBIO[zio.IO]), QuasiTemporal.fromBIO[zio.IO])
-        val result = zio.Unsafe.unsafe { implicit unsafe => zio.Runtime.default.unsafe.runToFuture(wait) }
-        try {
-          awaitContention(result, pending)
-          assert(Await.result(result.cancel(), watchdog).isInterrupted)
-          assert(succeeded.getCount == 1L)
-        } finally child.command("RELEASE")
-        assert(mutex(name, 0, timer, (_, _) => ())(_ => false, _.isValid).use(identity))
+          _ => zio.ZIO.succeed(succeeded()),
+        )(QuasiIO.fromBIO[zio.IO], QuasiAsync.fromBIO[zio.IO], QuasiTemporal.fromBIO[zio.IO])
+        val result = zio.Unsafe.unsafe { implicit unsafe => zio.Runtime.default.unsafe.runToFuture(wait.onExecutionContext(ec)) }
+        () => result.cancel().map(exit => assert(exit.isInterrupted).discard())(ec)
       }
     }
 
     "cancel an external wait before its owner releases the lock" in { mutexName =>
-      val name = mutexName()
-      withChild(name, mutexName()) { child =>
-        val pending = new CountDownLatch(1)
-        val succeeded = new CountDownLatch(1)
-        val (result, cancelWait) = FileLockMutex.withLocalMutex[IO, Boolean](name, retryWait, 0, (_, _) => IO.unit, IO.unit)(
+      checkInterruptedWait(mutexName) { (name, ec, started, succeeded) =>
+        val wait = FileLockMutex.withLocalMutex[IO, Unit](name, retryWait, 0, (_, _) => IO.unit, IO(started()))(
           _ => IO.raiseError(new AssertionError("unexpected exhaustion")),
-          _ => IO { succeeded.countDown(); true },
-        )(QuasiIO[IO], onPending[IO](pending), QuasiTemporal[IO]).unsafeToFutureCancelable()(IORuntime.global)
-        try {
-          awaitContention(result, pending)
-          Await.result(cancelWait(), watchdog)
-          assert(succeeded.getCount == 1L)
-        } finally child.command("RELEASE")
-        assert(mutex(name, 0, timer, (_, _) => ())(_ => false, _.isValid).use(identity))
+          _ => IO(succeeded()),
+        )
+        val (_, cancelWait) = wait.evalOn(ec).unsafeToFutureCancelable()(IORuntime.global)
+        cancelWait
       }
     }
 
@@ -267,20 +231,42 @@ class FileLockMutexTest extends FileLockMutexFixture {
     }
   }
 
+  private def checkInterruptedWait(mutexName: () => String)(
+    startWaiter: (String, ExecutionContext, () => Unit, () => Unit) => (() => Future[Unit])
+  ): Unit = {
+    val name = mutexName()
+    withChild(name, mutexName()) { child =>
+      val ec = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+      val started = Promise[Unit]()
+      val succeeded = Promise[Unit]()
+      try {
+        val cancelWait = startWaiter(name, ec, () => ec.execute(() => started.success(()).discard()), () => succeeded.success(()).discard())
+        Await.result(started.future, watchdog)
+        val canceled = cancelWait()
+        try Await.result(canceled, watchdog)
+        finally {
+          child.command("RELEASE")
+          Await.ready(canceled, watchdog).discard()
+        }
+        assert(child.awaitAny(Set("RELEASED")) == "RELEASED")
+        assert(mutex(name, 0, timer, (_, _) => ())(_ => false, _.isValid).use(identity))
+        assert(!succeeded.isCompleted).discard()
+      } finally ec.shutdown()
+    }
+  }
+
   private def mutex[A](
     name: String,
     maximum: Int,
     temporal: QuasiTemporal[Identity],
     attemptLog: (Int, Int) => Unit,
-    async: QuasiAsync[Identity] = QuasiAsync.quasiAsyncIdentity,
+    onExisting: => Unit = (),
   )(failure: Int => A,
     success: FileLock => A,
-  ): Lifecycle[Identity, A] = FileLockMutex.allocate[Identity, A](name, retryWait, maximum, attemptLog, ())(
+  ): Lifecycle[Identity, A] = FileLockMutex.allocate[Identity, A](name, retryWait, maximum, attemptLog, onExisting)(
     failure,
     success,
-  )(QuasiIO.quasiIOIdentity, async, temporal)
-
-  private def onPending[F[_]](pending: CountDownLatch)(implicit async: QuasiAsync[F]): QuasiAsync[F] = new OnPendingFileLock[F](_ => pending.countDown())
+  )(QuasiIO.quasiIOIdentity, QuasiAsync.quasiAsyncIdentity, temporal)
 
   private def start[A](action: => A): Future[A] = {
     val result = Promise[A]()
@@ -290,10 +276,9 @@ class FileLockMutexTest extends FileLockMutexFixture {
     result.future
   }
 
-  private def awaitContention(acquired: Future[Boolean], pending: CountDownLatch): Unit = {
-    val submitted = pending.await(watchdog.toMillis, TimeUnit.MILLISECONDS)
-    assert(submitted, s"no pending lock request: ${acquired.value}")
-    assert(!acquired.isCompleted, s"mutex completed before release: ${acquired.value}").discard()
+  private def awaitContention(acquired: Future[Boolean], started: Promise[Unit]): Unit = {
+    Await.result(started.future, watchdog)
+    assertThrows[TimeoutException](Await.ready(acquired, 1.second)).discard()
   }
 
   private def withChild[A](own: String, other: String)(use: Child => A): A = Using.resource(new Child(own, other)) { child =>
@@ -323,14 +308,14 @@ class FileLockMutexTest extends FileLockMutexFixture {
     def command(value: String): Unit = commands.println(value)
 
     def awaitAny(prefixes: Set[String]): String = {
-      val deadline = watchdog.fromNow
-      var matched = Option.empty[String]
-      while (matched.isEmpty) {
-        val line = events.poll(math.max(0L, deadline.timeLeft.toNanos), TimeUnit.NANOSECONDS)
-        assert(line != null, s"missing $prefixes; output=${transcript.asScala.mkString("\n")}")
-        if (prefixes.exists(prefix => line.startsWith(prefix))) matched = Some(line)
-      }
-      matched.get
+      pollAny(prefixes, watchdog).getOrElse(fail(s"missing $prefixes; output=${transcript.asScala.mkString("\n")}"))
+    }
+
+    def pollAny(prefixes: Set[String], timeout: FiniteDuration): Option[String] = {
+      val deadline = timeout.fromNow
+      Iterator.continually(events.poll(math.max(0L, deadline.timeLeft.toNanos), TimeUnit.NANOSECONDS))
+        .takeWhile(_ != null)
+        .find(line => prefixes.exists(line.startsWith))
     }
 
     override def close(): Unit = {
