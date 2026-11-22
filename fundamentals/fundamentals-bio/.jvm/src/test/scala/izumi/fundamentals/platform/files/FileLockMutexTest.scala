@@ -195,24 +195,24 @@ class FileLockMutexTest extends FileLockMutexFixture {
       } finally release.foreach(_())
     }
 
-    "interrupt a ZIO wait through BIO before its owner releases the lock" in { mutexName =>
-      checkInterruptedWait(mutexName) { (name, ec, started, succeeded) =>
-        val wait = FileLockMutex.withLocalMutex[zio.Task, Unit](name, retryWait, 0, (_, _) => zio.ZIO.unit, zio.ZIO.succeed(started()))(
+    "interrupt a ZIO (BIO) wait before its owner releases the lock" in { mutexName =>
+      checkInterruptedWait(mutexName) { (name, waiterThread, signalOnceWaiterYields, succeeded) =>
+        val wait = FileLockMutex.withLocalMutex[zio.Task, Unit](name, retryWait, 0, (_, _) => zio.ZIO.unit, zio.ZIO.succeed(signalOnceWaiterYields()))(
           _ => zio.ZIO.fail(new AssertionError("unexpected exhaustion")),
           _ => zio.ZIO.succeed(succeeded()),
         )(QuasiIO.fromBIO[zio.IO], QuasiAsync.fromBIO[zio.IO], QuasiTemporal.fromBIO[zio.IO])
-        val result = zio.Unsafe.unsafe { implicit unsafe => zio.Runtime.default.unsafe.runToFuture(wait.onExecutionContext(ec)) }
-        () => result.cancel().map(exit => assert(exit.isInterrupted).discard())(ec)
+        val result = zio.Unsafe.unsafe { implicit unsafe => zio.Runtime.default.unsafe.runToFuture(wait.onExecutionContext(waiterThread)) }
+        () => result.cancel().map(exit => assert(exit.isInterrupted).discard())(waiterThread)
       }
     }
 
-    "cancel an external wait before its owner releases the lock" in { mutexName =>
-      checkInterruptedWait(mutexName) { (name, ec, started, succeeded) =>
-        val wait = FileLockMutex.withLocalMutex[IO, Unit](name, retryWait, 0, (_, _) => IO.unit, IO(started()))(
+    "cancel a cats-effect IO wait before its owner releases the lock" in { mutexName =>
+      checkInterruptedWait(mutexName) { (name, waiterThread, signalOnceWaiterYields, succeeded) =>
+        val wait = FileLockMutex.withLocalMutex[IO, Unit](name, retryWait, 0, (_, _) => IO.unit, IO(signalOnceWaiterYields()))(
           _ => IO.raiseError(new AssertionError("unexpected exhaustion")),
           _ => IO(succeeded()),
         )
-        val (_, cancelWait) = wait.evalOn(ec).unsafeToFutureCancelable()(IORuntime.global)
+        val (_, cancelWait) = wait.evalOn(waiterThread).unsafeToFutureCancelable()(IORuntime.global)
         cancelWait
       }
     }
@@ -236,12 +236,13 @@ class FileLockMutexTest extends FileLockMutexFixture {
   ): Unit = {
     val name = mutexName()
     withChild(name, mutexName()) { child =>
-      val ec = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
-      val started = Promise[Unit]()
+      val waiterThread = ExecutionContext.fromExecutorService(Executors.newSingleThreadExecutor())
+      val waiterYielded = Promise[Unit]()
       val succeeded = Promise[Unit]()
       try {
-        val cancelWait = startWaiter(name, ec, () => ec.execute(() => started.success(()).discard()), () => succeeded.success(()).discard())
-        Await.result(started.future, watchdog)
+        val signalOnceWaiterYields = () => waiterThread.execute(() => waiterYielded.success(()).discard())
+        val cancelWait = startWaiter(name, waiterThread, signalOnceWaiterYields, () => succeeded.success(()).discard())
+        Await.result(waiterYielded.future, watchdog)
         val canceled = cancelWait()
         try Await.result(canceled, watchdog)
         finally {
@@ -251,7 +252,7 @@ class FileLockMutexTest extends FileLockMutexFixture {
         assert(child.awaitAny(Set("RELEASED")) == "RELEASED")
         assert(mutex(name, 0, timer, (_, _) => ())(_ => false, _.isValid).use(identity))
         assert(!succeeded.isCompleted).discard()
-      } finally ec.shutdown()
+      } finally waiterThread.shutdown()
     }
   }
 
